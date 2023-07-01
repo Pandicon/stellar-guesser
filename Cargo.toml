@@ -14,3 +14,4 @@ eframe = { version = "0.22.0", features = [
 	"glow",
 	"persistence",
 ] }
+nalgebra = "0.32.2"
