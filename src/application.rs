@@ -5,6 +5,8 @@ mod caspr;
 
 use caspr::{CellestialSphere};
 
+#[path = "./input.rs"]
+mod input;
 #[path = "./structs/state.rs"]
 mod state;
 
@@ -12,6 +14,7 @@ mod state;
 
 
 pub struct Application {
+	pub input: input::Input,
 	pub state: state::State,
 
 	pub frame_timestamp: i64,
@@ -36,6 +39,7 @@ impl Application {
 		let timestamp = chrono::Utc::now().timestamp();
 		let state = state::State::new(timestamp, time_spent_start);
 		Self {
+			input: input::Input::default(),
 			state,
 
 			frame_timestamp: timestamp,

@@ -57,7 +57,7 @@ pub struct CellestialSphere {
 impl CellestialSphere {
     //Renders a circle based on its current normal (does NOT account for the rotation of the sphere)
     pub fn render_circle(&self, normal: &Vector3<f32>, radius: f32, color: eframe::epaint::Color32, painter: &egui::Painter) {
-        let scale_factor = 1.0-normal[2]/self.zoom;	
+        let scale_factor = 1.0-normal[2]/self.zoom;
         
         let viewport_rect = self.viewport_rect;
 
