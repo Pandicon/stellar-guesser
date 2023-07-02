@@ -18,7 +18,7 @@ pub struct Star {
 impl Star{
     pub fn get_renderer(&self, rotation_de: f32, rotation_ra: f32) -> StarRenderer {
         let (ra_s, ra_c) = ((-self.ra + rotation_ra) * PI / 180.0).sin_cos();
-        let (de_s, de_c) = ((90.0 - self.dec + rotation_de) * PI / 180.0).sin_cos();
+        let (de_s, de_c) = ((self.dec + rotation_de) * PI / 180.0).sin_cos();
         StarRenderer::new(Vector3::new(de_s*ra_c, de_s*ra_s, de_c), self.vmag)
     }
 }

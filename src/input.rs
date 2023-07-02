@@ -18,7 +18,10 @@ impl Application {
 		let rotation_ra = self.input.dragged.x / 10.0;
 		let rotation_de = self.input.dragged.y / 10.0;
 		if rotation_de != 0.0 && rotation_ra != 0.0 {
-			self.cellestial_sphere.rotation_dec += rotation_de; // TODO: Fix the rotation in declination 💀
+			self.cellestial_sphere.rotation_dec += rotation_de;
+			if self.cellestial_sphere.rotation_dec.abs() > 90.0 {
+				self.cellestial_sphere.rotation_dec = 90.0 * self.cellestial_sphere.rotation_dec.signum();
+			}
 			self.cellestial_sphere.rotation_ra += rotation_ra;
 			self.cellestial_sphere.init_renderers();
 		}
