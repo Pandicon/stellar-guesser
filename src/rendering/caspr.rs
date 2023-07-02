@@ -5,6 +5,9 @@ use std::{error::Error, f32::consts::PI, fs};
 
 const STARS_FOLDER: &str = "./sphere/stars";
 
+#[path = "../geometry.rs"]
+mod geometry;
+
 #[derive(Clone, Copy,Deserialize)]
 pub struct Star {
     pub ra: f32,
@@ -63,7 +66,7 @@ impl CellestialSphere {
 
         let point_coordinates = Vector2::new(normal[0]/scale_factor,normal[1]/scale_factor);
 
-        // is it within the bounds that we want to render in? 
+        // is it within the bounds that we want to render in? //TODO: Use the geometry::is_in_rect function
         if ((rect_size[0]*screen_ratio/2.0 > point_coordinates[0]) && (point_coordinates[0] > -rect_size[0]*screen_ratio/2.0)) || ((rect_size[1]*screen_ratio/2.0 > point_coordinates[1]) && (point_coordinates[1] > -rect_size[1]*screen_ratio/2.0)) {
             painter.circle_filled(egui::Pos2::new(point_coordinates[0]/screen_ratio+rect_size[0]/2.0,point_coordinates[1]/screen_ratio+rect_size[1]/2.0), radius, color);
         }
