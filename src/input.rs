@@ -62,7 +62,7 @@ impl Input {
 			self.pointer_down_outside_subwindow = primary_down;
 		}
 		let mut to_handle: Vec<enums::Inputs> = Vec::new();
-		self.zoom = 1.0;
+		self.zoom = 0.0;
 		for event in &input_events {
 			match event {
 				/*egui::Event::Zoom(zoom) => {
