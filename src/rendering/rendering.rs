@@ -1,14 +1,13 @@
 use eframe::egui;
 
 use crate::Application;
-use crate::enums;
 
 mod app_info_window;
 mod stats_window;
 mod top_panel;
 
 impl Application {
-	pub fn render(&mut self, ctx: &egui::Context) {
+	pub fn render(&mut self, ctx: &egui::Context) -> bool {
 		let mut window_rectangles = Vec::new();
 		if let Some(response) = self.render_application_info_window(ctx) {
 			window_rectangles.push([[response.response.rect.right(), response.response.rect.top()], [response.response.rect.left(), response.response.rect.bottom()]]);
@@ -25,13 +24,6 @@ impl Application {
 			let painter = ui.painter();
 			self.cellestial_sphere.render_sky(painter);
 		});
-		let cursor_within_central_panel = central_panel_response.response.hovered();
-		self.input.handle(cursor_within_central_panel, ctx);
-		for input_to_handle in &self.input.to_handle {
-			match input_to_handle {
-				enums::Inputs::AltShiftI => self.state.windows.app_info.opened = !self.state.windows.app_info.opened,
-				enums::Inputs::AltShiftS => self.state.windows.stats.opened = !self.state.windows.stats.opened,
-			}
-		}
+		central_panel_response.response.hovered()
 	}
 }

@@ -1,5 +1,7 @@
 use eframe::egui;
 
+use crate::enums;
+
 #[path = "./rendering/caspr.rs"]
 mod caspr;
 
@@ -55,7 +57,14 @@ impl Application {
 impl eframe::App for Application {
 	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 		self.frame_timestamp = chrono::Utc::now().timestamp();
-		self.render(ctx);
+		let cursor_within_central_panel = self.render(ctx);
+		self.input.handle(cursor_within_central_panel, ctx);
+		for input_to_handle in &self.input.to_handle {
+			match input_to_handle {
+				enums::Inputs::AltShiftI => self.state.windows.app_info.opened = !self.state.windows.app_info.opened,
+				enums::Inputs::AltShiftS => self.state.windows.stats.opened = !self.state.windows.stats.opened,
+			}
+		}
 		self.cellestial_sphere.zoom(self.input.zoom / 500.0);
 		ctx.request_repaint();
 	}
