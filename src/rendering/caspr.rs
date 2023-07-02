@@ -101,8 +101,13 @@ impl CellestialSphere {
 
         let viewport_rect = egui::Rect::from_two_pos(egui::pos2(0.0, 0.0), egui::pos2(0.0, 0.0));
         Ok(Self { stars: catalog, markers: Vec::new(), zoom: 1.0, star_renderers, mag_scale: 0.3, mag_offset: 6.0, star_color: eframe::epaint::Color32::WHITE, viewport_rect})
-
     }
+
+    // TODO: Make this always for example halve the FOV
+    pub fn zoom(&mut self, velocity: f32) {
+        self.zoom += velocity;
+    }
+
     pub fn init(&mut self){
         self.star_renderers = self.stars.iter().map(|i| i.get_renderer()).collect()
     }

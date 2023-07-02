@@ -56,6 +56,7 @@ impl eframe::App for Application {
 	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 		self.frame_timestamp = chrono::Utc::now().timestamp();
 		self.render(ctx);
+		self.cellestial_sphere.zoom(self.input.zoom / 500.0);
 		ctx.request_repaint();
 	}
 
