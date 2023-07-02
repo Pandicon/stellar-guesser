@@ -3,6 +3,7 @@ use eframe::egui;
 use serde::Deserialize;
 use std::{error::Error, f32::consts::PI, fs};
 
+const STARS_FOLDER: &str = "./sphere/stars";
 
 #[derive(Clone, Copy,Deserialize)]
 pub struct Star {
@@ -15,7 +16,7 @@ impl Star{
     pub fn get_renderer(&self)-> StarRenderer{
         let (ra_s, ra_c) = (-self.ra * PI / 180.0).sin_cos();
         let (de_s, de_c) = ((90.0-self.dec) * PI / 180.0).sin_cos();
-        StarRenderer::new(Vector3::new(de_s*ra_c, de_s*ra_s, de_c),self.vmag)
+        StarRenderer::new(Vector3::new(de_s*ra_c, de_s*ra_s, de_c), self.vmag)
     }
 }
 
@@ -47,6 +48,7 @@ pub struct CellestialSphere{
     mag_offset: f32,
     star_color: eframe::epaint::Color32
 }
+
 impl CellestialSphere{
     //Renders a circle based on its current normal(does NOT account for the rotation of the sphere)
     pub fn render_circle(&self, normal: &Vector3<f32>, radius: f32, color: eframe::epaint::Color32, painter: &mut egui::Painter, ctx: &egui::Context){
@@ -78,14 +80,16 @@ impl CellestialSphere{
     }
 
     pub fn load() -> Result<Self, Box<dyn Error>>{
-        let mut catalog:Vec<Star> = Vec::new();
-
-        for data in fs::read_dir("./sphere/stars") {
-            let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path("data.csv");
+        let mut catalog: Vec<Star> = Vec::new();
+        let files = fs::read_dir(STARS_FOLDER);
+        for file in files? {
+            if let Ok(file) = file {
+                let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
     
-            for star in reader?.deserialize() {
-                let star: Star = star?;
-                catalog.push(star);
+                for star in reader?.deserialize() {
+                    let star: Star = star?;
+                    catalog.push(star);
+                }
             }
         }
 
