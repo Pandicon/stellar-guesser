@@ -3,7 +3,7 @@ use eframe::egui;
 use crate::Application;
 
 impl Application {
-	pub fn render_top_panel(&mut self, ctx: &egui::Context) {
+	pub fn render_top_panel(&mut self, ctx: &egui::Context) -> egui::InnerResponse<()> {
 		egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
 			egui::menu::bar(ui, |ui| {
 				ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -25,6 +25,6 @@ impl Application {
 					}
 				});
 			});
-		});
+		})
 	}
 }

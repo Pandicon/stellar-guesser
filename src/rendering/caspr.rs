@@ -37,8 +37,8 @@ impl StarRenderer {
         Self { unit_vector: vector, vmag: magnitude }
     }
 
-    pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter, ctx: &egui::Context) {
-        cellestial_sphere.render_circle(&self.unit_vector, cellestial_sphere.mag_to_radius(self.vmag), cellestial_sphere.star_color, painter, ctx);
+    pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter) {
+        cellestial_sphere.render_circle(&self.unit_vector, cellestial_sphere.mag_to_radius(self.vmag), cellestial_sphere.star_color, painter);
     }
     
 }
@@ -50,15 +50,16 @@ pub struct CellestialSphere {
     star_renderers: Vec<StarRenderer>,
     mag_scale: f32,
     mag_offset: f32,
-    star_color: eframe::epaint::Color32
+    star_color: eframe::epaint::Color32,
+    pub viewport_rect: egui::Rect
 }
 
 impl CellestialSphere {
     //Renders a circle based on its current normal (does NOT account for the rotation of the sphere)
-    pub fn render_circle(&self, normal: &Vector3<f32>, radius: f32, color: eframe::epaint::Color32, painter: &egui::Painter, ctx: &egui::Context){
+    pub fn render_circle(&self, normal: &Vector3<f32>, radius: f32, color: eframe::epaint::Color32, painter: &egui::Painter) {
         let scale_factor = 1.0-normal[2]/self.zoom;	
         
-        let viewport_rect = ctx.input(|i| i.screen_rect());
+        let viewport_rect = self.viewport_rect;
 
         let rect_size = Vector2::new(viewport_rect.max[0]-viewport_rect.min[0],viewport_rect.max[1]-viewport_rect.min[1]);
 
@@ -66,7 +67,8 @@ impl CellestialSphere {
 
         let point_coordinates = Vector2::new(normal[0]/scale_factor,normal[1]/scale_factor);
 
-        // is it within the bounds that we want to render in? //TODO: Use the geometry::is_in_rect function
+        // Is it within the bounds that we want to render in? //TODO: Use the geometry::is_in_rect function
+        // TODO: Probably fix this - see how it is rendering into the top panel
         if ((rect_size[0]*screen_ratio/2.0 > point_coordinates[0]) && (point_coordinates[0] > -rect_size[0]*screen_ratio/2.0)) || ((rect_size[1]*screen_ratio/2.0 > point_coordinates[1]) && (point_coordinates[1] > -rect_size[1]*screen_ratio/2.0)) {
             painter.circle_filled(egui::Pos2::new(point_coordinates[0]/screen_ratio+rect_size[0]/2.0,point_coordinates[1]/screen_ratio+rect_size[1]/2.0), radius, color);
         }
@@ -74,10 +76,10 @@ impl CellestialSphere {
     }
 
     //Renders the entire sphere view
-    pub fn render_sky(&self, painter: &egui::Painter, ctx: &egui::Context){
+    pub fn render_sky(&self, painter: &egui::Painter) {
         //some stuff lol
         for star_renderer in &self.star_renderers {
-            star_renderer.render(&self, painter, ctx)
+            star_renderer.render(&self, painter)
         }
     }
 
@@ -97,7 +99,8 @@ impl CellestialSphere {
             }
         }
 
-        Ok(Self { stars: catalog, markers: Vec::new(), zoom: 1.0, star_renderers, mag_scale: 0.3, mag_offset: 6.0, star_color: eframe::epaint::Color32::WHITE})
+        let viewport_rect = egui::Rect::from_two_pos(egui::pos2(0.0, 0.0), egui::pos2(0.0, 0.0));
+        Ok(Self { stars: catalog, markers: Vec::new(), zoom: 1.0, star_renderers, mag_scale: 0.3, mag_offset: 6.0, star_color: eframe::epaint::Color32::WHITE, viewport_rect})
 
     }
     pub fn init(&mut self){
