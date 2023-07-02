@@ -13,7 +13,7 @@ impl Application {
 		egui::CentralPanel::default().show(ctx, |ui| {
 			self.render_top_panel(ctx);
 			let painter = ui.painter();
-			painter.circle_filled(egui::pos2(50.0, 50.0), 5.0, egui::epaint::Color32::WHITE);
+			self.cellestial_sphere.render_sky(painter, ctx);
 		});
 	}
 }
