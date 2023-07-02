@@ -1,13 +1,22 @@
 use eframe::egui;
 
+#[path = "./rendering/caspr.rs"]
+mod caspr;
+
+use caspr::{CellestialSphere};
+
 #[path = "./structs/state.rs"]
 mod state;
+
+
+
 
 pub struct Application {
 	pub state: state::State,
 
 	pub frame_timestamp: i64,
 	pub frame_timestamp_ms: i64,
+	pub cellestial_sphere: CellestialSphere,
 
 	pub authors: String,
 	pub version: String
@@ -31,6 +40,7 @@ impl Application {
 
 			frame_timestamp: timestamp,
 			frame_timestamp_ms: chrono::Utc::now().timestamp_millis(),
+			cellestial_sphere: CellestialSphere::load().expect("No catalogs are present"),
 
 			authors,
 			version,
