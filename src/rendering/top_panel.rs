@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use eframe::egui;
 
 use crate::Application;
@@ -6,6 +8,10 @@ impl Application {
 	pub fn render_top_panel(&mut self, ctx: &egui::Context) -> egui::InnerResponse<()> {
 		egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
 			egui::menu::bar(ui, |ui| {
+				ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+					// ui.label(format!("{} FPS", ctx.input(|i| 1.0 / i.stable_dt))); // TODO: Add some FPS smoothing
+					ui.label(format!("FOV: {}", (2.0 / self.cellestial_sphere.get_zoom()).asin() / PI * 180.0)); // TODO: Find the correct formula
+				});
 				ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
 					let app_info_btn = ui
 						.add(egui::Button::new(

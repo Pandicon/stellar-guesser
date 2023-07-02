@@ -108,6 +108,10 @@ impl CellestialSphere {
         self.zoom += velocity;
     }
 
+    pub fn get_zoom(&self) -> f32 {
+        self.zoom
+    }
+
     pub fn init(&mut self){
         self.star_renderers = self.stars.iter().map(|i| i.get_renderer()).collect()
     }
