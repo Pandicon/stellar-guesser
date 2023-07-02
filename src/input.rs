@@ -1,9 +1,29 @@
 use eframe::egui;
 use std::collections::HashMap;
 
-use crate::enums;
+use crate::{Application, enums};
 
 const KEY_COMBINATIONS: [&str; 2] = ["alt+shift+i", "alt+shift+s"];
+
+impl Application {
+	pub fn handle_input(&mut self, cursor_within_central_panel: bool, ctx: &egui::Context) {
+		self.input.handle(cursor_within_central_panel, ctx);
+		for input_to_handle in &self.input.to_handle {
+			match input_to_handle {
+				enums::Inputs::AltShiftI => self.state.windows.app_info.opened = !self.state.windows.app_info.opened,
+				enums::Inputs::AltShiftS => self.state.windows.stats.opened = !self.state.windows.stats.opened,
+			}
+		}
+		self.cellestial_sphere.zoom(self.input.zoom / 500.0);
+		let rotation_ra = self.input.dragged.x / 10.0;
+		let rotation_de = self.input.dragged.y / 10.0;
+		if rotation_de != 0.0 && rotation_ra != 0.0 {
+			self.cellestial_sphere.rotation_dec += rotation_de; // TODO: Fix the rotation in declination 💀
+			self.cellestial_sphere.rotation_ra += rotation_ra;
+			self.cellestial_sphere.init_renderers();
+		}
+	}
+}
 
 pub struct Input {
 	pub dragged: egui::Vec2,

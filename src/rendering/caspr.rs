@@ -16,9 +16,9 @@ pub struct Star {
 }
 
 impl Star{
-    pub fn get_renderer(&self) -> StarRenderer {
-        let (ra_s, ra_c) = (-self.ra * PI / 180.0).sin_cos();
-        let (de_s, de_c) = ((90.0-self.dec) * PI / 180.0).sin_cos();
+    pub fn get_renderer(&self, rotation_de: f32, rotation_ra: f32) -> StarRenderer {
+        let (ra_s, ra_c) = ((-self.ra + rotation_ra) * PI / 180.0).sin_cos();
+        let (de_s, de_c) = ((90.0 - self.dec + rotation_de) * PI / 180.0).sin_cos();
         StarRenderer::new(Vector3::new(de_s*ra_c, de_s*ra_s, de_c), self.vmag)
     }
 }
@@ -51,7 +51,10 @@ pub struct CellestialSphere {
     mag_scale: f32,
     mag_offset: f32,
     star_color: eframe::epaint::Color32,
-    pub viewport_rect: egui::Rect
+    pub viewport_rect: egui::Rect,
+
+    pub rotation_dec: f32,
+    pub rotation_ra: f32
 }
 
 impl CellestialSphere {
@@ -85,7 +88,6 @@ impl CellestialSphere {
 
     pub fn load() -> Result<Self, Box<dyn Error>>{
         let mut catalog: Vec<Star> = Vec::new();
-        let mut star_renderers: Vec<StarRenderer> = Vec::new();
         let files = fs::read_dir(STARS_FOLDER);
         for file in files? {
             if let Ok(file) = file {
@@ -93,14 +95,13 @@ impl CellestialSphere {
     
                 for star in reader?.deserialize() {
                     let star: Star = star?;
-                    star_renderers.push(star.get_renderer());
                     catalog.push(star);
                 }
             }
         }
 
         let viewport_rect = egui::Rect::from_two_pos(egui::pos2(0.0, 0.0), egui::pos2(0.0, 0.0));
-        Ok(Self { stars: catalog, markers: Vec::new(), zoom: 1.0, star_renderers, mag_scale: 0.3, mag_offset: 6.0, star_color: eframe::epaint::Color32::WHITE, viewport_rect})
+        Ok(Self { stars: catalog, markers: Vec::new(), zoom: 1.0, star_renderers: Vec::new(), mag_scale: 0.3, mag_offset: 6.0, star_color: eframe::epaint::Color32::WHITE, viewport_rect, rotation_dec: 0.0, rotation_ra: 0.0})
     }
 
     // TODO: Make this always for example halve the FOV
@@ -112,8 +113,12 @@ impl CellestialSphere {
         self.zoom
     }
 
-    pub fn init(&mut self){
-        self.star_renderers = self.stars.iter().map(|i| i.get_renderer()).collect()
+    pub fn init(&mut self) {
+        self.init_renderers();
+    }
+
+    pub fn init_renderers(&mut self) {
+        self.star_renderers = self.stars.iter().map(|i| i.get_renderer(self.rotation_dec, self.rotation_ra)).collect()
     }
 
     pub fn mag_to_radius(&self,vmag:f32)-> f32{
