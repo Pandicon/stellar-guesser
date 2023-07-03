@@ -38,6 +38,8 @@ pub struct CellestialSphere {
 	pub mag_offset: f32,
 	pub viewport_rect: egui::Rect,
 
+	pub deepsky_render_mag_decrease: f32,
+
 	pub rotation_dec: f32,
 	pub rotation_ra: f32,
 	pub rotation_matrix: Matrix3<f32>,
@@ -77,7 +79,7 @@ impl CellestialSphere {
 		}
 		for (_, deepsky_renderers) in &self.deepsky_renderers {
 			for deepsky_renderer in deepsky_renderers {
-				deepsky_renderer.render(&self, painter);
+				deepsky_renderer.render(&self, painter, self.deepsky_render_mag_decrease);
 			}
 		}
 	}
@@ -181,6 +183,9 @@ impl CellestialSphere {
 			mag_scale: 0.3,
 			mag_offset: 6.0,
 			viewport_rect,
+
+			deepsky_render_mag_decrease: 0.0,
+
 			rotation_dec: 0.0,
 			rotation_ra: 0.0,
 			rotation_matrix: Matrix3::identity(),

@@ -1,4 +1,3 @@
-use crate::structs::graphics_settings::GraphicsSettings;
 use eframe::{egui, epaint::Color32};
 use nalgebra::{Matrix3, Vector3};
 use serde::Deserialize;
@@ -86,7 +85,7 @@ impl DeepskyRenderer {
 		}
 	}
 
-	pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter) {
-		cellestial_sphere.render_circle(&self.unit_vector, cellestial_sphere.mag_to_radius(self.vmag), self.colour, painter);
+	pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter, magnitude_decrease: f32) {
+		cellestial_sphere.render_circle(&self.unit_vector, cellestial_sphere.mag_to_radius(self.vmag - magnitude_decrease), self.colour, painter);
 	}
 }

@@ -52,6 +52,11 @@ impl Application {
 			egui::CollapsingHeader::new(egui::RichText::new("Deepsky objects").text_style(egui::TextStyle::Heading).size(20.0))
 				.default_open(true)
 				.show(ui, |ui| {
+					ui.horizontal(|ui| {
+						ui.add(egui::DragValue::new(&mut self.cellestial_sphere.deepsky_render_mag_decrease).speed(0.1));
+						ui.label("Magnitude decrease")
+							.on_hover_text("By how much should the magnitude of the deepsky objects be decreased for rendering - this way the objects can be made to be seen even without zooming in");
+					});
 					let mut newly_active_deepsky_groups = Vec::new();
 					let mut newly_inactive_deepsky_groups = Vec::new();
 					for (name, active) in &mut self.cellestial_sphere.deepskies_categories_active {
