@@ -1,4 +1,4 @@
-use nalgebra::{Vector3, Vector2};
+use nalgebra::{Vector3, Vector2, Matrix3};
 use eframe::egui;
 use serde::Deserialize;
 use std::{error::Error, f32::consts::PI, fs};
@@ -16,10 +16,11 @@ pub struct Star {
 }
 
 impl Star{
-    pub fn get_renderer(&self, rotation_de: f32, rotation_ra: f32) -> StarRenderer {
-        let (ra_s, ra_c) = ((-self.ra + rotation_ra) * PI / 180.0).sin_cos();
-        let (de_s, de_c) = ((self.dec + rotation_de) * PI / 180.0).sin_cos();
-        StarRenderer::new(Vector3::new(de_s*ra_c, de_s*ra_s, de_c), self.vmag)
+    pub fn get_renderer(&self, rotation_matrix: Matrix3<f32>) -> StarRenderer {
+        let (ra_s, ra_c) = ((-self.ra) * PI / 180.0).sin_cos(); // + rotation_ra
+        let (de_s, de_c) = ((90.0 - self.dec) * PI / 180.0).sin_cos();
+        let unit_vector = rotation_matrix * Vector3::new(de_s*ra_c, de_s*ra_s, de_c);
+        StarRenderer::new(unit_vector, self.vmag)
     }
 }
 
@@ -118,7 +119,20 @@ impl CellestialSphere {
     }
 
     pub fn init_renderers(&mut self) {
-        self.star_renderers = self.stars.iter().map(|i| i.get_renderer(self.rotation_dec, self.rotation_ra)).collect()
+        let (rot_de_s, rot_de_c) = ((90.0 - self.rotation_dec) * PI / 180.0).sin_cos();
+        let (rot_ra_s, rot_ra_c) = (self.rotation_ra * PI / 180.0).sin_cos();
+        let rotation_x_matrix = Matrix3::new(
+            1.0, 0.0, 0.0,
+            0.0, rot_de_c, -rot_de_s,
+            0.0, rot_de_s, rot_de_c
+        );
+        let rotation_z_matrix = Matrix3::new(
+            rot_ra_c, -rot_ra_s, 0.0,
+            rot_ra_s, rot_ra_c, 0.0,
+            0.0, 0.0, 1.0
+        );
+        let rotation_matrix = rotation_x_matrix * rotation_z_matrix;
+        self.star_renderers = self.stars.iter().map(|i| i.get_renderer(rotation_matrix)).collect()
     }
 
     pub fn mag_to_radius(&self,vmag:f32)-> f32{

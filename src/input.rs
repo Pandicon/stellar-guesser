@@ -16,7 +16,7 @@ impl Application {
 		}
 		self.cellestial_sphere.zoom(self.input.zoom / 500.0);
 		let rotation_ra = self.input.dragged.x / 10.0;
-		let rotation_de = self.input.dragged.y / 10.0;
+		let rotation_de = -self.input.dragged.y / 10.0;
 		if rotation_de != 0.0 && rotation_ra != 0.0 {
 			self.cellestial_sphere.rotation_dec += rotation_de;
 			if self.cellestial_sphere.rotation_dec.abs() > 90.0 {
