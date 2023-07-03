@@ -41,7 +41,25 @@ impl Application {
 				});
 			egui::CollapsingHeader::new(egui::RichText::new("Coordinate grids").text_style(egui::TextStyle::Heading).size(20.0))
 				.default_open(true)
-				.show(ui, |ui| {});
+				.show(ui, |ui| {
+					let mut newly_active_line_groups = Vec::new();
+					let mut newly_inactive_line_groups = Vec::new();
+					for (name, active) in &mut self.cellestial_sphere.lines_categories_active {
+						let active_before = *active;
+						ui.checkbox(active, format!("Render lines from the {} file", name));
+						if !active_before && *active {
+							newly_active_line_groups.push(name.to_owned());
+						} else if active_before && !*active {
+							newly_inactive_line_groups.push(name.to_owned());
+						}
+					}
+					for name in &newly_active_line_groups {
+						self.cellestial_sphere.init_single_renderer("lines", name, self.cellestial_sphere.rotation_matrix);
+					}
+					for name in &newly_inactive_line_groups {
+						self.cellestial_sphere.deinit_single_renderer("lines", name);
+					}
+				});
 		})
 	}
 }

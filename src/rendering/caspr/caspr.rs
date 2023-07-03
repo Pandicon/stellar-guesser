@@ -22,11 +22,12 @@ pub struct Marker {
 pub struct CellestialSphere {
 	pub stars: HashMap<String, Vec<Star>>,
 	pub stars_categories_active: HashMap<String, bool>,
-	pub lines: Vec<SkyLine>,
+	pub lines: HashMap<String, Vec<SkyLine>>,
+	pub lines_categories_active: HashMap<String, bool>,
 	pub markers: Vec<Marker>,
 	zoom: f32,
 	star_renderers: HashMap<String, Vec<StarRenderer>>,
-	line_renderers: Vec<LineRenderer>,
+	line_renderers: HashMap<String, Vec<LineRenderer>>,
 	mag_scale: f32,
 	mag_offset: f32,
 	pub viewport_rect: egui::Rect,
@@ -58,8 +59,10 @@ impl CellestialSphere {
 	//Renders the entire sphere view
 	pub fn render_sky(&self, painter: &egui::Painter, graphics_settings: &GraphicsSettings) {
 		//some stuff lol
-		for line_renderer in &self.line_renderers {
-			line_renderer.render(&self, painter);
+		for (_, line_renderers) in &self.line_renderers {
+			for line_renderer in line_renderers {
+				line_renderer.render(&self, painter);
+			}
 		}
 		for (_, star_renderers) in &self.star_renderers {
 			for star_renderer in star_renderers {
@@ -96,15 +99,31 @@ impl CellestialSphere {
 				}
 			}
 		}
-		let mut lines: Vec<SkyLine> = Vec::new();
+
+		let mut lines: HashMap<String, Vec<SkyLine>> = HashMap::new();
+		let mut lines_categories_active = HashMap::new();
 		let files: Result<fs::ReadDir, std::io::Error> = fs::read_dir(LINES_FOLDER);
 		for file in (files?).flatten() {
+			let path = file.path();
+			let file_name = path.file_name();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_str();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_string();
 			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
 
 			for line_raw in reader?.deserialize() {
 				let line_raw: SkyLineRaw = line_raw?;
 				let line = SkyLine::from_raw(line_raw, star_color);
-				lines.push(line);
+				let entry = lines.entry(file_name.clone()).or_insert(Vec::new());
+				entry.push(line);
+				if !lines_categories_active.contains_key(&file_name) {
+					lines_categories_active.insert(file_name.clone(), true);
+				}
 			}
 		}
 
@@ -113,10 +132,11 @@ impl CellestialSphere {
 			stars: catalog,
 			stars_categories_active,
 			lines,
+			lines_categories_active,
 			markers: Vec::new(),
 			zoom: 1.0,
 			star_renderers: HashMap::new(),
-			line_renderers: Vec::new(),
+			line_renderers: HashMap::new(),
 			mag_scale: 0.3,
 			mag_offset: 6.0,
 			viewport_rect,
@@ -162,7 +182,18 @@ impl CellestialSphere {
 		for name in active_star_groups {
 			self.init_single_renderer("stars", &name, rotation_matrix);
 		}
-		self.line_renderers = self.lines.iter().map(|i| i.get_renderer(rotation_matrix)).collect();
+		self.line_renderers = HashMap::new();
+		let mut active_line_groups = Vec::new();
+		for (name, _) in &self.lines {
+			let active = self.lines_categories_active.entry(name.to_owned()).or_insert(true);
+			if !*active {
+				continue;
+			}
+			active_line_groups.push(name.to_owned());
+		}
+		for name in active_line_groups {
+			self.init_single_renderer("lines", &name, rotation_matrix);
+		}
 	}
 
 	pub fn init_single_renderer(&mut self, category: &str, name: &str, rotation_matrix: Matrix3<f32>) {
@@ -170,12 +201,18 @@ impl CellestialSphere {
 			if let Some(stars) = self.stars.get(name) {
 				self.star_renderers.insert(name.to_string(), stars.iter().map(|star| star.get_renderer(rotation_matrix)).collect());
 			}
+		} else if category == "lines" {
+			if let Some(lines) = self.lines.get(name) {
+				self.line_renderers.insert(name.to_string(), lines.iter().map(|line| line.get_renderer(rotation_matrix)).collect());
+			}
 		}
 	}
 
 	pub fn deinit_single_renderer(&mut self, category: &str, name: &str) {
 		if category == "stars" {
 			self.star_renderers.insert(name.to_string(), Vec::new());
+		} else if category == "lines" {
+			self.line_renderers.insert(name.to_string(), Vec::new());
 		}
 	}
 
