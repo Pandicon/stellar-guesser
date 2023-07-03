@@ -14,13 +14,13 @@ pub fn get_point_vector(ra: f32, dec: f32, rotation_matrix: Matrix3<f32>) -> Vec
 }
 
 pub fn project_point(vector: &Vector3<f32>, zoom: f32, viewport_rect: egui::Rect) -> (egui::Pos2, bool) {
-	let scale_factor = 1.0 - vector[2] / zoom;
+	let scale_factor = 1.0 - vector[2];
 
 	let rect_size = Vector2::new(viewport_rect.max[0] - viewport_rect.min[0], viewport_rect.max[1] - viewport_rect.min[1]);
 
 	let screen_ratio = 2.0 / (rect_size[0] * rect_size[0] + rect_size[1] * rect_size[1]).sqrt();
 
-	let point_coordinates = Vector2::new(vector[0] / scale_factor, vector[1] / scale_factor);
+	let point_coordinates = Vector2::new(vector[0]*zoom / scale_factor, vector[1]*zoom / scale_factor);
 
 	(
 		egui::Pos2::new(point_coordinates[0] / screen_ratio + rect_size[0] / 2.0, point_coordinates[1] / screen_ratio + rect_size[1] / 2.0),
