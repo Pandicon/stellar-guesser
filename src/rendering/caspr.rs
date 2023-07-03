@@ -67,6 +67,7 @@ pub struct StarRenderer {
 	pub vmag: f32,
 	pub colour: Color32,
 }
+
 impl StarRenderer {
 	pub fn new(vector: Vector3<f32>, magnitude: f32, colour: Color32) -> Self {
 		Self {
@@ -133,15 +134,13 @@ impl CellestialSphere {
 		let star_color = eframe::epaint::Color32::WHITE;
 		let mut catalog: Vec<Star> = Vec::new();
 		let files = fs::read_dir(STARS_FOLDER);
-		for file in files? {
-			if let Ok(file) = file {
-				let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
+		for file in (files?).flatten() {
+			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
 
-				for star_raw in reader?.deserialize() {
-					let star_raw: StarRaw = star_raw?;
-					let star = Star::from_raw(star_raw, star_color);
-					catalog.push(star);
-				}
+			for star_raw in reader?.deserialize() {
+				let star_raw: StarRaw = star_raw?;
+				let star = Star::from_raw(star_raw, star_color);
+				catalog.push(star);
 			}
 		}
 
