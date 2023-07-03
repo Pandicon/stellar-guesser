@@ -1,6 +1,6 @@
 use eframe::egui;
 
-#[path = "./rendering/caspr.rs"]
+#[path = "./rendering/caspr/caspr.rs"]
 mod caspr;
 
 use caspr::CellestialSphere;
