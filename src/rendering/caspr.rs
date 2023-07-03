@@ -1,4 +1,4 @@
-use eframe::egui;
+use eframe::{egui, epaint::Color32};
 use nalgebra::{Matrix3, Vector2, Vector3};
 use serde::Deserialize;
 use std::{error::Error, f32::consts::PI, fs};
@@ -13,6 +13,15 @@ pub struct Star {
 	pub ra: f32,
 	pub dec: f32,
 	pub vmag: f32,
+	pub colour: Color32,
+}
+
+#[derive(Clone, Deserialize)]
+pub struct StarRaw {
+	pub ra: f32,
+	pub dec: f32,
+	pub vmag: f32,
+	pub colour: Option<String>,
 }
 
 impl Star {
@@ -20,7 +29,32 @@ impl Star {
 		let (ra_s, ra_c) = ((-self.ra) * PI / 180.0).sin_cos(); // + rotation_ra
 		let (de_s, de_c) = ((90.0 - self.dec) * PI / 180.0).sin_cos();
 		let unit_vector = rotation_matrix * Vector3::new(de_s * ra_c, de_s * ra_s, de_c);
-		StarRenderer::new(unit_vector, self.vmag)
+		StarRenderer::new(unit_vector, self.vmag, self.colour)
+	}
+
+	pub fn from_raw(raw_star: StarRaw, default_colour: Color32) -> Self {
+		let colour = if let Some(colour_string) = raw_star.colour {
+			if let Ok(mut col_raw) = i64::from_str_radix(&colour_string, 16) {
+				let a = col_raw % 256;
+				col_raw /= 256; // a < 256, so there is no need to subtract it before division as it can only create a decimal part which is dropped in integer division
+				let b = col_raw % 256;
+				col_raw /= 256;
+				let g = col_raw % 256;
+				col_raw /= 256;
+				let r = col_raw;
+				Color32::from_rgba_premultiplied(r as u8, g as u8, b as u8, a as u8)
+			} else {
+				default_colour
+			}
+		} else {
+			default_colour
+		};
+		Self {
+			ra: raw_star.ra,
+			dec: raw_star.dec,
+			vmag: raw_star.vmag,
+			colour,
+		}
 	}
 }
 
@@ -31,14 +65,19 @@ pub struct Marker {
 pub struct StarRenderer {
 	pub unit_vector: Vector3<f32>,
 	pub vmag: f32,
+	pub colour: Color32,
 }
 impl StarRenderer {
-	pub fn new(vector: Vector3<f32>, magnitude: f32) -> Self {
-		Self { unit_vector: vector, vmag: magnitude }
+	pub fn new(vector: Vector3<f32>, magnitude: f32, colour: Color32) -> Self {
+		Self {
+			unit_vector: vector,
+			vmag: magnitude,
+			colour,
+		}
 	}
 
 	pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter) {
-		cellestial_sphere.render_circle(&self.unit_vector, cellestial_sphere.mag_to_radius(self.vmag), cellestial_sphere.star_color, painter);
+		cellestial_sphere.render_circle(&self.unit_vector, cellestial_sphere.mag_to_radius(self.vmag), self.colour, painter);
 	}
 }
 
@@ -91,14 +130,16 @@ impl CellestialSphere {
 	}
 
 	pub fn load() -> Result<Self, Box<dyn Error>> {
+		let star_color = eframe::epaint::Color32::WHITE;
 		let mut catalog: Vec<Star> = Vec::new();
 		let files = fs::read_dir(STARS_FOLDER);
 		for file in files? {
 			if let Ok(file) = file {
 				let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
 
-				for star in reader?.deserialize() {
-					let star: Star = star?;
+				for star_raw in reader?.deserialize() {
+					let star_raw: StarRaw = star_raw?;
+					let star = Star::from_raw(star_raw, star_color);
 					catalog.push(star);
 				}
 			}
@@ -112,7 +153,7 @@ impl CellestialSphere {
 			star_renderers: Vec::new(),
 			mag_scale: 0.3,
 			mag_offset: 6.0,
-			star_color: eframe::epaint::Color32::WHITE,
+			star_color,
 			viewport_rect,
 			rotation_dec: 0.0,
 			rotation_ra: 0.0,
