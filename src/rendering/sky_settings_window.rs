@@ -3,8 +3,8 @@ use eframe::{egui, epaint::Color32};
 use crate::Application;
 
 impl Application {
-	pub fn render_graphics_settings_window(&mut self, ctx: &egui::Context) -> Option<egui::InnerResponse<Option<()>>> {
-		egui::Window::new("Graphics settings").open(&mut self.state.windows.graphics_settings.opened).show(ctx, |ui| {
+	pub fn render_sky_settings_window(&mut self, ctx: &egui::Context) -> Option<egui::InnerResponse<Option<()>>> {
+		egui::Window::new("Sky settings").open(&mut self.state.windows.graphics_settings.opened).show(ctx, |ui| {
 			egui::CollapsingHeader::new(egui::RichText::new("Stars").text_style(egui::TextStyle::Heading).size(20.0))
 				.default_open(true)
 				.show(ui, |ui| {

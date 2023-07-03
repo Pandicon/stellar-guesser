@@ -26,8 +26,8 @@ impl Application {
 						self.state.windows.stats.opened = true;
 					}
 					let graphics_settings_btn = ui
-						.add(egui::Button::new(egui::RichText::new("Graphics settings").text_style(egui::TextStyle::Body)))
-						.on_hover_text("Show the graphics settings");
+						.add(egui::Button::new(egui::RichText::new("Sky settings").text_style(egui::TextStyle::Body)))
+						.on_hover_text("Show the sky settings");
 					if graphics_settings_btn.clicked() {
 						self.state.windows.graphics_settings.opened = true;
 					}

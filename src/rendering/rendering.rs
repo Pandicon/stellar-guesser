@@ -3,7 +3,7 @@ use eframe::egui;
 use crate::Application;
 
 mod app_info_window;
-mod graphics_settings_window;
+mod sky_settings_window;
 mod stats_window;
 mod top_panel;
 
@@ -16,7 +16,7 @@ impl Application {
 				[response.response.rect.left(), response.response.rect.bottom()],
 			]);
 		}
-		if let Some(response) = self.render_graphics_settings_window(ctx) {
+		if let Some(response) = self.render_sky_settings_window(ctx) {
 			window_rectangles.push([
 				[response.response.rect.right(), response.response.rect.top()],
 				[response.response.rect.left(), response.response.rect.bottom()],
