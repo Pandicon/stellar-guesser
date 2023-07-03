@@ -1,3 +1,4 @@
+use crate::structs::graphics_settings::GraphicsSettings;
 use eframe::{egui, epaint::Color32};
 use nalgebra::{Matrix3, Vector3};
 use std::{error::Error, f32::consts::PI, fs};
@@ -27,7 +28,6 @@ pub struct CellestialSphere {
 	line_renderers: Vec<LineRenderer>,
 	mag_scale: f32,
 	mag_offset: f32,
-	star_color: eframe::epaint::Color32,
 	pub viewport_rect: egui::Rect,
 
 	pub rotation_dec: f32,
@@ -54,13 +54,13 @@ impl CellestialSphere {
 	}
 
 	//Renders the entire sphere view
-	pub fn render_sky(&self, painter: &egui::Painter) {
+	pub fn render_sky(&self, painter: &egui::Painter, graphics_settings: &GraphicsSettings) {
 		//some stuff lol
 		for line_renderer in &self.line_renderers {
-			line_renderer.render(&self, painter)
+			line_renderer.render(&self, painter);
 		}
 		for star_renderer in &self.star_renderers {
-			star_renderer.render(&self, painter)
+			star_renderer.render(&self, painter, graphics_settings);
 		}
 	}
 
@@ -99,7 +99,6 @@ impl CellestialSphere {
 			line_renderers: Vec::new(),
 			mag_scale: 0.3,
 			mag_offset: 6.0,
-			star_color,
 			viewport_rect,
 			rotation_dec: 0.0,
 			rotation_ra: 0.0,
@@ -110,8 +109,8 @@ impl CellestialSphere {
 	pub fn zoom(&mut self, velocity: f32) {
 		let future_zoom = self.zoom + velocity;
 		//A check is needed since negative zoom breaks everything
-		if future_zoom >0.0{
-			self.zoom=future_zoom
+		if future_zoom > 0.0 {
+			self.zoom = future_zoom
 		}
 	}
 

@@ -1,3 +1,4 @@
+use crate::structs::graphics_settings::GraphicsSettings;
 use eframe::egui;
 
 #[path = "./rendering/caspr/caspr.rs"]
@@ -17,6 +18,7 @@ pub struct Application {
 	pub frame_timestamp: i64,
 	pub frame_timestamp_ms: i64,
 	pub cellestial_sphere: CellestialSphere,
+	pub graphics_settings: GraphicsSettings,
 
 	pub authors: String,
 	pub version: String,
@@ -44,6 +46,7 @@ impl Application {
 			frame_timestamp: timestamp,
 			frame_timestamp_ms: chrono::Utc::now().timestamp_millis(),
 			cellestial_sphere,
+			graphics_settings: GraphicsSettings::default(),
 
 			authors,
 			version,

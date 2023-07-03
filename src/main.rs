@@ -4,6 +4,7 @@ mod rendering;
 
 pub use application::Application;
 pub mod enums;
+pub mod structs;
 
 pub const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 pub const PROJECT_NAME: &str = env!("CARGO_PKG_NAME");
