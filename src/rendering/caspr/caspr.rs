@@ -1,7 +1,7 @@
 use crate::structs::graphics_settings::GraphicsSettings;
 use eframe::{egui, epaint::Color32};
 use nalgebra::{Matrix3, Vector3};
-use std::{error::Error, f32::consts::PI, fs};
+use std::{collections::HashMap, error::Error, f32::consts::PI, fs};
 
 const LINES_FOLDER: &str = "./sphere/lines";
 const STARS_FOLDER: &str = "./sphere/stars";
@@ -20,11 +20,12 @@ pub struct Marker {
 }
 
 pub struct CellestialSphere {
-	pub stars: Vec<Star>,
+	pub stars: HashMap<String, Vec<Star>>,
+	pub stars_categories_active: HashMap<String, bool>,
 	pub lines: Vec<SkyLine>,
 	pub markers: Vec<Marker>,
 	zoom: f32,
-	star_renderers: Vec<StarRenderer>,
+	star_renderers: HashMap<String, Vec<StarRenderer>>,
 	line_renderers: Vec<LineRenderer>,
 	mag_scale: f32,
 	mag_offset: f32,
@@ -32,6 +33,7 @@ pub struct CellestialSphere {
 
 	pub rotation_dec: f32,
 	pub rotation_ra: f32,
+	pub rotation_matrix: Matrix3<f32>,
 }
 
 impl CellestialSphere {
@@ -59,22 +61,39 @@ impl CellestialSphere {
 		for line_renderer in &self.line_renderers {
 			line_renderer.render(&self, painter);
 		}
-		for star_renderer in &self.star_renderers {
-			star_renderer.render(&self, painter, graphics_settings);
+		for (_, star_renderers) in &self.star_renderers {
+			for star_renderer in star_renderers {
+				star_renderer.render(&self, painter, graphics_settings);
+			}
 		}
 	}
 
 	pub fn load() -> Result<Self, Box<dyn Error>> {
 		let star_color = eframe::epaint::Color32::WHITE;
-		let mut catalog: Vec<Star> = Vec::new();
+		let mut catalog: HashMap<String, Vec<Star>> = HashMap::new();
+		let mut stars_categories_active = HashMap::new();
 		let files = fs::read_dir(STARS_FOLDER);
 		for file in (files?).flatten() {
-			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
+			let path = file.path();
+			let file_name = path.file_name();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_str();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_string();
+			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(path);
 
 			for star_raw in reader?.deserialize() {
 				let star_raw: StarRaw = star_raw?;
 				let star = Star::from_raw(star_raw, star_color);
-				catalog.push(star);
+				let entry = catalog.entry(file_name.clone()).or_insert(Vec::new());
+				entry.push(star);
+				if !stars_categories_active.contains_key(&file_name) {
+					stars_categories_active.insert(file_name.clone(), true);
+				}
 			}
 		}
 		let mut lines: Vec<SkyLine> = Vec::new();
@@ -92,16 +111,18 @@ impl CellestialSphere {
 		let viewport_rect = egui::Rect::from_two_pos(egui::pos2(0.0, 0.0), egui::pos2(0.0, 0.0));
 		Ok(Self {
 			stars: catalog,
+			stars_categories_active,
 			lines,
 			markers: Vec::new(),
 			zoom: 1.0,
-			star_renderers: Vec::new(),
+			star_renderers: HashMap::new(),
 			line_renderers: Vec::new(),
 			mag_scale: 0.3,
 			mag_offset: 6.0,
 			viewport_rect,
 			rotation_dec: 0.0,
 			rotation_ra: 0.0,
+			rotation_matrix: Matrix3::identity(),
 		})
 	}
 
@@ -128,8 +149,34 @@ impl CellestialSphere {
 		let rotation_x_matrix = Matrix3::new(1.0, 0.0, 0.0, 0.0, rot_de_c, -rot_de_s, 0.0, rot_de_s, rot_de_c);
 		let rotation_z_matrix = Matrix3::new(rot_ra_c, -rot_ra_s, 0.0, rot_ra_s, rot_ra_c, 0.0, 0.0, 0.0, 1.0);
 		let rotation_matrix = rotation_x_matrix * rotation_z_matrix;
-		self.star_renderers = self.stars.iter().map(|i| i.get_renderer(rotation_matrix)).collect();
+		self.rotation_matrix = rotation_matrix;
+		self.star_renderers = HashMap::new();
+		let mut active_star_groups = Vec::new();
+		for (name, _) in &self.stars {
+			let active = self.stars_categories_active.entry(name.to_owned()).or_insert(true);
+			if !*active {
+				continue;
+			}
+			active_star_groups.push(name.to_owned());
+		}
+		for name in active_star_groups {
+			self.init_single_renderer("stars", &name, rotation_matrix);
+		}
 		self.line_renderers = self.lines.iter().map(|i| i.get_renderer(rotation_matrix)).collect();
+	}
+
+	pub fn init_single_renderer(&mut self, category: &str, name: &str, rotation_matrix: Matrix3<f32>) {
+		if category == "stars" {
+			if let Some(stars) = self.stars.get(name) {
+				self.star_renderers.insert(name.to_string(), stars.iter().map(|star| star.get_renderer(rotation_matrix)).collect());
+			}
+		}
+	}
+
+	pub fn deinit_single_renderer(&mut self, category: &str, name: &str) {
+		if category == "stars" {
+			self.star_renderers.insert(name.to_string(), Vec::new());
+		}
 	}
 
 	pub fn mag_to_radius(&self, vmag: f32) -> f32 {
