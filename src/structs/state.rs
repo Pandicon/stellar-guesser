@@ -10,21 +10,21 @@ impl State {
 		Self {
 			start_timestamp,
 			time_spent_start,
-			windows: WindowsState::default()
+			windows: WindowsState::default(),
 		}
 	}
 }
 
 pub struct WindowsState {
 	pub app_info: AppInfoWindowState,
-	pub stats: StatsWindowState
+	pub stats: StatsWindowState,
 }
 
 impl Default for WindowsState {
 	fn default() -> Self {
 		Self {
 			app_info: AppInfoWindowState::default(),
-			stats: StatsWindowState::default()
+			stats: StatsWindowState::default(),
 		}
 	}
 }
@@ -35,9 +35,7 @@ pub struct AppInfoWindowState {
 
 impl Default for AppInfoWindowState {
 	fn default() -> Self {
-		Self {
-			opened: false
-		}
+		Self { opened: false }
 	}
 }
 
@@ -47,8 +45,6 @@ pub struct StatsWindowState {
 
 impl Default for StatsWindowState {
 	fn default() -> Self {
-		Self {
-			opened: false
-		}
+		Self { opened: false }
 	}
 }

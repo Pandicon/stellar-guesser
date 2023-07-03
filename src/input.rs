@@ -1,7 +1,7 @@
 use eframe::egui;
 use std::collections::HashMap;
 
-use crate::{Application, enums};
+use crate::{enums, Application};
 
 const KEY_COMBINATIONS: [&str; 2] = ["alt+shift+i", "alt+shift+s"];
 
@@ -64,7 +64,8 @@ impl Input {
 		let drag_y = ctx.input(|i| i.pointer.delta().y);
 		let primary_down = ctx.input(|i| i.pointer.primary_down());
 		self.pointer_position = ctx.input(|i| i.pointer.hover_pos().unwrap_or(egui::pos2(0.0, 0.0)));
-		if self.pointer_down_outside_subwindow && primary_down && ctx.input(|i| i.pointer.is_decidedly_dragging()) { // Ignore drags that started in a subwindow
+		if self.pointer_down_outside_subwindow && primary_down && ctx.input(|i| i.pointer.is_decidedly_dragging()) {
+			// Ignore drags that started in a subwindow
 			if shift_held {
 				if drag_x.abs() >= drag_y.abs() {
 					self.dragged.x = drag_x;
@@ -89,7 +90,7 @@ impl Input {
 		for event in &input_events {
 			match event {
 				/*egui::Event::Zoom(zoom) => {
-					
+
 				}*/
 				egui::Event::Scroll(egui::Vec2 { y, .. }) => {
 					self.zoom = *y;

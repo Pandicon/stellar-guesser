@@ -10,10 +10,16 @@ impl Application {
 	pub fn render(&mut self, ctx: &egui::Context) -> bool {
 		let mut window_rectangles = Vec::new();
 		if let Some(response) = self.render_application_info_window(ctx) {
-			window_rectangles.push([[response.response.rect.right(), response.response.rect.top()], [response.response.rect.left(), response.response.rect.bottom()]]);
+			window_rectangles.push([
+				[response.response.rect.right(), response.response.rect.top()],
+				[response.response.rect.left(), response.response.rect.bottom()],
+			]);
 		}
 		if let Some(response) = self.render_statistics_window(ctx) {
-			window_rectangles.push([[response.response.rect.right(), response.response.rect.top()], [response.response.rect.left(), response.response.rect.bottom()]]);
+			window_rectangles.push([
+				[response.response.rect.right(), response.response.rect.top()],
+				[response.response.rect.left(), response.response.rect.bottom()],
+			]);
 		}
 		let mut viewport_rect = ctx.input(|i| i.screen_rect());
 		let central_panel_response = egui::CentralPanel::default().show(ctx, |ui| {

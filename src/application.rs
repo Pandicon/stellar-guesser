@@ -1,19 +1,14 @@
 use eframe::egui;
 
-use crate::enums;
-
 #[path = "./rendering/caspr.rs"]
 mod caspr;
 
-use caspr::{CellestialSphere};
+use caspr::CellestialSphere;
 
 #[path = "./input.rs"]
 mod input;
 #[path = "./structs/state.rs"]
 mod state;
-
-
-
 
 pub struct Application {
 	pub input: input::Input,
@@ -24,7 +19,7 @@ pub struct Application {
 	pub cellestial_sphere: CellestialSphere,
 
 	pub authors: String,
-	pub version: String
+	pub version: String,
 }
 
 impl Application {

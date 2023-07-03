@@ -17,8 +17,8 @@ fn main() {
 	} else {
 		authors_split.join(" and ")
 	};
-    let native_options = eframe::NativeOptions {
-        app_id: Some(PROJECT_NAME.to_string()),
+	let native_options = eframe::NativeOptions {
+		app_id: Some(PROJECT_NAME.to_string()),
 		maximized: true,
 		resizable: true,
 		..Default::default()
@@ -28,5 +28,6 @@ fn main() {
 		"Stellar guesser",
 		native_options,
 		Box::new(|cc| Box::new(application::Application::new(cc, authors, VERSION.to_string()))),
-	).expect("Failed to start the application");
+	)
+	.expect("Failed to start the application");
 }
