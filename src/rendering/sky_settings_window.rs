@@ -19,6 +19,16 @@ impl Application {
 						ui.color_edit_button_rgba_premultiplied(&mut colour);
 						ui.label("Default star colour");
 					});
+					ui.horizontal_wrapped(|ui| ui.label("The following two values affect the size of the stars via the following formula: radius = mag_scale * (mag_offset - magnitude)"));
+					ui.horizontal(|ui| {
+						ui.add(egui::DragValue::new(&mut self.cellestial_sphere.mag_offset).speed(0.1));
+						ui.label("Magnitude offset (mag_offset)");
+					});
+					ui.horizontal(|ui| {
+						ui.add(egui::DragValue::new(&mut self.cellestial_sphere.mag_scale).speed(0.1));
+						ui.label("Magnitude scale (mag_scale)");
+					});
+
 					self.graphics_settings.default_star_colour =
 						Color32::from_rgba_premultiplied((colour[0] * 255.0) as u8, (colour[1] * 255.0) as u8, (colour[2] * 255.0) as u8, (colour[3] * 255.0) as u8);
 					let mut newly_active_star_groups = Vec::new();

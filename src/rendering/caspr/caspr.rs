@@ -28,8 +28,8 @@ pub struct CellestialSphere {
 	zoom: f32,
 	star_renderers: HashMap<String, Vec<StarRenderer>>,
 	line_renderers: HashMap<String, Vec<LineRenderer>>,
-	mag_scale: f32,
-	mag_offset: f32,
+	pub mag_scale: f32,
+	pub mag_offset: f32,
 	pub viewport_rect: egui::Rect,
 
 	pub rotation_dec: f32,
