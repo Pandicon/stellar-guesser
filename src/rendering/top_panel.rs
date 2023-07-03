@@ -9,8 +9,13 @@ impl Application {
 		egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
 			egui::menu::bar(ui, |ui| {
 				ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-					// ui.label(format!("{} FPS", ctx.input(|i| 1.0 / i.stable_dt))); // TODO: Add some FPS smoothing
 					ui.label(format!("FOV: {}°", 4.0 * (1.0 / self.cellestial_sphere.get_zoom()).atan() / PI * 180.0));
+					ui.label(self.frames_handler.fps_display_holder.clone());
+					ui.label(self.frames_handler.average_fps_display_holder.clone()).on_hover_text(format!(
+						"The average FPS over the last {} frame{}",
+						self.frames_handler.frames_analysed,
+						if self.frames_handler.frames_analysed != 1 { "s" } else { "" }
+					));
 				});
 				ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
 					let app_info_btn = ui
