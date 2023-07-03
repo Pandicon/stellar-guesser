@@ -49,6 +49,27 @@ impl Application {
 						self.cellestial_sphere.deinit_single_renderer("stars", name);
 					}
 				});
+			egui::CollapsingHeader::new(egui::RichText::new("Deepsky objects").text_style(egui::TextStyle::Heading).size(20.0))
+				.default_open(true)
+				.show(ui, |ui| {
+					let mut newly_active_deepsky_groups = Vec::new();
+					let mut newly_inactive_deepsky_groups = Vec::new();
+					for (name, active) in &mut self.cellestial_sphere.deepskies_categories_active {
+						let active_before = *active;
+						ui.checkbox(active, format!("Render deepsky objects from the {} file", name));
+						if !active_before && *active {
+							newly_active_deepsky_groups.push(name.to_owned());
+						} else if active_before && !*active {
+							newly_inactive_deepsky_groups.push(name.to_owned());
+						}
+					}
+					for name in &newly_active_deepsky_groups {
+						self.cellestial_sphere.init_single_renderer("deepskies", name, self.cellestial_sphere.rotation_matrix);
+					}
+					for name in &newly_inactive_deepsky_groups {
+						self.cellestial_sphere.deinit_single_renderer("deepskies", name);
+					}
+				});
 			egui::CollapsingHeader::new(egui::RichText::new("Coordinate grids").text_style(egui::TextStyle::Heading).size(20.0))
 				.default_open(true)
 				.show(ui, |ui| {

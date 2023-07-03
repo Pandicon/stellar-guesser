@@ -1,4 +1,4 @@
-names,messier,ngc,ic,type,constellation,ra,dec,mag,distance,colour
+names,messier,ngc,ic,object_type,constellation,ra,dec,mag,distance,colour
 Crab Nebula,M1,NGC 1952,,Supernova Remnant,Taurus,83.625,22.01666667,8.4,6300,6BEEFFFF
 ,M2,NGC 7089,,Globular Cluster,Aquarius,323.375,-0.81666667,6.5,37500,6BEEFFFF
 ,M3,NGC 5272,,Globular Cluster,Canes Venatici,205.55,28.38333333,6.2,33900,6BEEFFFF
