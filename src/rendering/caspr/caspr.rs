@@ -108,7 +108,11 @@ impl CellestialSphere {
 
 	// TODO: Make this always for example halve the FOV
 	pub fn zoom(&mut self, velocity: f32) {
-		self.zoom += velocity;
+		let future_zoom = self.zoom + velocity;
+		//A check is needed since negative zoom breaks everything
+		if future_zoom >0.0{
+			self.zoom=future_zoom
+		}
 	}
 
 	pub fn get_zoom(&self) -> f32 {
