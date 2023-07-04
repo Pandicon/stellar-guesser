@@ -29,7 +29,7 @@ pub struct StarRaw {
 }
 
 impl Star {
-	pub fn get_renderer(&self, rotation_matrix: Matrix3<f32>) -> StarRenderer {
+	pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>) -> StarRenderer {
 		StarRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), self.vmag, self.colour)
 	}
 

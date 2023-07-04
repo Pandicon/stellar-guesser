@@ -1,13 +1,15 @@
 use eframe::egui;
-use nalgebra::{Matrix3, Vector2, Vector3};
+use nalgebra::{Matrix3, Vector2, Vector3, Rotation3};
 use std::f32::consts::PI;
+
+use super::CellestialSphere;
 
 pub fn is_in_rect<T: PartialOrd>(point: [T; 2], rect: [[T; 2]; 2]) -> bool {
 	let [upper_left, bottom_right] = rect;
 	point[0] >= upper_left[0] && point[0] <= bottom_right[0] && point[1] >= upper_left[1] && point[1] <= bottom_right[1]
 }
 
-pub fn get_point_vector(ra: f32, dec: f32, rotation_matrix: Matrix3<f32>) -> Vector3<f32> {
+pub fn get_point_vector(ra: f32, dec: f32, rotation_matrix: &Matrix3<f32>) -> Vector3<f32> {
 	let (ra_s, ra_c) = ((-ra) * PI / 180.0).sin_cos();
 	let (de_s, de_c) = ((90.0 - dec) * PI / 180.0).sin_cos();
 	rotation_matrix * Vector3::new(de_s * ra_c, de_s * ra_s, de_c)
@@ -29,4 +31,21 @@ pub fn project_point(vector: &Vector3<f32>, zoom: f32, viewport_rect: egui::Rect
 		((rect_size[0] * screen_ratio / 2.0 > point_coordinates[0]) && (point_coordinates[0] > -rect_size[0] * screen_ratio / 2.0))
 			|| ((rect_size[1] * screen_ratio / 2.0 > point_coordinates[1]) && (point_coordinates[1] > -rect_size[1] * screen_ratio / 2.0)),
 	)
+
 }
+
+//something is broken over here and I have no idea what it is...
+pub fn cast_onto_sphere(cellestial_sphere:&CellestialSphere,screen_position:&egui::Pos2)-> Vector3<f32>{
+
+	let rect_size = Vector2::new(cellestial_sphere.viewport_rect.max[0] - cellestial_sphere.viewport_rect.min[0], cellestial_sphere.viewport_rect.max[1] - cellestial_sphere.viewport_rect.min[1]);
+
+	let screen_ratio = 2.0 / (rect_size[0] * rect_size[0] + rect_size[1] * rect_size[1]).sqrt();
+
+
+	let plane_coordinates=Vector2::new((screen_position[0]-rect_size[0]/2.0)*screen_ratio,(-screen_position[1]+rect_size[1]/2.0)*screen_ratio);
+	println!("{}, [{},{}], {}",plane_coordinates,screen_position[0],screen_position[1],screen_ratio);
+
+	let scaling_factor = cellestial_sphere.zoom*cellestial_sphere.zoom+plane_coordinates[0]*plane_coordinates[0]+plane_coordinates[1]*plane_coordinates[1];
+
+	cellestial_sphere.rotation.matrix().try_inverse().expect("FUCK") * Vector3::new(2.0*cellestial_sphere.get_zoom()*cellestial_sphere.get_zoom()*plane_coordinates[0]/scaling_factor, 2.0*cellestial_sphere.get_zoom()*cellestial_sphere.get_zoom()*plane_coordinates[1]/scaling_factor, (cellestial_sphere.get_zoom()*cellestial_sphere.get_zoom()-plane_coordinates[0]*plane_coordinates[0]*plane_coordinates[1]*plane_coordinates[1])*cellestial_sphere.get_zoom()/(scaling_factor))
+	}

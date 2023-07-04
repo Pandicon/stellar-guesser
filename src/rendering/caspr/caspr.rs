@@ -1,5 +1,5 @@
 use eframe::{egui, epaint::Color32};
-use nalgebra::{Matrix3, Vector3};
+use nalgebra::{Matrix3, Vector3,Rotation3};
 use std::{error::Error, f32::consts::PI, fs};
 
 const LINES_FOLDER: &str = "./sphere/lines";
@@ -13,6 +13,8 @@ mod lines;
 use lines::{LineRenderer, SkyLine, SkyLineRaw};
 mod stars;
 use stars::{Star, StarRaw, StarRenderer};
+
+use self::geometry::cast_onto_sphere;
 
 pub struct Marker {
 	pub normal: Vector3<f32>,
@@ -30,8 +32,7 @@ pub struct CellestialSphere {
 	star_color: eframe::epaint::Color32,
 	pub viewport_rect: egui::Rect,
 
-	pub rotation_dec: f32,
-	pub rotation_ra: f32,
+	pub rotation:Rotation3<f32>
 }
 
 impl CellestialSphere {
@@ -101,14 +102,13 @@ impl CellestialSphere {
 			mag_offset: 6.0,
 			star_color,
 			viewport_rect,
-			rotation_dec: 0.0,
-			rotation_ra: 0.0,
+			rotation:Rotation3::new(Vector3::new(0.0, 0.0,0.0))
 		})
 	}
 
 	// TODO: Make this always for example halve the FOV
 	pub fn zoom(&mut self, velocity: f32) {
-		let future_zoom = self.zoom + velocity;
+		let future_zoom = self.zoom + velocity*self.zoom;
 		//A check is needed since negative zoom breaks everything
 		if future_zoom >0.0{
 			self.zoom=future_zoom
@@ -124,16 +124,15 @@ impl CellestialSphere {
 	}
 
 	pub fn init_renderers(&mut self) {
-		let (rot_de_s, rot_de_c) = ((90.0 - self.rotation_dec) * PI / 180.0).sin_cos();
-		let (rot_ra_s, rot_ra_c) = (self.rotation_ra * PI / 180.0).sin_cos();
-		let rotation_x_matrix = Matrix3::new(1.0, 0.0, 0.0, 0.0, rot_de_c, -rot_de_s, 0.0, rot_de_s, rot_de_c);
-		let rotation_z_matrix = Matrix3::new(rot_ra_c, -rot_ra_s, 0.0, rot_ra_s, rot_ra_c, 0.0, 0.0, 0.0, 1.0);
-		let rotation_matrix = rotation_x_matrix * rotation_z_matrix;
-		self.star_renderers = self.stars.iter().map(|i| i.get_renderer(rotation_matrix)).collect();
-		self.line_renderers = self.lines.iter().map(|i| i.get_renderer(rotation_matrix)).collect();
+		self.star_renderers = self.stars.iter().map(|i| i.get_renderer(self.rotation.matrix())).collect();
+		self.line_renderers = self.lines.iter().map(|i| i.get_renderer(self.rotation.matrix())).collect();
 	}
 
 	pub fn mag_to_radius(&self, vmag: f32) -> f32 {
-		self.mag_scale * (self.mag_offset - vmag)
+		self.mag_scale * (self.mag_offset - vmag)+0.5
+	}
+
+	pub fn project_screen_pos(&self,screen_pos:egui::Pos2) -> Vector3<f32>{
+		cast_onto_sphere(self, &screen_pos)
 	}
 }

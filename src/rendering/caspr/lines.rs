@@ -22,7 +22,7 @@ pub struct SkyLine {
 }
 
 impl SkyLine {
-	pub fn get_renderer(&self, rotation_matrix: Matrix3<f32>) -> LineRenderer {
+	pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>) -> LineRenderer {
 		LineRenderer::new(
 			get_point_vector(self.ra_start, self.dec_start, rotation_matrix),
 			get_point_vector(self.ra_end, self.dec_end, rotation_matrix),

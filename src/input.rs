@@ -1,5 +1,8 @@
 use eframe::egui;
+use nalgebra::Rotation3;
 use std::collections::HashMap;
+use std::f32::consts::PI;
+
 
 use crate::{enums, Application};
 
@@ -15,16 +18,17 @@ impl Application {
 			}
 		}
 		self.cellestial_sphere.zoom(self.input.zoom / 500.0);
-		let rotation_ra = self.input.dragged.x / 10.0;
-		let rotation_de = -self.input.dragged.y / 10.0;
-		if rotation_de != 0.0 && rotation_ra != 0.0 {
-			self.cellestial_sphere.rotation_dec += rotation_de;
-			if self.cellestial_sphere.rotation_dec.abs() > 90.0 {
-				self.cellestial_sphere.rotation_dec = 90.0 * self.cellestial_sphere.rotation_dec.signum();
-			}
-			self.cellestial_sphere.rotation_ra += rotation_ra;
-			self.cellestial_sphere.init_renderers();
-		}
+		// let rotation_ra = self.input.dragged.x /( 10.0*self.cellestial_sphere.get_zoom())*self.cellestial_sphere.rotation_dec.cos();
+		// let rotation_de = -self.input.dragged.y / ( 10.0*self.cellestial_sphere.get_zoom());
+
+		let initial_vector = self.cellestial_sphere.project_screen_pos(self.input.pointer_position-self.input.dragged);
+		let final_vector=self.cellestial_sphere.project_screen_pos(self.input.pointer_position);
+
+		let temp_rotation = Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
+		// println!("{},{}",self.input.dragged[0],self.input.dragged[1]);
+		let rotation_matrix = temp_rotation.matrix();
+
+		self.cellestial_sphere.rotation = Rotation3::from_matrix(&(self.cellestial_sphere.rotation*rotation_matrix));
 	}
 }
 
@@ -60,7 +64,7 @@ impl Input {
 	pub fn handle(&mut self, cursor_within_central_panel: bool, ctx: &egui::Context) {
 		let input_events = ctx.input(|i| i.events.clone());
 		let shift_held = ctx.input(|i| i.modifiers.shift);
-		let drag_x = ctx.input(|i| i.pointer.delta().x);
+		let drag_x = ctx.input(|i: &egui::InputState| i.pointer.delta().x);
 		let drag_y = ctx.input(|i| i.pointer.delta().y);
 		let primary_down = ctx.input(|i| i.pointer.primary_down());
 		self.pointer_position = ctx.input(|i| i.pointer.hover_pos().unwrap_or(egui::pos2(0.0, 0.0)));
