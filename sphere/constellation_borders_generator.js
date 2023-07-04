@@ -1,3 +1,67 @@
+function deg_to_rad(deg) {
+	return (deg / 180.0) * Math.PI;
+}
+
+function convert_dec(dec, t) {
+	let dec_2000 = dec + 0.0416667 + 1.385 * Math.pow(10, -7) * t;
+
+	let l =
+		280.46 +
+		36000.771 * t +
+		0.0003875 * Math.pow(t, 2) -
+		Math.pow(t, 3) / 38710000;
+	let s =
+		125.04452 -
+		1934.136261 * t +
+		0.0020708 * Math.pow(t, 2) +
+		Math.pow(t, 3) / 450000;
+
+	let d_dec_p =
+		-0.0252 * t + 0.00929 * Math.pow(t, 2) + 0.00006 * Math.pow(t, 3);
+	let d_dec_n =
+		9.2 * Math.cos(deg_to_rad(s)) +
+		0.57 * Math.cos(deg_to_rad(2 * l)) +
+		0.1 * Math.cos(deg_to_rad(2 * l - s)) -
+		0.09 * Math.cos(deg_to_rad(2 * s));
+
+	return dec_2000 + d_dec_p + d_dec_n;
+}
+
+function convert_ra(ra, t) {
+	let ra_2000 = ra + 0.0083333 + 1.397 * Math.pow(10, -7) * t;
+
+	let l =
+		280.46 +
+		36000.771 * t +
+		0.0003875 * Math.pow(t, 2) -
+		Math.pow(t, 3) / 38710000;
+	let s =
+		125.04452 -
+		1934.136261 * t +
+		0.0020708 * Math.pow(t, 2) +
+		Math.pow(t, 3) / 450000;
+
+	let d_ra_p =
+		-47.0029 * t - 0.06603 * Math.pow(t, 2) - 0.00006 * Math.pow(t, 3);
+	let d_ra_n =
+		-17.2 * Math.sin(deg_to_rad(s)) -
+		1.32 * Math.sin(deg_to_rad(2 * l)) -
+		0.23 * Math.sin(deg_to_rad(2 * l - s)) +
+		0.21 * Math.sin(deg_to_rad(2 * s));
+
+	return ra_2000 + d_ra_p + d_ra_n;
+}
+
+function flip_dec_over_poles(dec) {
+	if (dec > 90) {
+		return 180 - dec;
+	} else if (dec < -90) {
+		return -180 - dec;
+	} else {
+		return dec;
+	}
+}
+
 const step = 10; // In degrees
 
 const data =
@@ -55,11 +119,19 @@ for (const constellation of grouped_data) {
 		let ra_step = d_ra / steps;
 		let de_step = d_de / steps;
 		for (let j = 0; j < steps; j += 1) {
+			let ra_1 = convert_ra((ra_s + ra_step * j) % 360, 0.23) % 360;
+			let dec_1 = flip_dec_over_poles(
+				convert_dec((de_s + de_step * j) % 360, 0.23)
+			);
+			let ra_2 = convert_ra((ra_s + ra_step * (j + 1)) % 360, 0.23) % 360;
+			let dec_2 = flip_dec_over_poles(
+				convert_dec((de_s + de_step * (j + 1)) % 360, 0.23)
+			);
 			new_data[new_data.length - 1].push([
-				((ra_s + ra_step * j) % 360).toString(10),
-				((de_s + de_step * j) % 360).toString(10),
-				((ra_s + ra_step * (j + 1)) % 360).toString(10),
-				((de_s + de_step * (j + 1)) % 360).toString(10),
+				ra_1.toString(10),
+				dec_1.toString(10),
+				ra_2.toString(10),
+				dec_2.toString(10),
 				line[4],
 				line[5],
 				line[6]
