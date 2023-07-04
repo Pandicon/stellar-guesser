@@ -3,17 +3,18 @@ use nalgebra::Rotation3;
 use std::collections::HashMap;
 use std::f32::consts::PI;
 
-
 use crate::{enums, Application};
 
-const KEY_COMBINATIONS: [&str; 2] = ["alt+shift+i", "alt+shift+s"];
+const KEY_COMBINATIONS: [&str; 4] = ["alt+shift+g", "alt+shift+i", "alt+shift+o", "alt+shift+s"];
 
 impl Application {
 	pub fn handle_input(&mut self, cursor_within_central_panel: bool, ctx: &egui::Context) {
 		self.input.handle(cursor_within_central_panel, ctx);
 		for input_to_handle in &self.input.to_handle {
 			match input_to_handle {
+				enums::Inputs::AltShiftG => self.state.windows.game_settings.opened = !self.state.windows.game_settings.opened,
 				enums::Inputs::AltShiftI => self.state.windows.app_info.opened = !self.state.windows.app_info.opened,
+				enums::Inputs::AltShiftO => self.state.windows.graphics_settings.opened = !self.state.windows.graphics_settings.opened,
 				enums::Inputs::AltShiftS => self.state.windows.stats.opened = !self.state.windows.stats.opened,
 			}
 		}
@@ -21,14 +22,14 @@ impl Application {
 		// let rotation_ra = self.input.dragged.x /( 10.0*self.cellestial_sphere.get_zoom())*self.cellestial_sphere.rotation_dec.cos();
 		// let rotation_de = -self.input.dragged.y / ( 10.0*self.cellestial_sphere.get_zoom());
 
-		let initial_vector = self.cellestial_sphere.project_screen_pos(self.input.pointer_position-self.input.dragged);
-		let final_vector=self.cellestial_sphere.project_screen_pos(self.input.pointer_position);
+		let initial_vector = self.cellestial_sphere.project_screen_pos(self.input.pointer_position - self.input.dragged);
+		let final_vector = self.cellestial_sphere.project_screen_pos(self.input.pointer_position);
 
 		let temp_rotation = Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
 		// println!("{},{}",self.input.dragged[0],self.input.dragged[1]);
 		let rotation_matrix = temp_rotation.matrix();
 
-		self.cellestial_sphere.rotation = Rotation3::from_matrix(&(self.cellestial_sphere.rotation*rotation_matrix));
+		self.cellestial_sphere.rotation = Rotation3::from_matrix(&(self.cellestial_sphere.rotation * rotation_matrix));
 	}
 }
 
@@ -189,6 +190,29 @@ impl Input {
 				} => {
 					self.dragged.y += 1.0;
 				}
+				// Press of Alt + Shift + G
+				egui::Event::Key {
+					key: egui::Key::G,
+					pressed: true,
+					repeat: false,
+					modifiers: egui::Modifiers {
+						alt: true,
+						ctrl: _,
+						shift: true,
+						mac_cmd: _,
+						command: _,
+					},
+				} => {
+					if let Some(pressed) = self.currently_held.get("alt+shift+g") {
+						if !pressed {
+							let held = self.currently_held.entry("alt+shift+g").or_insert(true);
+							*held = true;
+							to_handle.push(enums::Inputs::AltShiftG);
+						}
+					} else {
+						println!("The alt+shift+g combination was not in the 'currently_held' hashmap");
+					}
+				}
 				// Press of Alt + Shift + I
 				egui::Event::Key {
 					key: egui::Key::I,
@@ -210,6 +234,29 @@ impl Input {
 						}
 					} else {
 						println!("The alt+shift+i combination was not in the 'currently_held' hashmap");
+					}
+				}
+				// Press of Alt + Shift + O
+				egui::Event::Key {
+					key: egui::Key::O,
+					pressed: true,
+					repeat: false,
+					modifiers: egui::Modifiers {
+						alt: true,
+						ctrl: _,
+						shift: true,
+						mac_cmd: _,
+						command: _,
+					},
+				} => {
+					if let Some(pressed) = self.currently_held.get("alt+shift+o") {
+						if !pressed {
+							let held = self.currently_held.entry("alt+shift+o").or_insert(true);
+							*held = true;
+							to_handle.push(enums::Inputs::AltShiftO);
+						}
+					} else {
+						println!("The alt+shift+o combination was not in the 'currently_held' hashmap");
 					}
 				}
 				// Press of Alt + Shift + S
@@ -235,6 +282,28 @@ impl Input {
 						println!("The alt+shift+s combination was not in the 'currently_held' hashmap");
 					}
 				}
+				// Release of G
+				egui::Event::Key {
+					key: egui::Key::G,
+					pressed: false,
+					repeat: _,
+					modifiers: egui::Modifiers {
+						alt: _,
+						ctrl: _,
+						shift: _,
+						mac_cmd: _,
+						command: _,
+					},
+				} => {
+					if let Some(&pressed) = self.currently_held.get("alt+shift+g") {
+						if pressed {
+							let held = self.currently_held.entry("alt+shift+g").or_insert(false);
+							*held = false;
+						}
+					} else {
+						println!("The alt+shift+g combination was not in the 'currently_held' hashmap");
+					}
+				}
 				// Release of I
 				egui::Event::Key {
 					key: egui::Key::I,
@@ -255,6 +324,28 @@ impl Input {
 						}
 					} else {
 						println!("The alt+shift+i combination was not in the 'currently_held' hashmap");
+					}
+				}
+				// Release of O
+				egui::Event::Key {
+					key: egui::Key::O,
+					pressed: false,
+					repeat: _,
+					modifiers: egui::Modifiers {
+						alt: _,
+						ctrl: _,
+						shift: _,
+						mac_cmd: _,
+						command: _,
+					},
+				} => {
+					if let Some(&pressed) = self.currently_held.get("alt+shift+o") {
+						if pressed {
+							let held = self.currently_held.entry("alt+shift+o").or_insert(false);
+							*held = false;
+						}
+					} else {
+						println!("The alt+shift+o combination was not in the 'currently_held' hashmap");
 					}
 				}
 				// Release of S

@@ -1,7 +1,9 @@
 use std::fmt::Display;
 
 pub enum Inputs {
+	AltShiftG,
 	AltShiftI,
+	AltShiftO,
 	AltShiftS,
 }
 

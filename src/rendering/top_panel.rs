@@ -50,6 +50,12 @@ impl Application {
 					if graphics_settings_btn.clicked() {
 						self.state.windows.graphics_settings.opened = true;
 					}
+					let game_settings_btn = ui
+						.add(egui::Button::new(egui::RichText::new("Game settings").text_style(egui::TextStyle::Body)))
+						.on_hover_text("Show the game settings");
+					if game_settings_btn.clicked() {
+						self.state.windows.game_settings.opened = true;
+					}
 				});
 			});
 		})
