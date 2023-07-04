@@ -43,7 +43,7 @@ pub struct DeepskyRaw {
 }
 
 impl Deepsky {
-	pub fn get_renderer(&self, rotation_matrix: Matrix3<f32>) -> DeepskyRenderer {
+	pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>) -> DeepskyRenderer {
 		DeepskyRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), self.mag, self.colour)
 	}
 
