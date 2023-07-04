@@ -1,4 +1,4 @@
-use crate::structs::graphics_settings::GraphicsSettings;
+use crate::{enums::LightPollution, structs::graphics_settings::GraphicsSettings};
 use eframe::{egui, epaint::Color32};
 use nalgebra::{Matrix3, Vector3,Rotation3};
 use std::{collections::HashMap, error::Error, f32::consts::PI, fs};
@@ -6,6 +6,8 @@ use std::{collections::HashMap, error::Error, f32::consts::PI, fs};
 const DEEPSKIES_FOLDER: &str = "./sphere/deepsky";
 const LINES_FOLDER: &str = "./sphere/lines";
 const STARS_FOLDER: &str = "./sphere/stars";
+
+const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 2] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague)];
 
 #[path = "../../geometry.rs"]
 mod geometry;
@@ -36,8 +38,12 @@ pub struct CellestialSphere {
 	star_renderers: HashMap<String, Vec<StarRenderer>>,
 	line_renderers: HashMap<String, Vec<LineRenderer>>,
 	deepsky_renderers: HashMap<String, Vec<DeepskyRenderer>>,
+
 	pub mag_scale: f32,
 	pub mag_offset: f32,
+	pub light_pollution_place: LightPollution,
+	light_pollution_place_to_mag: HashMap<LightPollution, [f32; 2]>,
+
 	pub viewport_rect: egui::Rect,
 
 	pub rotation:Rotation3<f32>,
@@ -166,6 +172,11 @@ impl CellestialSphere {
 			}
 		}
 
+		let mut light_pollution_place_to_mag = HashMap::with_capacity(MAG_TO_LIGHT_POLLUTION_RAW.len());
+		for &(mag_offset, mag_scale, place) in &MAG_TO_LIGHT_POLLUTION_RAW {
+			light_pollution_place_to_mag.insert(place, [mag_offset, mag_scale]);
+		}
+
 		let viewport_rect = egui::Rect::from_two_pos(egui::pos2(0.0, 0.0), egui::pos2(0.0, 0.0));
 		Ok(Self {
 			stars: catalog,
@@ -181,6 +192,9 @@ impl CellestialSphere {
 			deepsky_renderers: HashMap::new(),
 			mag_scale: 0.3,
 			mag_offset: 6.0,
+			light_pollution_place: LightPollution::Default,
+			light_pollution_place_to_mag,
+
 			viewport_rect,
 			deepsky_render_mag_decrease: 0.0,
 
@@ -202,6 +216,9 @@ impl CellestialSphere {
 	}
 
 	pub fn init(&mut self) {
+		let [mag_offset, mag_scale] = self.light_pollution_place_to_mag_settings(&self.light_pollution_place);
+		self.mag_offset = mag_offset;
+		self.mag_scale = mag_scale;
 		self.init_renderers();
 	}
 
@@ -277,5 +294,22 @@ impl CellestialSphere {
 
 	pub fn project_screen_pos(&self,screen_pos:egui::Pos2) -> Vector3<f32>{
 		cast_onto_sphere(self, &screen_pos)
+	}
+
+	pub fn mag_settings_to_light_pollution_place(&self, mag_offset: f32, mag_scale: f32) -> LightPollution {
+		for (&place, &[mag_off, mag_sca]) in &self.light_pollution_place_to_mag {
+			if mag_off == mag_offset && mag_sca == mag_scale {
+				return place;
+			}
+		}
+		LightPollution::NoSpecific
+	}
+
+	pub fn light_pollution_place_to_mag_settings(&self, place: &LightPollution) -> [f32; 2] {
+		if let Some(settings) = self.light_pollution_place_to_mag.get(place) {
+			*settings
+		} else {
+			[self.mag_offset, self.mag_scale]
+		}
 	}
 }
