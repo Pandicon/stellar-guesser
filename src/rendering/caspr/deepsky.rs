@@ -16,6 +16,7 @@ use super::CellestialSphere;
 pub struct Deepsky {
 	pub names: Option<Vec<String>>,
 	pub messier: Option<String>,
+	pub caldwell: Option<String>,
 	pub ngc: Option<String>,
 	pub ic: Option<String>,
 	pub object_type: Option<String>,
@@ -31,6 +32,7 @@ pub struct Deepsky {
 pub struct DeepskyRaw {
 	pub names: Option<String>,
 	pub messier: Option<String>,
+	pub caldwell: Option<String>,
 	pub ngc: Option<String>,
 	pub ic: Option<String>,
 	pub object_type: Option<String>,
@@ -53,6 +55,7 @@ impl Deepsky {
 		Self {
 			names,
 			messier: raw_deepsky.messier,
+			caldwell: raw_deepsky.caldwell,
 			ngc: raw_deepsky.ngc,
 			ic: raw_deepsky.ic,
 			object_type: raw_deepsky.object_type,
