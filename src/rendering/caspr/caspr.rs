@@ -1,7 +1,7 @@
 use crate::{enums::LightPollution, structs::graphics_settings::GraphicsSettings};
 use eframe::{egui, epaint::Color32};
-use nalgebra::{Matrix3, Rotation3, Vector3};
-use std::{collections::HashMap, error::Error, f32::consts::PI, fs};
+use nalgebra::{Rotation3, Vector3};
+use std::{collections::HashMap, error::Error, fs};
 
 const DEEPSKIES_FOLDER: &str = "./sphere/deepsky";
 const LINES_FOLDER: &str = "./sphere/lines";
@@ -99,22 +99,22 @@ impl CellestialSphere {
 	//Renders the entire sphere view
 	pub fn render_sky(&self, painter: &egui::Painter, graphics_settings: &GraphicsSettings) {
 		//some stuff lol
-		for (_, line_renderers) in &self.line_renderers {
+		for line_renderers in self.line_renderers.values() {
 			for line_renderer in line_renderers {
 				line_renderer.render(&self, painter);
 			}
 		}
-		for (_, star_renderers) in &self.star_renderers {
+		for star_renderers in self.star_renderers.values() {
 			for star_renderer in star_renderers {
-				star_renderer.render(&self, painter, graphics_settings);
+				star_renderer.render(self, painter, graphics_settings);
 			}
 		}
-		for (_, marker_renderers) in &self.marker_renderers {
+		for marker_renderers in self.marker_renderers.values() {
 			for marker_renderer in marker_renderers {
 				marker_renderer.render(&self, painter);
 			}
 		}
-		for (_, deepsky_renderers) in &self.deepsky_renderers {
+		for deepsky_renderers in self.deepsky_renderers.values() {
 			for deepsky_renderer in deepsky_renderers {
 				deepsky_renderer.render(&self, painter, self.deepsky_render_mag_decrease);
 			}
@@ -142,7 +142,7 @@ impl CellestialSphere {
 			for star_raw in reader?.deserialize() {
 				let star_raw: StarRaw = star_raw?;
 				let star = Star::from_raw(star_raw, star_color);
-				let entry = catalog.entry(file_name.clone()).or_insert(Vec::new());
+				let entry = catalog.entry(file_name.clone()).or_default();
 				entry.push(star);
 				if !stars_categories_active.contains_key(&file_name) {
 					stars_categories_active.insert(file_name.clone(), true);
@@ -169,7 +169,7 @@ impl CellestialSphere {
 			for line_raw in reader?.deserialize() {
 				let line_raw: SkyLineRaw = line_raw?;
 				let line = SkyLine::from_raw(line_raw, star_color);
-				let entry = lines.entry(file_name.clone()).or_insert(Vec::new());
+				let entry = lines.entry(file_name.clone()).or_default();
 				entry.push(line);
 				if !lines_categories_active.contains_key(&file_name) {
 					lines_categories_active.insert(file_name.clone(), true);
@@ -196,7 +196,7 @@ impl CellestialSphere {
 			for deepsky_raw in reader?.deserialize() {
 				let deepsky_raw: DeepskyRaw = deepsky_raw?;
 				let deepsky = Deepsky::from_raw(deepsky_raw, star_color);
-				let entry = deepskies.entry(file_name.clone()).or_insert(Vec::new());
+				let entry = deepskies.entry(file_name.clone()).or_default();
 				entry.push(deepsky);
 				if !deepskies_categories_active.contains_key(&file_name) {
 					deepskies_categories_active.insert(file_name.clone(), true);
@@ -223,7 +223,7 @@ impl CellestialSphere {
 			for marker_raw in reader?.deserialize() {
 				let marker_raw: MarkerRaw = marker_raw?;
 				let marker = Marker::from_raw(marker_raw, star_color);
-				let entry = markers.entry(file_name.clone()).or_insert(Vec::new());
+				let entry = markers.entry(file_name.clone()).or_default();
 				entry.push(marker);
 				if !markers_categories_active.contains_key(&file_name) {
 					markers_categories_active.insert(file_name.clone(), true);
@@ -286,7 +286,7 @@ impl CellestialSphere {
 	pub fn init_renderers(&mut self) {
 		self.star_renderers = HashMap::new();
 		let mut active_star_groups = Vec::new();
-		for (name, _) in &self.stars {
+		for name in self.stars.keys() {
 			let active = self.stars_categories_active.entry(name.to_owned()).or_insert(true);
 			if !*active {
 				continue;
@@ -299,7 +299,7 @@ impl CellestialSphere {
 
 		self.line_renderers = HashMap::new();
 		let mut active_line_groups = Vec::new();
-		for (name, _) in &self.lines {
+		for name in self.lines.keys() {
 			let active = self.lines_categories_active.entry(name.to_owned()).or_insert(true);
 			if !*active {
 				continue;
@@ -312,7 +312,7 @@ impl CellestialSphere {
 
 		self.deepsky_renderers = HashMap::new();
 		let mut active_deepsky_groups = Vec::new();
-		for (name, _) in &self.deepskies {
+		for name in self.deepskies.keys() {
 			let active = self.deepskies_categories_active.entry(name.to_owned()).or_insert(true);
 			if !*active {
 				continue;
@@ -325,7 +325,7 @@ impl CellestialSphere {
 
 		self.marker_renderers = HashMap::new();
 		let mut active_markers_groups = Vec::new();
-		for (name, _) in &self.markers {
+		for name in self.markers.keys() {
 			let active = self.markers_categories_active.entry(name.to_owned()).or_insert(true);
 			if !*active {
 				continue;

@@ -51,14 +51,14 @@ impl Marker {
 				},
 				rotation_matrix,
 			))
-		} else if let Some(angular_width) = self.angular_width {
-			Some(get_point_vector(
-				self.ra,
-				if self.dec + angular_width <= 90.0 { self.dec + angular_width } else { self.dec - angular_width },
-				rotation_matrix,
-			))
 		} else {
-			None
+			self.angular_width.map(|angular_width| {
+				get_point_vector(
+					self.ra,
+					if self.dec + angular_width <= 90.0 { self.dec + angular_width } else { self.dec - angular_width },
+					rotation_matrix,
+				)
+			})
 		};
 		Some(MarkerRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), other_vec, &self))
 	}

@@ -36,7 +36,7 @@ impl Application {
 
 		// println!("{}",final_vector)
 
-		self.cellestial_sphere.rotation = self.cellestial_sphere.rotation * Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
+		self.cellestial_sphere.rotation *= Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
 		self.cellestial_sphere.init_renderers(); // TODO: Maybe don't reinitialize them if the rotation hasn't changed
 	}
 }
