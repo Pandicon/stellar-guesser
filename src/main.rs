@@ -3,7 +3,11 @@ mod application;
 mod rendering;
 
 pub use application::Application;
+#[path = "./rendering/caspr/caspr.rs"]
+pub mod caspr;
 pub mod enums;
+#[path = "./rendering/caspr/markers.rs"]
+pub mod markers;
 pub mod structs;
 
 pub const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");

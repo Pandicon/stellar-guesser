@@ -10,7 +10,7 @@ use geometry::get_point_vector;
 mod graphics;
 use graphics::parse_colour;
 
-use super::CellestialSphere;
+use crate::caspr::CellestialSphere;
 
 #[derive(Clone, Copy, Deserialize)]
 pub struct Marker {

@@ -1,8 +1,8 @@
 use eframe::egui;
 use nalgebra::{Matrix3, Vector2, Vector3};
-use std::{f32::consts::PI};
+use std::f32::consts::PI;
 
-use super::CellestialSphere;
+use crate::caspr::CellestialSphere;
 
 pub fn is_in_rect<T: PartialOrd>(point: [T; 2], rect: [[T; 2]; 2]) -> bool {
 	let [upper_left, bottom_right] = rect;

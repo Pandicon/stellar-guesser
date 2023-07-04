@@ -4,10 +4,10 @@ use crate::Application;
 
 mod app_info_window;
 mod game_settings_window;
+mod question_display;
 mod sky_settings_window;
 mod stats_window;
 mod top_panel;
-mod question_display;
 
 impl Application {
 	pub fn render(&mut self, ctx: &egui::Context) -> bool {

@@ -1,11 +1,17 @@
-use eframe::{egui, epaint::Pos2};
+use eframe::{
+	egui,
+	epaint::{Color32, Pos2},
+};
 use nalgebra::Rotation3;
-use std::collections::HashMap;
+use std::{collections::HashMap, f32::consts::PI};
 
+use crate::markers::Marker;
 use crate::{
 	enums::{self, PointerPosition},
 	Application,
 };
+
+mod geometry;
 
 const KEY_COMBINATIONS: [&str; 4] = ["alt+shift+g", "alt+shift+i", "alt+shift+o", "alt+shift+s"];
 
@@ -28,6 +34,11 @@ impl Application {
 			PointerPosition::OnScreen(position) => pointer_position = position,
 			PointerPosition::OffScreen => return,
 		}
+		if self.input.primary_clicked {
+			let (ra, dec) = geometry::cartesian_to_spherical(geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position));
+			let entry = self.cellestial_sphere.markers.entry("game".to_string()).or_default();
+			*entry = vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, false, false)];
+		}
 
 		let initial_vector = self.cellestial_sphere.project_screen_pos(pointer_position - self.input.dragged);
 		let final_vector = self.cellestial_sphere.project_screen_pos(pointer_position);
@@ -44,7 +55,8 @@ pub struct Input {
 	pub pointer_position: PointerPosition,
 	pub to_handle: Vec<enums::Inputs>,
 	pub zoom: f32,
-	pub secondary_released:bool,
+	pub secondary_released: bool,
+	pub primary_clicked: bool,
 
 	pointer_down_outside_subwindow: bool,
 	currently_held: HashMap<&'static str, bool>,
@@ -64,7 +76,8 @@ impl Default for Input {
 
 			pointer_down_outside_subwindow: false,
 			currently_held,
-			secondary_released:false,
+			secondary_released: false,
+			primary_clicked: false,
 		}
 	}
 }
@@ -76,11 +89,12 @@ impl Input {
 		let drag_x = ctx.input(|i: &egui::InputState| i.pointer.delta().x);
 		let drag_y = ctx.input(|i| i.pointer.delta().y);
 		let primary_down = ctx.input(|i| i.pointer.primary_down());
+		self.primary_clicked = ctx.input(|i| i.pointer.primary_clicked());
 		if ctx.is_pointer_over_area() {
 			self.pointer_position = PointerPosition::OnScreen(ctx.input(|i| i.pointer.hover_pos().unwrap_or(egui::pos2(0.0, 0.0))));
 		} else {
 			self.pointer_position = PointerPosition::OffScreen;
-		}		
+		}
 		if self.pointer_down_outside_subwindow && primary_down && ctx.input(|i| i.pointer.is_decidedly_dragging()) {
 			// Ignore drags that started in a subwindow
 			if shift_held {

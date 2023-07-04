@@ -19,7 +19,7 @@ use deepsky::{Deepsky, DeepskyRaw, DeepskyRenderer};
 mod lines;
 use lines::{LineRenderer, SkyLine, SkyLineRaw};
 mod markers;
-use markers::{Marker, MarkerRaw, MarkerRenderer};
+use crate::markers::{Marker, MarkerRaw, MarkerRenderer};
 mod stars;
 use stars::{Star, StarRaw, StarRenderer};
 
@@ -32,7 +32,7 @@ pub struct CellestialSphere {
 	pub deepskies_categories_active: HashMap<String, bool>,
 	pub markers: HashMap<String, Vec<Marker>>,
 	pub markers_categories_active: HashMap<String, bool>,
-	zoom: f32,
+	pub zoom: f32,
 	star_renderers: HashMap<String, Vec<StarRenderer>>,
 	line_renderers: HashMap<String, Vec<LineRenderer>>,
 	deepsky_renderers: HashMap<String, Vec<DeepskyRenderer>>,
@@ -111,7 +111,7 @@ impl CellestialSphere {
 		}
 		for marker_renderers in self.marker_renderers.values() {
 			for marker_renderer in marker_renderers {
-				marker_renderer.render(&self, painter);
+				marker_renderer.render(self, painter);
 			}
 		}
 		for deepsky_renderers in self.deepsky_renderers.values() {
@@ -206,6 +206,8 @@ impl CellestialSphere {
 
 		let mut markers: HashMap<String, Vec<Marker>> = HashMap::new();
 		let mut markers_categories_active = HashMap::new();
+		markers.insert(String::from("game"), Vec::new());
+		markers_categories_active.insert(String::from("game"), true);
 		let files: Result<fs::ReadDir, std::io::Error> = fs::read_dir(MARKERS_FOLDER);
 		for file in (files?).flatten() {
 			let path = file.path();

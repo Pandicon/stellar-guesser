@@ -1,21 +1,18 @@
 use crate::structs::graphics_settings::GraphicsSettings;
 use eframe::egui;
 
-#[path = "./rendering/caspr/caspr.rs"]
-mod caspr;
-
-use caspr::CellestialSphere;
+use crate::caspr::CellestialSphere;
 
 use self::{frames_handler::FramesHandler, game::GameHandler};
 
 #[path = "./structs/frames_handler.rs"]
 mod frames_handler;
+#[path = "./game/game.rs"]
+mod game;
 #[path = "./input.rs"]
 mod input;
 #[path = "./structs/state.rs"]
 mod state;
-#[path = "./game/game.rs"]
-mod game;
 pub struct Application {
 	pub input: input::Input,
 	pub state: state::State,
@@ -55,7 +52,7 @@ impl Application {
 			cellestial_sphere,
 			graphics_settings: GraphicsSettings::default(),
 			frames_handler: FramesHandler::default(),
-			game_handler:GameHandler::init(),
+			game_handler: GameHandler::init(),
 
 			authors,
 			version,
