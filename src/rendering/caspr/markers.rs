@@ -76,6 +76,41 @@ impl Marker {
 			pixel_width: raw_marker.pixel_width,
 		}
 	}
+
+	/**
+	 * ra - the right ascension
+	 * dec - the declination
+	 * colour - the colour of the marker
+	 * line_width - the width of the line of the marker
+	 * half_size - the distance from the centre to the edge of the marker (radius for circular markers)
+	 * circular - if the marker is circular or not, if not then it is a cross
+	 * angular_size - if the half_size is in degrees or in pixels
+	 */
+	pub fn new(ra: f32, dec: f32, colour: Color32, line_width: f32, half_size: f32, circular: bool, angular_size: bool) -> Self {
+		let [angular_radius, pixel_radius, angular_width, pixel_width] = if circular {
+			if angular_size {
+				[Some(half_size), None, None, None]
+			} else {
+				[None, Some(half_size), None, None]
+			}
+		} else {
+			if angular_size {
+				[None, None, Some(half_size), None]
+			} else {
+				[None, None, None, Some(half_size)]
+			}
+		};
+		Self {
+			ra,
+			dec,
+			colour,
+			line_width,
+			angular_radius,
+			pixel_radius,
+			angular_width,
+			pixel_width,
+		}
+	}
 }
 
 pub struct MarkerRenderer {
