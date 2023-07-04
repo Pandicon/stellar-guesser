@@ -17,4 +17,5 @@ eframe = { version = "0.22.0", features = [
 ] }
 help = "0.0.0"
 nalgebra = "0.32.2"
+rand = "0.8.5"
 serde = {version = "1.0.164", features=["derive"]}

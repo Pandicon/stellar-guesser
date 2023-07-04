@@ -12,7 +12,6 @@ use crate::{
 };
 
 mod geometry;
-
 const KEY_COMBINATIONS: [&str; 4] = ["alt+shift+g", "alt+shift+i", "alt+shift+o", "alt+shift+s"];
 
 impl Application {
@@ -46,6 +45,8 @@ impl Application {
 		// println!("{}",final_vector)
 
 		self.cellestial_sphere.rotation *= Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
+
+		if self.input.secondary_released {}
 		self.cellestial_sphere.init_renderers(); // TODO: Maybe don't reinitialize them if the rotation hasn't changed
 	}
 }
@@ -89,7 +90,7 @@ impl Input {
 		let drag_x = ctx.input(|i: &egui::InputState| i.pointer.delta().x);
 		let drag_y = ctx.input(|i| i.pointer.delta().y);
 		let primary_down = ctx.input(|i| i.pointer.primary_down());
-		self.primary_clicked = ctx.input(|i| i.pointer.primary_clicked());
+		self.secondary_released = ctx.input(|i| i.pointer.secondary_clicked());
 		if ctx.is_pointer_over_area() {
 			self.pointer_position = PointerPosition::OnScreen(ctx.input(|i| i.pointer.hover_pos().unwrap_or(egui::pos2(0.0, 0.0))));
 		} else {

@@ -233,7 +233,7 @@ impl CellestialSphere {
 			}
 		}
 
-		let mut light_pollution_place_to_mag = HashMap::with_capacity(MAG_TO_LIGHT_POLLUTION_RAW.len());
+		let mut light_pollution_place_to_mag: HashMap<LightPollution, [f32; 2]> = HashMap::with_capacity(MAG_TO_LIGHT_POLLUTION_RAW.len());
 		for &(mag_offset, mag_scale, place) in &MAG_TO_LIGHT_POLLUTION_RAW {
 			light_pollution_place_to_mag.insert(place, [mag_offset, mag_scale]);
 		}
