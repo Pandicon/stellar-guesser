@@ -85,7 +85,14 @@ impl CellestialSphere {
 		if circle {
 			painter.circle(centre_point, size, Color32::TRANSPARENT, egui::Stroke::new(width, colour));
 		} else {
-			// painter.line_segment([start_point, end_point], egui::Stroke::new(width, colour)); TODO: Implement cross markers
+			painter.line_segment(
+				[egui::pos2(centre_point.x, centre_point.y - size), egui::pos2(centre_point.x, centre_point.y + size)],
+				egui::Stroke::new(width, colour),
+			);
+			painter.line_segment(
+				[egui::pos2(centre_point.x - size, centre_point.y), egui::pos2(centre_point.x + size, centre_point.y)],
+				egui::Stroke::new(width, colour),
+			);
 		}
 	}
 
