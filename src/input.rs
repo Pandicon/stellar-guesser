@@ -28,8 +28,6 @@ impl Application {
 			PointerPosition::OnScreen(position) => pointer_position = position,
 			PointerPosition::OffScreen => return,
 		}
-		// let rotation_ra = self.input.dragged.x /( 10.0*self.cellestial_sphere.get_zoom())*self.cellestial_sphere.rotation_dec.cos();
-		// let rotation_de = -self.input.dragged.y / ( 10.0*self.cellestial_sphere.get_zoom());
 
 		let initial_vector = self.cellestial_sphere.project_screen_pos(pointer_position - self.input.dragged);
 		let final_vector = self.cellestial_sphere.project_screen_pos(pointer_position);
@@ -46,6 +44,7 @@ pub struct Input {
 	pub pointer_position: PointerPosition,
 	pub to_handle: Vec<enums::Inputs>,
 	pub zoom: f32,
+	pub secondary_released:bool,
 
 	pointer_down_outside_subwindow: bool,
 	currently_held: HashMap<&'static str, bool>,
@@ -65,6 +64,7 @@ impl Default for Input {
 
 			pointer_down_outside_subwindow: false,
 			currently_held,
+			secondary_released:false,
 		}
 	}
 }
@@ -81,7 +81,8 @@ impl Input {
 		} else {
 			self.pointer_position = PointerPosition::OffScreen;
 		}
-
+		self.secondary_released = secondary_released;
+		
 		if self.pointer_down_outside_subwindow && primary_down && ctx.input(|i| i.pointer.is_decidedly_dragging()) {
 			// Ignore drags that started in a subwindow
 			if shift_held {

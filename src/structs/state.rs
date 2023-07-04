@@ -20,6 +20,7 @@ pub struct WindowsState {
 	pub game_settings: GameSettingsWindowState,
 	pub graphics_settings: GraphicsSettingsWindowState,
 	pub stats: StatsWindowState,
+	pub game_question:QuestionWindowState
 }
 
 impl Default for WindowsState {
@@ -29,6 +30,7 @@ impl Default for WindowsState {
 			game_settings: GameSettingsWindowState::default(),
 			graphics_settings: GraphicsSettingsWindowState::default(),
 			stats: StatsWindowState::default(),
+			game_question: QuestionWindowState::default()
 		}
 	}
 }
@@ -47,6 +49,10 @@ pub struct GameSettingsWindowState {
 	pub opened: bool,
 }
 
+pub struct QuestionWindowState {
+	pub opened: bool,
+}
+
 impl Default for GameSettingsWindowState {
 	fn default() -> Self {
 		Self { opened: false }
@@ -60,6 +66,11 @@ pub struct GraphicsSettingsWindowState {
 impl Default for GraphicsSettingsWindowState {
 	fn default() -> Self {
 		Self { opened: false }
+	}
+}
+impl Default for QuestionWindowState {
+	fn default() -> Self {
+		Self { opened: true }
 	}
 }
 
