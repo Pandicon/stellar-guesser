@@ -23,7 +23,7 @@ pub struct Deepsky {
 	pub constellation: Option<String>,
 	pub ra: f32,
 	pub dec: f32,
-	pub mag: f32,
+	pub mag: String,
 	pub distance: f32,
 	pub colour: Color32,
 }
@@ -39,14 +39,14 @@ pub struct DeepskyRaw {
 	pub constellation: Option<String>,
 	pub ra: f32,
 	pub dec: f32,
-	pub mag: f32,
+	pub mag: String,
 	pub distance: f32,
 	pub colour: Option<String>,
 }
 
 impl Deepsky {
 	pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>) -> DeepskyRenderer {
-		DeepskyRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), self.mag, self.colour)
+		DeepskyRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), self.colour)
 	}
 
 	pub fn from_raw(raw_deepsky: DeepskyRaw, default_colour: Color32) -> Self {
@@ -71,17 +71,12 @@ impl Deepsky {
 
 pub struct DeepskyRenderer {
 	pub unit_vector: Vector3<f32>,
-	pub vmag: f32,
 	pub colour: Color32,
 }
 
 impl DeepskyRenderer {
-	pub fn new(vector: Vector3<f32>, magnitude: f32, colour: Color32) -> Self {
-		Self {
-			unit_vector: vector,
-			vmag: magnitude,
-			colour,
-		}
+	pub fn new(vector: Vector3<f32>, colour: Color32) -> Self {
+		Self { unit_vector: vector, colour }
 	}
 
 	pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter, magnitude_decrease: f32) {
