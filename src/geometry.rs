@@ -1,6 +1,6 @@
 use eframe::egui;
 use nalgebra::{Matrix3, Vector2, Vector3};
-use std::{f32::consts::PI, process::id};
+use std::{f32::consts::PI};
 
 use super::CellestialSphere;
 

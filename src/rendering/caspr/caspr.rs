@@ -19,12 +19,17 @@ mod lines;
 use lines::{LineRenderer, SkyLine, SkyLineRaw};
 mod stars;
 use stars::{Star, StarRaw, StarRenderer};
-
 use self::geometry::{cast_onto_sphere, cartesian_to_spherical};
 
+
+
 pub struct Marker {
-	pub normal: Vector3<f32>,
+	pub ra:f32,
+	pub dec:f32,
+    pub normal:Vector3<f32>
 }
+
+
 
 pub struct CellestialSphere {
 	pub stars: HashMap<String, Vec<Star>>,
@@ -33,7 +38,7 @@ pub struct CellestialSphere {
 	pub lines_categories_active: HashMap<String, bool>,
 	pub deepskies: HashMap<String, Vec<Deepsky>>,
 	pub deepskies_categories_active: HashMap<String, bool>,
-	pub markers: Vec<Marker>,
+	pub marker: Option<Marker>,
 	zoom: f32,
 	star_renderers: HashMap<String, Vec<StarRenderer>>,
 	line_renderers: HashMap<String, Vec<LineRenderer>>,
@@ -185,7 +190,7 @@ impl CellestialSphere {
 			lines_categories_active,
 			deepskies,
 			deepskies_categories_active,
-			markers: Vec::new(),
+			marker: None,
 			zoom: 1.0,
 			star_renderers: HashMap::new(),
 			line_renderers: HashMap::new(),
@@ -259,6 +264,7 @@ impl CellestialSphere {
 		for name in active_deepsky_groups {
 			self.init_single_renderer("deepskies", &name);
 		}
+
 	}
 
 	pub fn init_single_renderer(&mut self, category: &str, name: &str) {

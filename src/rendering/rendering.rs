@@ -7,6 +7,7 @@ mod game_settings_window;
 mod sky_settings_window;
 mod stats_window;
 mod top_panel;
+mod question_display;
 
 impl Application {
 	pub fn render(&mut self, ctx: &egui::Context) -> bool {
@@ -30,6 +31,12 @@ impl Application {
 			]);
 		}
 		if let Some(response) = self.render_statistics_window(ctx) {
+			window_rectangles.push([
+				[response.response.rect.right(), response.response.rect.top()],
+				[response.response.rect.left(), response.response.rect.bottom()],
+			]);
+		}
+		if let Some(response) = self.render_question_window(ctx) {
 			window_rectangles.push([
 				[response.response.rect.right(), response.response.rect.top()],
 				[response.response.rect.left(), response.response.rect.bottom()],

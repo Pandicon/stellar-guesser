@@ -6,7 +6,7 @@ mod caspr;
 
 use caspr::CellestialSphere;
 
-use self::frames_handler::FramesHandler;
+use self::{frames_handler::FramesHandler, game::GameHandler};
 
 #[path = "./structs/frames_handler.rs"]
 mod frames_handler;
@@ -14,7 +14,8 @@ mod frames_handler;
 mod input;
 #[path = "./structs/state.rs"]
 mod state;
-
+#[path = "./game/game.rs"]
+mod game;
 pub struct Application {
 	pub input: input::Input,
 	pub state: state::State,
@@ -24,6 +25,7 @@ pub struct Application {
 	pub cellestial_sphere: CellestialSphere,
 	pub graphics_settings: GraphicsSettings,
 	pub frames_handler: FramesHandler,
+	pub game_handler: game::GameHandler,
 
 	pub authors: String,
 	pub version: String,
@@ -53,6 +55,7 @@ impl Application {
 			cellestial_sphere,
 			graphics_settings: GraphicsSettings::default(),
 			frames_handler: FramesHandler::default(),
+			game_handler:GameHandler::init(),
 
 			authors,
 			version,

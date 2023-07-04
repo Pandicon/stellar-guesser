@@ -16,11 +16,11 @@ impl Application {
 						self.frames_handler.frames_analysed,
 						if self.frames_handler.frames_analysed != 1 { "s" } else { "" }
 					));
-					let prev_light_pollution = self.cellestial_sphere.light_pollution_place;
+					let prev_light_pollution: LightPollution = self.cellestial_sphere.light_pollution_place;
 					ui.label("Light pollution level: ");
 					egui::ComboBox::from_id_source("Light pollution level: ")
 						.selected_text(format!("{}", self.cellestial_sphere.light_pollution_place))
-						.show_ui(ui, |ui| {
+						.show_ui(ui, |ui: &mut egui::Ui| {
 							ui.style_mut().wrap = Some(false);
 							ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Default, format!("{}", LightPollution::Default));
 							ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Prague, format!("{}", LightPollution::Prague));
@@ -38,7 +38,7 @@ impl Application {
 					if app_info_btn.clicked() {
 						self.state.windows.app_info.opened = true;
 					}
-					let stats_btn = ui
+					let stats_btn: egui::Response = ui
 						.add(egui::Button::new(egui::RichText::new("Statistics").text_style(egui::TextStyle::Body)))
 						.on_hover_text("Show your statistics");
 					if stats_btn.clicked() {
@@ -56,6 +56,18 @@ impl Application {
 					if game_settings_btn.clicked() {
 						self.state.windows.game_settings.opened = true;
 					}
+					let stats_btn: egui::Response = ui
+					.add(egui::Button::new(egui::RichText::new("Statistics").text_style(egui::TextStyle::Body)))
+					.on_hover_text("Display the current question");
+				if stats_btn.clicked() {
+					self.state.windows.stats.opened = true;
+				}
+				let game_question_btn = ui
+				.add(egui::Button::new(egui::RichText::new("Question").text_style(egui::TextStyle::Body)))
+				.on_hover_text("Show the question");
+				if game_question_btn.clicked() {
+					self.state.windows.game_question.opened = true;
+				}
 				});
 			});
 		})

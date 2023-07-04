@@ -26,13 +26,9 @@ impl Application {
 			PointerPosition::OnScreen(position) => pointer_position = position,
 			PointerPosition::OffScreen => return
 		}
-		// let rotation_ra = self.input.dragged.x /( 10.0*self.cellestial_sphere.get_zoom())*self.cellestial_sphere.rotation_dec.cos();
-		// let rotation_de = -self.input.dragged.y / ( 10.0*self.cellestial_sphere.get_zoom());
 
 		let initial_vector = self.cellestial_sphere.project_screen_pos(pointer_position-self.input.dragged);
 		let final_vector=self.cellestial_sphere.project_screen_pos(pointer_position);
-
-		// println!("{}",final_vector)
 
 		self.cellestial_sphere.rotation = self.cellestial_sphere.rotation*Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
 		self.cellestial_sphere.init_renderers();
@@ -44,6 +40,7 @@ pub struct Input {
 	pub pointer_position: PointerPosition,
 	pub to_handle: Vec<enums::Inputs>,
 	pub zoom: f32,
+	pub secondary_released:bool,
 
 	pointer_down_outside_subwindow: bool,
 	currently_held: HashMap<&'static str, bool>,
@@ -63,6 +60,7 @@ impl Default for Input {
 
 			pointer_down_outside_subwindow: false,
 			currently_held,
+			secondary_released:false,
 		}
 	}
 }
@@ -74,12 +72,14 @@ impl Input {
 		let drag_x = ctx.input(|i: &egui::InputState| i.pointer.delta().x);
 		let drag_y = ctx.input(|i| i.pointer.delta().y);
 		let primary_down = ctx.input(|i| i.pointer.primary_down());
+		let secondary_released = ctx.input(|i| i.pointer.secondary_released());
 		if ctx.is_pointer_over_area(){
 			self.pointer_position = PointerPosition::OnScreen(ctx.input(|i| i.pointer.hover_pos().unwrap_or(egui::pos2(0.0, 0.0))));
 		}
 		else {
 			self.pointer_position = PointerPosition::OffScreen;
 		}
+		self.secondary_released = secondary_released;
 		
 		if self.pointer_down_outside_subwindow && primary_down && ctx.input(|i| i.pointer.is_decidedly_dragging()) {
 			// Ignore drags that started in a subwindow
