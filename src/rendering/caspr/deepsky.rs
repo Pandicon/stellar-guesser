@@ -85,6 +85,7 @@ impl DeepskyRenderer {
 	}
 
 	pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter, magnitude_decrease: f32) {
-		cellestial_sphere.render_circle(&self.unit_vector, cellestial_sphere.mag_to_radius(self.vmag - magnitude_decrease), self.colour, painter);
+		// cellestial_sphere.render_circle(&self.unit_vector, cellestial_sphere.mag_to_radius(self.vmag - magnitude_decrease), self.colour, painter);
+		cellestial_sphere.render_marker(&self.unit_vector, &None, false, Some(5.0), self.colour, 1.5, painter);
 	}
 }
