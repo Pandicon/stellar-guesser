@@ -216,7 +216,7 @@ impl CellestialSphere {
 			active_star_groups.push(name.to_owned());
 		}
 		for name in active_star_groups {
-			self.init_single_renderer("stars", &name, self.rotation.matrix());
+			self.init_single_renderer("stars", &name);
 		}
 		self.line_renderers = HashMap::new();
 		let mut active_line_groups = Vec::new();
@@ -228,7 +228,7 @@ impl CellestialSphere {
 			active_line_groups.push(name.to_owned());
 		}
 		for name in active_line_groups {
-			self.init_single_renderer("lines", &name, self.rotation.matrix());
+			self.init_single_renderer("lines", &name);
 		}
 		self.deepsky_renderers = HashMap::new();
 		let mut active_deepsky_groups = Vec::new();
@@ -240,11 +240,11 @@ impl CellestialSphere {
 			active_deepsky_groups.push(name.to_owned());
 		}
 		for name in active_deepsky_groups {
-			self.init_single_renderer("deepskies", &name, self.rotation.matrix());
+			self.init_single_renderer("deepskies", &name);
 		}
 	}
 
-	pub fn init_single_renderer(&mut self, category: &str, name: &str, rotation_matrix: &Matrix3<f32>) {
+	pub fn init_single_renderer(&mut self, category: &str, name: &str) {
 		if category == "stars" {
 			if let Some(stars) = self.stars.get(name) {
 				self.star_renderers.insert(name.to_string(), stars.iter().map(|star| star.get_renderer(self.rotation.matrix())).collect());

@@ -28,7 +28,6 @@ impl Application {
 						ui.add(egui::DragValue::new(&mut self.cellestial_sphere.mag_scale).speed(0.1));
 						ui.label("Magnitude scale (mag_scale)");
 					});
-
 					self.graphics_settings.default_star_colour =
 						Color32::from_rgba_premultiplied((colour[0] * 255.0) as u8, (colour[1] * 255.0) as u8, (colour[2] * 255.0) as u8, (colour[3] * 255.0) as u8);
 					let mut newly_active_star_groups = Vec::new();
@@ -42,8 +41,9 @@ impl Application {
 							newly_inactive_star_groups.push(name.to_owned());
 						}
 					}
+
 					for name in &newly_active_star_groups {
-						self.cellestial_sphere.init_single_renderer("stars", name, self.cellestial_sphere.rotation_matrix);
+						self.cellestial_sphere.init_single_renderer("stars", name);
 					}
 					for name in &newly_inactive_star_groups {
 						self.cellestial_sphere.deinit_single_renderer("stars", name);
@@ -69,7 +69,7 @@ impl Application {
 						}
 					}
 					for name in &newly_active_deepsky_groups {
-						self.cellestial_sphere.init_single_renderer("deepskies", name, self.cellestial_sphere.rotation_matrix);
+						self.cellestial_sphere.init_single_renderer("deepskies", name);
 					}
 					for name in &newly_inactive_deepsky_groups {
 						self.cellestial_sphere.deinit_single_renderer("deepskies", name);
@@ -90,7 +90,7 @@ impl Application {
 						}
 					}
 					for name in &newly_active_line_groups {
-						self.cellestial_sphere.init_single_renderer("lines", name, self.cellestial_sphere.rotation_matrix);
+						self.cellestial_sphere.init_single_renderer("lines", name);
 					}
 					for name in &newly_inactive_line_groups {
 						self.cellestial_sphere.deinit_single_renderer("lines", name);
