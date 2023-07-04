@@ -1,5 +1,3 @@
-use std::f32::consts::E;
-
 use eframe::{egui, epaint::Color32};
 use nalgebra::{Matrix3, Vector3};
 use serde::Deserialize;
@@ -44,9 +42,21 @@ impl Marker {
 			return None;
 		}
 		let other_vec = if let Some(angular_radius) = self.angular_radius {
-			Some(get_point_vector(self.ra + angular_radius, self.dec, rotation_matrix))
+			Some(get_point_vector(
+				self.ra,
+				if self.dec + angular_radius <= 90.0 {
+					self.dec + angular_radius
+				} else {
+					self.dec - angular_radius
+				},
+				rotation_matrix,
+			))
 		} else if let Some(angular_width) = self.angular_width {
-			Some(get_point_vector(self.ra + angular_width, self.dec, rotation_matrix))
+			Some(get_point_vector(
+				self.ra,
+				if self.dec + angular_width <= 90.0 { self.dec + angular_width } else { self.dec - angular_width },
+				rotation_matrix,
+			))
 		} else {
 			None
 		};

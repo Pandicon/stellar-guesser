@@ -5,6 +5,7 @@ use std::{collections::HashMap, error::Error, f32::consts::PI, fs};
 
 const DEEPSKIES_FOLDER: &str = "./sphere/deepsky";
 const LINES_FOLDER: &str = "./sphere/lines";
+const MARKERS_FOLDER: &str = "./sphere/markers";
 const STARS_FOLDER: &str = "./sphere/stars";
 
 const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 2] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague)];
@@ -29,11 +30,13 @@ pub struct CellestialSphere {
 	pub lines_categories_active: HashMap<String, bool>,
 	pub deepskies: HashMap<String, Vec<Deepsky>>,
 	pub deepskies_categories_active: HashMap<String, bool>,
-	pub markers: Vec<Marker>,
+	pub markers: HashMap<String, Vec<Marker>>,
+	pub markers_categories_active: HashMap<String, bool>,
 	zoom: f32,
 	star_renderers: HashMap<String, Vec<StarRenderer>>,
 	line_renderers: HashMap<String, Vec<LineRenderer>>,
 	deepsky_renderers: HashMap<String, Vec<DeepskyRenderer>>,
+	marker_renderers: HashMap<String, Vec<MarkerRenderer>>,
 
 	pub mag_scale: f32,
 	pub mag_offset: f32,
@@ -80,9 +83,9 @@ impl CellestialSphere {
 			return;
 		};
 		if circle {
-			painter.circle(centre_point, size, colour, egui::Stroke::new(width, colour));
+			painter.circle(centre_point, size, Color32::TRANSPARENT, egui::Stroke::new(width, colour));
 		} else {
-			// painter.line_segment([start_point, end_point], egui::Stroke::new(width, colour));
+			// painter.line_segment([start_point, end_point], egui::Stroke::new(width, colour)); TODO: Implement cross markers
 		}
 	}
 
@@ -97,6 +100,11 @@ impl CellestialSphere {
 		for (_, star_renderers) in &self.star_renderers {
 			for star_renderer in star_renderers {
 				star_renderer.render(&self, painter, graphics_settings);
+			}
+		}
+		for (_, marker_renderers) in &self.marker_renderers {
+			for marker_renderer in marker_renderers {
+				marker_renderer.render(&self, painter);
 			}
 		}
 		for (_, deepsky_renderers) in &self.deepsky_renderers {
@@ -189,6 +197,33 @@ impl CellestialSphere {
 			}
 		}
 
+		let mut markers: HashMap<String, Vec<Marker>> = HashMap::new();
+		let mut markers_categories_active = HashMap::new();
+		let files: Result<fs::ReadDir, std::io::Error> = fs::read_dir(MARKERS_FOLDER);
+		for file in (files?).flatten() {
+			let path = file.path();
+			let file_name = path.file_name();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_str();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_string();
+			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
+
+			for marker_raw in reader?.deserialize() {
+				let marker_raw: MarkerRaw = marker_raw?;
+				let marker = Marker::from_raw(marker_raw, star_color);
+				let entry = markers.entry(file_name.clone()).or_insert(Vec::new());
+				entry.push(marker);
+				if !markers_categories_active.contains_key(&file_name) {
+					markers_categories_active.insert(file_name.clone(), true);
+				}
+			}
+		}
+
 		let mut light_pollution_place_to_mag = HashMap::with_capacity(MAG_TO_LIGHT_POLLUTION_RAW.len());
 		for &(mag_offset, mag_scale, place) in &MAG_TO_LIGHT_POLLUTION_RAW {
 			light_pollution_place_to_mag.insert(place, [mag_offset, mag_scale]);
@@ -202,11 +237,13 @@ impl CellestialSphere {
 			lines_categories_active,
 			deepskies,
 			deepskies_categories_active,
-			markers: Vec::new(),
+			markers,
+			markers_categories_active,
 			zoom: 1.0,
 			star_renderers: HashMap::new(),
 			line_renderers: HashMap::new(),
 			deepsky_renderers: HashMap::new(),
+			marker_renderers: HashMap::new(),
 			mag_scale: 0.3,
 			mag_offset: 6.0,
 			light_pollution_place: LightPollution::Default,
@@ -252,6 +289,7 @@ impl CellestialSphere {
 		for name in active_star_groups {
 			self.init_single_renderer("stars", &name);
 		}
+
 		self.line_renderers = HashMap::new();
 		let mut active_line_groups = Vec::new();
 		for (name, _) in &self.lines {
@@ -264,6 +302,7 @@ impl CellestialSphere {
 		for name in active_line_groups {
 			self.init_single_renderer("lines", &name);
 		}
+
 		self.deepsky_renderers = HashMap::new();
 		let mut active_deepsky_groups = Vec::new();
 		for (name, _) in &self.deepskies {
@@ -275,6 +314,19 @@ impl CellestialSphere {
 		}
 		for name in active_deepsky_groups {
 			self.init_single_renderer("deepskies", &name);
+		}
+
+		self.marker_renderers = HashMap::new();
+		let mut active_markers_groups = Vec::new();
+		for (name, _) in &self.markers {
+			let active = self.markers_categories_active.entry(name.to_owned()).or_insert(true);
+			if !*active {
+				continue;
+			}
+			active_markers_groups.push(name.to_owned());
+		}
+		for name in active_markers_groups {
+			self.init_single_renderer("markers", &name);
 		}
 	}
 
@@ -294,6 +346,11 @@ impl CellestialSphere {
 				self.deepsky_renderers
 					.insert(name.to_string(), deepskies.iter().map(|deepsky| deepsky.get_renderer(self.rotation.matrix())).collect());
 			}
+		} else if category == "markers" {
+			if let Some(markers) = self.markers.get(name) {
+				self.marker_renderers
+					.insert(name.to_string(), markers.iter().filter_map(|marker| marker.get_renderer(self.rotation.matrix())).collect());
+			}
 		}
 	}
 
@@ -304,6 +361,8 @@ impl CellestialSphere {
 			self.line_renderers.insert(name.to_string(), Vec::new());
 		} else if category == "deepskies" {
 			self.deepsky_renderers.insert(name.to_string(), Vec::new());
+		} else if category == "markers" {
+			self.marker_renderers.insert(name.to_string(), Vec::new());
 		}
 	}
 
