@@ -48,11 +48,7 @@ impl Deepsky {
 	}
 
 	pub fn from_raw(raw_deepsky: DeepskyRaw, default_colour: Color32) -> Self {
-		let names = if let Some(raw_names) = raw_deepsky.names {
-			Some(raw_names.split(';').map(|s| s.to_owned()).collect())
-		} else {
-			None
-		};
+		let names = raw_deepsky.names.map(|raw_names| raw_names.split(';').map(|s| s.to_owned()).collect());
 		let colour = parse_colour(raw_deepsky.colour, default_colour);
 		Self {
 			names,
