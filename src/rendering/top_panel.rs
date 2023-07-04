@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use eframe::egui;
 
-use crate::Application;
+use crate::{enums::LightPollution, Application};
 
 impl Application {
 	pub fn render_top_panel(&mut self, ctx: &egui::Context) -> egui::InnerResponse<()> {
@@ -16,6 +16,20 @@ impl Application {
 						self.frames_handler.frames_analysed,
 						if self.frames_handler.frames_analysed != 1 { "s" } else { "" }
 					));
+					let prev_light_pollution = self.cellestial_sphere.light_pollution_place;
+					ui.label("Light pollution level: ");
+					egui::ComboBox::from_id_source("Light pollution level: ")
+						.selected_text(format!("{}", self.cellestial_sphere.light_pollution_place))
+						.show_ui(ui, |ui| {
+							ui.style_mut().wrap = Some(false);
+							ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Default, format!("{}", LightPollution::Default));
+							ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Prague, format!("{}", LightPollution::Prague));
+						});
+					if prev_light_pollution != self.cellestial_sphere.light_pollution_place {
+						let [mag_offset, mag_scale] = self.cellestial_sphere.light_pollution_place_to_mag_settings(&self.cellestial_sphere.light_pollution_place);
+						self.cellestial_sphere.mag_offset = mag_offset;
+						self.cellestial_sphere.mag_scale = mag_scale;
+					}
 				});
 				ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
 					let app_info_btn = ui
@@ -35,6 +49,12 @@ impl Application {
 						.on_hover_text("Show the sky settings");
 					if graphics_settings_btn.clicked() {
 						self.state.windows.graphics_settings.opened = true;
+					}
+					let game_settings_btn = ui
+						.add(egui::Button::new(egui::RichText::new("Game settings").text_style(egui::TextStyle::Body)))
+						.on_hover_text("Show the game settings");
+					if game_settings_btn.clicked() {
+						self.state.windows.game_settings.opened = true;
 					}
 				});
 			});

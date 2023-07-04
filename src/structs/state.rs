@@ -17,6 +17,7 @@ impl State {
 
 pub struct WindowsState {
 	pub app_info: AppInfoWindowState,
+	pub game_settings: GameSettingsWindowState,
 	pub graphics_settings: GraphicsSettingsWindowState,
 	pub stats: StatsWindowState,
 }
@@ -25,6 +26,7 @@ impl Default for WindowsState {
 	fn default() -> Self {
 		Self {
 			app_info: AppInfoWindowState::default(),
+			game_settings: GameSettingsWindowState::default(),
 			graphics_settings: GraphicsSettingsWindowState::default(),
 			stats: StatsWindowState::default(),
 		}
@@ -36,6 +38,16 @@ pub struct AppInfoWindowState {
 }
 
 impl Default for AppInfoWindowState {
+	fn default() -> Self {
+		Self { opened: false }
+	}
+}
+
+pub struct GameSettingsWindowState {
+	pub opened: bool,
+}
+
+impl Default for GameSettingsWindowState {
 	fn default() -> Self {
 		Self { opened: false }
 	}

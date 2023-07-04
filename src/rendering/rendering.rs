@@ -3,6 +3,7 @@ use eframe::egui;
 use crate::Application;
 
 mod app_info_window;
+mod game_settings_window;
 mod sky_settings_window;
 mod stats_window;
 mod top_panel;
@@ -11,6 +12,12 @@ impl Application {
 	pub fn render(&mut self, ctx: &egui::Context) -> bool {
 		let mut window_rectangles = Vec::new();
 		if let Some(response) = self.render_application_info_window(ctx) {
+			window_rectangles.push([
+				[response.response.rect.right(), response.response.rect.top()],
+				[response.response.rect.left(), response.response.rect.bottom()],
+			]);
+		}
+		if let Some(response) = self.render_game_settings_window(ctx) {
 			window_rectangles.push([
 				[response.response.rect.right(), response.response.rect.top()],
 				[response.response.rect.left(), response.response.rect.bottom()],
