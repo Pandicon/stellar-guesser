@@ -80,9 +80,7 @@ impl Input {
 			self.pointer_position = PointerPosition::OnScreen(ctx.input(|i| i.pointer.hover_pos().unwrap_or(egui::pos2(0.0, 0.0))));
 		} else {
 			self.pointer_position = PointerPosition::OffScreen;
-		}
-		self.secondary_released = secondary_released;
-		
+		}		
 		if self.pointer_down_outside_subwindow && primary_down && ctx.input(|i| i.pointer.is_decidedly_dragging()) {
 			// Ignore drags that started in a subwindow
 			if shift_held {
