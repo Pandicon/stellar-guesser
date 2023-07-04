@@ -1,12 +1,12 @@
-use eframe::egui;
+use eframe::{egui, epaint::Pos2};
 use nalgebra::Rotation3;
 use std::collections::HashMap;
-use std::f32::consts::PI;
+// use std::f32::consts::PI;
 
-
-use crate::{enums, Application};
+use crate::{enums::{self, PointerPosition}, Application, application::caspr::CellestialSphere};
 
 const KEY_COMBINATIONS: [&str; 2] = ["alt+shift+i", "alt+shift+s"];
+
 
 impl Application {
 	pub fn handle_input(&mut self, cursor_within_central_panel: bool, ctx: &egui::Context) {
@@ -18,23 +18,29 @@ impl Application {
 			}
 		}
 		self.cellestial_sphere.zoom(self.input.zoom / 500.0);
+
+		let pointer_position:Pos2;
+
+		match self.input.pointer_position{
+			PointerPosition::OnScreen(position) => pointer_position = position,
+			PointerPosition::OffScreen => return
+		}
 		// let rotation_ra = self.input.dragged.x /( 10.0*self.cellestial_sphere.get_zoom())*self.cellestial_sphere.rotation_dec.cos();
 		// let rotation_de = -self.input.dragged.y / ( 10.0*self.cellestial_sphere.get_zoom());
 
-		let initial_vector = self.cellestial_sphere.project_screen_pos(self.input.pointer_position-self.input.dragged);
-		let final_vector=self.cellestial_sphere.project_screen_pos(self.input.pointer_position);
+		let initial_vector = self.cellestial_sphere.project_screen_pos(pointer_position-self.input.dragged);
+		let final_vector=self.cellestial_sphere.project_screen_pos(pointer_position);
 
-		let temp_rotation = Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
-		// println!("{},{}",self.input.dragged[0],self.input.dragged[1]);
-		let rotation_matrix = temp_rotation.matrix();
+		// println!("{}",final_vector)
 
-		self.cellestial_sphere.rotation = Rotation3::from_matrix(&(self.cellestial_sphere.rotation*rotation_matrix));
+		self.cellestial_sphere.rotation = self.cellestial_sphere.rotation*Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
+		self.cellestial_sphere.init_renderers();
 	}
 }
 
 pub struct Input {
 	pub dragged: egui::Vec2,
-	pub pointer_position: egui::Pos2,
+	pub pointer_position: PointerPosition,
 	pub to_handle: Vec<enums::Inputs>,
 	pub zoom: f32,
 
@@ -50,7 +56,7 @@ impl Default for Input {
 		}
 		Self {
 			dragged: egui::Vec2::new(0.0, 0.0),
-			pointer_position: egui::Pos2::new(0.0, 0.0),
+			pointer_position: PointerPosition::OnScreen(egui::Pos2::new(0.0, 0.0)),
 			to_handle: Vec::new(),
 			zoom: 1.0,
 
@@ -67,7 +73,13 @@ impl Input {
 		let drag_x = ctx.input(|i: &egui::InputState| i.pointer.delta().x);
 		let drag_y = ctx.input(|i| i.pointer.delta().y);
 		let primary_down = ctx.input(|i| i.pointer.primary_down());
-		self.pointer_position = ctx.input(|i| i.pointer.hover_pos().unwrap_or(egui::pos2(0.0, 0.0)));
+		if ctx.is_pointer_over_area(){
+			self.pointer_position = PointerPosition::OnScreen(ctx.input(|i| i.pointer.hover_pos().unwrap_or(egui::pos2(0.0, 0.0))));
+		}
+		else {
+			self.pointer_position = PointerPosition::OffScreen;
+		}
+		
 		if self.pointer_down_outside_subwindow && primary_down && ctx.input(|i| i.pointer.is_decidedly_dragging()) {
 			// Ignore drags that started in a subwindow
 			if shift_held {

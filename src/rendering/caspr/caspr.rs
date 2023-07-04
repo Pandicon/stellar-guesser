@@ -18,7 +18,7 @@ use lines::{LineRenderer, SkyLine, SkyLineRaw};
 mod stars;
 use stars::{Star, StarRaw, StarRenderer};
 
-use self::geometry::cast_onto_sphere;
+use self::geometry::{cast_onto_sphere, cartesian_to_spherical};
 
 pub struct Marker {
 	pub normal: Vector3<f32>,
@@ -184,7 +184,7 @@ impl CellestialSphere {
 			viewport_rect,
 			deepsky_render_mag_decrease: 0.0,
 
-			rotation:Rotation3::new(Vector3::new(0.0, 0.0,0.0))
+			rotation:Rotation3::from_matrix(&Matrix3::identity())
 		})
 	}
 
@@ -277,5 +277,8 @@ impl CellestialSphere {
 
 	pub fn project_screen_pos(&self,screen_pos:egui::Pos2) -> Vector3<f32>{
 		cast_onto_sphere(self, &screen_pos)
+	}
+	pub fn to_equatorial_coordinates(vector:Vector3<f32>) -> (f32,f32){
+		cartesian_to_spherical(vector)
 	}
 }
