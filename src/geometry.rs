@@ -1,6 +1,6 @@
 use eframe::egui;
-use nalgebra::{Matrix3, Vector2, Vector3, Rotation3};
-use std::f32::consts::PI;
+use nalgebra::{Matrix3, Vector2, Vector3};
+use std::{f32::consts::PI, process::id};
 
 use super::CellestialSphere;
 
@@ -53,5 +53,12 @@ pub fn cast_onto_sphere(cellestial_sphere:&CellestialSphere,screen_position:&egu
 pub fn cartesian_to_spherical(vector:Vector3<f32>) -> (f32,f32){
 	
 	(vector.normalize()[2].acos(), vector[1].atan2(vector[0]))
+}
+pub fn angular_distance(initial_position:(f32,f32), final_position:(f32,f32)) -> f32{
+	let (i_ra,i_dec) = initial_position;
+	let (f_ra,f_dec) = final_position;
+
+	(i_dec.cos()*f_dec.cos()+i_dec.sin()*i_dec.sin()*(i_ra-f_ra).cos()).acos()
+
 }
 

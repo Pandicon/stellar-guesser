@@ -1,9 +1,8 @@
 use eframe::{egui, epaint::Pos2};
 use nalgebra::Rotation3;
 use std::collections::HashMap;
-// use std::f32::consts::PI;
 
-use crate::{enums::{self, PointerPosition}, Application, application::caspr::CellestialSphere};
+use crate::{enums::{self, PointerPosition}, Application};
 
 const KEY_COMBINATIONS: [&str; 4] = ["alt+shift+g", "alt+shift+i", "alt+shift+o", "alt+shift+s"];
 

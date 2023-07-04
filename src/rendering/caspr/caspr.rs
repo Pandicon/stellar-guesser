@@ -1,7 +1,7 @@
 use crate::{enums::LightPollution, structs::graphics_settings::GraphicsSettings};
 use eframe::{egui, epaint::Color32};
 use nalgebra::{Matrix3, Vector3,Rotation3};
-use std::{collections::HashMap, error::Error, f32::consts::PI, fs};
+use std::{collections::HashMap, error::Error, fs};
 
 const DEEPSKIES_FOLDER: &str = "./sphere/deepsky";
 const LINES_FOLDER: &str = "./sphere/lines";
