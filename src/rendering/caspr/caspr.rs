@@ -1,7 +1,7 @@
 use crate::{enums::LightPollution, structs::graphics_settings::GraphicsSettings};
 use eframe::{egui, epaint::Color32};
-use nalgebra::{Matrix3, Vector3,Rotation3};
-use std::{collections::HashMap, error::Error, fs};
+use nalgebra::{Matrix3, Rotation3, Vector3};
+use std::{collections::HashMap, error::Error, f32::consts::PI, fs};
 
 const DEEPSKIES_FOLDER: &str = "./sphere/deepsky";
 const LINES_FOLDER: &str = "./sphere/lines";
@@ -11,20 +11,16 @@ const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 2] = [(6.0, 0.3, 
 
 #[path = "../../geometry.rs"]
 mod geometry;
-use geometry::project_point;
+use geometry::{cartesian_to_spherical, cast_onto_sphere, project_point};
 
 mod deepsky;
 use deepsky::{Deepsky, DeepskyRaw, DeepskyRenderer};
 mod lines;
 use lines::{LineRenderer, SkyLine, SkyLineRaw};
+mod markers;
+use markers::{Marker, MarkerRaw, MarkerRenderer};
 mod stars;
 use stars::{Star, StarRaw, StarRenderer};
-
-use self::geometry::{cast_onto_sphere, cartesian_to_spherical};
-
-pub struct Marker {
-	pub normal: Vector3<f32>,
-}
 
 pub struct CellestialSphere {
 	pub stars: HashMap<String, Vec<Star>>,
@@ -46,8 +42,8 @@ pub struct CellestialSphere {
 
 	pub viewport_rect: egui::Rect,
 
-	pub rotation:Rotation3<f32>,
-	pub deepsky_render_mag_decrease: f32
+	pub rotation: Rotation3<f32>,
+	pub deepsky_render_mag_decrease: f32,
 }
 
 impl CellestialSphere {
@@ -66,6 +62,27 @@ impl CellestialSphere {
 
 		if is_start_within_bounds || is_end_within_bounds {
 			painter.line_segment([start_point, end_point], egui::Stroke::new(width, colour));
+		}
+	}
+
+	pub fn render_marker(&self, centre_vector: &Vector3<f32>, other_vector: &Option<Vector3<f32>>, circle: bool, pixel_size: Option<f32>, colour: Color32, width: f32, painter: &egui::Painter) {
+		let (centre_point, is_centre_within_bounds) = project_point(centre_vector, self.zoom, self.viewport_rect);
+		if !is_centre_within_bounds {
+			return;
+		}
+		let size = if let Some(other_point_vec) = other_vector {
+			let (other_point, _) = project_point(other_point_vec, self.zoom, self.viewport_rect);
+			let vec_to = other_point - centre_point;
+			vec_to.length()
+		} else if let Some(pixel_size) = pixel_size {
+			pixel_size
+		} else {
+			return;
+		};
+		if circle {
+			painter.circle(centre_point, size, colour, egui::Stroke::new(width, colour));
+		} else {
+			// painter.line_segment([start_point, end_point], egui::Stroke::new(width, colour));
 		}
 	}
 
@@ -198,13 +215,13 @@ impl CellestialSphere {
 			viewport_rect,
 			deepsky_render_mag_decrease: 0.0,
 
-			rotation:Rotation3::from_matrix(&Matrix3::identity())
+			rotation: Rotation3::new(Vector3::new(0.0, 0.0, 0.0)),
 		})
 	}
 
 	// TODO: Make this always for example halve the FOV
 	pub fn zoom(&mut self, velocity: f32) {
-		let future_zoom = self.zoom + velocity*self.zoom;
+		let future_zoom = self.zoom + velocity * self.zoom;
 		//A check is needed since negative zoom breaks everything
 		if future_zoom > 0.0 {
 			self.zoom = future_zoom
@@ -264,11 +281,13 @@ impl CellestialSphere {
 	pub fn init_single_renderer(&mut self, category: &str, name: &str) {
 		if category == "stars" {
 			if let Some(stars) = self.stars.get(name) {
-				self.star_renderers.insert(name.to_string(), stars.iter().map(|star| star.get_renderer(self.rotation.matrix())).collect());
+				self.star_renderers
+					.insert(name.to_string(), stars.iter().map(|star| star.get_renderer(self.rotation.matrix())).collect());
 			}
 		} else if category == "lines" {
 			if let Some(lines) = self.lines.get(name) {
-				self.line_renderers.insert(name.to_string(), lines.iter().map(|line| line.get_renderer(self.rotation.matrix())).collect());
+				self.line_renderers
+					.insert(name.to_string(), lines.iter().map(|line| line.get_renderer(self.rotation.matrix())).collect());
 			}
 		} else if category == "deepskies" {
 			if let Some(deepskies) = self.deepskies.get(name) {
@@ -289,10 +308,10 @@ impl CellestialSphere {
 	}
 
 	pub fn mag_to_radius(&self, vmag: f32) -> f32 {
-		self.mag_scale * (self.mag_offset - vmag)+0.5
+		self.mag_scale * (self.mag_offset - vmag) + 0.5
 	}
 
-	pub fn project_screen_pos(&self,screen_pos:egui::Pos2) -> Vector3<f32>{
+	pub fn project_screen_pos(&self, screen_pos: egui::Pos2) -> Vector3<f32> {
 		cast_onto_sphere(self, &screen_pos)
 	}
 
@@ -312,7 +331,7 @@ impl CellestialSphere {
 			[self.mag_offset, self.mag_scale]
 		}
 	}
-	pub fn to_equatorial_coordinates(vector:Vector3<f32>) -> (f32,f32){
+	pub fn to_equatorial_coordinates(vector: Vector3<f32>) -> (f32, f32) {
 		cartesian_to_spherical(vector)
 	}
 }

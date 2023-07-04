@@ -22,7 +22,7 @@ pub fn project_point(vector: &Vector3<f32>, zoom: f32, viewport_rect: egui::Rect
 
 	let screen_ratio = 2.0 / (rect_size[0] * rect_size[0] + rect_size[1] * rect_size[1]).sqrt();
 
-	let point_coordinates = Vector2::new(vector[0]*zoom / scale_factor, vector[1]*zoom / scale_factor);
+	let point_coordinates = Vector2::new(vector[0] * zoom / scale_factor, vector[1] * zoom / scale_factor);
 
 	(
 		egui::Pos2::new(point_coordinates[0] / screen_ratio + rect_size[0] / 2.0, point_coordinates[1] / screen_ratio + rect_size[1] / 2.0),
@@ -31,34 +31,35 @@ pub fn project_point(vector: &Vector3<f32>, zoom: f32, viewport_rect: egui::Rect
 		((rect_size[0] * screen_ratio / 2.0 > point_coordinates[0]) && (point_coordinates[0] > -rect_size[0] * screen_ratio / 2.0))
 			|| ((rect_size[1] * screen_ratio / 2.0 > point_coordinates[1]) && (point_coordinates[1] > -rect_size[1] * screen_ratio / 2.0)),
 	)
-
 }
 
 //something is broken over here and I have no idea what it is...
-pub fn cast_onto_sphere(cellestial_sphere:&CellestialSphere,screen_position:&egui::Pos2)-> Vector3<f32>{
-
-	let rect_size = Vector2::new(cellestial_sphere.viewport_rect.max[0] - cellestial_sphere.viewport_rect.min[0], cellestial_sphere.viewport_rect.max[1] - cellestial_sphere.viewport_rect.min[1]);
+pub fn cast_onto_sphere(cellestial_sphere: &CellestialSphere, screen_position: &egui::Pos2) -> Vector3<f32> {
+	let rect_size = Vector2::new(
+		cellestial_sphere.viewport_rect.max[0] - cellestial_sphere.viewport_rect.min[0],
+		cellestial_sphere.viewport_rect.max[1] - cellestial_sphere.viewport_rect.min[1],
+	);
 
 	let screen_ratio = 2.0 / (rect_size[0] * rect_size[0] + rect_size[1] * rect_size[1]).sqrt();
 
+	let plane_coordinates = Vector2::new((screen_position[0] - rect_size[0] / 2.0) * screen_ratio, (screen_position[1] - rect_size[1] / 2.0) * screen_ratio);
 
-	let plane_coordinates=Vector2::new((screen_position[0]-rect_size[0]/2.0)*screen_ratio,(screen_position[1]-rect_size[1]/2.0)*screen_ratio);
+	let scaling_factor = cellestial_sphere.zoom * cellestial_sphere.zoom + plane_coordinates[0] * plane_coordinates[0] + plane_coordinates[1] * plane_coordinates[1];
 
-	let scaling_factor = cellestial_sphere.zoom*cellestial_sphere.zoom+plane_coordinates[0]*plane_coordinates[0]+plane_coordinates[1]*plane_coordinates[1];
-
-	cellestial_sphere.rotation.matrix().try_inverse().expect("FUCK") * Vector3::new(2.0*cellestial_sphere.get_zoom()*cellestial_sphere.get_zoom()*plane_coordinates[0]/scaling_factor, 2.0*cellestial_sphere.get_zoom()*cellestial_sphere.get_zoom()*plane_coordinates[1]/scaling_factor, -(cellestial_sphere.get_zoom()*cellestial_sphere.get_zoom()-plane_coordinates[0]*plane_coordinates[0]*plane_coordinates[1]*plane_coordinates[1])*cellestial_sphere.get_zoom()/(scaling_factor))
-
-	
-	}
-pub fn cartesian_to_spherical(vector:Vector3<f32>) -> (f32,f32){
-	
+	cellestial_sphere.rotation.matrix().try_inverse().expect("FUCK")
+		* Vector3::new(
+			2.0 * cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() * plane_coordinates[0] / scaling_factor,
+			2.0 * cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() * plane_coordinates[1] / scaling_factor,
+			-(cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() - plane_coordinates[0] * plane_coordinates[0] * plane_coordinates[1] * plane_coordinates[1]) * cellestial_sphere.get_zoom()
+				/ (scaling_factor),
+		)
+}
+pub fn cartesian_to_spherical(vector: Vector3<f32>) -> (f32, f32) {
 	(vector.normalize()[2].acos(), vector[1].atan2(vector[0]))
 }
-pub fn angular_distance(initial_position:(f32,f32), final_position:(f32,f32)) -> f32{
-	let (i_ra,i_dec) = initial_position;
-	let (f_ra,f_dec) = final_position;
+pub fn angular_distance(initial_position: (f32, f32), final_position: (f32, f32)) -> f32 {
+	let (i_ra, i_dec) = initial_position;
+	let (f_ra, f_dec) = final_position;
 
-	(i_dec.cos()*f_dec.cos()+i_dec.sin()*i_dec.sin()*(i_ra-f_ra).cos()).acos()
-
+	(i_dec.cos() * f_dec.cos() + i_dec.sin() * i_dec.sin() * (i_ra - f_ra).cos()).acos()
 }
-
