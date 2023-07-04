@@ -1,3 +1,4 @@
+use crate::structs::graphics_settings::GraphicsSettings;
 use eframe::egui;
 
 #[path = "./rendering/caspr/caspr.rs"]
@@ -5,6 +6,10 @@ mod caspr;
 
 use caspr::CellestialSphere;
 
+use self::frames_handler::FramesHandler;
+
+#[path = "./structs/frames_handler.rs"]
+mod frames_handler;
 #[path = "./input.rs"]
 mod input;
 #[path = "./structs/state.rs"]
@@ -17,6 +22,8 @@ pub struct Application {
 	pub frame_timestamp: i64,
 	pub frame_timestamp_ms: i64,
 	pub cellestial_sphere: CellestialSphere,
+	pub graphics_settings: GraphicsSettings,
+	pub frames_handler: FramesHandler,
 
 	pub authors: String,
 	pub version: String,
@@ -44,6 +51,8 @@ impl Application {
 			frame_timestamp: timestamp,
 			frame_timestamp_ms: chrono::Utc::now().timestamp_millis(),
 			cellestial_sphere,
+			graphics_settings: GraphicsSettings::default(),
+			frames_handler: FramesHandler::default(),
 
 			authors,
 			version,
@@ -53,9 +62,12 @@ impl Application {
 
 impl eframe::App for Application {
 	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+		self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos();
 		self.frame_timestamp = chrono::Utc::now().timestamp();
 		let cursor_within_central_panel = self.render(ctx);
 		self.handle_input(cursor_within_central_panel, ctx);
+		self.frames_handler.handle();
+		self.frames_handler.last_frame = chrono::Local::now().timestamp_nanos();
 		ctx.request_repaint();
 	}
 

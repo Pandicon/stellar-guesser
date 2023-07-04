@@ -1,7 +1,9 @@
+use crate::structs::graphics_settings::GraphicsSettings;
 use eframe::{egui, epaint::Color32};
 use nalgebra::{Matrix3, Vector3,Rotation3};
-use std::{error::Error, f32::consts::PI, fs};
+use std::{collections::HashMap, error::Error, f32::consts::PI, fs};
 
+const DEEPSKIES_FOLDER: &str = "./sphere/deepsky";
 const LINES_FOLDER: &str = "./sphere/lines";
 const STARS_FOLDER: &str = "./sphere/stars";
 
@@ -9,6 +11,8 @@ const STARS_FOLDER: &str = "./sphere/stars";
 mod geometry;
 use geometry::project_point;
 
+mod deepsky;
+use deepsky::{Deepsky, DeepskyRaw, DeepskyRenderer};
 mod lines;
 use lines::{LineRenderer, SkyLine, SkyLineRaw};
 mod stars;
@@ -21,18 +25,23 @@ pub struct Marker {
 }
 
 pub struct CellestialSphere {
-	pub stars: Vec<Star>,
-	pub lines: Vec<SkyLine>,
+	pub stars: HashMap<String, Vec<Star>>,
+	pub stars_categories_active: HashMap<String, bool>,
+	pub lines: HashMap<String, Vec<SkyLine>>,
+	pub lines_categories_active: HashMap<String, bool>,
+	pub deepskies: HashMap<String, Vec<Deepsky>>,
+	pub deepskies_categories_active: HashMap<String, bool>,
 	pub markers: Vec<Marker>,
 	zoom: f32,
-	star_renderers: Vec<StarRenderer>,
-	line_renderers: Vec<LineRenderer>,
-	mag_scale: f32,
-	mag_offset: f32,
-	star_color: eframe::epaint::Color32,
+	star_renderers: HashMap<String, Vec<StarRenderer>>,
+	line_renderers: HashMap<String, Vec<LineRenderer>>,
+	deepsky_renderers: HashMap<String, Vec<DeepskyRenderer>>,
+	pub mag_scale: f32,
+	pub mag_offset: f32,
 	pub viewport_rect: egui::Rect,
 
-	pub rotation:Rotation3<f32>
+	pub rotation:Rotation3<f32>,
+	pub deepsky_render_mag_decrease: f32
 }
 
 impl CellestialSphere {
@@ -55,53 +64,126 @@ impl CellestialSphere {
 	}
 
 	//Renders the entire sphere view
-	pub fn render_sky(&self, painter: &egui::Painter) {
+	pub fn render_sky(&self, painter: &egui::Painter, graphics_settings: &GraphicsSettings) {
 		//some stuff lol
-		for line_renderer in &self.line_renderers {
-			line_renderer.render(&self, painter)
+		for (_, line_renderers) in &self.line_renderers {
+			for line_renderer in line_renderers {
+				line_renderer.render(&self, painter);
+			}
 		}
-		for star_renderer in &self.star_renderers {
-			star_renderer.render(&self, painter)
+		for (_, star_renderers) in &self.star_renderers {
+			for star_renderer in star_renderers {
+				star_renderer.render(&self, painter, graphics_settings);
+			}
+		}
+		for (_, deepsky_renderers) in &self.deepsky_renderers {
+			for deepsky_renderer in deepsky_renderers {
+				deepsky_renderer.render(&self, painter, self.deepsky_render_mag_decrease);
+			}
 		}
 	}
 
 	pub fn load() -> Result<Self, Box<dyn Error>> {
 		let star_color = eframe::epaint::Color32::WHITE;
-		let mut catalog: Vec<Star> = Vec::new();
+		let mut catalog: HashMap<String, Vec<Star>> = HashMap::new();
+		let mut stars_categories_active = HashMap::new();
 		let files = fs::read_dir(STARS_FOLDER);
 		for file in (files?).flatten() {
-			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
+			let path = file.path();
+			let file_name = path.file_name();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_str();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_string();
+			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(path);
 
 			for star_raw in reader?.deserialize() {
 				let star_raw: StarRaw = star_raw?;
 				let star = Star::from_raw(star_raw, star_color);
-				catalog.push(star);
+				let entry = catalog.entry(file_name.clone()).or_insert(Vec::new());
+				entry.push(star);
+				if !stars_categories_active.contains_key(&file_name) {
+					stars_categories_active.insert(file_name.clone(), true);
+				}
 			}
 		}
-		let mut lines: Vec<SkyLine> = Vec::new();
+
+		let mut lines: HashMap<String, Vec<SkyLine>> = HashMap::new();
+		let mut lines_categories_active = HashMap::new();
 		let files: Result<fs::ReadDir, std::io::Error> = fs::read_dir(LINES_FOLDER);
 		for file in (files?).flatten() {
+			let path = file.path();
+			let file_name = path.file_name();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_str();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_string();
 			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
 
 			for line_raw in reader?.deserialize() {
 				let line_raw: SkyLineRaw = line_raw?;
 				let line = SkyLine::from_raw(line_raw, star_color);
-				lines.push(line);
+				let entry = lines.entry(file_name.clone()).or_insert(Vec::new());
+				entry.push(line);
+				if !lines_categories_active.contains_key(&file_name) {
+					lines_categories_active.insert(file_name.clone(), true);
+				}
+			}
+		}
+
+		let mut deepskies: HashMap<String, Vec<Deepsky>> = HashMap::new();
+		let mut deepskies_categories_active = HashMap::new();
+		let files: Result<fs::ReadDir, std::io::Error> = fs::read_dir(DEEPSKIES_FOLDER);
+		for file in (files?).flatten() {
+			let path = file.path();
+			let file_name = path.file_name();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_str();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_string();
+			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
+
+			for deepsky_raw in reader?.deserialize() {
+				let deepsky_raw: DeepskyRaw = deepsky_raw?;
+				let deepsky = Deepsky::from_raw(deepsky_raw, star_color);
+				let entry = deepskies.entry(file_name.clone()).or_insert(Vec::new());
+				entry.push(deepsky);
+				if !deepskies_categories_active.contains_key(&file_name) {
+					deepskies_categories_active.insert(file_name.clone(), true);
+				}
 			}
 		}
 
 		let viewport_rect = egui::Rect::from_two_pos(egui::pos2(0.0, 0.0), egui::pos2(0.0, 0.0));
 		Ok(Self {
 			stars: catalog,
+			stars_categories_active,
 			lines,
+			lines_categories_active,
+			deepskies,
+			deepskies_categories_active,
 			markers: Vec::new(),
 			zoom: 1.0,
-			star_renderers: Vec::new(),
-			line_renderers: Vec::new(),
+			star_renderers: HashMap::new(),
+			line_renderers: HashMap::new(),
+			deepsky_renderers: HashMap::new(),
 			mag_scale: 0.3,
 			mag_offset: 6.0,
-			star_color,
 			viewport_rect,
+			deepsky_render_mag_decrease: 0.0,
+
 			rotation:Rotation3::new(Vector3::new(0.0, 0.0,0.0))
 		})
 	}
@@ -110,8 +192,8 @@ impl CellestialSphere {
 	pub fn zoom(&mut self, velocity: f32) {
 		let future_zoom = self.zoom + velocity*self.zoom;
 		//A check is needed since negative zoom breaks everything
-		if future_zoom >0.0{
-			self.zoom=future_zoom
+		if future_zoom > 0.0 {
+			self.zoom = future_zoom
 		}
 	}
 
@@ -124,8 +206,69 @@ impl CellestialSphere {
 	}
 
 	pub fn init_renderers(&mut self) {
-		self.star_renderers = self.stars.iter().map(|i| i.get_renderer(self.rotation.matrix())).collect();
-		self.line_renderers = self.lines.iter().map(|i| i.get_renderer(self.rotation.matrix())).collect();
+		self.star_renderers = HashMap::new();
+		let mut active_star_groups = Vec::new();
+		for (name, _) in &self.stars {
+			let active = self.stars_categories_active.entry(name.to_owned()).or_insert(true);
+			if !*active {
+				continue;
+			}
+			active_star_groups.push(name.to_owned());
+		}
+		for name in active_star_groups {
+			self.init_single_renderer("stars", &name, self.rotation.matrix());
+		}
+		self.line_renderers = HashMap::new();
+		let mut active_line_groups = Vec::new();
+		for (name, _) in &self.lines {
+			let active = self.lines_categories_active.entry(name.to_owned()).or_insert(true);
+			if !*active {
+				continue;
+			}
+			active_line_groups.push(name.to_owned());
+		}
+		for name in active_line_groups {
+			self.init_single_renderer("lines", &name, self.rotation.matrix());
+		}
+		self.deepsky_renderers = HashMap::new();
+		let mut active_deepsky_groups = Vec::new();
+		for (name, _) in &self.deepskies {
+			let active = self.deepskies_categories_active.entry(name.to_owned()).or_insert(true);
+			if !*active {
+				continue;
+			}
+			active_deepsky_groups.push(name.to_owned());
+		}
+		for name in active_deepsky_groups {
+			self.init_single_renderer("deepskies", &name, self.rotation.matrix());
+		}
+	}
+
+	pub fn init_single_renderer(&mut self, category: &str, name: &str, rotation_matrix: &Matrix3<f32>) {
+		if category == "stars" {
+			if let Some(stars) = self.stars.get(name) {
+				self.star_renderers.insert(name.to_string(), stars.iter().map(|star| star.get_renderer(self.rotation.matrix())).collect());
+			}
+		} else if category == "lines" {
+			if let Some(lines) = self.lines.get(name) {
+				self.line_renderers.insert(name.to_string(), lines.iter().map(|line| line.get_renderer(self.rotation.matrix())).collect());
+			}
+		} else if category == "deepskies" {
+			if let Some(deepskies) = self.deepskies.get(name) {
+				self.deepsky_renderers
+					.insert(name.to_string(), deepskies.iter().map(|deepsky| deepsky.get_renderer(self.rotation.matrix())).collect());
+			}
+		}
+	}
+
+	pub fn deinit_single_renderer(&mut self, category: &str, name: &str) {
+		if category == "stars" {
+			self.star_renderers.insert(name.to_string(), Vec::new());
+		} else if category == "lines" {
+			self.line_renderers.insert(name.to_string(), Vec::new());
+		} else if category == "deepskies" {
+			self.deepsky_renderers.insert(name.to_string(), Vec::new());
+		}
 	}
 
 	pub fn mag_to_radius(&self, vmag: f32) -> f32 {

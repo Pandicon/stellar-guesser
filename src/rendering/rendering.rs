@@ -3,6 +3,7 @@ use eframe::egui;
 use crate::Application;
 
 mod app_info_window;
+mod sky_settings_window;
 mod stats_window;
 mod top_panel;
 
@@ -10,6 +11,12 @@ impl Application {
 	pub fn render(&mut self, ctx: &egui::Context) -> bool {
 		let mut window_rectangles = Vec::new();
 		if let Some(response) = self.render_application_info_window(ctx) {
+			window_rectangles.push([
+				[response.response.rect.right(), response.response.rect.top()],
+				[response.response.rect.left(), response.response.rect.bottom()],
+			]);
+		}
+		if let Some(response) = self.render_sky_settings_window(ctx) {
 			window_rectangles.push([
 				[response.response.rect.right(), response.response.rect.top()],
 				[response.response.rect.left(), response.response.rect.bottom()],
@@ -28,7 +35,7 @@ impl Application {
 			self.cellestial_sphere.viewport_rect = viewport_rect;
 
 			let painter = ui.painter();
-			self.cellestial_sphere.render_sky(painter);
+			self.cellestial_sphere.render_sky(painter, &self.graphics_settings);
 		});
 		central_panel_response.response.hovered()
 	}
