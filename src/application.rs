@@ -52,10 +52,10 @@ impl Application {
 
 			frame_timestamp: timestamp,
 			frame_timestamp_ms: chrono::Utc::now().timestamp_millis(),
+			game_handler:GameHandler::init(&cellestial_sphere),
 			cellestial_sphere,
 			graphics_settings: GraphicsSettings::default(),
 			frames_handler: FramesHandler::default(),
-			game_handler:GameHandler::init(),
 
 			authors,
 			version,
