@@ -53,7 +53,6 @@ impl Application {
 			cellestial_sphere,
 			graphics_settings: GraphicsSettings::default(),
 			frames_handler: FramesHandler::default(),
-			game_handler: GameHandler::init(),
 
 			authors,
 			version,

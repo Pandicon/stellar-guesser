@@ -90,7 +90,8 @@ impl Input {
 		let drag_x = ctx.input(|i: &egui::InputState| i.pointer.delta().x);
 		let drag_y = ctx.input(|i| i.pointer.delta().y);
 		let primary_down = ctx.input(|i| i.pointer.primary_down());
-		self.secondary_released = ctx.input(|i| i.pointer.secondary_clicked());
+		self.primary_clicked = ctx.input(|i| i.pointer.primary_clicked());
+		self.secondary_released = ctx.input(|i| i.pointer.secondary_released());
 		if ctx.is_pointer_over_area() {
 			self.pointer_position = PointerPosition::OnScreen(ctx.input(|i| i.pointer.hover_pos().unwrap_or(egui::pos2(0.0, 0.0))));
 		} else {

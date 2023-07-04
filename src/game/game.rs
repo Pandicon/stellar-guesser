@@ -1,5 +1,10 @@
+use crate::caspr::CellestialSphere;
+use rand::Rng;
+
 pub enum Question {
-	PositionQuestion { name: String, ra: f32, dec: f32 },
+	ObjectQuestion { name: String, ra: f32, dec: f32 },
+	PositionQuestion { ra: f32, dec: f32 },
+	ThisPointObject { name: String, ra: f32, dec: f32 },
 }
 
 pub struct GameHandler {
