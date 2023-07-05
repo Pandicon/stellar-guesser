@@ -220,10 +220,11 @@ impl GameHandler {
 						is_ic,
 						..
 					} => {
-						if (self.object_question_settings.show_messiers && is_messier)
-							|| (self.object_question_settings.show_caldwells && is_caldwell)
-							|| (self.object_question_settings.show_ngcs && is_ngc)
-							|| (self.object_question_settings.show_ics && is_ic)
+						if self.show_object_questions
+							&& ((self.object_question_settings.show_messiers && is_messier)
+								|| (self.object_question_settings.show_caldwells && is_caldwell)
+								|| (self.object_question_settings.show_ngcs && is_ngc)
+								|| (self.object_question_settings.show_ics && is_ic))
 						{
 							possible_questions.push(question);
 						}
@@ -240,10 +241,11 @@ impl GameHandler {
 						is_ic,
 						..
 					} => {
-						if (self.this_point_object_question_settings.show_messiers && is_messier)
-							|| (self.this_point_object_question_settings.show_caldwells && is_caldwell)
-							|| (self.this_point_object_question_settings.show_ngcs && is_ngc)
-							|| (self.this_point_object_question_settings.show_ics && is_ic)
+						if self.show_this_point_object_questions
+							&& ((self.this_point_object_question_settings.show_messiers && is_messier)
+								|| (self.this_point_object_question_settings.show_caldwells && is_caldwell)
+								|| (self.this_point_object_question_settings.show_ngcs && is_ngc)
+								|| (self.this_point_object_question_settings.show_ics && is_ic))
 						{
 							possible_questions.push(question);
 						}
