@@ -54,6 +54,7 @@ pub fn cast_onto_sphere(cellestial_sphere: &CellestialSphere, screen_position: &
 				/ (scaling_factor),
 		)
 }
+/** Returns a (dec, ra) pair (both in radians) */
 pub fn cartesian_to_spherical(vector: Vector3<f32>) -> (f32, f32) {
 	(vector.normalize()[2].acos(), vector[1].atan2(vector[0]))
 }
@@ -62,4 +63,21 @@ pub fn angular_distance(initial_position: (f32, f32), final_position: (f32, f32)
 	let (f_ra, f_dec) = final_position;
 
 	(i_dec.cos() * f_dec.cos() + i_dec.sin() * i_dec.sin() * (i_ra - f_ra).cos()).acos()
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn vec_to_dec_ra() {
+		let dec = 40.7;
+		let ra = 28.3;
+		let v = get_point_vector(ra, dec, &nalgebra::Matrix3::identity());
+		let (dec_2, ra_2) = cartesian_to_spherical(v);
+		let dec_2 = dec_2 * 180.0 / PI;
+		let ra_2 = ra_2 * 180.0 / PI;
+		assert_eq!(dec, dec_2);
+		assert_eq!(ra, ra_2);
+	}
 }
