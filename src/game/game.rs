@@ -5,9 +5,46 @@ use eframe::epaint::Color32;
 use rand::Rng;
 
 pub enum Question {
-	ObjectQuestion { name: String, ra: f32, dec: f32 },
-	PositionQuestion { ra: f32, dec: f32 },
-	ThisPointObject { possible_names: Vec<String>, ra: f32, dec: f32 },
+	ObjectQuestion {
+		name: String,
+		ra: f32,
+		dec: f32,
+		is_messier: bool,
+		is_caldwell: bool,
+		is_ngc: bool,
+		is_ic: bool,
+	},
+	PositionQuestion {
+		ra: f32,
+		dec: f32,
+	},
+	ThisPointObject {
+		possible_names: Vec<String>,
+		ra: f32,
+		dec: f32,
+		is_messier: bool,
+		is_caldwell: bool,
+		is_ngc: bool,
+		is_ic: bool,
+	},
+}
+
+pub struct QuestionSettings {
+	pub show_messiers: bool,
+	pub show_caldwells: bool,
+	pub show_ngcs: bool,
+	pub show_ics: bool,
+}
+
+impl Default for QuestionSettings {
+	fn default() -> Self {
+		Self {
+			show_messiers: true,
+			show_caldwells: true,
+			show_ngcs: true,
+			show_ics: true,
+		}
+	}
 }
 
 pub struct GameHandler {
@@ -22,6 +59,12 @@ pub struct GameHandler {
 	pub answer_review_text_heading: String,
 	pub answer_review_text: String,
 	pub answer: String,
+
+	pub object_question_settings: QuestionSettings,
+	pub this_point_object_question_settings: QuestionSettings,
+	pub show_object_questions: bool,
+	pub show_positions_questions: bool,
+	pub show_this_point_object_questions: bool,
 }
 
 impl GameHandler {
@@ -30,11 +73,19 @@ impl GameHandler {
 		for file in cellestial_sphere.deepskies.values() {
 			for deepsky in file {
 				let mut possible_names = Vec::new();
+				let is_messier = deepsky.messier.is_some();
+				let is_caldwell = deepsky.caldwell.is_some();
+				let is_ngc = deepsky.ngc.is_some();
+				let is_ic = deepsky.ic.is_some();
 				if let Some(messier_name) = &deepsky.messier {
 					catalog.push(Question::ObjectQuestion {
 						name: messier_name.to_owned(),
 						ra: deepsky.ra,
 						dec: deepsky.dec,
+						is_messier: true,
+						is_caldwell: false,
+						is_ngc: false,
+						is_ic: false,
 					});
 					possible_names.push(messier_name.to_owned());
 				}
@@ -44,6 +95,10 @@ impl GameHandler {
 						name: caldwell_name.to_owned(),
 						ra: deepsky.ra,
 						dec: deepsky.dec,
+						is_messier: false,
+						is_caldwell: true,
+						is_ngc: false,
+						is_ic: false,
 					});
 					possible_names.push(caldwell_name.to_owned());
 				}
@@ -53,6 +108,10 @@ impl GameHandler {
 						name: ngc_name.to_owned(),
 						ra: deepsky.ra,
 						dec: deepsky.dec,
+						is_messier: false,
+						is_caldwell: false,
+						is_ngc: true,
+						is_ic: false,
 					});
 					possible_names.push(ngc_name.to_owned());
 				}
@@ -62,6 +121,10 @@ impl GameHandler {
 						name: ic_name.to_owned(),
 						ra: deepsky.ra,
 						dec: deepsky.dec,
+						is_messier: false,
+						is_caldwell: false,
+						is_ngc: false,
+						is_ic: true,
 					});
 					possible_names.push(ic_name.to_owned());
 				}
@@ -70,6 +133,10 @@ impl GameHandler {
 						possible_names,
 						ra: deepsky.ra,
 						dec: deepsky.dec,
+						is_messier,
+						is_caldwell,
+						is_ngc,
+						is_ic,
 					});
 				}
 			}
@@ -97,6 +164,11 @@ impl GameHandler {
 			answer_review_text_heading: String::new(),
 			answer_review_text: String::new(),
 			answer: String::new(),
+			object_question_settings: QuestionSettings::default(),
+			this_point_object_question_settings: QuestionSettings::default(),
+			show_object_questions: true,
+			show_positions_questions: true,
+			show_this_point_object_questions: true,
 		}
 	}
 
@@ -140,7 +212,43 @@ impl GameHandler {
 		let mut possible_questions: Vec<usize> = Vec::new();
 		for question in 0..self.questions.len() {
 			if !self.used_questions.contains(&question) {
-				possible_questions.push(question);
+				match self.questions[question] {
+					Question::ObjectQuestion {
+						is_messier,
+						is_caldwell,
+						is_ngc,
+						is_ic,
+						..
+					} => {
+						if (self.object_question_settings.show_messiers && is_messier)
+							|| (self.object_question_settings.show_caldwells && is_caldwell)
+							|| (self.object_question_settings.show_ngcs && is_ngc)
+							|| (self.object_question_settings.show_ics && is_ic)
+						{
+							possible_questions.push(question);
+						}
+					}
+					Question::PositionQuestion { .. } => {
+						if self.show_positions_questions {
+							possible_questions.push(question);
+						}
+					}
+					Question::ThisPointObject {
+						is_messier,
+						is_caldwell,
+						is_ngc,
+						is_ic,
+						..
+					} => {
+						if (self.this_point_object_question_settings.show_messiers && is_messier)
+							|| (self.this_point_object_question_settings.show_caldwells && is_caldwell)
+							|| (self.this_point_object_question_settings.show_ngcs && is_ngc)
+							|| (self.this_point_object_question_settings.show_ics && is_ic)
+						{
+							possible_questions.push(question);
+						}
+					}
+				}
 			}
 		}
 		self.current_question = possible_questions[rand::thread_rng().gen_range(0..possible_questions.len())];
@@ -160,17 +268,13 @@ impl GameHandler {
 	}
 	pub fn get_display_question(&self) -> String {
 		match &self.questions[self.current_question] {
-			Question::ObjectQuestion { name, ra: _ra, dec: _dec } => {
+			Question::ObjectQuestion { name, .. } => {
 				return String::from(format!("Find {}.", name));
 			}
 			Question::PositionQuestion { ra: _ra, dec: _dec } => {
 				return String::from("This does not work yet... Sorry :)");
 			}
-			Question::ThisPointObject {
-				possible_names: _possible_names,
-				ra: _ra,
-				dec: _dec,
-			} => {
+			Question::ThisPointObject { .. } => {
 				return String::from("What is this object?");
 			}
 		}
