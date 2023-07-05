@@ -41,7 +41,7 @@ impl Application {
 		}
 		let timestamp = chrono::Utc::now().timestamp();
 		let state = state::State::new(timestamp, time_spent_start);
-		let mut cellestial_sphere = CellestialSphere::load().expect("No catalogs are present");
+		let mut cellestial_sphere = CellestialSphere::load(cc.storage).expect("No catalogs are present");
 		cellestial_sphere.init();
 		Self {
 			input: input::Input::default(),
@@ -73,5 +73,18 @@ impl eframe::App for Application {
 
 	fn save(&mut self, storage: &mut dyn eframe::Storage) {
 		storage.set_string("time_spent", (self.state.time_spent_start + (self.frame_timestamp - self.state.start_timestamp)).to_string());
+
+		for (file, active) in &self.cellestial_sphere.deepskies_categories_active {
+			storage.set_string(&format!("render_deepskies_{}", file), active.to_string());
+		}
+		for (file, active) in &self.cellestial_sphere.lines_categories_active {
+			storage.set_string(&format!("render_lines_{}", file), active.to_string());
+		}
+		for (file, active) in &self.cellestial_sphere.markers_categories_active {
+			storage.set_string(&format!("render_markers_{}", file), active.to_string());
+		}
+		for (file, active) in &self.cellestial_sphere.stars_categories_active {
+			storage.set_string(&format!("render_stars_{}", file), active.to_string());
+		}
 	}
 }

@@ -121,7 +121,7 @@ impl CellestialSphere {
 		}
 	}
 
-	pub fn load() -> Result<Self, Box<dyn Error>> {
+	pub fn load(storage: Option<&dyn eframe::Storage>) -> Result<Self, Box<dyn Error>> {
 		let star_color = eframe::epaint::Color32::WHITE;
 		let mut catalog: HashMap<String, Vec<Star>> = HashMap::new();
 		let mut stars_categories_active = HashMap::new();
@@ -145,7 +145,14 @@ impl CellestialSphere {
 				let entry = catalog.entry(file_name.clone()).or_default();
 				entry.push(star);
 				if !stars_categories_active.contains_key(&file_name) {
-					stars_categories_active.insert(file_name.clone(), true);
+					stars_categories_active.insert(
+						file_name.clone(),
+						if let Some(storage) = storage {
+							storage.get_string(&format!("render_stars_{}", file_name)).unwrap_or(String::from("true")) == *"true"
+						} else {
+							true
+						},
+					);
 				}
 			}
 		}
@@ -172,7 +179,14 @@ impl CellestialSphere {
 				let entry = lines.entry(file_name.clone()).or_default();
 				entry.push(line);
 				if !lines_categories_active.contains_key(&file_name) {
-					lines_categories_active.insert(file_name.clone(), true);
+					lines_categories_active.insert(
+						file_name.clone(),
+						if let Some(storage) = storage {
+							storage.get_string(&format!("render_lines_{}", file_name)).unwrap_or(String::from("true")) == *"true"
+						} else {
+							true
+						},
+					);
 				}
 			}
 		}
@@ -199,7 +213,14 @@ impl CellestialSphere {
 				let entry = deepskies.entry(file_name.clone()).or_default();
 				entry.push(deepsky);
 				if !deepskies_categories_active.contains_key(&file_name) {
-					deepskies_categories_active.insert(file_name.clone(), true);
+					deepskies_categories_active.insert(
+						file_name.clone(),
+						if let Some(storage) = storage {
+							storage.get_string(&format!("render_deepskies_{}", file_name)).unwrap_or(String::from("true")) == *"true"
+						} else {
+							true
+						},
+					);
 				}
 			}
 		}
@@ -228,7 +249,14 @@ impl CellestialSphere {
 				let entry = markers.entry(file_name.clone()).or_default();
 				entry.push(marker);
 				if !markers_categories_active.contains_key(&file_name) {
-					markers_categories_active.insert(file_name.clone(), true);
+					markers_categories_active.insert(
+						file_name.clone(),
+						if let Some(storage) = storage {
+							storage.get_string(&format!("render_markers_{}", file_name)).unwrap_or(String::from("true")) == *"true"
+						} else {
+							true
+						},
+					);
 				}
 			}
 		}
