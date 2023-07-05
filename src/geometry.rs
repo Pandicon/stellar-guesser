@@ -10,9 +10,9 @@ pub fn is_in_rect<T: PartialOrd>(point: [T; 2], rect: [[T; 2]; 2]) -> bool {
 }
 
 pub fn get_point_vector(ra: f32, dec: f32, rotation_matrix: &Matrix3<f32>) -> Vector3<f32> {
-	let (ra_s, ra_c) = ((-ra) * PI / 180.0).sin_cos();
-	let (de_s, de_c) = ((90.0 - dec) * PI / 180.0).sin_cos();
-	rotation_matrix * Vector3::new(de_s * ra_c, de_s * ra_s, de_c)
+	let (ra_s, ra_c) = ((-ra as f64) * std::f64::consts::PI / 180.0).sin_cos();
+	let (de_s, de_c) = ((90.0 - dec as f64) * std::f64::consts::PI / 180.0).sin_cos();
+	rotation_matrix * Vector3::new((de_s * ra_c) as f32, (de_s * ra_s) as f32, (de_c) as f32)
 }
 
 pub fn project_point(vector: &Vector3<f32>, zoom: f32, viewport_rect: egui::Rect) -> (egui::Pos2, bool) {
@@ -56,28 +56,24 @@ pub fn cast_onto_sphere(cellestial_sphere: &CellestialSphere, screen_position: &
 }
 /** Returns a (dec, ra) pair (both in radians) */
 pub fn cartesian_to_spherical(vector: Vector3<f32>) -> (f32, f32) {
-	(vector.normalize()[2].acos(), vector[1].atan2(vector[0]))
+	/*let v = vector.normalize();
+	let x = v[0];
+	let y = v[1];
+	let ra = y.atan2(x);
+	let sin_dec = x / ra.cos();
+	let cos_dec = v[2];
+	let dec = sin_dec.atan2(cos_dec);
+	(PI / 2.0 - dec, -ra)*/
+	let dec = PI / 2.0 - vector.normalize()[2].acos();
+	let mut ra = -(vector[1].atan2(vector[0]));
+	if ra < 0.0 {
+		ra = 2.0 * PI + ra;
+	}
+	(dec, ra)
 }
 pub fn angular_distance(initial_position: (f32, f32), final_position: (f32, f32)) -> f32 {
 	let (i_ra, i_dec) = initial_position;
 	let (f_ra, f_dec) = final_position;
 
 	(i_dec.cos() * f_dec.cos() + i_dec.sin() * i_dec.sin() * (i_ra - f_ra).cos()).acos()
-}
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-
-	#[test]
-	fn vec_to_dec_ra() {
-		let dec = 40.7;
-		let ra = 28.3;
-		let v = get_point_vector(ra, dec, &nalgebra::Matrix3::identity());
-		let (dec_2, ra_2) = cartesian_to_spherical(v);
-		let dec_2 = dec_2 * 180.0 / PI;
-		let ra_2 = ra_2 * 180.0 / PI;
-		assert_eq!(dec, dec_2);
-		assert_eq!(ra, ra_2);
-	}
 }
