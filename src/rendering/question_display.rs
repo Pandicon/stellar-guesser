@@ -26,7 +26,9 @@ impl Application {
 					}
 				}
 			} else if self.game_handler.stage == 1 {
-				ui.heading(&self.game_handler.answer_review_text_heading);
+				if !self.game_handler.answer_review_text_heading.is_empty() {
+					ui.heading(&self.game_handler.answer_review_text_heading);
+				}
 				ui.label(&self.game_handler.answer_review_text);
 				if ui.button("Next").clicked() {
 					self.game_handler.next_question(&mut self.cellestial_sphere);

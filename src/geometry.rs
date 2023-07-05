@@ -71,6 +71,10 @@ pub fn cartesian_to_spherical(vector: Vector3<f32>) -> (f32, f32) {
 	}
 	(dec, ra)
 }
+/**
+ * initial_position: (ra, dec) both in radians
+ * final_position: (ra, dec) both in radians
+ */
 pub fn angular_distance(initial_position: (f32, f32), final_position: (f32, f32)) -> f32 {
 	let (i_ra, i_dec) = initial_position;
 	let (f_ra, f_dec) = final_position;
