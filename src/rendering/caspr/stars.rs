@@ -13,12 +13,13 @@ use graphics::parse_colour;
 
 use super::CellestialSphere;
 
-#[derive(Clone, Copy, Deserialize)]
+#[derive(Clone, Deserialize)]
 pub struct Star {
 	pub ra: f32,
 	pub dec: f32,
 	pub vmag: f32,
 	pub colour: Color32,
+	pub name: Option<String>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -27,6 +28,7 @@ pub struct StarRaw {
 	pub dec: f32,
 	pub vmag: f32,
 	pub colour: Option<String>,
+	pub name: Option<String>,
 }
 
 impl Star {
@@ -41,6 +43,7 @@ impl Star {
 			dec: raw_star.dec,
 			vmag: raw_star.vmag,
 			colour,
+			name: raw_star.name,
 		}
 	}
 }
