@@ -1,3 +1,6 @@
+#[path = "./tests/root.rs"]
+mod tests;
+
 mod application;
 #[path = "./rendering/rendering.rs"]
 mod rendering;
