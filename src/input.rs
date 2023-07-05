@@ -12,7 +12,7 @@ use crate::{
 };
 
 mod geometry;
-const KEY_COMBINATIONS: [&str; 4] = ["alt+shift+g", "alt+shift+i", "alt+shift+o", "alt+shift+s"];
+const KEY_COMBINATIONS: [&str; 5] = ["alt+shift+g", "alt+shift+i", "alt+shift+o", "alt+shift+s", "space"];
 
 impl Application {
 	pub fn handle_input(&mut self, cursor_within_central_panel: bool, ctx: &egui::Context) {
@@ -23,6 +23,17 @@ impl Application {
 				enums::Inputs::AltShiftI => self.state.windows.app_info.opened = !self.state.windows.app_info.opened,
 				enums::Inputs::AltShiftO => self.state.windows.graphics_settings.opened = !self.state.windows.graphics_settings.opened,
 				enums::Inputs::AltShiftS => self.state.windows.stats.opened = !self.state.windows.stats.opened,
+				enums::Inputs::Space => {
+					if self.game_handler.stage == 0 {
+						if !self.game_handler.should_display_input() {
+							self.game_handler.check_answer(&mut self.cellestial_sphere);
+						}
+					} else if self.game_handler.stage == 1 {
+						self.game_handler.next_question(&mut self.cellestial_sphere);
+					} else {
+						unimplemented!();
+					}
+				}
 			}
 		}
 		self.cellestial_sphere.zoom(self.input.zoom / 500.0);
@@ -325,6 +336,29 @@ impl Input {
 						println!("The alt+shift+s combination was not in the 'currently_held' hashmap");
 					}
 				}
+				// Press of Space
+				egui::Event::Key {
+					key: egui::Key::Space,
+					pressed: true,
+					repeat: _,
+					modifiers: egui::Modifiers {
+						alt: _,
+						ctrl: _,
+						shift: _,
+						mac_cmd: _,
+						command: _,
+					},
+				} => {
+					if let Some(pressed) = self.currently_held.get("space") {
+						if !pressed {
+							let held = self.currently_held.entry("space").or_insert(true);
+							*held = true;
+							to_handle.push(enums::Inputs::Space);
+						}
+					} else {
+						println!("The space combination was not in the 'currently_held' hashmap");
+					}
+				}
 				// Release of G
 				egui::Event::Key {
 					key: egui::Key::G,
@@ -411,6 +445,28 @@ impl Input {
 						}
 					} else {
 						println!("The alt+shift+s combination was not in the 'currently_held' hashmap");
+					}
+				}
+				// Release of Space
+				egui::Event::Key {
+					key: egui::Key::Space,
+					pressed: false,
+					repeat: _,
+					modifiers: egui::Modifiers {
+						alt: _,
+						ctrl: _,
+						shift: _,
+						mac_cmd: _,
+						command: _,
+					},
+				} => {
+					if let Some(&pressed) = self.currently_held.get("space") {
+						if pressed {
+							let held = self.currently_held.entry("space").or_insert(false);
+							*held = false;
+						}
+					} else {
+						println!("The space combination was not in the 'currently_held' hashmap");
 					}
 				}
 				_ => {}
