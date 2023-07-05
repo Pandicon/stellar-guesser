@@ -102,10 +102,24 @@ impl GameHandler {
 
 	pub fn check_answer(&mut self, cellestial_sphere: &mut crate::caspr::CellestialSphere) {
 		self.stage = 1;
+		self.add_marker_on_click = false;
+		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
 		match &self.questions[self.current_question] {
-			Question::ObjectQuestion { .. } => {
+			Question::ObjectQuestion { ra, dec, .. } => {
 				self.answer_review_text_heading = format!("");
-				self.answer_review_text = String::from("To be implemented");
+				let (answer_dec_text, answer_ra_text, distance) = if !entry.is_empty() {
+					let answer_dec = entry[0].dec;
+					let answer_ra = entry[0].ra;
+					let distance = 100;
+					(answer_dec.to_string(), answer_ra.to_string(), distance.to_string())
+				} else {
+					(String::from("-"), String::from("-"), String::from("-"))
+				};
+				self.answer_review_text = format!(
+					"Your coordinates: [dec = {}; ra = {}]\nCorrect coordinates: [dec = {}; ra = {}]\nDistance: {} (To be implemented)\nYou can see the correct place marked with a yellow cross.",
+					answer_dec_text, answer_ra_text, ra, dec, distance
+				);
+				entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, false, false));
 			}
 			Question::PositionQuestion { ra, dec, .. } => {
 				self.answer_review_text_heading = format!("");
