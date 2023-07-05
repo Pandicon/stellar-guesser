@@ -98,7 +98,7 @@ impl Application {
 						self.cellestial_sphere.deinit_single_renderer("deepskies", name);
 					}
 				});
-			egui::CollapsingHeader::new(egui::RichText::new("Coordinate grids").text_style(egui::TextStyle::Heading).size(20.0))
+			egui::CollapsingHeader::new(egui::RichText::new("Lines").text_style(egui::TextStyle::Heading).size(20.0))
 				.default_open(true)
 				.show(ui, |ui| {
 					let mut newly_active_line_groups = Vec::new();
