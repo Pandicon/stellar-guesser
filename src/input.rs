@@ -24,14 +24,16 @@ impl Application {
 				enums::Inputs::AltShiftO => self.state.windows.graphics_settings.opened = !self.state.windows.graphics_settings.opened,
 				enums::Inputs::AltShiftS => self.state.windows.stats.opened = !self.state.windows.stats.opened,
 				enums::Inputs::Space => {
-					if self.game_handler.stage == 0 {
-						if !self.game_handler.should_display_input() {
-							self.game_handler.check_answer(&mut self.cellestial_sphere);
+					if !self.game_handler.no_more_questions() {
+						if self.game_handler.stage == 0 {
+							if !self.game_handler.should_display_input() {
+								self.game_handler.check_answer(&mut self.cellestial_sphere);
+							}
+						} else if self.game_handler.stage == 1 {
+							self.game_handler.next_question(&mut self.cellestial_sphere);
+						} else {
+							unimplemented!();
 						}
-					} else if self.game_handler.stage == 1 {
-						self.game_handler.next_question(&mut self.cellestial_sphere);
-					} else {
-						unimplemented!();
 					}
 				}
 			}

@@ -27,6 +27,7 @@ pub enum Question {
 		is_ngc: bool,
 		is_ic: bool,
 	},
+	NoMoreQuestions,
 }
 
 pub struct QuestionSettings {
@@ -70,6 +71,7 @@ pub struct GameHandler {
 impl GameHandler {
 	pub fn init(cellestial_sphere: &mut CellestialSphere) -> Self {
 		let mut catalog: Vec<Question> = Vec::new();
+		catalog.push(Question::NoMoreQuestions);
 		for file in cellestial_sphere.deepskies.values() {
 			for deepsky in file {
 				let mut possible_names = Vec::new();
@@ -154,6 +156,7 @@ impl GameHandler {
 				*entry = vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)];
 				false
 			}
+			Question::NoMoreQuestions => false,
 		};
 		Self {
 			current_question,
@@ -203,6 +206,7 @@ impl GameHandler {
 				self.answer_review_text_heading = format!("{}orrect!", if correct { "C" } else { "Inc" });
 				self.answer_review_text = format!("Your answer was: {}\nPossible answers: {}", self.answer, possible_names.join(", "));
 			}
+			Question::NoMoreQuestions => {}
 		}
 	}
 
@@ -250,22 +254,28 @@ impl GameHandler {
 							possible_questions.push(question);
 						}
 					}
+					Question::NoMoreQuestions => {}
 				}
 			}
 		}
-		self.current_question = possible_questions[rand::thread_rng().gen_range(0..possible_questions.len())];
+		if possible_questions.is_empty() {
+			self.current_question = 0;
+		} else {
+			self.current_question = possible_questions[rand::thread_rng().gen_range(0..possible_questions.len())];
 
-		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
-		self.add_marker_on_click = match self.questions[self.current_question] {
-			Question::ObjectQuestion { .. } => {
-				*entry = Vec::new();
-				true
-			}
-			Question::PositionQuestion { ra, dec, .. } | Question::ThisPointObject { ra, dec, .. } => {
-				*entry = vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)];
-				false
-			}
-		};
+			let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
+			self.add_marker_on_click = match self.questions[self.current_question] {
+				Question::ObjectQuestion { .. } => {
+					*entry = Vec::new();
+					true
+				}
+				Question::PositionQuestion { ra, dec, .. } | Question::ThisPointObject { ra, dec, .. } => {
+					*entry = vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)];
+					false
+				}
+				Question::NoMoreQuestions => false,
+			};
+		}
 		self.stage = 0;
 	}
 	pub fn get_display_question(&self) -> String {
@@ -279,13 +289,27 @@ impl GameHandler {
 			Question::ThisPointObject { .. } => {
 				return String::from("What is this object?");
 			}
+			Question::NoMoreQuestions => {
+				return String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return the questions you already went through by clicking 'Reset and next question'.");
+			}
 		}
 	}
 
 	pub fn should_display_input(&self) -> bool {
 		match &self.questions[self.current_question] {
-			Question::ObjectQuestion { .. } => false,
+			Question::ObjectQuestion { .. } | Question::NoMoreQuestions => false,
 			Question::PositionQuestion { .. } | Question::ThisPointObject { .. } => true,
 		}
+	}
+
+	pub fn no_more_questions(&self) -> bool {
+		match &self.questions[self.current_question] {
+			Question::NoMoreQuestions => true,
+			Question::ObjectQuestion { .. } | Question::PositionQuestion { .. } | Question::ThisPointObject { .. } => false,
+		}
+	}
+
+	pub fn reset_used_questions(&mut self) {
+		self.used_questions = Vec::new();
 	}
 }
