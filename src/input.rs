@@ -33,8 +33,11 @@ impl Application {
 			PointerPosition::OnScreen(position) => pointer_position = position,
 			PointerPosition::OffScreen => return,
 		}
-		if self.input.primary_clicked {
-			let (ra, dec) = geometry::cartesian_to_spherical(geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position));
+		if cursor_within_central_panel && self.input.primary_released && !self.input.primary_dragging_last_frame {
+			let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
+			let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);
+			dbg!(sphere_position);
+			dbg!(dec, ra);
 			let entry = self.cellestial_sphere.markers.entry("game".to_string()).or_default();
 			*entry = vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, false, false)];
 		}
@@ -58,6 +61,10 @@ pub struct Input {
 	pub zoom: f32,
 	pub secondary_released: bool,
 	pub primary_clicked: bool,
+	pub primary_down: bool,
+	pub primary_released: bool,
+	pub primary_dragging: bool,
+	pub primary_dragging_last_frame: bool,
 
 	pointer_down_outside_subwindow: bool,
 	currently_held: HashMap<&'static str, bool>,
@@ -79,6 +86,10 @@ impl Default for Input {
 			currently_held,
 			secondary_released: false,
 			primary_clicked: false,
+			primary_down: false,
+			primary_released: false,
+			primary_dragging: false,
+			primary_dragging_last_frame: false,
 		}
 	}
 }
@@ -91,7 +102,11 @@ impl Input {
 		let drag_y = ctx.input(|i| i.pointer.delta().y);
 		let primary_down = ctx.input(|i| i.pointer.primary_down());
 		self.primary_clicked = ctx.input(|i| i.pointer.primary_clicked());
+		self.primary_released = ctx.input(|i| i.pointer.primary_released());
 		self.secondary_released = ctx.input(|i| i.pointer.secondary_released());
+		self.primary_down = primary_down;
+		self.primary_dragging_last_frame = self.primary_dragging;
+		self.primary_dragging = primary_down && ctx.input(|i| i.pointer.is_decidedly_dragging());
 		if ctx.is_pointer_over_area() {
 			self.pointer_position = PointerPosition::OnScreen(ctx.input(|i| i.pointer.hover_pos().unwrap_or(egui::pos2(0.0, 0.0))));
 		} else {
