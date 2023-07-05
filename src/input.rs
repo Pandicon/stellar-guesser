@@ -33,7 +33,7 @@ impl Application {
 			PointerPosition::OnScreen(position) => pointer_position = position,
 			PointerPosition::OffScreen => return,
 		}
-		if cursor_within_central_panel && self.input.primary_released && !self.input.primary_dragging_last_frame {
+		if self.game_handler.add_marker_on_click && cursor_within_central_panel && self.input.primary_released && !self.input.primary_dragging_last_frame {
 			let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
 			let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);
 			dbg!(sphere_position);
