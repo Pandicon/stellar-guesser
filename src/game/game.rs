@@ -150,7 +150,7 @@ impl GameHandler {
 		let current_question = rand::thread_rng().gen_range(0..catalog.len());
 
 		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
-		let add_marker_on_click = match catalog[current_question] {
+		let add_marker_on_click: bool = match catalog[current_question] {
 			Question::ObjectQuestion { .. } => {
 				*entry = Vec::new();
 				true
