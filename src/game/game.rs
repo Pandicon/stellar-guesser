@@ -323,8 +323,8 @@ impl GameHandler {
 			}
 			Question::NoMoreQuestions => {
                 if self.is_scored_mode{
-                    let percentage = self.score/self.possible_score*100;
-                    String::from(format!("Game over! Your score was{}/{}, that is {} percent of the maximum. Click new game if you want to reset the game!",self.score,self.possible_score,percentage))
+                    let percentage = (self.score as f32)/(self.possible_score as f32)*100.0;
+                    String::from(format!("Game over! Your score was {}/{}, that is {:.1} percent of the maximum. Click new game if you want to reset the game!",self.score,self.possible_score,percentage))
                 }
                 else {
                     return String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return the questions you already went through by clicking 'Reset and next question'.");
