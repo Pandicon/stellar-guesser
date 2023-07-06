@@ -184,19 +184,20 @@ impl GameHandler {
 		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
 		match &self.questions[self.current_question] {
 			Question::ObjectQuestion { ra, dec, .. } => {
-				let (answer_dec_text, answer_ra_text, distance) = if !entry.is_empty() {
+				let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !entry.is_empty() {
 					let answer_dec = entry[0].dec;
 					let answer_ra = entry[0].ra;
 					let distance = geometry::angular_distance((ra * PI / 180.0, dec * PI / 180.0), (answer_ra * PI / 180.0, answer_dec * PI / 180.0)) * 180.0 / PI;
-					(answer_dec.to_string(), answer_ra.to_string(), distance.to_string())
+					(
+						answer_dec.to_string(),
+						answer_ra.to_string(),
+						distance.to_string(),
+						format!("You were {} degrees away!", (distance * 100.0).round() / 100.0),
+					)
 				} else {
-					(String::from("-"), String::from("-"), String::from("-"))
+					(String::from("-"), String::from("-"), String::from("-"), String::from("You didn't guess"))
 				};
-				self.answer_review_text_heading = if !entry.is_empty() {
-					format!("You were {:.2} degrees away!", distance)
-				} else {
-					String::from("You didn't guess")
-				};
+				self.answer_review_text_heading = answer_review_text_heading;
 				self.answer_review_text = format!(
 					"Your coordinates: [dec = {}; ra = {}]\nCorrect coordinates: [dec = {}; ra = {}]\nFully precise distance: {} degrees\nYou can see the correct place marked with a yellow cross.",
 					answer_dec_text, answer_ra_text, dec, ra, distance
