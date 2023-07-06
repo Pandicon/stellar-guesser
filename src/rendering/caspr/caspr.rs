@@ -405,8 +405,11 @@ impl CellestialSphere {
 
 	pub fn mag_to_radius(&self, vmag: f32) -> f32 {
 		let mag = self.mag_scale * (self.mag_offset - vmag) + 0.5;
-		if mag < 0.35{return 0.0}
-		else {return mag}
+		if mag < 0.35 {
+			return 0.0;
+		} else {
+			return mag;
+		}
 	}
 
 	pub fn project_screen_pos(&self, screen_pos: egui::Pos2) -> Vector3<f32> {

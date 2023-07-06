@@ -69,12 +69,11 @@ pub struct GameHandler {
 	pub show_object_questions: bool,
 	pub show_positions_questions: bool,
 	pub show_this_point_object_questions: bool,
-    pub no_of_questions:u32,
-    pub possible_no_of_questions:u32,
-    pub is_scored_mode:bool,
-    pub score:u32,
-    possible_score:u32,
-
+	pub no_of_questions: u32,
+	pub possible_no_of_questions: u32,
+	pub is_scored_mode: bool,
+	pub score: u32,
+	possible_score: u32,
 }
 
 impl GameHandler {
@@ -169,7 +168,7 @@ impl GameHandler {
 		};
 		Self {
 			current_question: 0,
-            possible_no_of_questions:catalog.len() as u32,
+			possible_no_of_questions: catalog.len() as u32,
 			question_catalog: catalog,
 			used_questions: Vec::new(),
 			add_marker_on_click,
@@ -182,18 +181,23 @@ impl GameHandler {
 			show_object_questions: true,
 			show_positions_questions: true,
 			show_this_point_object_questions: true,
-            no_of_questions:15,
-            is_scored_mode:false,
-            score:0,
-            possible_score:0,
+			no_of_questions: 15,
+			is_scored_mode: false,
+			score: 0,
+			possible_score: 0,
 		}
 	}
-    pub fn evaluate_score(distance:f32)-> u32{
-            if distance < 0.5 {return 3;}
-            else if distance < 1.0{ return 2;}
-            else if distance < 3.0 { return 1;}
-            else {return 0;}
-        }
+	pub fn evaluate_score(distance: f32) -> u32 {
+		if distance < 0.5 {
+			return 3;
+		} else if distance < 1.0 {
+			return 2;
+		} else if distance < 3.0 {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
 
 	pub fn check_answer(&mut self, cellestial_sphere: &mut crate::caspr::CellestialSphere) {
 		self.stage = 1;
@@ -201,12 +205,14 @@ impl GameHandler {
 		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
 		match &self.question_catalog[self.current_question] {
 			Question::ObjectQuestion { name, ra, dec, .. } => {
-                self.possible_score +=3;
+				self.possible_score += 3;
 				let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !entry.is_empty() {
 					let answer_dec = entry[0].dec;
 					let answer_ra = entry[0].ra;
 					let distance = geometry::angular_distance((ra * PI / 180.0, dec * PI / 180.0), (answer_ra * PI / 180.0, answer_dec * PI / 180.0)) * 180.0 / PI;
-                    if self.is_scored_mode{self.score += GameHandler::evaluate_score(distance); }
+					if self.is_scored_mode {
+						self.score += GameHandler::evaluate_score(distance);
+					}
 					(
 						answer_dec.to_string(),
 						answer_ra.to_string(),
@@ -223,17 +229,24 @@ impl GameHandler {
 				);
 				entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, false, false));
 			}
-			Question::PositionQuestion { ra:_ra, dec:_dec, .. } => {
+			Question::PositionQuestion { ra: _ra, dec: _dec, .. } => {
 				self.answer_review_text_heading = format!("");
 				self.answer_review_text = String::from("Not implemented yet D:");
 			}
 			Question::ThisPointObject { possible_names, .. } => {
 				let possible_names_edited = possible_names.iter().map(|name| name.replace(" ", "").to_lowercase()).collect::<Vec<String>>();
 				let correct = possible_names_edited.contains(&self.answer.replace(" ", "").to_lowercase());
-				self.answer_review_text_heading = format!("{}orrect!", if correct {self.score+=1; "C" } else { "Inc" });
+				self.answer_review_text_heading = format!(
+					"{}orrect!",
+					if correct {
+						self.score += 1;
+						"C"
+					} else {
+						"Inc"
+					}
+				);
 				self.answer_review_text = format!("Your answer was: {}\nPossible answers: {}", self.answer, possible_names.join(", "));
-                self.possible_score +=1;
-
+				self.possible_score += 1;
 			}
 			Question::NoMoreQuestions => {}
 		}
@@ -288,7 +301,7 @@ impl GameHandler {
 			}
 		}
 
-		if possible_questions.is_empty() ||(self.is_scored_mode && self.used_questions.len() as u32 > self.no_of_questions){
+		if possible_questions.is_empty() || (self.is_scored_mode && self.used_questions.len() as u32 > self.no_of_questions) {
 			self.current_question = 0;
 		} else {
 			self.current_question = possible_questions[rand::thread_rng().gen_range(0..possible_questions.len())];
@@ -320,13 +333,15 @@ impl GameHandler {
 				return String::from("What is this object?");
 			}
 			Question::NoMoreQuestions => {
-                if self.is_scored_mode{
-                    let percentage = (self.score as f32)/(self.possible_score as f32)*100.0;
-                    String::from(format!("Game over! Your score was {}/{}, that is {:.1}% of the maximum. Click Reset if you want to play a new game!",self.score,self.possible_score,percentage))
-                }
-                else {
-                    return String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return the questions you already went through by clicking 'Reset and next question'.");
-                }
+				if self.is_scored_mode {
+					let percentage = (self.score as f32) / (self.possible_score as f32) * 100.0;
+					String::from(format!(
+						"Game over! Your score was {}/{}, that is {:.1}% of the maximum. Click Reset if you want to play a new game!",
+						self.score, self.possible_score, percentage
+					))
+				} else {
+					return String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return the questions you already went through by clicking 'Reset and next question'.");
+				}
 			}
 		}
 	}
@@ -347,7 +362,7 @@ impl GameHandler {
 
 	pub fn reset_used_questions(&mut self) {
 		self.used_questions = Vec::new();
-        self.score = 0;
-        self.possible_score = 0;
+		self.score = 0;
+		self.possible_score = 0;
 	}
 }
