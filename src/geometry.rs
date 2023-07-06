@@ -79,5 +79,17 @@ pub fn angular_distance(initial_position: (f32, f32), final_position: (f32, f32)
 	let (i_ra, i_dec) = initial_position;
 	let (f_ra, f_dec) = final_position;
 
-	(i_dec.cos() * f_dec.cos() + i_dec.sin() * i_dec.sin() * (i_ra - f_ra).cos()).acos()
+	/*
+	a = ?
+	A = i_ra - f_ra
+	b = PI/2 - i_dec
+	c = PI/2 - f_dec
+	cos(a) = cos(b)cos(c) + sin(b)sin(c)cos(A)
+	*/
+
+	let b = PI / 2.0 - i_dec;
+	let c = PI / 2.0 - f_dec;
+	(b.cos() * c.cos() + b.sin() * c.sin() * (i_ra - f_ra).cos()).acos()
+
+	// (i_dec.cos() * f_dec.cos() + i_dec.sin() * i_dec.sin() * (i_ra - f_ra).cos()).acos()
 }
