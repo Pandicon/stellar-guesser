@@ -39,7 +39,15 @@ impl Application {
 				if ui.button("Next").clicked() {
 					self.game_handler.next_question(&mut self.cellestial_sphere);
 				}
-			} else {
+			}
+			else if self.game_handler.stage == 2{
+				ui.heading("Welcome!");
+				if ui.button("Start").clicked(){
+					self.game_handler.stage = 1;
+					self.game_handler.next_question(&mut self.cellestial_sphere)
+				}
+			}
+			else {
 				unimplemented!();
 			}
 		})

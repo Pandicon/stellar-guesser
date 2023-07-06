@@ -75,7 +75,7 @@ pub struct GameHandler {
     pub possible_no_of_questions:u32,
     pub is_scored_mode:bool,
     pub score:u32,
-    possible_score:u32
+    possible_score:u32,
 
 }
 
@@ -170,12 +170,12 @@ impl GameHandler {
 			Question::NoMoreQuestions => false,
 		};
 		Self {
-			current_question,
+			current_question: 0,
             possible_no_of_questions:catalog.len() as u32,
 			question_catalog: catalog,
 			used_questions: Vec::new(),
 			add_marker_on_click,
-			stage: 0,
+			stage: 2,
 			answer_review_text_heading: String::new(),
 			answer_review_text: String::new(),
 			answer: String::new(),
@@ -187,7 +187,7 @@ impl GameHandler {
             no_of_questions:15,
             is_scored_mode:false,
             score:0,
-            possible_score:0
+            possible_score:0,
 		}
 	}
     pub fn evaluate_score(distance:f32)-> u32{
@@ -234,6 +234,7 @@ impl GameHandler {
 				let correct = possible_names_edited.contains(&self.answer.replace(" ", "").to_lowercase());
 				self.answer_review_text_heading = format!("{}orrect!", if correct {self.score+=1; "C" } else { "Inc" });
 				self.answer_review_text = format!("Your answer was: {}\nPossible answers: {}", self.answer, possible_names.join(", "));
+                self.possible_score +=1;
 
 			}
 			Question::NoMoreQuestions => {}
@@ -289,7 +290,7 @@ impl GameHandler {
 			}
 		}
 
-		if possible_questions.is_empty() || self.used_questions.len() as u32 == self.no_of_questions{
+		if possible_questions.is_empty() ||(self.is_scored_mode && self.used_questions.len() as u32 > self.no_of_questions){
 			self.current_question = 0;
 		} else {
 			self.current_question = possible_questions[rand::thread_rng().gen_range(0..possible_questions.len())];
@@ -348,5 +349,7 @@ impl GameHandler {
 
 	pub fn reset_used_questions(&mut self) {
 		self.used_questions = Vec::new();
+        self.score = 0;
+        self.possible_score = 0;
 	}
 }
