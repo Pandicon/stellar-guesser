@@ -116,7 +116,7 @@ impl CellestialSphere {
 		}
 		for deepsky_renderers in self.deepsky_renderers.values() {
 			for deepsky_renderer in deepsky_renderers {
-				deepsky_renderer.render(&self, painter, self.deepsky_render_mag_decrease);
+				deepsky_renderer.render(&self, painter);
 			}
 		}
 	}

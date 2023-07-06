@@ -1,9 +1,7 @@
 use std::f32::consts::PI;
 
 use crate::{caspr::CellestialSphere, markers::Marker};
-use chrono::format::format;
 use eframe::epaint::Color32;
-use nalgebra::distance;
 use rand::Rng;
 
 #[path = "../geometry.rs"]
@@ -225,7 +223,7 @@ impl GameHandler {
 				);
 				entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, false, false));
 			}
-			Question::PositionQuestion { ra, dec, .. } => {
+			Question::PositionQuestion { ra:_ra, dec:_dec, .. } => {
 				self.answer_review_text_heading = format!("");
 				self.answer_review_text = String::from("Not implemented yet D:");
 			}
@@ -324,7 +322,7 @@ impl GameHandler {
 			Question::NoMoreQuestions => {
                 if self.is_scored_mode{
                     let percentage = (self.score as f32)/(self.possible_score as f32)*100.0;
-                    String::from(format!("Game over! Your score was {}/{}, that is {:.1} percent of the maximum. Click new game if you want to reset the game!",self.score,self.possible_score,percentage))
+                    String::from(format!("Game over! Your score was {}/{}, that is {:.1}% of the maximum. Click Reset if you want to play a new game!",self.score,self.possible_score,percentage))
                 }
                 else {
                     return String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return the questions you already went through by clicking 'Reset and next question'.");

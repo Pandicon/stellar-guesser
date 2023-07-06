@@ -57,12 +57,6 @@ impl Application {
 					if game_settings_btn.clicked() {
 						self.state.windows.game_settings.opened = true;
 					}
-					let stats_btn: egui::Response = ui
-					.add(egui::Button::new(egui::RichText::new("Statistics").text_style(egui::TextStyle::Body)))
-					.on_hover_text("Display the current question");
-				if stats_btn.clicked() {
-					self.state.windows.stats.opened = true;
-				}
 				let game_question_btn = ui
 				.add(egui::Button::new(egui::RichText::new("Question").text_style(egui::TextStyle::Body)))
 				.on_hover_text("Show the question");

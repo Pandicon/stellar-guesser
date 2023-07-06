@@ -7,7 +7,7 @@ impl Application {
 		egui::Window::new("Question").open(&mut self.state.windows.game_question.opened).show(ctx, |ui| {
 			if self.game_handler.stage == 0 {
 				if self.game_handler.no_more_questions() {
-					if(self.game_handler.is_scored_mode){
+					if self.game_handler.is_scored_mode{
 						ui.heading("Game over!");
 
 					}
@@ -18,7 +18,7 @@ impl Application {
 					// if ui.button("Next question").clicked() {
 					// 	self.game_handler.next_question(&mut self.cellestial_sphere);
 					// }
-					if ui.button("Reset and next question").clicked() {
+					if ui.button("Reset").clicked() {
 						self.game_handler.reset_used_questions();
 						self.game_handler.next_question(&mut self.cellestial_sphere);
 					}
