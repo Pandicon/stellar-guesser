@@ -27,6 +27,10 @@ impl Application {
 					ui.checkbox(&mut self.game_handler.this_point_object_question_settings.show_caldwells, "Show Caldwell objects");
 					ui.checkbox(&mut self.game_handler.this_point_object_question_settings.show_ngcs, "Show NGC objects");
 					ui.checkbox(&mut self.game_handler.this_point_object_question_settings.show_ics, "Show IC objects");
+					ui.checkbox(&mut self.game_handler.is_scored_mode, "Play in scored mode?");
+					ui.add(egui::Slider::new(&mut self.game_handler.no_of_questions, 10..=self.game_handler.possible_no_of_questions)
+					.text("Number of questions")
+					.logarithmic(true));
 				});
 		})
 	}

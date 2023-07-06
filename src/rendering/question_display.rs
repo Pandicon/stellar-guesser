@@ -7,7 +7,13 @@ impl Application {
 		egui::Window::new("Question").open(&mut self.state.windows.game_question.opened).show(ctx, |ui| {
 			if self.game_handler.stage == 0 {
 				if self.game_handler.no_more_questions() {
-					ui.heading("No more questions left");
+					if(self.game_handler.is_scored_mode){
+						ui.heading("Game over!");
+
+					}
+					else{
+						ui.heading("No more questions left");
+					}
 					ui.label(self.game_handler.get_display_question());
 					if ui.button("Next question").clicked() {
 						self.game_handler.next_question(&mut self.cellestial_sphere);

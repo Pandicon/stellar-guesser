@@ -1,7 +1,9 @@
 use std::f32::consts::PI;
 
 use crate::{caspr::CellestialSphere, markers::Marker};
+use chrono::format::format;
 use eframe::epaint::Color32;
+use nalgebra::distance;
 use rand::Rng;
 
 #[path = "../geometry.rs"]
@@ -53,7 +55,7 @@ impl Default for QuestionSettings {
 
 pub struct GameHandler {
 	current_question: usize,
-	questions: Vec<Question>,
+	question_catalog: Vec<Question>,
 	used_questions: Vec<usize>,
 
 	pub add_marker_on_click: bool,
@@ -69,6 +71,12 @@ pub struct GameHandler {
 	pub show_object_questions: bool,
 	pub show_positions_questions: bool,
 	pub show_this_point_object_questions: bool,
+    pub no_of_questions:u32,
+    pub possible_no_of_questions:u32,
+    pub is_scored_mode:bool,
+    pub score:u32,
+    possible_score:u32
+
 }
 
 impl GameHandler {
@@ -163,7 +171,8 @@ impl GameHandler {
 		};
 		Self {
 			current_question,
-			questions: catalog,
+            possible_no_of_questions:catalog.len() as u32,
+			question_catalog: catalog,
 			used_questions: Vec::new(),
 			add_marker_on_click,
 			stage: 0,
@@ -175,19 +184,31 @@ impl GameHandler {
 			show_object_questions: true,
 			show_positions_questions: true,
 			show_this_point_object_questions: true,
+            no_of_questions:15,
+            is_scored_mode:false,
+            score:0,
+            possible_score:0
 		}
 	}
+    pub fn evaluate_score(distance:f32)-> u32{
+            if distance < 0.5 {return 3;}
+            else if distance < 1.0{ return 2;}
+            else if distance < 3.0 { return 1;}
+            else {return 0;}
+        }
 
 	pub fn check_answer(&mut self, cellestial_sphere: &mut crate::caspr::CellestialSphere) {
 		self.stage = 1;
 		self.add_marker_on_click = false;
 		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
-		match &self.questions[self.current_question] {
+		match &self.question_catalog[self.current_question] {
 			Question::ObjectQuestion { ra, dec, .. } => {
+                self.possible_score +=3;
 				let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !entry.is_empty() {
 					let answer_dec = entry[0].dec;
 					let answer_ra = entry[0].ra;
 					let distance = geometry::angular_distance((ra * PI / 180.0, dec * PI / 180.0), (answer_ra * PI / 180.0, answer_dec * PI / 180.0)) * 180.0 / PI;
+                    if self.is_scored_mode{self.score += GameHandler::evaluate_score(distance); }
 					(
 						answer_dec.to_string(),
 						answer_ra.to_string(),
@@ -211,8 +232,9 @@ impl GameHandler {
 			Question::ThisPointObject { possible_names, .. } => {
 				let possible_names_edited = possible_names.iter().map(|name| name.replace(" ", "").to_lowercase()).collect::<Vec<String>>();
 				let correct = possible_names_edited.contains(&self.answer.replace(" ", "").to_lowercase());
-				self.answer_review_text_heading = format!("{}orrect!", if correct { "C" } else { "Inc" });
+				self.answer_review_text_heading = format!("{}orrect!", if correct {self.score+=1; "C" } else { "Inc" });
 				self.answer_review_text = format!("Your answer was: {}\nPossible answers: {}", self.answer, possible_names.join(", "));
+
 			}
 			Question::NoMoreQuestions => {}
 		}
@@ -222,9 +244,9 @@ impl GameHandler {
 		self.answer = String::new();
 		self.used_questions.push(self.current_question);
 		let mut possible_questions: Vec<usize> = Vec::new();
-		for question in 0..self.questions.len() {
+		for question in 0..self.question_catalog.len() {
 			if !self.used_questions.contains(&question) {
-				match self.questions[question] {
+				match self.question_catalog[question] {
 					Question::ObjectQuestion {
 						is_messier,
 						is_caldwell,
@@ -266,13 +288,14 @@ impl GameHandler {
 				}
 			}
 		}
-		if possible_questions.is_empty() {
+
+		if possible_questions.is_empty() || self.used_questions.len() as u32 == self.no_of_questions{
 			self.current_question = 0;
 		} else {
 			self.current_question = possible_questions[rand::thread_rng().gen_range(0..possible_questions.len())];
 
 			let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
-			self.add_marker_on_click = match self.questions[self.current_question] {
+			self.add_marker_on_click = match self.question_catalog[self.current_question] {
 				Question::ObjectQuestion { .. } => {
 					*entry = Vec::new();
 					true
@@ -287,7 +310,7 @@ impl GameHandler {
 		self.stage = 0;
 	}
 	pub fn get_display_question(&self) -> String {
-		match &self.questions[self.current_question] {
+		match &self.question_catalog[self.current_question] {
 			Question::ObjectQuestion { name, .. } => {
 				return String::from(format!("Find {}.", name));
 			}
@@ -298,20 +321,26 @@ impl GameHandler {
 				return String::from("What is this object?");
 			}
 			Question::NoMoreQuestions => {
-				return String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return the questions you already went through by clicking 'Reset and next question'.");
+                if self.is_scored_mode{
+                    let percentage = self.score/self.possible_score*100;
+                    String::from(format!("Game over! Your score was{}/{}, that is {} percent of the maximum. Click new game if you want to reset the game!",self.score,self.possible_score,percentage))
+                }
+                else {
+                    return String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return the questions you already went through by clicking 'Reset and next question'.");
+                }
 			}
 		}
 	}
 
 	pub fn should_display_input(&self) -> bool {
-		match &self.questions[self.current_question] {
+		match &self.question_catalog[self.current_question] {
 			Question::ObjectQuestion { .. } | Question::NoMoreQuestions => false,
 			Question::PositionQuestion { .. } | Question::ThisPointObject { .. } => true,
 		}
 	}
 
 	pub fn no_more_questions(&self) -> bool {
-		match &self.questions[self.current_question] {
+		match &self.question_catalog[self.current_question] {
 			Question::NoMoreQuestions => true,
 			Question::ObjectQuestion { .. } | Question::PositionQuestion { .. } | Question::ThisPointObject { .. } => false,
 		}
