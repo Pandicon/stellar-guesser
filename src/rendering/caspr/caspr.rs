@@ -8,7 +8,7 @@ const LINES_FOLDER: &str = "./sphere/lines";
 const MARKERS_FOLDER: &str = "./sphere/markers";
 const STARS_FOLDER: &str = "./sphere/stars";
 
-const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 2] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague)];
+const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague), (4.2, 0.5, LightPollution::AverageVillage)];
 
 #[path = "../../geometry.rs"]
 mod geometry;
@@ -404,7 +404,9 @@ impl CellestialSphere {
 	}
 
 	pub fn mag_to_radius(&self, vmag: f32) -> f32 {
-		self.mag_scale * (self.mag_offset - vmag) + 0.5
+		let mag = self.mag_scale * (self.mag_offset - vmag) + 0.5;
+		if mag < 0.35{return 0.0}
+		else {return mag}
 	}
 
 	pub fn project_screen_pos(&self, screen_pos: egui::Pos2) -> Vector3<f32> {

@@ -15,9 +15,9 @@ impl Application {
 						ui.heading("No more questions left");
 					}
 					ui.label(self.game_handler.get_display_question());
-					if ui.button("Next question").clicked() {
-						self.game_handler.next_question(&mut self.cellestial_sphere);
-					}
+					// if ui.button("Next question").clicked() {
+					// 	self.game_handler.next_question(&mut self.cellestial_sphere);
+					// }
 					if ui.button("Reset and next question").clicked() {
 						self.game_handler.reset_used_questions();
 						self.game_handler.next_question(&mut self.cellestial_sphere);

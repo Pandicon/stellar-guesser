@@ -19,6 +19,7 @@ pub enum LightPollution {
 	Default,
 	NoSpecific,
 	Prague,
+	AverageVillage,
 }
 
 impl Display for LightPollution {
@@ -27,6 +28,7 @@ impl Display for LightPollution {
 			Self::Default => write!(f, "Default"),
 			Self::NoSpecific => write!(f, "No specific"),
 			Self::Prague => write!(f, "Prague"),
+			Self::AverageVillage => write!(f,"Village"),
 		}
 	}
 }

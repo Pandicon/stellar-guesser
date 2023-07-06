@@ -202,7 +202,7 @@ impl GameHandler {
 		self.add_marker_on_click = false;
 		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
 		match &self.question_catalog[self.current_question] {
-			Question::ObjectQuestion { ra, dec, .. } => {
+			Question::ObjectQuestion { name, ra, dec, .. } => {
                 self.possible_score +=3;
 				let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !entry.is_empty() {
 					let answer_dec = entry[0].dec;
@@ -213,7 +213,7 @@ impl GameHandler {
 						answer_dec.to_string(),
 						answer_ra.to_string(),
 						distance.to_string(),
-						format!("You were {} degrees away!", (distance * 100.0).round() / 100.0),
+						format!("You were {} degrees away from {} !", (distance * 100.0).round() / 100.0, name),
 					)
 				} else {
 					(String::from("-"), String::from("-"), String::from("-"), String::from("You didn't guess"))
