@@ -49,8 +49,6 @@ impl Application {
 		if self.game_handler.add_marker_on_click && cursor_within_central_panel && self.input.primary_released && !self.input.primary_dragging_last_frame {
 			let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
 			let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);
-			dbg!(sphere_position);
-			dbg!(dec, ra);
 			let entry = self.cellestial_sphere.markers.entry("game".to_string()).or_default();
 			*entry = vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, false, false)];
 			self.cellestial_sphere.init_single_renderer("markers", "game");
