@@ -60,10 +60,14 @@ impl Application {
 
 		// println!("{}",final_vector)
 
-		self.cellestial_sphere.rotation *= Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
+		if initial_vector != final_vector {
+			// Some rotation this frame
 
-		if self.input.secondary_released {}
-		self.cellestial_sphere.init_renderers(); // TODO: Maybe don't reinitialize them if the rotation hasn't changed
+			self.cellestial_sphere.rotation *= Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
+
+			if self.input.secondary_released {}
+			self.cellestial_sphere.init_renderers();
+		}
 	}
 }
 
