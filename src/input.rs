@@ -53,6 +53,7 @@ impl Application {
 			dbg!(dec, ra);
 			let entry = self.cellestial_sphere.markers.entry("game".to_string()).or_default();
 			*entry = vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, false, false)];
+			self.cellestial_sphere.init_single_renderer("markers", "game");
 		}
 
 		let initial_vector = self.cellestial_sphere.project_screen_pos(pointer_position - self.input.dragged);

@@ -57,7 +57,7 @@ pub struct GameHandler {
 	used_questions: Vec<usize>,
 
 	pub add_marker_on_click: bool,
-	/// 0 = guessing, 1 = checked
+	/// 0 = guessing, 1 = checked, 2 = not started yet
 	pub stage: usize,
 
 	pub answer_review_text_heading: String,
@@ -155,23 +155,14 @@ impl GameHandler {
 		let current_question = rand::thread_rng().gen_range(0..catalog.len());
 
 		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
-		let add_marker_on_click: bool = match catalog[current_question] {
-			Question::ObjectQuestion { .. } => {
-				*entry = Vec::new();
-				true
-			}
-			Question::PositionQuestion { ra, dec, .. } | Question::ThisPointObject { ra, dec, .. } => {
-				*entry = vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)];
-				false
-			}
-			Question::NoMoreQuestions => false,
-		};
+		*entry = Vec::new();
+		cellestial_sphere.init_single_renderer("markers", "game");
 		Self {
 			current_question: 0,
 			possible_no_of_questions: catalog.len() as u32,
 			question_catalog: catalog,
 			used_questions: Vec::new(),
-			add_marker_on_click,
+			add_marker_on_click: false,
 			stage: 2,
 			answer_review_text_heading: String::new(),
 			answer_review_text: String::new(),
@@ -250,6 +241,7 @@ impl GameHandler {
 			}
 			Question::NoMoreQuestions => {}
 		}
+		cellestial_sphere.init_single_renderer("markers", "game");
 	}
 
 	pub fn next_question(&mut self, cellestial_sphere: &mut crate::caspr::CellestialSphere) {
@@ -318,6 +310,7 @@ impl GameHandler {
 				}
 				Question::NoMoreQuestions => false,
 			};
+			cellestial_sphere.init_single_renderer("markers", "game");
 		}
 		self.stage = 0;
 	}
