@@ -28,6 +28,11 @@ impl Application {
 					ui.checkbox(&mut self.game_handler.this_point_object_question_settings.show_ngcs, "Show NGC objects");
 					ui.checkbox(&mut self.game_handler.this_point_object_question_settings.show_ics, "Show IC objects");
 				});
+			egui::CollapsingHeader::new(egui::RichText::new("'What is the angle between..' questions").text_style(egui::TextStyle::Heading).size(20.0))
+				.default_open(true)
+				.show(ui, |ui| {
+					ui.checkbox(&mut self.game_handler.show_distance_between_questions, "Show the 'What is the angle between..' questions");
+				});
 			ui.checkbox(&mut self.game_handler.is_scored_mode, "Play in scored mode?");
 			ui.add(
 				egui::Slider::new(&mut self.game_handler.no_of_questions, 1..=self.game_handler.possible_no_of_questions)

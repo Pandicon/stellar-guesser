@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use std::{f32::consts::PI};
 
 use crate::{caspr::CellestialSphere, markers::Marker};
 use eframe::epaint::Color32;
@@ -29,6 +29,10 @@ pub enum Question {
 		is_caldwell: bool,
 		is_ngc: bool,
 		is_ic: bool,
+	},
+	DistanceBetweenQuestion{
+		point1:(f32,f32),
+		point2:(f32,f32)
 	},
 	NoMoreQuestions,
 }
@@ -69,6 +73,7 @@ pub struct GameHandler {
 	pub show_object_questions: bool,
 	pub show_positions_questions: bool,
 	pub show_this_point_object_questions: bool,
+	pub show_distance_between_questions: bool,
 	pub no_of_questions: u32,
 	pub possible_no_of_questions: u32,
 	pub is_scored_mode: bool,
@@ -80,6 +85,8 @@ impl GameHandler {
 	pub fn init(cellestial_sphere: &mut CellestialSphere) -> Self {
 		let mut catalog: Vec<Question> = Vec::new();
 		catalog.push(Question::NoMoreQuestions);
+		let mut rng = rand::thread_rng();
+		catalog.push(Question::DistanceBetweenQuestion { point1: geometry::generate_random_point(&mut rng), point2: geometry::generate_random_point(&mut rng) });
 		for file in cellestial_sphere.deepskies.values() {
 			for deepsky in file {
 				let mut possible_names = Vec::new();
@@ -100,7 +107,7 @@ impl GameHandler {
 					possible_names.push(messier_name.to_owned());
 				}
 				if let Some(caldwell_number) = &deepsky.caldwell {
-					let caldwell_name = format!("C {}", caldwell_number);
+					let caldwell_name: String = format!("C {}", caldwell_number);
 					catalog.push(Question::ObjectQuestion {
 						name: caldwell_name.to_owned(),
 						ra: deepsky.ra,
@@ -151,9 +158,6 @@ impl GameHandler {
 				}
 			}
 		}
-
-		let current_question = rand::thread_rng().gen_range(0..catalog.len());
-
 		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
 		*entry = Vec::new();
 		cellestial_sphere.init_single_renderer("markers", "game");
@@ -176,6 +180,7 @@ impl GameHandler {
 			is_scored_mode: false,
 			score: 0,
 			possible_score: 0,
+			show_distance_between_questions:true,
 		}
 	}
 	pub fn evaluate_score(distance: f32) -> u32 {
@@ -239,6 +244,41 @@ impl GameHandler {
 				self.answer_review_text = format!("Your answer was: {}\nPossible answers: {}", self.answer, possible_names.join(", "));
 				self.possible_score += 1;
 			}
+			Question::DistanceBetweenQuestion { point1, point2 }=>{
+				let (ra1,dec1) = point1;
+				let (ra2,dec2) = point2;
+				let distance = geometry::angular_distance((ra1*PI/180.0,dec1*PI/180.0),(ra2*PI/180.0,dec2*PI/180.0))*180.0/PI;
+				let answer_dist:f32 = match self.answer.parse(){
+					Ok(answer) => {
+						self.answer_review_text_heading = format!("You were {:.1} degrees away!",distance-answer);
+						let error_percent = 1.0 - answer/distance;
+						self.answer_review_text = format!("The real distance was {:.1}°. Your error is equal to {:.1}% of the distance.",distance,error_percent*100.0);
+						answer
+					},
+					Err(_) => {
+						self.answer_review_text_heading = format!("You didn't guess");
+						self.answer_review_text = format!("The real distance was {:.1}°.",distance);
+
+						1.00
+					}
+
+				};
+				if self.is_scored_mode{
+					let error = 1.0-answer_dist/distance;
+					if error< 0.03 {
+						self.score+=3;
+					}
+					else if error<0.05{
+						self.score+=2;
+					}
+					else if error<0.1 {
+						self.score+=1;
+					}
+					self.possible_score+=3;
+				}
+				self.question_catalog.push(Question::DistanceBetweenQuestion { point1: geometry::generate_random_point(&mut rand::thread_rng()), point2: geometry::generate_random_point(&mut rand::thread_rng()) })
+
+			}
 			Question::NoMoreQuestions => {}
 		}
 		cellestial_sphere.init_single_renderer("markers", "game");
@@ -288,6 +328,11 @@ impl GameHandler {
 							possible_questions.push(question);
 						}
 					}
+					Question::DistanceBetweenQuestion { point1:_point1, point2:_point2 } => {
+						if(self.show_distance_between_questions){
+							possible_questions.push(question);
+						}
+					}
 					Question::NoMoreQuestions => {}
 				}
 			}
@@ -308,6 +353,13 @@ impl GameHandler {
 					*entry = vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)];
 					false
 				}
+				Question::DistanceBetweenQuestion { point1, point2 } =>{
+					let (ra1,dec1) = point1;
+					let (ra2,dec2) = point2;
+					*entry = vec![Marker::new(ra1,dec1,Color32::GREEN, 2.0, 5.0, false, false),Marker::new(ra2,dec2,Color32::GREEN, 2.0, 5.0, false, false)];
+					false 
+				}
+
 				Question::NoMoreQuestions => false,
 			};
 			cellestial_sphere.init_single_renderer("markers", "game");
@@ -325,6 +377,9 @@ impl GameHandler {
 			Question::ThisPointObject { .. } => {
 				return String::from("What is this object?");
 			}
+			Question::DistanceBetweenQuestion { .. } => {
+				return  String::from("What is the angular distance between these objects? ");
+			} 
 			Question::NoMoreQuestions => {
 				if self.is_scored_mode {
 					let percentage = (self.score as f32) / (self.possible_score as f32) * 100.0;
@@ -342,14 +397,14 @@ impl GameHandler {
 	pub fn should_display_input(&self) -> bool {
 		match &self.question_catalog[self.current_question] {
 			Question::ObjectQuestion { .. } | Question::NoMoreQuestions => false,
-			Question::PositionQuestion { .. } | Question::ThisPointObject { .. } => true,
+			Question::PositionQuestion { .. } | Question::ThisPointObject { .. } | Question::DistanceBetweenQuestion {..} => true,
 		}
 	}
 
 	pub fn no_more_questions(&self) -> bool {
 		match &self.question_catalog[self.current_question] {
 			Question::NoMoreQuestions => true,
-			Question::ObjectQuestion { .. } | Question::PositionQuestion { .. } | Question::ThisPointObject { .. } => false,
+			Question::ObjectQuestion { .. } | Question::PositionQuestion { .. } | Question::ThisPointObject { .. } | Question::DistanceBetweenQuestion { .. } => false,
 		}
 	}
 

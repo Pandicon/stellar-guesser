@@ -1,6 +1,8 @@
 use eframe::egui;
 use nalgebra::{Matrix3, Vector2, Vector3};
 use std::f32::consts::PI;
+use rand::{rngs::ThreadRng, Rng};
+
 
 use crate::caspr::CellestialSphere;
 
@@ -92,4 +94,8 @@ pub fn angular_distance(initial_position: (f32, f32), final_position: (f32, f32)
 	(b.cos() * c.cos() + b.sin() * c.sin() * (i_ra - f_ra).cos()).acos()
 
 	// (i_dec.cos() * f_dec.cos() + i_dec.sin() * i_dec.sin() * (i_ra - f_ra).cos()).acos()
+}
+pub fn generate_random_point(rng:&mut ThreadRng)->(f32,f32){
+	(rng.gen_range(0.0..360.0),rng.gen_range(-90.0..90.0))
+
 }

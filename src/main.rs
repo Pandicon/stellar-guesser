@@ -6,6 +6,8 @@ mod application;
 mod rendering;
 
 pub use application::Application;
+use eframe::{IconData};
+use std::fs::read;
 #[path = "./rendering/caspr/caspr.rs"]
 pub mod caspr;
 pub mod enums;
@@ -29,6 +31,7 @@ fn main() {
 		app_id: Some(PROJECT_NAME.to_string()),
 		maximized: true,
 		resizable: true,
+		icon_data:Some(IconData::try_from_png_bytes(&read("./ico.png").expect("File not found!")).expect("File not png!")),
 		..Default::default()
 	};
 
