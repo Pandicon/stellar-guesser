@@ -34,6 +34,14 @@ pub enum Question {
 		point1:(f32,f32),
 		point2:(f32,f32)
 	},
+	RAQuestion{
+		ra:f32,
+		dec:f32
+	},
+	DECQuestion{
+		ra:f32,
+		dec:f32
+	},
 	NoMoreQuestions,
 }
 
@@ -79,14 +87,13 @@ pub struct GameHandler {
 	pub is_scored_mode: bool,
 	pub score: u32,
 	possible_score: u32,
+	pub show_radecquestions:bool,
 }
 
 impl GameHandler {
 	pub fn init(cellestial_sphere: &mut CellestialSphere) -> Self {
 		let mut catalog: Vec<Question> = Vec::new();
 		catalog.push(Question::NoMoreQuestions);
-		let mut rng = rand::thread_rng();
-		catalog.push(Question::DistanceBetweenQuestion { point1: geometry::generate_random_point(&mut rng), point2: geometry::generate_random_point(&mut rng) });
 		for file in cellestial_sphere.deepskies.values() {
 			for deepsky in file {
 				let mut possible_names = Vec::new();
@@ -157,7 +164,17 @@ impl GameHandler {
 					});
 				}
 			}
+
 		}
+
+		let mut  rand = rand::thread_rng();
+		for i in 1..catalog.len(){
+			catalog.push(Question::DistanceBetweenQuestion { point1: geometry::generate_random_point(&mut rand), point2: geometry::generate_random_point(&mut rand) });
+			let (ra,dec) = geometry::generate_random_point(&mut rand);
+			if i%2==0 {catalog.push(Question::DECQuestion {ra,dec});}
+			else{catalog.push(Question::RAQuestion {ra,dec});}
+		}
+
 		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
 		*entry = Vec::new();
 		cellestial_sphere.init_single_renderer("markers", "game");
@@ -181,6 +198,7 @@ impl GameHandler {
 			score: 0,
 			possible_score: 0,
 			show_distance_between_questions:true,
+			show_radecquestions:true,
 		}
 	}
 	pub fn evaluate_score(distance: f32) -> u32 {
@@ -259,12 +277,13 @@ impl GameHandler {
 						self.answer_review_text_heading = format!("You didn't guess");
 						self.answer_review_text = format!("The real distance was {:.1}°.",distance);
 
-						1.00
+						0.0
 					}
 
 				};
 				if self.is_scored_mode{
-					let error = 1.0-answer_dist/distance;
+
+					let error = 1.0-(answer_dist/distance).abs();
 					if error< 0.03 {
 						self.score+=3;
 					}
@@ -276,9 +295,67 @@ impl GameHandler {
 					}
 					self.possible_score+=3;
 				}
-				self.question_catalog.push(Question::DistanceBetweenQuestion { point1: geometry::generate_random_point(&mut rand::thread_rng()), point2: geometry::generate_random_point(&mut rand::thread_rng()) })
+			},
+			Question::RAQuestion { ra,..} =>{
+				let answer_dist:f32 = match self.answer.parse(){
+					Ok(answer) => {
+						self.answer_review_text_heading = format!("You were {:.1}° away!",answer - ra);
 
-			}
+						self.answer_review_text = format!("The real right ascension was {:.1}°",ra);
+						answer
+					},
+					Err(_) => {
+						self.answer_review_text_heading = format!("You didn't guess");
+						self.answer_review_text = format!("The real right ascension was {:.1}°.",ra);
+
+						0.0
+					}
+				};
+				let error = (ra - answer_dist).abs();
+
+				if self.is_scored_mode{
+					if error< 3.0 {
+						self.score+=3;
+					}
+					else if error<5.0{
+						self.score+=2;
+					}
+					else if error<10.0 {
+						self.score+=1;
+					}
+					self.possible_score+=3;
+				}
+			},
+			Question::DECQuestion { dec,..} =>{
+				let answer_dist:f32 = match self.answer.parse(){
+					Ok(answer) => {
+						self.answer_review_text_heading = format!("You were {:.1}° away!",answer - dec);
+
+						self.answer_review_text = format!("The declination  was {:.1}°",dec);
+						answer
+					},
+					Err(_) => {
+						self.answer_review_text_heading = format!("You didn't guess");
+						self.answer_review_text = format!("The declination ascension was {:.1}°.",dec);
+
+						0.0
+					}
+				};
+				let error = (dec - answer_dist).abs();
+
+				if self.is_scored_mode{
+					if error< 3.0 {
+						self.score+=3;
+					}
+					else if error<5.0{
+						self.score+=2;
+					}
+					else if error<10.0 {
+						self.score+=1;
+					}
+					self.possible_score+=3;
+				}
+			},
 			Question::NoMoreQuestions => {}
 		}
 		cellestial_sphere.init_single_renderer("markers", "game");
@@ -329,10 +406,21 @@ impl GameHandler {
 						}
 					}
 					Question::DistanceBetweenQuestion { point1:_point1, point2:_point2 } => {
-						if(self.show_distance_between_questions){
+						if self.show_distance_between_questions{
 							possible_questions.push(question);
 						}
-					}
+
+					},
+					Question::DECQuestion { .. } => {
+						if self.show_radecquestions{
+							possible_questions.push(question);
+						}
+					},
+					Question::RAQuestion { .. } => {
+						if self.show_radecquestions{
+							possible_questions.push(question);
+						}
+					},
 					Question::NoMoreQuestions => {}
 				}
 			}
@@ -359,6 +447,15 @@ impl GameHandler {
 					*entry = vec![Marker::new(ra1,dec1,Color32::GREEN, 2.0, 5.0, false, false),Marker::new(ra2,dec2,Color32::GREEN, 2.0, 5.0, false, false)];
 					false 
 				}
+				Question::DECQuestion { ra, dec } => {
+					*entry = vec![Marker::new(ra, dec, Color32::GREEN, 2.0, 5.0, false, false)];
+					false
+				}
+				Question::RAQuestion { ra, dec } => {
+					*entry = vec![Marker::new(ra, dec, Color32::GREEN, 2.0, 5.0, false, false)];
+					false
+				}
+
 
 				Question::NoMoreQuestions => false,
 			};
@@ -391,20 +488,26 @@ impl GameHandler {
 					return String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return the questions you already went through by clicking 'Reset and next question'.");
 				}
 			}
+			Question::DECQuestion {..} => {
+				return String::from("What is the declination of this point?");
+			}
+			Question::RAQuestion {..} => {
+				return String::from("What is the right ascension of this point?");
+			}
 		}
 	}
 
 	pub fn should_display_input(&self) -> bool {
 		match &self.question_catalog[self.current_question] {
 			Question::ObjectQuestion { .. } | Question::NoMoreQuestions => false,
-			Question::PositionQuestion { .. } | Question::ThisPointObject { .. } | Question::DistanceBetweenQuestion {..} => true,
+			Question::PositionQuestion { .. } | Question::ThisPointObject { .. } | Question::DistanceBetweenQuestion {..} | Question::DECQuestion { .. } |Question::RAQuestion { .. } => true,
 		}
 	}
 
 	pub fn no_more_questions(&self) -> bool {
 		match &self.question_catalog[self.current_question] {
 			Question::NoMoreQuestions => true,
-			Question::ObjectQuestion { .. } | Question::PositionQuestion { .. } | Question::ThisPointObject { .. } | Question::DistanceBetweenQuestion { .. } => false,
+			Question::ObjectQuestion { .. } | Question::PositionQuestion { .. } | Question::ThisPointObject { .. } | Question::DistanceBetweenQuestion { .. } | Question::DECQuestion { .. } |Question::RAQuestion { .. }=> false,
 		}
 	}
 

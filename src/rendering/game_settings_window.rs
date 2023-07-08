@@ -33,6 +33,11 @@ impl Application {
 				.show(ui, |ui| {
 					ui.checkbox(&mut self.game_handler.show_distance_between_questions, "Show the 'What is the angle between..' questions");
 				});
+			egui::CollapsingHeader::new(egui::RichText::new("'What is the RA/DEC..' questions").text_style(egui::TextStyle::Heading).size(20.0))
+				.default_open(true)
+				.show(ui, |ui: &mut egui::Ui| {
+					ui.checkbox(&mut self.game_handler.show_radecquestions, "Show the 'What is the RA/DEC..' questions");
+				});
 			ui.checkbox(&mut self.game_handler.is_scored_mode, "Play in scored mode?");
 			ui.add(
 				egui::Slider::new(&mut self.game_handler.no_of_questions, 1..=self.game_handler.possible_no_of_questions)
