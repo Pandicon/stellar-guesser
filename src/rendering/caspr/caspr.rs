@@ -1,4 +1,7 @@
-use crate::{enums::LightPollution, structs::graphics_settings::GraphicsSettings};
+use crate::{
+	enums::LightPollution,
+	structs::{constellations::ConstellationData, graphics_settings::GraphicsSettings},
+};
 use eframe::{egui, epaint::Color32};
 use nalgebra::{Rotation3, Vector3};
 use std::{collections::HashMap, error::Error, fs};
@@ -8,6 +11,7 @@ const LINES_FOLDER: &str = "./sphere/lines";
 const MARKERS_FOLDER: &str = "./sphere/markers";
 const STARS_FOLDER: &str = "./sphere/stars";
 const STAR_NAMES_FOLDER: &str = "./sphere/named-stars";
+const CONSTELLATIONS_FILE: &str = "./data/constellations.csv";
 
 const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague), (4.2, 0.5, LightPollution::AverageVillage)];
 
@@ -42,6 +46,7 @@ pub struct CellestialSphere {
 	line_renderers: HashMap<String, Vec<LineRenderer>>,
 	deepsky_renderers: HashMap<String, Vec<DeepskyRenderer>>,
 	marker_renderers: HashMap<String, Vec<MarkerRenderer>>,
+	pub constellations: Vec<ConstellationData>,
 
 	pub mag_scale: f32,
 	pub mag_offset: f32,
@@ -305,6 +310,15 @@ impl CellestialSphere {
 			}
 		}
 
+		let mut constellations = Vec::new();
+		let file_data = fs::read_to_string(CONSTELLATIONS_FILE)?;
+		let mut reader = csv::Reader::from_reader(file_data.as_bytes());
+
+		for constellation in reader.deserialize() {
+			let constellation: ConstellationData = constellation?;
+			constellations.push(constellation);
+		}
+
 		let mut light_pollution_place_to_mag: HashMap<LightPollution, [f32; 2]> = HashMap::with_capacity(MAG_TO_LIGHT_POLLUTION_RAW.len());
 		for &(mag_offset, mag_scale, place) in &MAG_TO_LIGHT_POLLUTION_RAW {
 			light_pollution_place_to_mag.insert(place, [mag_offset, mag_scale]);
@@ -327,6 +341,8 @@ impl CellestialSphere {
 			line_renderers: HashMap::new(),
 			deepsky_renderers: HashMap::new(),
 			marker_renderers: HashMap::new(),
+			constellations,
+
 			mag_scale: 0.3,
 			mag_offset: 6.0,
 			light_pollution_place: LightPollution::Default,
