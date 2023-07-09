@@ -7,6 +7,7 @@ const DEEPSKIES_FOLDER: &str = "./sphere/deepsky";
 const LINES_FOLDER: &str = "./sphere/lines";
 const MARKERS_FOLDER: &str = "./sphere/markers";
 const STARS_FOLDER: &str = "./sphere/stars";
+const STAR_NAMES_FOLDER: &str = "./sphere/named-stars";
 
 const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague), (4.2, 0.5, LightPollution::AverageVillage)];
 
@@ -22,6 +23,8 @@ mod markers;
 use crate::markers::{Marker, MarkerRaw, MarkerRenderer};
 mod stars;
 use stars::{Star, StarRaw, StarRenderer};
+mod star_names;
+use star_names::{StarName,StarNameRaw};
 
 pub struct CellestialSphere {
 	pub stars: HashMap<String, Vec<Star>>,
@@ -32,6 +35,8 @@ pub struct CellestialSphere {
 	pub deepskies_categories_active: HashMap<String, bool>,
 	pub markers: HashMap<String, Vec<Marker>>,
 	pub markers_categories_active: HashMap<String, bool>,
+	pub star_names: HashMap<String, Vec<StarName>>,
+	pub star_names_categories_active: HashMap<String, bool>,
 	pub zoom: f32,
 	star_renderers: HashMap<String, Vec<StarRenderer>>,
 	line_renderers: HashMap<String, Vec<LineRenderer>>,
@@ -224,6 +229,46 @@ impl CellestialSphere {
 				}
 			}
 		}
+		let mut star_names:HashMap<String,Vec<StarName>>= HashMap::new();
+		let mut star_names_categories_active = HashMap::new();
+		let files: Result<fs::ReadDir, std::io::Error> = fs::read_dir(STAR_NAMES_FOLDER);
+		for file in (files?).flatten() {
+			let path = file.path();
+			let file_name = path.file_name();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_str();
+			if file_name.is_none() {
+				continue;
+			}
+			let file_name = file_name.unwrap().to_string();
+			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
+
+			for star_name_raw in reader?.deserialize() {
+				let star_name_raw: StarNameRaw = star_name_raw?;
+				let star_name = StarName::from_raw(star_name_raw);
+				match star_name {
+					Some(star_name) => {
+						let entry = star_names.entry(file_name.clone()).or_default();
+				entry.push(star_name);
+				if !star_names_categories_active.contains_key(&file_name) {
+					star_names_categories_active.insert(
+						file_name.clone(),
+						if let Some(storage) = storage {
+							storage.get_string(&format!("use_star_names_{}", file_name)).unwrap_or(String::from("true")) == *"true"
+						} else {
+							true
+						},
+					);
+				}
+					}
+				None => continue
+				}
+				
+			}
+		}
+		//TODO:Add linking between stars and their names
 
 		let mut markers: HashMap<String, Vec<Marker>> = HashMap::new();
 		let mut markers_categories_active = HashMap::new();
@@ -276,6 +321,8 @@ impl CellestialSphere {
 			deepskies_categories_active,
 			markers,
 			markers_categories_active,
+			star_names: star_names,
+			star_names_categories_active,
 			zoom: 1.0,
 			star_renderers: HashMap::new(),
 			line_renderers: HashMap::new(),

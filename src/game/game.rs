@@ -1,6 +1,7 @@
-use std::{f32::consts::PI};
+use std::{f32::consts::PI, mem::transmute_copy};
 
 use crate::{caspr::CellestialSphere, markers::Marker};
+use chrono::format::format;
 use eframe::epaint::Color32;
 use rand::Rng;
 
@@ -16,6 +17,9 @@ pub enum Question {
 		is_caldwell: bool,
 		is_ngc: bool,
 		is_ic: bool,
+		is_bayer:bool,
+		is_starname:bool,
+		magnitude:Option<f32>,
 	},
 	PositionQuestion {
 		ra: f32,
@@ -29,6 +33,9 @@ pub enum Question {
 		is_caldwell: bool,
 		is_ngc: bool,
 		is_ic: bool,
+		is_bayer:bool,
+		is_starname:bool,
+		magnitude:Option<f32>,
 	},
 	DistanceBetweenQuestion{
 		point1:(f32,f32),
@@ -50,6 +57,9 @@ pub struct QuestionSettings {
 	pub show_caldwells: bool,
 	pub show_ngcs: bool,
 	pub show_ics: bool,
+	pub show_bayer:bool,
+	pub show_starnames:bool,
+	pub magnitude_cutoff:f32,
 }
 
 impl Default for QuestionSettings {
@@ -59,6 +69,9 @@ impl Default for QuestionSettings {
 			show_caldwells: true,
 			show_ngcs: true,
 			show_ics: true,
+			show_bayer:true,
+			show_starnames:true,
+			magnitude_cutoff:6.0,
 		}
 	}
 }
@@ -110,6 +123,9 @@ impl GameHandler {
 						is_caldwell: false,
 						is_ngc: false,
 						is_ic: false,
+						is_bayer:false,
+						is_starname:false, 
+						magnitude:None,
 					});
 					possible_names.push(messier_name.to_owned());
 				}
@@ -123,6 +139,9 @@ impl GameHandler {
 						is_caldwell: true,
 						is_ngc: false,
 						is_ic: false,
+						is_bayer:false,
+						is_starname:false,
+						magnitude:None,
 					});
 					possible_names.push(caldwell_name.to_owned());
 				}
@@ -136,6 +155,9 @@ impl GameHandler {
 						is_caldwell: false,
 						is_ngc: true,
 						is_ic: false,
+						is_bayer:false,
+						is_starname:false,
+						magnitude:None,
 					});
 					possible_names.push(ngc_name.to_owned());
 				}
@@ -149,6 +171,9 @@ impl GameHandler {
 						is_caldwell: false,
 						is_ngc: false,
 						is_ic: true,
+						is_bayer:false,
+						is_starname:false,
+						magnitude:None,
 					});
 					possible_names.push(ic_name.to_owned());
 				}
@@ -161,10 +186,66 @@ impl GameHandler {
 						is_caldwell,
 						is_ngc,
 						is_ic,
+						is_bayer:false,
+						is_starname:false,
+						magnitude:None,
 					});
 				}
 			}
 
+		}
+		for file in cellestial_sphere.star_names.values() {
+			for starname in file{
+				let mut possible_names: Vec<String> = vec![starname.name.to_owned()];
+				catalog.push(Question::ObjectQuestion {
+					ra: starname.ra,
+					dec: starname.dec,
+					is_messier: false,
+					is_caldwell: false,
+					is_ngc: false,
+					is_ic: false,
+					is_bayer: false,
+					is_starname: true,
+					magnitude:Some(starname.mag),
+					name:starname.name.to_owned()
+				});
+				let is_bayer: bool = match &starname.id_greek{
+					Some(id) => {
+						let name = format!("{} {}",id,starname.con);
+						possible_names.push(name.to_owned());
+						match &starname.id{
+							Some(id) => {possible_names.push(format!("{} {}",id,starname.con))},
+							None => (),
+						}
+						catalog.push(Question::ObjectQuestion {
+							name,
+							ra: starname.ra,
+							dec: starname.dec,
+							is_messier: false,
+							is_caldwell: false,
+							is_ngc: false,
+							is_ic: false,
+							is_bayer: true,
+							is_starname: false,
+							magnitude: Some(starname.mag)
+						});
+						true
+					}
+					None => false
+				};
+				catalog.push(Question::ThisPointObject {
+					possible_names,
+					ra: starname.ra,
+					dec: starname.dec,
+					is_messier: false,
+					is_caldwell: false,
+					is_ngc: false,
+					is_ic: false,
+					is_bayer,
+					is_starname: true,
+					magnitude: Some(starname.mag), 
+				})
+			}
 		}
 
 		let mut  rand = rand::thread_rng();
@@ -175,9 +256,10 @@ impl GameHandler {
 			else{catalog.push(Question::RAQuestion {ra,dec});}
 		}
 
-		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
-		*entry = Vec::new();
-		cellestial_sphere.init_single_renderer("markers", "game");
+		// let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
+		// *entry = Vec::new();
+		// cellestial_sphere.init_single_renderer("markers", "game");
+
 		Self {
 			current_question: 0,
 			possible_no_of_questions: catalog.len() as u32,
@@ -218,7 +300,7 @@ impl GameHandler {
 		self.add_marker_on_click = false;
 		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
 		match &self.question_catalog[self.current_question] {
-			Question::ObjectQuestion { name, ra, dec, .. } => {
+			Question::ObjectQuestion { name, ra, dec,is_bayer,is_starname, .. } => {
 				self.possible_score += 3;
 				let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !entry.is_empty() {
 					let answer_dec = entry[0].dec;
@@ -231,17 +313,22 @@ impl GameHandler {
 						answer_dec.to_string(),
 						answer_ra.to_string(),
 						distance.to_string(),
-						format!("You were {} degrees away from {} !", (distance * 100.0).round() / 100.0, name),
+						if distance<0.5 {
+							String::from("Correct!")
+						}
+						else {
+							format!("You were {} degrees away from {} !", (distance * 100.0).round() / 100.0, name)
+						}
 					)
 				} else {
 					(String::from("-"), String::from("-"), String::from("-"), String::from("You didn't guess"))
 				};
 				self.answer_review_text_heading = answer_review_text_heading;
 				self.answer_review_text = format!(
-					"Your coordinates: [dec = {}; ra = {}]\nCorrect coordinates: [dec = {}; ra = {}]\nFully precise distance: {} degrees\nYou can see the correct place marked with a yellow cross.",
-					answer_dec_text, answer_ra_text, dec, ra, distance
+					"Your coordinates: [dec = {}; ra = {}]\nCorrect coordinates: [dec = {}; ra = {}]\nFully precise distance: {} degrees\nYou can see the correct place marked with a yellow {}.",
+					answer_dec_text, answer_ra_text, dec, ra, distance,if *is_bayer||*is_starname {"circle"}else{"cross"}
 				);
-				entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, false, false));
+				entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, *is_bayer||*is_starname, false));
 			}
 			Question::PositionQuestion { ra: _ra, dec: _dec, .. } => {
 				self.answer_review_text_heading = format!("");
@@ -373,13 +460,23 @@ impl GameHandler {
 						is_caldwell,
 						is_ngc,
 						is_ic,
+						is_bayer,
+						is_starname,
+						magnitude,
 						..
 					} => {
+						let mag = match magnitude {
+							Some(mag) => mag,
+							None => -1.0
+						};
 						if self.show_object_questions
 							&& ((self.object_question_settings.show_messiers && is_messier)
 								|| (self.object_question_settings.show_caldwells && is_caldwell)
 								|| (self.object_question_settings.show_ngcs && is_ngc)
-								|| (self.object_question_settings.show_ics && is_ic))
+								|| (self.object_question_settings.show_ics && is_ic)
+								|| (self.object_question_settings.show_bayer && is_bayer)
+								|| (self.object_question_settings.show_starnames && is_starname)) &&
+								(mag < self.object_question_settings.magnitude_cutoff)
 						{
 							possible_questions.push(question);
 						}
@@ -394,13 +491,23 @@ impl GameHandler {
 						is_caldwell,
 						is_ngc,
 						is_ic,
+						is_bayer,
+						is_starname,
+						magnitude,
 						..
 					} => {
+						let mag = match magnitude {
+							Some(mag) => mag,
+							None => -1.0
+						};
 						if self.show_this_point_object_questions
 							&& ((self.this_point_object_question_settings.show_messiers && is_messier)
 								|| (self.this_point_object_question_settings.show_caldwells && is_caldwell)
 								|| (self.this_point_object_question_settings.show_ngcs && is_ngc)
-								|| (self.this_point_object_question_settings.show_ics && is_ic))
+								|| (self.this_point_object_question_settings.show_ics && is_ic)
+								|| (self.this_point_object_question_settings.show_bayer && is_bayer)
+								|| (self.this_point_object_question_settings.show_starnames && is_starname))
+								&& (mag < self.this_point_object_question_settings.magnitude_cutoff)
 						{
 							possible_questions.push(question);
 						}
@@ -437,8 +544,12 @@ impl GameHandler {
 					*entry = Vec::new();
 					true
 				}
-				Question::PositionQuestion { ra, dec, .. } | Question::ThisPointObject { ra, dec, .. } => {
+				Question::PositionQuestion { ra, dec, .. } => {
 					*entry = vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)];
+					false
+				}
+				Question::ThisPointObject { ra, dec,is_bayer,is_starname, .. }  =>{
+					*entry = if is_bayer || is_starname {vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, true, false)]} else{ vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)]};
 					false
 				}
 				Question::DistanceBetweenQuestion { point1, point2 } =>{
@@ -475,7 +586,7 @@ impl GameHandler {
 				return String::from("What is this object?");
 			}
 			Question::DistanceBetweenQuestion { .. } => {
-				return  String::from("What is the angular distance between these objects? ");
+				return  String::from("What is the angular distance between these markers? ");
 			} 
 			Question::NoMoreQuestions => {
 				if self.is_scored_mode {
@@ -515,5 +626,18 @@ impl GameHandler {
 		self.used_questions = Vec::new();
 		self.score = 0;
 		self.possible_score = 0;
+	}
+	pub fn show_circle_marker(&self) -> bool{
+		match &self.question_catalog[self.current_question] {
+			Question::NoMoreQuestions| Question::PositionQuestion { .. }| Question::DistanceBetweenQuestion { .. } | Question::DECQuestion { .. } |Question::RAQuestion { .. } => false,
+			Question::ObjectQuestion { is_bayer,is_starname ,..}  | Question::ThisPointObject {is_bayer,is_starname,..} => {
+				if *is_bayer||*is_starname{
+					true
+				}
+				else {
+					false
+				}
+			},
+		}
 	}
 }

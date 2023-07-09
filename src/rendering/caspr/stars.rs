@@ -11,7 +11,7 @@ use geometry::get_point_vector;
 mod graphics;
 use graphics::parse_colour;
 
-use super::CellestialSphere;
+use super::{CellestialSphere, star_names::StarName};
 
 #[derive(Clone, Deserialize)]
 pub struct Star {
@@ -19,7 +19,8 @@ pub struct Star {
 	pub dec: f32,
 	pub vmag: f32,
 	pub colour: Color32,
-	pub name: Option<String>,
+	name_str: Option<String>,
+	pub name:Option<StarName>
 }
 
 #[derive(Clone, Deserialize)]
@@ -28,7 +29,8 @@ pub struct StarRaw {
 	pub dec: f32,
 	pub vmag: f32,
 	pub colour: Option<String>,
-	pub name: Option<String>,
+	pub name:Option<String>
+
 }
 
 impl Star {
@@ -43,7 +45,8 @@ impl Star {
 			dec: raw_star.dec,
 			vmag: raw_star.vmag,
 			colour,
-			name: raw_star.name,
+			name_str: raw_star.name,
+			name:None,
 		}
 	}
 }
