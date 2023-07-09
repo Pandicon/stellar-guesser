@@ -1,4 +1,4 @@
-use std::{f32::consts::PI};
+use std::{collections::HashMap, f32::consts::PI};
 
 use crate::{caspr::CellestialSphere, markers::Marker};
 use eframe::epaint::Color32;
@@ -16,9 +16,10 @@ pub enum Question {
 		is_caldwell: bool,
 		is_ngc: bool,
 		is_ic: bool,
-		is_bayer:bool,
-		is_starname:bool,
-		magnitude:Option<f32>,
+		is_bayer: bool,
+		is_starname: bool,
+		magnitude: Option<f32>,
+		constellation_abbreviation: String,
 	},
 	PositionQuestion {
 		ra: f32,
@@ -33,21 +34,22 @@ pub enum Question {
 		is_caldwell: bool,
 		is_ngc: bool,
 		is_ic: bool,
-		is_bayer:bool,
-		is_starname:bool,
-		magnitude:Option<f32>,
+		is_bayer: bool,
+		is_starname: bool,
+		magnitude: Option<f32>,
+		constellation_abbreviation: String,
 	},
-	DistanceBetweenQuestion{
-		point1:(f32,f32),
-		point2:(f32,f32)
+	DistanceBetweenQuestion {
+		point1: (f32, f32),
+		point2: (f32, f32),
 	},
-	RAQuestion{
-		ra:f32,
-		dec:f32
+	RAQuestion {
+		ra: f32,
+		dec: f32,
 	},
-	DECQuestion{
-		ra:f32,
-		dec:f32
+	DECQuestion {
+		ra: f32,
+		dec: f32,
 	},
 	NoMoreQuestions,
 }
@@ -57,9 +59,9 @@ pub struct QuestionSettings {
 	pub show_caldwells: bool,
 	pub show_ngcs: bool,
 	pub show_ics: bool,
-	pub show_bayer:bool,
-	pub show_starnames:bool,
-	pub magnitude_cutoff:f32,
+	pub show_bayer: bool,
+	pub show_starnames: bool,
+	pub magnitude_cutoff: f32,
 }
 
 impl Default for QuestionSettings {
@@ -69,9 +71,9 @@ impl Default for QuestionSettings {
 			show_caldwells: true,
 			show_ngcs: true,
 			show_ics: true,
-			show_bayer:true,
-			show_starnames:true,
-			magnitude_cutoff:6.0,
+			show_bayer: true,
+			show_starnames: true,
+			magnitude_cutoff: 6.0,
 		}
 	}
 }
@@ -100,11 +102,16 @@ pub struct GameHandler {
 	pub is_scored_mode: bool,
 	pub score: u32,
 	possible_score: u32,
-	pub show_radecquestions:bool,
+	pub show_radecquestions: bool,
+	pub active_constellations: HashMap<String, bool>,
 }
 
 impl GameHandler {
 	pub fn init(cellestial_sphere: &mut CellestialSphere) -> Self {
+		let mut active_constellations = HashMap::new();
+		for constellation in &cellestial_sphere.constellations {
+			active_constellations.insert(constellation.abbreviation.to_owned(), true); // TODO: Save and load from save file
+		}
 		let mut catalog: Vec<Question> = Vec::new();
 		catalog.push(Question::NoMoreQuestions);
 		for file in cellestial_sphere.deepskies.values() {
@@ -123,9 +130,10 @@ impl GameHandler {
 						is_caldwell: false,
 						is_ngc: false,
 						is_ic: false,
-						is_bayer:false,
-						is_starname:false, 
-						magnitude:None,
+						is_bayer: false,
+						is_starname: false,
+						magnitude: None,
+						constellation_abbreviation: deepsky.constellation.to_owned(),
 					});
 					possible_names.push(messier_name.to_owned());
 				}
@@ -139,9 +147,10 @@ impl GameHandler {
 						is_caldwell: true,
 						is_ngc: false,
 						is_ic: false,
-						is_bayer:false,
-						is_starname:false,
-						magnitude:None,
+						is_bayer: false,
+						is_starname: false,
+						magnitude: None,
+						constellation_abbreviation: deepsky.constellation.to_owned(),
 					});
 					possible_names.push(caldwell_name.to_owned());
 				}
@@ -155,9 +164,10 @@ impl GameHandler {
 						is_caldwell: false,
 						is_ngc: true,
 						is_ic: false,
-						is_bayer:false,
-						is_starname:false,
-						magnitude:None,
+						is_bayer: false,
+						is_starname: false,
+						magnitude: None,
+						constellation_abbreviation: deepsky.constellation.to_owned(),
 					});
 					possible_names.push(ngc_name.to_owned());
 				}
@@ -171,9 +181,10 @@ impl GameHandler {
 						is_caldwell: false,
 						is_ngc: false,
 						is_ic: true,
-						is_bayer:false,
-						is_starname:false,
-						magnitude:None,
+						is_bayer: false,
+						is_starname: false,
+						magnitude: None,
+						constellation_abbreviation: deepsky.constellation.to_owned(),
 					});
 					possible_names.push(ic_name.to_owned());
 				}
@@ -186,16 +197,16 @@ impl GameHandler {
 						is_caldwell,
 						is_ngc,
 						is_ic,
-						is_bayer:false,
-						is_starname:false,
-						magnitude:None,
+						is_bayer: false,
+						is_starname: false,
+						magnitude: None,
+						constellation_abbreviation: deepsky.constellation.to_owned(),
 					});
 				}
 			}
-
 		}
 		for file in cellestial_sphere.star_names.values() {
-			for starname in file{
+			for starname in file {
 				let mut possible_names: Vec<String> = vec![starname.name.to_owned()];
 				catalog.push(Question::ObjectQuestion {
 					ra: starname.ra,
@@ -206,15 +217,16 @@ impl GameHandler {
 					is_ic: false,
 					is_bayer: false,
 					is_starname: true,
-					magnitude:Some(starname.mag),
-					name:starname.name.to_owned()
+					magnitude: Some(starname.mag),
+					name: starname.name.to_owned(),
+					constellation_abbreviation: starname.con.to_owned(),
 				});
-				let is_bayer: bool = match &starname.id_greek{
+				let is_bayer: bool = match &starname.id_greek {
 					Some(id) => {
-						let name = format!("{} {}",id,starname.con);
+						let name = format!("{} {}", id, starname.con);
 						possible_names.push(name.to_owned());
-						match &starname.id{
-							Some(id) => {possible_names.push(format!("{} {}",id,starname.con))},
+						match &starname.id {
+							Some(id) => possible_names.push(format!("{} {}", id, starname.con)),
 							None => (),
 						}
 						catalog.push(Question::ObjectQuestion {
@@ -227,11 +239,12 @@ impl GameHandler {
 							is_ic: false,
 							is_bayer: true,
 							is_starname: false,
-							magnitude: Some(starname.mag)
+							magnitude: Some(starname.mag),
+							constellation_abbreviation: starname.con.to_owned(),
 						});
 						true
 					}
-					None => false
+					None => false,
 				};
 				catalog.push(Question::ThisPointObject {
 					possible_names,
@@ -243,14 +256,18 @@ impl GameHandler {
 					is_ic: false,
 					is_bayer,
 					is_starname: true,
-					magnitude: Some(starname.mag), 
+					magnitude: Some(starname.mag),
+					constellation_abbreviation: starname.con.to_owned(),
 				})
 			}
 		}
 
-		let mut  rand = rand::thread_rng();
-		for i in 1..catalog.len(){
-			catalog.push(Question::DistanceBetweenQuestion { point1: geometry::generate_random_point(&mut rand), point2: geometry::generate_random_point(&mut rand) });
+		let mut rand = rand::thread_rng();
+		for i in 1..catalog.len() {
+			catalog.push(Question::DistanceBetweenQuestion {
+				point1: geometry::generate_random_point(&mut rand),
+				point2: geometry::generate_random_point(&mut rand),
+			});
 			let (ra, dec) =  geometry::generate_random_point(&mut rand);
 			let abbrev = cellestial_sphere.determine_constellation((ra,dec));
 			println!("{},{},{}",ra,dec,abbrev);
@@ -262,9 +279,12 @@ impl GameHandler {
 			};
 			catalog.push(Question::PositionQuestion { ra, dec, possible_constellation_names});
 
-			let (ra,dec) = geometry::generate_random_point(&mut rand);
-			if i%2==0 {catalog.push(Question::DECQuestion {ra,dec});}
-			else{catalog.push(Question::RAQuestion {ra,dec});}
+			let (ra, dec) = geometry::generate_random_point(&mut rand);
+			if i % 2 == 0 {
+				catalog.push(Question::DECQuestion { ra, dec });
+			} else {
+				catalog.push(Question::RAQuestion { ra, dec });
+			}
 		}
 
 		// let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
@@ -290,8 +310,9 @@ impl GameHandler {
 			is_scored_mode: false,
 			score: 0,
 			possible_score: 0,
-			show_distance_between_questions:true,
-			show_radecquestions:true,
+			show_distance_between_questions: true,
+			show_radecquestions: true,
+			active_constellations,
 		}
 	}
 	pub fn evaluate_score(distance: f32) -> u32 {
@@ -311,7 +332,9 @@ impl GameHandler {
 		self.add_marker_on_click = false;
 		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
 		match &self.question_catalog[self.current_question] {
-			Question::ObjectQuestion { name, ra, dec,is_bayer,is_starname, .. } => {
+			Question::ObjectQuestion {
+				name, ra, dec, is_bayer, is_starname, ..
+			} => {
 				self.possible_score += 3;
 				let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !entry.is_empty() {
 					let answer_dec = entry[0].dec;
@@ -324,12 +347,11 @@ impl GameHandler {
 						answer_dec.to_string(),
 						answer_ra.to_string(),
 						distance.to_string(),
-						if distance<0.5 {
+						if distance < 0.5 {
 							String::from("Correct!")
-						}
-						else {
+						} else {
 							format!("You were {} degrees away from {} !", (distance * 100.0).round() / 100.0, name)
-						}
+						},
 					)
 				} else {
 					(String::from("-"), String::from("-"), String::from("-"), String::from("You didn't guess"))
@@ -337,9 +359,14 @@ impl GameHandler {
 				self.answer_review_text_heading = answer_review_text_heading;
 				self.answer_review_text = format!(
 					"Your coordinates: [dec = {}; ra = {}]\nCorrect coordinates: [dec = {}; ra = {}]\nFully precise distance: {} degrees\nYou can see the correct place marked with a yellow {}.",
-					answer_dec_text, answer_ra_text, dec, ra, distance,if *is_bayer||*is_starname {"circle"}else{"cross"}
+					answer_dec_text,
+					answer_ra_text,
+					dec,
+					ra,
+					distance,
+					if *is_bayer || *is_starname { "circle" } else { "cross" }
 				);
-				entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, *is_bayer||*is_starname, false));
+				entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, *is_bayer || *is_starname, false));
 			}
 			Question::PositionQuestion { possible_constellation_names,..} => {
 				let possible_names_edited = possible_constellation_names.iter().map(|name| name.replace(" ", "").to_lowercase()).collect::<Vec<String>>();
@@ -370,100 +397,92 @@ impl GameHandler {
 				self.answer_review_text = format!("Your answer was: {}\nPossible answers: {}", self.answer, possible_names.join(", "));
 				self.possible_score += 1;
 			}
-			Question::DistanceBetweenQuestion { point1, point2 }=>{
-				let (ra1,dec1) = point1;
-				let (ra2,dec2) = point2;
-				let distance = geometry::angular_distance((ra1*PI/180.0,dec1*PI/180.0),(ra2*PI/180.0,dec2*PI/180.0))*180.0/PI;
-				let answer_dist:f32 = match self.answer.parse(){
+			Question::DistanceBetweenQuestion { point1, point2 } => {
+				let (ra1, dec1) = point1;
+				let (ra2, dec2) = point2;
+				let distance = geometry::angular_distance((ra1 * PI / 180.0, dec1 * PI / 180.0), (ra2 * PI / 180.0, dec2 * PI / 180.0)) * 180.0 / PI;
+				let answer_dist: f32 = match self.answer.parse() {
 					Ok(answer) => {
-						self.answer_review_text_heading = format!("You were {:.1} degrees away!",distance-answer);
-						let error_percent = 1.0 - answer/distance;
-						self.answer_review_text = format!("The real distance was {:.1}°. Your error is equal to {:.1}% of the distance.",distance,error_percent*100.0);
+						self.answer_review_text_heading = format!("You were {:.1} degrees away!", distance - answer);
+						let error_percent = 1.0 - answer / distance;
+						self.answer_review_text = format!("The real distance was {:.1}°. Your error is equal to {:.1}% of the distance.", distance, error_percent * 100.0);
 						answer
-					},
+					}
 					Err(_) => {
 						self.answer_review_text_heading = format!("You didn't guess");
-						self.answer_review_text = format!("The real distance was {:.1}°.",distance);
+						self.answer_review_text = format!("The real distance was {:.1}°.", distance);
 
 						0.0
 					}
-
 				};
-				if self.is_scored_mode{
-
-					let error = 1.0-(answer_dist/distance).abs();
-					if error< 0.03 {
-						self.score+=3;
+				if self.is_scored_mode {
+					let error = 1.0 - (answer_dist / distance).abs();
+					if error < 0.03 {
+						self.score += 3;
+					} else if error < 0.05 {
+						self.score += 2;
+					} else if error < 0.1 {
+						self.score += 1;
 					}
-					else if error<0.05{
-						self.score+=2;
-					}
-					else if error<0.1 {
-						self.score+=1;
-					}
-					self.possible_score+=3;
+					self.possible_score += 3;
 				}
-			},
-			Question::RAQuestion { ra,..} =>{
-				let answer_dist:f32 = match self.answer.parse(){
+			}
+			Question::RAQuestion { ra, .. } => {
+				let answer_dist: f32 = match self.answer.parse() {
 					Ok(answer) => {
-						self.answer_review_text_heading = format!("You were {:.1}° away!",answer - ra);
+						self.answer_review_text_heading = format!("You were {:.1}° away!", answer - ra);
 
-						self.answer_review_text = format!("The real right ascension was {:.1}°",ra);
+						self.answer_review_text = format!("The real right ascension was {:.1}°", ra);
 						answer
-					},
+					}
 					Err(_) => {
 						self.answer_review_text_heading = format!("You didn't guess");
-						self.answer_review_text = format!("The real right ascension was {:.1}°.",ra);
+						self.answer_review_text = format!("The real right ascension was {:.1}°.", ra);
 
 						0.0
 					}
 				};
 				let error = (ra - answer_dist).abs();
 
-				if self.is_scored_mode{
-					if error< 3.0 {
-						self.score+=3;
+				if self.is_scored_mode {
+					if error < 3.0 {
+						self.score += 3;
+					} else if error < 5.0 {
+						self.score += 2;
+					} else if error < 10.0 {
+						self.score += 1;
 					}
-					else if error<5.0{
-						self.score+=2;
-					}
-					else if error<10.0 {
-						self.score+=1;
-					}
-					self.possible_score+=3;
+					self.possible_score += 3;
 				}
-			},
-			Question::DECQuestion { dec,..} =>{
-				let answer_dist:f32 = match self.answer.parse(){
+			}
+			Question::DECQuestion { dec, .. } => {
+				let answer_dist: f32 = match self.answer.parse() {
 					Ok(answer) => {
-						self.answer_review_text_heading = format!("You were {:.1}° away!",answer - dec);
+						self.answer_review_text_heading = format!("You were {:.1}° away!", answer - dec);
 
-						self.answer_review_text = format!("The declination  was {:.1}°",dec);
+						self.answer_review_text = format!("The declination  was {:.1}°", dec);
 						answer
-					},
+					}
 					Err(_) => {
 						self.answer_review_text_heading = format!("You didn't guess");
-						self.answer_review_text = format!("The declination ascension was {:.1}°.",dec);
+						self.answer_review_text = format!("The declination ascension was {:.1}°.", dec);
 
 						0.0
 					}
 				};
 				let error = (dec - answer_dist).abs();
 
-				if self.is_scored_mode{
-					if error< 3.0 {
-						self.score+=3;
+				if self.is_scored_mode {
+					if error < 3.0 {
+						self.score += 3;
+					} else if error < 5.0 {
+						self.score += 2;
+					} else if error < 10.0 {
+						self.score += 1;
 					}
-					else if error<5.0{
-						self.score+=2;
-					}
-					else if error<10.0 {
-						self.score+=1;
-					}
-					self.possible_score+=3;
+					self.possible_score += 3;
 				}
-			},
+			}
 			Question::NoMoreQuestions => {}
 		}
 		cellestial_sphere.init_single_renderer("markers", "game");
@@ -475,7 +494,7 @@ impl GameHandler {
 		let mut possible_questions: Vec<usize> = Vec::new();
 		for question in 0..self.question_catalog.len() {
 			if !self.used_questions.contains(&question) {
-				match self.question_catalog[question] {
+				match &self.question_catalog[question] {
 					Question::ObjectQuestion {
 						is_messier,
 						is_caldwell,
@@ -484,20 +503,22 @@ impl GameHandler {
 						is_bayer,
 						is_starname,
 						magnitude,
+						constellation_abbreviation,
 						..
 					} => {
-						let mag = match magnitude {
+						let mag = match *magnitude {
 							Some(mag) => mag,
-							None => -1.0
+							None => -1.0,
 						};
 						if self.show_object_questions
-							&& ((self.object_question_settings.show_messiers && is_messier)
-								|| (self.object_question_settings.show_caldwells && is_caldwell)
-								|| (self.object_question_settings.show_ngcs && is_ngc)
-								|| (self.object_question_settings.show_ics && is_ic)
-								|| (self.object_question_settings.show_bayer && is_bayer)
-								|| (self.object_question_settings.show_starnames && is_starname)) &&
-								(mag < self.object_question_settings.magnitude_cutoff)
+							&& ((self.object_question_settings.show_messiers && *is_messier)
+								|| (self.object_question_settings.show_caldwells && *is_caldwell)
+								|| (self.object_question_settings.show_ngcs && *is_ngc)
+								|| (self.object_question_settings.show_ics && *is_ic)
+								|| (self.object_question_settings.show_bayer && *is_bayer)
+								|| (self.object_question_settings.show_starnames && *is_starname))
+							&& (mag < self.object_question_settings.magnitude_cutoff)
+							&& *self.active_constellations.entry(constellation_abbreviation.clone()).or_insert(true)
 						{
 							possible_questions.push(question);
 						}
@@ -515,40 +536,41 @@ impl GameHandler {
 						is_bayer,
 						is_starname,
 						magnitude,
+						constellation_abbreviation,
 						..
 					} => {
-						let mag = match magnitude {
+						let mag = match *magnitude {
 							Some(mag) => mag,
-							None => -1.0
+							None => -1.0,
 						};
 						if self.show_this_point_object_questions
-							&& ((self.this_point_object_question_settings.show_messiers && is_messier)
-								|| (self.this_point_object_question_settings.show_caldwells && is_caldwell)
-								|| (self.this_point_object_question_settings.show_ngcs && is_ngc)
-								|| (self.this_point_object_question_settings.show_ics && is_ic)
-								|| (self.this_point_object_question_settings.show_bayer && is_bayer)
-								|| (self.this_point_object_question_settings.show_starnames && is_starname))
-								&& (mag < self.this_point_object_question_settings.magnitude_cutoff)
+							&& ((self.this_point_object_question_settings.show_messiers && *is_messier)
+								|| (self.this_point_object_question_settings.show_caldwells && *is_caldwell)
+								|| (self.this_point_object_question_settings.show_ngcs && *is_ngc)
+								|| (self.this_point_object_question_settings.show_ics && *is_ic)
+								|| (self.this_point_object_question_settings.show_bayer && *is_bayer)
+								|| (self.this_point_object_question_settings.show_starnames && *is_starname))
+							&& (mag < self.this_point_object_question_settings.magnitude_cutoff)
+							&& *self.active_constellations.entry(constellation_abbreviation.clone()).or_insert(true)
 						{
 							possible_questions.push(question);
 						}
 					}
-					Question::DistanceBetweenQuestion { point1:_point1, point2:_point2 } => {
-						if self.show_distance_between_questions{
+					Question::DistanceBetweenQuestion { point1: _point1, point2: _point2 } => {
+						if self.show_distance_between_questions {
 							possible_questions.push(question);
 						}
-
-					},
+					}
 					Question::DECQuestion { .. } => {
-						if self.show_radecquestions{
+						if self.show_radecquestions {
 							possible_questions.push(question);
 						}
-					},
+					}
 					Question::RAQuestion { .. } => {
-						if self.show_radecquestions{
+						if self.show_radecquestions {
 							possible_questions.push(question);
 						}
-					},
+					}
 					Question::NoMoreQuestions => {}
 				}
 			}
@@ -569,15 +591,22 @@ impl GameHandler {
 					*entry = vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)];
 					false
 				}
-				Question::ThisPointObject { ra, dec,is_bayer,is_starname, .. }  =>{
-					*entry = if is_bayer || is_starname {vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, true, false)]} else{ vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)]};
+				Question::ThisPointObject { ra, dec, is_bayer, is_starname, .. } => {
+					*entry = if is_bayer || is_starname {
+						vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, true, false)]
+					} else {
+						vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)]
+					};
 					false
 				}
-				Question::DistanceBetweenQuestion { point1, point2 } =>{
-					let (ra1,dec1) = point1;
-					let (ra2,dec2) = point2;
-					*entry = vec![Marker::new(ra1,dec1,Color32::GREEN, 2.0, 5.0, false, false),Marker::new(ra2,dec2,Color32::GREEN, 2.0, 5.0, false, false)];
-					false 
+				Question::DistanceBetweenQuestion { point1, point2 } => {
+					let (ra1, dec1) = point1;
+					let (ra2, dec2) = point2;
+					*entry = vec![
+						Marker::new(ra1, dec1, Color32::GREEN, 2.0, 5.0, false, false),
+						Marker::new(ra2, dec2, Color32::GREEN, 2.0, 5.0, false, false),
+					];
+					false
 				}
 				Question::DECQuestion { ra, dec } => {
 					*entry = vec![Marker::new(ra, dec, Color32::GREEN, 2.0, 5.0, false, false)];
@@ -587,7 +616,6 @@ impl GameHandler {
 					*entry = vec![Marker::new(ra, dec, Color32::GREEN, 2.0, 5.0, false, false)];
 					false
 				}
-
 
 				Question::NoMoreQuestions => false,
 			};
@@ -607,8 +635,8 @@ impl GameHandler {
 				return String::from("What is this object?");
 			}
 			Question::DistanceBetweenQuestion { .. } => {
-				return  String::from("What is the angular distance between these markers? ");
-			} 
+				return String::from("What is the angular distance between these markers? ");
+			}
 			Question::NoMoreQuestions => {
 				if self.is_scored_mode {
 					let percentage = (self.score as f32) / (self.possible_score as f32) * 100.0;
@@ -620,10 +648,10 @@ impl GameHandler {
 					return String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return the questions you already went through by clicking 'Reset and next question'.");
 				}
 			}
-			Question::DECQuestion {..} => {
+			Question::DECQuestion { .. } => {
 				return String::from("What is the declination of this point?");
 			}
-			Question::RAQuestion {..} => {
+			Question::RAQuestion { .. } => {
 				return String::from("What is the right ascension of this point?");
 			}
 		}
@@ -632,14 +660,19 @@ impl GameHandler {
 	pub fn should_display_input(&self) -> bool {
 		match &self.question_catalog[self.current_question] {
 			Question::ObjectQuestion { .. } | Question::NoMoreQuestions => false,
-			Question::PositionQuestion { .. } | Question::ThisPointObject { .. } | Question::DistanceBetweenQuestion {..} | Question::DECQuestion { .. } |Question::RAQuestion { .. } => true,
+			Question::PositionQuestion { .. } | Question::ThisPointObject { .. } | Question::DistanceBetweenQuestion { .. } | Question::DECQuestion { .. } | Question::RAQuestion { .. } => true,
 		}
 	}
 
 	pub fn no_more_questions(&self) -> bool {
 		match &self.question_catalog[self.current_question] {
 			Question::NoMoreQuestions => true,
-			Question::ObjectQuestion { .. } | Question::PositionQuestion { .. } | Question::ThisPointObject { .. } | Question::DistanceBetweenQuestion { .. } | Question::DECQuestion { .. } |Question::RAQuestion { .. }=> false,
+			Question::ObjectQuestion { .. }
+			| Question::PositionQuestion { .. }
+			| Question::ThisPointObject { .. }
+			| Question::DistanceBetweenQuestion { .. }
+			| Question::DECQuestion { .. }
+			| Question::RAQuestion { .. } => false,
 		}
 	}
 
@@ -648,17 +681,16 @@ impl GameHandler {
 		self.score = 0;
 		self.possible_score = 0;
 	}
-	pub fn show_circle_marker(&self) -> bool{
+	pub fn show_circle_marker(&self) -> bool {
 		match &self.question_catalog[self.current_question] {
-			Question::NoMoreQuestions| Question::PositionQuestion { .. }| Question::DistanceBetweenQuestion { .. } | Question::DECQuestion { .. } |Question::RAQuestion { .. } => false,
-			Question::ObjectQuestion { is_bayer,is_starname ,..}  | Question::ThisPointObject {is_bayer,is_starname,..} => {
-				if *is_bayer||*is_starname{
+			Question::NoMoreQuestions | Question::PositionQuestion { .. } | Question::DistanceBetweenQuestion { .. } | Question::DECQuestion { .. } | Question::RAQuestion { .. } => false,
+			Question::ObjectQuestion { is_bayer, is_starname, .. } | Question::ThisPointObject { is_bayer, is_starname, .. } => {
+				if *is_bayer || *is_starname {
 					true
-				}
-				else {
+				} else {
 					false
 				}
-			},
+			}
 		}
 	}
 }

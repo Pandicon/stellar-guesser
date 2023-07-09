@@ -1,4 +1,7 @@
-use crate::{enums::LightPollution, structs::graphics_settings::GraphicsSettings};
+use crate::{
+	enums::LightPollution,
+	structs::{constellations::ConstellationData, graphics_settings::GraphicsSettings},
+};
 use eframe::{egui, epaint::Color32};
 use nalgebra::{Rotation3, Vector3};
 use std::{collections::HashMap, error::Error, fs};
@@ -52,6 +55,7 @@ pub struct CellestialSphere {
 	line_renderers: HashMap<String, Vec<LineRenderer>>,
 	deepsky_renderers: HashMap<String, Vec<DeepskyRenderer>>,
 	marker_renderers: HashMap<String, Vec<MarkerRenderer>>,
+	pub constellations: Vec<ConstellationData>,
 
 	pub mag_scale: f32,
 	pub mag_offset: f32,
@@ -358,6 +362,8 @@ impl CellestialSphere {
 			line_renderers: HashMap::new(),
 			deepsky_renderers: HashMap::new(),
 			marker_renderers: HashMap::new(),
+			constellations,
+
 			mag_scale: 0.3,
 			mag_offset: 6.0,
 			light_pollution_place: LightPollution::Default,
