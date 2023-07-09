@@ -38,7 +38,7 @@ impl Application {
 				}
 			}
 		}
-		self.cellestial_sphere.zoom(self.input.zoom / 500.0);
+		self.cellestial_sphere.zoom(self.input.zoom);
 
 		let pointer_position: Pos2;
 
@@ -153,11 +153,15 @@ impl Input {
 		self.zoom = 0.0;
 		for event in &input_events {
 			match event {
-				/*egui::Event::Zoom(zoom) => {
-
-				}*/
+				egui::Event::Zoom(zoom) => {
+					if *zoom > 1.0 {
+						self.zoom = 0.2;
+					} else if *zoom < 1.0 {
+						self.zoom = -0.2;
+					}
+				}
 				egui::Event::Scroll(egui::Vec2 { y, .. }) => {
-					self.zoom = *y;
+					self.zoom = *y / 500.0;
 				}
 				// Press of Shift + UpArrow
 				egui::Event::Key {
