@@ -24,7 +24,7 @@ use crate::markers::{Marker, MarkerRaw, MarkerRenderer};
 mod stars;
 use stars::{Star, StarRaw, StarRenderer};
 mod star_names;
-use star_names::{StarName,StarNameRaw};
+use star_names::{StarName, StarNameRaw};
 
 pub struct CellestialSphere {
 	pub stars: HashMap<String, Vec<Star>>,
@@ -229,7 +229,7 @@ impl CellestialSphere {
 				}
 			}
 		}
-		let mut star_names:HashMap<String,Vec<StarName>>= HashMap::new();
+		let mut star_names: HashMap<String, Vec<StarName>> = HashMap::new();
 		let mut star_names_categories_active = HashMap::new();
 		let files: Result<fs::ReadDir, std::io::Error> = fs::read_dir(STAR_NAMES_FOLDER);
 		for file in (files?).flatten() {
@@ -251,21 +251,20 @@ impl CellestialSphere {
 				match star_name {
 					Some(star_name) => {
 						let entry = star_names.entry(file_name.clone()).or_default();
-				entry.push(star_name);
-				if !star_names_categories_active.contains_key(&file_name) {
-					star_names_categories_active.insert(
-						file_name.clone(),
-						if let Some(storage) = storage {
-							storage.get_string(&format!("use_star_names_{}", file_name)).unwrap_or(String::from("true")) == *"true"
-						} else {
-							true
-						},
-					);
-				}
+						entry.push(star_name);
+						if !star_names_categories_active.contains_key(&file_name) {
+							star_names_categories_active.insert(
+								file_name.clone(),
+								if let Some(storage) = storage {
+									storage.get_string(&format!("use_star_names_{}", file_name)).unwrap_or(String::from("true")) == *"true"
+								} else {
+									true
+								},
+							);
+						}
 					}
-				None => continue
+					None => continue,
 				}
-				
 			}
 		}
 		//TODO:Add linking between stars and their names

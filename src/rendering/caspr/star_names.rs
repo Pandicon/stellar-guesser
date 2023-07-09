@@ -1,67 +1,63 @@
 use serde::Deserialize;
 
-
-
 #[derive(Clone, Deserialize)]
 pub struct StarName {
-    pub ra:f32,
-    pub dec:f32,
-    pub mag:f32,
+	pub ra: f32,
+	pub dec: f32,
+	pub mag: f32,
 	pub name: String,
-    pub con:String,
-    pub id:Option<String>,
-    pub id_greek:Option<String>,
-    pub hip:f32,
+	pub con: String,
+	pub id: Option<String>,
+	pub id_greek: Option<String>,
+	pub hip: f32,
 }
 
 #[derive(Clone, Deserialize)]
 pub struct StarNameRaw {
-    name_ascii:String,
-    name_diacritics:String,
-    designation:String,
-    id:Option<String>,
-    id_greek:Option<String>,
-    con:String,
-    num:Option<String>,
-    wsd_j:Option<String>,
-    mag:Option<f32>,
-    bnd:Option<String>,
-    hip:Option<String>,
-    hd:Option<String>,
-    ra:f32,
-    dec:f32,
-    date:String,
+	name_ascii: String,
+	name_diacritics: String,
+	designation: String,
+	id: Option<String>,
+	id_greek: Option<String>,
+	con: String,
+	num: Option<String>,
+	wsd_j: Option<String>,
+	mag: Option<f32>,
+	bnd: Option<String>,
+	hip: Option<String>,
+	hd: Option<String>,
+	ra: f32,
+	dec: f32,
+	date: String,
 }
 
 impl StarName {
-
 	pub fn from_raw(raw_star: StarNameRaw) -> Option<Self> {
-    match raw_star.hip{
-        Some(hipstr) => {
-            let hip = hipstr.parse().expect("Invalid HIP number!");
-            match raw_star.mag{
-                Some(mag)=> {
-                    if mag <6.0{ //We cannot see it so guessing it would be stupid. 
-                        return Some(Self {
-                            ra:raw_star.ra,
-                            dec:raw_star.dec,
-                            name: raw_star.name_diacritics,
-                            con:raw_star.con,
-                            id:raw_star.id,
-                            id_greek:raw_star.id_greek,
-                            hip:hip,
-                            mag
-                        });
-                    }
-                    else {None}
-                }
-                None => None
-            }
-
-        }
-        None => {
-            None
-        }
-    }
+		match raw_star.hip {
+			Some(hipstr) => {
+				let hip = hipstr.parse().expect("Invalid HIP number!");
+				match raw_star.mag {
+					Some(mag) => {
+						if mag < 6.0 {
+							//We cannot see it so guessing it would be stupid.
+							return Some(Self {
+								ra: raw_star.ra,
+								dec: raw_star.dec,
+								name: raw_star.name_diacritics,
+								con: raw_star.con,
+								id: raw_star.id,
+								id_greek: raw_star.id_greek,
+								hip: hip,
+								mag,
+							});
+						} else {
+							None
+						}
+					}
+					None => None,
+				}
+			}
+			None => None,
+		}
 	}
 }
