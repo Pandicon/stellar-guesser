@@ -110,7 +110,7 @@ impl GameHandler {
 	pub fn init(cellestial_sphere: &mut CellestialSphere) -> Self {
 		let mut active_constellations = HashMap::new();
 		for constellation in &cellestial_sphere.constellations {
-			active_constellations.insert(constellation.abbreviation.to_owned(), true); // TODO: Save and load from save file
+			active_constellations.insert(constellation.0.to_owned(), true); // TODO: Save and load from save file
 		}
 		let mut catalog: Vec<Question> = Vec::new();
 		catalog.push(Question::NoMoreQuestions);
@@ -270,7 +270,6 @@ impl GameHandler {
 			});
 			let (ra, dec) =  geometry::generate_random_point(&mut rand);
 			let abbrev = cellestial_sphere.determine_constellation((ra,dec));
-			println!("{},{},{}",ra,dec,abbrev);
 			let possible_constellation_names = match cellestial_sphere.constellations.get(&abbrev){
 				None => vec![String::from("Undefined")],
 				Some(constellation) => {
@@ -629,7 +628,7 @@ impl GameHandler {
 				return String::from(format!("Find {}.", name));
 			}
 			Question::PositionQuestion {..} => {
-				return String::from("In what constellation does this point lie?");
+				return String::from("What constellation does this point lie in?");
 			}
 			Question::ThisPointObject { .. } => {
 				return String::from("What is this object?");

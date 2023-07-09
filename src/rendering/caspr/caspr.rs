@@ -36,6 +36,8 @@ use constellation::Constellation;
 
 use self::constellation::{ConstellationRaw, BorderVertex};
 
+const MERIDIAN_CONSTELLATIONS:[&str;10] =["cep","cas","and","peg","pis","cet","scl","phe", "tuc", "oct"];
+
 
 
 pub struct CellestialSphere {
@@ -55,7 +57,6 @@ pub struct CellestialSphere {
 	line_renderers: HashMap<String, Vec<LineRenderer>>,
 	deepsky_renderers: HashMap<String, Vec<DeepskyRenderer>>,
 	marker_renderers: HashMap<String, Vec<MarkerRenderer>>,
-	pub constellations: Vec<ConstellationData>,
 
 	pub mag_scale: f32,
 	pub mag_offset: f32,
@@ -362,7 +363,6 @@ impl CellestialSphere {
 			line_renderers: HashMap::new(),
 			deepsky_renderers: HashMap::new(),
 			marker_renderers: HashMap::new(),
-			constellations,
 
 			mag_scale: 0.3,
 			mag_offset: 6.0,
@@ -522,8 +522,9 @@ impl CellestialSphere {
 		let mut in_constellation = String::new();
 		for constellation in &self.constellations{
 			let (abbreviation,constellation) = constellation; 
-			if is_inside_polygon(constellation.vertices.to_owned(),point, abbreviation=="PIS"){
+			if is_inside_polygon(constellation.vertices.to_owned(),point, MERIDIAN_CONSTELLATIONS.contains(&abbreviation.as_str()) ){
 				in_constellation = abbreviation.to_owned();
+				println!("{}",in_constellation);
 			}
 		}
 		in_constellation
