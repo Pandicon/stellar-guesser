@@ -8,12 +8,14 @@ const LINES_FOLDER: &str = "./sphere/lines";
 const MARKERS_FOLDER: &str = "./sphere/markers";
 const STARS_FOLDER: &str = "./sphere/stars";
 const STAR_NAMES_FOLDER: &str = "./sphere/named-stars";
+const CONSTELLATION_VERTICES:&str = "./data/constellation_vertices.csv";
+const CONSTELLATION_NAMES:&str = "./data/constellations.csv";
 
 const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague), (4.2, 0.5, LightPollution::AverageVillage)];
 
 #[path = "../../geometry.rs"]
 mod geometry;
-use geometry::{cartesian_to_spherical, cast_onto_sphere, project_point};
+use geometry::{cartesian_to_spherical, cast_onto_sphere, project_point,is_inside_polygon};
 
 mod deepsky;
 use deepsky::{Deepsky, DeepskyRaw, DeepskyRenderer};
@@ -26,6 +28,13 @@ use stars::{Star, StarRaw, StarRenderer};
 mod star_names;
 use star_names::{StarName, StarNameRaw};
 
+mod constellation;
+use constellation::Constellation;
+
+use self::constellation::{ConstellationRaw, BorderVertex};
+
+
+
 pub struct CellestialSphere {
 	pub stars: HashMap<String, Vec<Star>>,
 	pub stars_categories_active: HashMap<String, bool>,
@@ -36,6 +45,7 @@ pub struct CellestialSphere {
 	pub markers: HashMap<String, Vec<Marker>>,
 	pub markers_categories_active: HashMap<String, bool>,
 	pub star_names: HashMap<String, Vec<StarName>>,
+	pub constellations: HashMap<String,Constellation>,
 	pub star_names_categories_active: HashMap<String, bool>,
 	pub zoom: f32,
 	star_renderers: HashMap<String, Vec<StarRenderer>>,
@@ -304,6 +314,26 @@ impl CellestialSphere {
 				}
 			}
 		}
+		let mut constellations = HashMap::new();
+		let reader = csv::Reader::from_path(CONSTELLATION_NAMES);
+		for constellation_raw in reader?.deserialize(){
+			let constellation_raw:ConstellationRaw = constellation_raw?;
+			let (constellation,abbreviation) = Constellation::from_raw(constellation_raw);
+			constellations.insert(abbreviation.to_lowercase(),constellation);
+		}
+		let reader = csv::Reader::from_path(CONSTELLATION_VERTICES);
+		for constellation_vertex in reader?.deserialize(){
+			let constellation_vertex:BorderVertex = constellation_vertex?;
+			match constellations.get_mut(&constellation_vertex.constellation.to_lowercase()){
+				Some(constellation) => {
+					let position = constellation_vertex.get_position();
+					constellation.vertices.push(position);
+				}
+				None => {
+					println!("FUCK");
+				}
+			}
+		}
 
 		let mut light_pollution_place_to_mag: HashMap<LightPollution, [f32; 2]> = HashMap::with_capacity(MAG_TO_LIGHT_POLLUTION_RAW.len());
 		for &(mag_offset, mag_scale, place) in &MAG_TO_LIGHT_POLLUTION_RAW {
@@ -322,6 +352,7 @@ impl CellestialSphere {
 			markers_categories_active,
 			star_names: star_names,
 			star_names_categories_active,
+			constellations,
 			zoom: 1.0,
 			star_renderers: HashMap::new(),
 			line_renderers: HashMap::new(),
@@ -480,5 +511,15 @@ impl CellestialSphere {
 	}
 	pub fn to_equatorial_coordinates(vector: Vector3<f32>) -> (f32, f32) {
 		cartesian_to_spherical(vector)
+	}
+	pub fn determine_constellation(&self,point:(f32,f32))->String{
+		let mut in_constellation = String::new();
+		for constellation in &self.constellations{
+			let (abbreviation,constellation) = constellation; 
+			if is_inside_polygon(constellation.vertices.to_owned(),point, abbreviation=="PIS"){
+				in_constellation = abbreviation.to_owned();
+			}
+		}
+		in_constellation
 	}
 }

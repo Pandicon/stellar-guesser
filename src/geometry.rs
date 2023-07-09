@@ -6,6 +6,8 @@ use rand::{rngs::ThreadRng, Rng};
 
 use crate::caspr::CellestialSphere;
 
+const POLYGONLIMIT:f32 = 180.0; 
+
 pub fn is_in_rect<T: PartialOrd>(point: [T; 2], rect: [[T; 2]; 2]) -> bool {
 	let [upper_left, bottom_right] = rect;
 	point[0] >= upper_left[0] && point[0] <= bottom_right[0] && point[1] >= upper_left[1] && point[1] <= bottom_right[1]
@@ -99,3 +101,30 @@ pub fn generate_random_point(rng:&mut ThreadRng)->(f32,f32){
 	(rng.gen_range(0.0..360.0),rng.gen_range(-90.0..90.0))
 
 }
+pub fn ccw(a:(f32,f32),b:(f32,f32),c:(f32,f32))->bool{
+	let(ax,ay) = a;
+	let(bx,by) = b;
+	let(cx,cy) = c;
+	(cy-ay)*(bx-ax) > (by-ay) * (cx-ax)
+}	
+pub fn intersect(a:(f32,f32),b:(f32,f32),c:(f32,f32),d:(f32,f32))->bool{
+	ccw(a, c, d) !=ccw(b, c, d) && ccw(a, b, c) !=ccw(a, b, d)
+}
+
+pub fn is_inside_polygon(polygon:Vec<(f32,f32)>, point:(f32,f32),dont_use_oo:bool)->bool {
+	let (_pra,pdec) = point;
+	let mut crossed= 0;
+	for i in 0..polygon.len(){
+		let startpoint = polygon[i];
+		let endpoint = polygon[(i+1)%polygon.len()];
+		let (_ira,idec) = startpoint;
+		let (_fra,fdec) = endpoint;
+		if (idec-pdec)*(fdec-pdec)<0.0 && intersect(startpoint, endpoint, point, if dont_use_oo{ (90.0,0.0)}else {
+			(0.0,0.0)
+		} ){ 
+			crossed+=1;
+		}
+	}
+	crossed%2==1
+}
+
