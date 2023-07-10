@@ -529,7 +529,7 @@ impl GameHandler {
 								|| (self.object_question_settings.show_bayer && *is_bayer)
 								|| (self.object_question_settings.show_starnames && *is_starname))
 							&& (mag < self.object_question_settings.magnitude_cutoff)
-							&& *self.active_constellations.entry(constellation_abbreviation.clone()).or_insert(true)
+							&& *self.active_constellations.entry(constellation_abbreviation.to_lowercase()).or_insert(true)
 						{
 							possible_questions.push(question);
 						}
@@ -562,7 +562,7 @@ impl GameHandler {
 								|| (self.this_point_object_question_settings.show_bayer && *is_bayer)
 								|| (self.this_point_object_question_settings.show_starnames && *is_starname))
 							&& (mag < self.this_point_object_question_settings.magnitude_cutoff)
-							&& *self.active_constellations.entry(constellation_abbreviation.clone()).or_insert(true)
+							&& *self.active_constellations.entry(constellation_abbreviation.to_lowercase()).or_insert(true)
 						{
 							possible_questions.push(question);
 						}

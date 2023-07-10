@@ -67,7 +67,7 @@ impl Application {
 						abbreviations.sort();
 						for abbreviation in abbreviations {
 							if let Some(constellation) = self.cellestial_sphere.constellations.get(&abbreviation) {
-								let text = format!("{} ({})", constellation.possible_names[1], abbreviation);
+								let text = format!("{} ({})", constellation.possible_names[1], constellation.abbreviation);
 								let entry = self.game_handler.active_constellations.entry(abbreviation.clone()).or_insert(true);
 								ui.checkbox(entry, text);
 							}
