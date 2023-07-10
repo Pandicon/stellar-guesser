@@ -17,7 +17,7 @@ Blinking Planetary,,15,6826,,Planetary Nebula,Cyg,296.2,50.51666667,9.8,2200,6BF
 ,,16,7243,,Open Cluster,Lac,333.825,49.88333333,6.4,2500,6BFFBFFF
 ,,17,147,,Elliptical Galaxy,Cas,8.3,48.5,9.3,2300000,6BFFBFFF
 ,,18,185,,Elliptical Galaxy,Cas,9.75,48.33333333,9.2,2300000,6BFFBFFF
-Cocoon Nebula,,19,IC 5146,,Blushing Nebula,Cyg,328.375,47.26666667,10,3300,6BFFBFFF
+Cocoon Nebula,,19,,5146,Blushing Nebula,Cyg,328.375,47.26666667,10,3300,6BFFBFFF
 North America Nebula,,20,7000,,Blushing Nebula,Cyg,314.7,44.33333333,6,1800,6BFFBFFF
 ,,21,4449,,Irregular Galaxy,CVn,187.05,44.1,9.4,10000000,6BFFBFFF
 Blue Snowball,,22,7662,,Planetary Nebula,And,351.475,42.55,9.2,3200,6BFFBFFF
@@ -29,7 +29,7 @@ Crescent Nebula,,27,6888,,Blushing Nebula,Cyg,303,38.35,7.5,4700,6BFFBFFF
 ,,28,752,,Open Cluster,And,29.45,37.68333333,5.7,1200,6BFFBFFF
 ,,29,5005,,Barred Spiral Galaxy,CVn,197.725,37.05,9.8,69000000,6BFFBFFF
 ,,30,7331,,Barred Spiral Galaxy,Peg,339.275,34.41666667,9.5,47000000,6BFFBFFF
-Flaming Star Nebula,,31,IC 405,,Blushing Nebula,Aur,79.05,34.26666667,6,1600,6BFFBFFF
+Flaming Star Nebula,,31,,405,Blushing Nebula,Aur,79.05,34.26666667,6,1600,6BFFBFFF
 Whale Galaxy,,32,4631,,Spiral Galaxy,CVn,190.525,32.53333333,9.3,22000000,6BFFBFFF
 East Veil Nebula,,33,6992/5,,Supernova Nebula,Cyg,314.1,31.71666667,7.9,2500,6BFFBFFF
 West Veil Nebula,,34,6960,,Supernova Nebula,Cyg,311.425,30.71666667,8.1,2500,6BFFBFFF
@@ -49,7 +49,7 @@ Hubble's Variable Nebula,,46,2261,,Blushing Nebula,Mon,99.8,8.73333333,10,2500,6
 ,,48,2775,,Spiral Galaxy,Cnc,137.575,7.03333333,10.3,55000000,6BFFBFFF
 Rosette Nebula,,49,2237-9,,Blushing Nebula,Mon,98.075,5.05,9,4900,6BFFBFFF
 ,,50,2244,,Open Cluster,Mon,98.1,4.86666667,4.8,4900,6BFFBFFF
-,,51,IC 1613,,Irregular Galaxy,Cet,16.2,2.11666667,9,2300000,6BFFBFFF
+,,51,,1613,Irregular Galaxy,Cet,16.2,2.11666667,9,2300000,6BFFBFFF
 ,,52,4697,,Elliptical Galaxy,Vir,192.15,-5.8,9.3,76000000,6BFFBFFF
 Spindle Galaxy,,53,3115,,Elliptical Galaxy,Sex,151.3,-7.71666667,9.1,22000000,6BFFBFFF
 ,,54,2506,,Open Cluster,Mon,120.05,-10.78333333,7.6,10000,6BFFBFFF
@@ -83,7 +83,7 @@ Omega Centauri,,80,5139,,Globular Cluster,Cen,201.7,-47.48333333,3.6,17300,6BFFB
 ,,82,6193,,Open Cluster,Ara,250.325,-48.76666667,5.2,4300,6BFFBFFF
 ,,83,4945,,Spiral Galaxy,Cen,196.35,-49.46666667,9.5,17000000,6BFFBFFF
 ,,84,5286,,Globular Cluster,Cen,206.6,-51.36666667,7.6,36000,6BFFBFFF
-Omicron Vel Cluster,,85,IC 2391,,Open Cluster,Vel,130.05,-53.06666667,2.5,500,6BFFBFFF
+Omicron Vel Cluster,,85,,2391,Open Cluster,Vel,130.05,-53.06666667,2.5,500,6BFFBFFF
 ,,86,6397,,Globular Cluster,Ara,265.175,-53.66666667,5.6,7500,6BFFBFFF
 ,,87,1261,,Globular Cluster,Hor,48.075,-55.21666667,8.4,55500,6BFFBFFF
 ,,88,5823,,Open Cluster,Cir,226.425,-55.6,7.9,3400,6BFFBFFF
@@ -98,9 +98,9 @@ Jewel Box,,94,4755,,Open Cluster,Cru,193.4,-60.33333333,4.2,4900,6BFFBFFF
 ,,97,3766,,Open Cluster,Cen,174.025,-61.61666667,5.3,5800,6BFFBFFF
 ,,98,4609,,Open Cluster,Cru,190.575,-62.96666667,6.9,4200,6BFFBFFF
 Coalsack Nebula,,99,-,,Dark Nebula,Cru,193.25,-63,-,610,6BFFBFFF
-Lambda Centauri Nebula,,100,IC 2944,,Open Cluster,Cen,174.15,-63.03333333,4.5,6000,6BFFBFFF
+Lambda Centauri Nebula,,100,,2944,Open Cluster,Cen,174.15,-63.03333333,4.5,6000,6BFFBFFF
 ,,101,6744,,Barred Spiral Galaxy,Pav,287.45,-63.85,9,34000000,6BFFBFFF
-Theta Car Cluster,,102,IC 2602,,Open Cluster,Car,160.8,-64.4,1.9,492,6BFFBFFF
+Theta Car Cluster,,102,,2602,Open Cluster,Car,160.8,-64.4,1.9,492,6BFFBFFF
 Tarantula Nebula,,103,2070,,Blushing Nebula,Dor,84.675,-69.1,1,170000,6BFFBFFF
 ,,104,362,,Globular Cluster,Tuc,15.8,-70.85,6.6,27700,6BFFBFFF
 ,,105,4833,,Globular Cluster,Mus,194.9,-70.88333333,7.3,19600,6BFFBFFF
