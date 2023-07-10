@@ -163,14 +163,7 @@ impl CellestialSphere {
 				let entry = catalog.entry(file_name.clone()).or_default();
 				entry.push(star);
 				if !stars_categories_active.contains_key(&file_name) {
-					stars_categories_active.insert(
-						file_name.clone(),
-						if let Some(storage) = storage {
-							storage.get_string(&format!("render_stars_{}", file_name)).unwrap_or(String::from("true")) == *"true"
-						} else {
-							true
-						},
-					);
+					stars_categories_active.insert(file_name.clone(), true);
 				}
 			}
 		}
@@ -197,14 +190,7 @@ impl CellestialSphere {
 				let entry = lines.entry(file_name.clone()).or_default();
 				entry.push(line);
 				if !lines_categories_active.contains_key(&file_name) {
-					lines_categories_active.insert(
-						file_name.clone(),
-						if let Some(storage) = storage {
-							storage.get_string(&format!("render_lines_{}", file_name)).unwrap_or(String::from("true")) == *"true"
-						} else {
-							true
-						},
-					);
+					lines_categories_active.insert(file_name.clone(), true);
 				}
 			}
 		}
@@ -231,14 +217,7 @@ impl CellestialSphere {
 				let entry = deepskies.entry(file_name.clone()).or_default();
 				entry.push(deepsky);
 				if !deepskies_categories_active.contains_key(&file_name) {
-					deepskies_categories_active.insert(
-						file_name.clone(),
-						if let Some(storage) = storage {
-							storage.get_string(&format!("render_deepskies_{}", file_name)).unwrap_or(String::from("true")) == *"true"
-						} else {
-							true
-						},
-					);
+					deepskies_categories_active.insert(file_name.clone(), true);
 				}
 			}
 		}
@@ -266,14 +245,7 @@ impl CellestialSphere {
 						let entry = star_names.entry(file_name.clone()).or_default();
 						entry.push(star_name);
 						if !star_names_categories_active.contains_key(&file_name) {
-							star_names_categories_active.insert(
-								file_name.clone(),
-								if let Some(storage) = storage {
-									storage.get_string(&format!("use_star_names_{}", file_name)).unwrap_or(String::from("true")) == *"true"
-								} else {
-									true
-								},
-							);
+							star_names_categories_active.insert(file_name.clone(), true);
 						}
 					}
 					None => continue,
@@ -306,14 +278,7 @@ impl CellestialSphere {
 				let entry = markers.entry(file_name.clone()).or_default();
 				entry.push(marker);
 				if !markers_categories_active.contains_key(&file_name) {
-					markers_categories_active.insert(
-						file_name.clone(),
-						if let Some(storage) = storage {
-							storage.get_string(&format!("render_markers_{}", file_name)).unwrap_or(String::from("true")) == *"true"
-						} else {
-							true
-						},
-					);
+					markers_categories_active.insert(file_name.clone(), true);
 				}
 			}
 		}
@@ -338,6 +303,34 @@ impl CellestialSphere {
 			}
 		}
 
+		if let Some(storage) = storage {
+			if let Some(star_files_to_not_render) = storage.get_string("star_files_to_not_render") {
+				for file_name in star_files_to_not_render.split('|') {
+					stars_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
+				}
+			}
+			if let Some(line_files_to_not_render) = storage.get_string("line_files_to_not_render") {
+				for file_name in line_files_to_not_render.split('|') {
+					lines_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
+				}
+			}
+			if let Some(deepsky_files_to_not_render) = storage.get_string("deepsky_files_to_not_render") {
+				for file_name in deepsky_files_to_not_render.split('|') {
+					deepskies_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
+				}
+			}
+			if let Some(marker_files_to_not_render) = storage.get_string("marker_files_to_not_render") {
+				for file_name in marker_files_to_not_render.split('|') {
+					markers_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
+				}
+			}
+			if let Some(star_names_files_to_not_use) = storage.get_string("star_names_files_to_not_use") {
+				for file_name in star_names_files_to_not_use.split('|') {
+					star_names_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
+				}
+			}
+		}
+
 		let mut light_pollution_place_to_mag: HashMap<LightPollution, [f32; 2]> = HashMap::with_capacity(MAG_TO_LIGHT_POLLUTION_RAW.len());
 		for &(mag_offset, mag_scale, place) in &MAG_TO_LIGHT_POLLUTION_RAW {
 			light_pollution_place_to_mag.insert(place, [mag_offset, mag_scale]);
@@ -353,7 +346,7 @@ impl CellestialSphere {
 			deepskies_categories_active,
 			markers,
 			markers_categories_active,
-			star_names: star_names,
+			star_names,
 			star_names_categories_active,
 			constellations,
 			zoom: 1.0,
@@ -524,13 +517,12 @@ impl CellestialSphere {
 				in_constellation = abbreviation.to_owned();
 			}
 		}
-		if in_constellation == "Undefined"{
-			let (_ra,dec) = point;
+		if in_constellation == "Undefined" {
+			let (_ra, dec) = point;
 			if dec > 0.0 {
-				in_constellation=String::from("umi");
-			}
-			else {
-				in_constellation=String::from("");
+				in_constellation = String::from("umi");
+			} else {
+				in_constellation = String::from("");
 			}
 		}
 		in_constellation
