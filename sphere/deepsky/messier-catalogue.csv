@@ -1,5 +1,5 @@
 names,messier,caldwell,ngc,ic,type,constellation,ra,dec,mag,distance,colour
-Crab Nebula,M1,,1952,,Supernova Remnant,Taurus,83.625,22.01666667,8.4,6300,6BEEFFFF
+Crab Nebula,M1,,1952,,Supernova Remnant,Tau,83.625,22.01666667,8.4,6300,6BEEFFFF
 ,M2,,7089,,Globular Cluster,Aqr,323.375,-0.81666667,6.5,37500,6BEEFFFF
 ,M3,,5272,,Globular Cluster,CVn,205.55,28.38333333,6.2,33900,6BEEFFFF
 ,M4,,6121,,Globular Cluster,Sco,245.9,-26.53333333,5.6,7200,6BEEFFFF
