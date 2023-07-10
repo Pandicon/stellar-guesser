@@ -17,7 +17,7 @@ impl Application {
 					// 	self.game_handler.next_question(&mut self.cellestial_sphere);
 					// }
 					if ui.button("Reset").clicked() {
-						self.game_handler.reset_used_questions();
+						self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
 						self.game_handler.next_question(&mut self.cellestial_sphere);
 					}
 				} else {

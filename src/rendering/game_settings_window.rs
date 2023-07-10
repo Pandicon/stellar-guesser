@@ -53,7 +53,7 @@ impl Application {
 				);
 				if ui.button("Reset").clicked() {
 					self.game_handler.stage = 2;
-					self.game_handler.reset_used_questions();
+					self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
 				}
 				egui::CollapsingHeader::new(egui::RichText::new("Constellations").text_style(egui::TextStyle::Heading).size(20.0))
 					.default_open(true)
