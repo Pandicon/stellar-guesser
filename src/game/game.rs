@@ -24,7 +24,7 @@ pub enum Question {
 	PositionQuestion {
 		ra: f32,
 		dec: f32,
-		possible_constellation_names:Vec<String>,
+		possible_constellation_names: Vec<String>,
 	},
 	ThisPointObject {
 		possible_names: Vec<String>,
@@ -109,8 +109,8 @@ pub struct GameHandler {
 impl GameHandler {
 	pub fn init(cellestial_sphere: &mut CellestialSphere) -> Self {
 		let mut active_constellations = HashMap::new();
-		for constellation in &cellestial_sphere.constellations {
-			active_constellations.insert(constellation.0.to_owned(), true); // TODO: Save and load from save file
+		for constellation_abbreviation in cellestial_sphere.constellations.keys() {
+			active_constellations.insert(constellation_abbreviation.to_owned(), true); // TODO: Save and load from save file
 		}
 		let mut catalog: Vec<Question> = Vec::new();
 		catalog.push(Question::NoMoreQuestions);
@@ -268,15 +268,17 @@ impl GameHandler {
 				point1: geometry::generate_random_point(&mut rand),
 				point2: geometry::generate_random_point(&mut rand),
 			});
-			let (ra, dec) =  geometry::generate_random_point(&mut rand);
-			let abbrev = cellestial_sphere.determine_constellation((ra,dec));
-			let possible_constellation_names = match cellestial_sphere.constellations.get(&abbrev){
+			let (ra, dec) = geometry::generate_random_point(&mut rand);
+			let abbrev = cellestial_sphere.determine_constellation((ra, dec));
+			let possible_constellation_names = match cellestial_sphere.constellations.get(&abbrev) {
 				None => vec![String::from("Undefined")],
-				Some(constellation) => {
-					constellation.possible_names.to_owned()
-				}
+				Some(constellation) => constellation.possible_names.to_owned(),
 			};
-			catalog.push(Question::PositionQuestion { ra, dec, possible_constellation_names});
+			catalog.push(Question::PositionQuestion {
+				ra,
+				dec,
+				possible_constellation_names,
+			});
 
 			let (ra, dec) = geometry::generate_random_point(&mut rand);
 			if i % 2 == 0 {
@@ -367,7 +369,7 @@ impl GameHandler {
 				);
 				entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, *is_bayer || *is_starname, false));
 			}
-			Question::PositionQuestion { possible_constellation_names,..} => {
+			Question::PositionQuestion { possible_constellation_names, .. } => {
 				let possible_names_edited = possible_constellation_names.iter().map(|name| name.replace(" ", "").to_lowercase()).collect::<Vec<String>>();
 				let correct = possible_names_edited.contains(&self.answer.replace(" ", "").to_lowercase());
 				self.answer_review_text_heading = format!(
@@ -379,7 +381,7 @@ impl GameHandler {
 						"Inc"
 					}
 				);
-				self.answer_review_text = format!("Your answer was: {}\nThe right answers were: {}",self.answer,possible_constellation_names.join(", "))
+				self.answer_review_text = format!("Your answer was: {}\nThe right answers were: {}", self.answer, possible_constellation_names.join(", "))
 			}
 			Question::ThisPointObject { possible_names, .. } => {
 				let possible_names_edited = possible_names.iter().map(|name| name.replace(" ", "").to_lowercase()).collect::<Vec<String>>();
@@ -627,7 +629,7 @@ impl GameHandler {
 			Question::ObjectQuestion { name, .. } => {
 				return String::from(format!("Find {}.", name));
 			}
-			Question::PositionQuestion {..} => {
+			Question::PositionQuestion { .. } => {
 				return String::from("What constellation does this point lie in?");
 			}
 			Question::ThisPointObject { .. } => {
