@@ -49,7 +49,7 @@ impl Application {
 
 			frame_timestamp: timestamp,
 			frame_timestamp_ms: chrono::Utc::now().timestamp_millis(),
-			game_handler: GameHandler::init(&mut cellestial_sphere),
+			game_handler: GameHandler::init(&mut cellestial_sphere, cc.storage),
 			cellestial_sphere,
 			graphics_settings: GraphicsSettings::default(),
 			frames_handler: FramesHandler::default(),
@@ -86,5 +86,12 @@ impl eframe::App for Application {
 		for (file, active) in &self.cellestial_sphere.stars_categories_active {
 			storage.set_string(&format!("render_stars_{}", file), active.to_string());
 		}
+		let mut inactive_constellations = Vec::new();
+		for (abbreviation, value) in &self.game_handler.active_constellations {
+			if !*value {
+				inactive_constellations.push(abbreviation.as_str());
+			}
+		}
+		storage.set_string("game_inactive_constellations", inactive_constellations.join("|"));
 	}
 }

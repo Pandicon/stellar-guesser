@@ -108,10 +108,18 @@ pub struct GameHandler {
 }
 
 impl GameHandler {
-	pub fn init(cellestial_sphere: &mut CellestialSphere) -> Self {
+	pub fn init(cellestial_sphere: &mut CellestialSphere, storage: Option<&dyn eframe::Storage>) -> Self {
 		let mut active_constellations = HashMap::new();
 		for constellation_abbreviation in cellestial_sphere.constellations.keys() {
-			active_constellations.insert(constellation_abbreviation.to_owned(), true); // TODO: Save and load from save file
+			active_constellations.insert(constellation_abbreviation.to_owned(), true);
+		}
+		if let Some(storage) = storage {
+			if let Some(inactive_constellations) = storage.get_string("game_inactive_constellations") {
+				let inactive_constellations = inactive_constellations.split('|');
+				for inactive_constellation in inactive_constellations {
+					active_constellations.insert(inactive_constellation.to_string(), false);
+				}
+			}
 		}
 		let mut catalog: Vec<Question> = Vec::new();
 		catalog.push(Question::NoMoreQuestions);
@@ -315,7 +323,7 @@ impl GameHandler {
 			show_distance_between_questions: true,
 			show_radecquestions: true,
 			active_constellations,
-			toggle_all_constellations:true,
+			toggle_all_constellations: true,
 		}
 	}
 	pub fn evaluate_score(distance: f32) -> u32 {
