@@ -522,7 +522,15 @@ impl CellestialSphere {
 			let (abbreviation, constellation) = constellation;
 			if is_inside_polygon(constellation.vertices.to_owned(), point, MERIDIAN_CONSTELLATIONS.contains(&abbreviation.as_str())) {
 				in_constellation = abbreviation.to_owned();
-				println!("{}", in_constellation);
+			}
+		}
+		if in_constellation == "Undefined"{
+			let (_ra,dec) = point;
+			if dec > 0.0 {
+				in_constellation=String::from("umi");
+			}
+			else {
+				in_constellation=String::from("");
 			}
 		}
 		in_constellation

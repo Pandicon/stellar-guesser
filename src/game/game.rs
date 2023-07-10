@@ -104,6 +104,7 @@ pub struct GameHandler {
 	possible_score: u32,
 	pub show_radecquestions: bool,
 	pub active_constellations: HashMap<String, bool>,
+	pub toggle_all_constellations: bool,
 }
 
 impl GameHandler {
@@ -314,6 +315,7 @@ impl GameHandler {
 			show_distance_between_questions: true,
 			show_radecquestions: true,
 			active_constellations,
+			toggle_all_constellations:true,
 		}
 	}
 	pub fn evaluate_score(distance: f32) -> u32 {

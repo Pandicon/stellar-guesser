@@ -59,6 +59,7 @@ impl Application {
 					.default_open(true)
 					.show(ui, |ui| {
 						ui.label("Set the constellations from which objects should appear in questions");
+
 						let mut abbreviations = Vec::new();
 						for abbreviation in self.game_handler.active_constellations.keys() {
 							abbreviations.push(abbreviation.clone());

@@ -13,6 +13,8 @@ impl Application {
 					ui.style_mut().wrap = Some(false);
 					ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Default, format!("{}", LightPollution::Default));
 					ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Prague, format!("{}", LightPollution::Prague));
+					ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::AverageVillage, format!("{}", LightPollution::AverageVillage));
+
 				});
 			if prev_light_pollution != self.cellestial_sphere.light_pollution_place {
 				let [mag_offset, mag_scale] = self.cellestial_sphere.light_pollution_place_to_mag_settings(&self.cellestial_sphere.light_pollution_place);
