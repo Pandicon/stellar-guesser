@@ -20,6 +20,7 @@ pub struct ConstellationRaw {
 }
 
 pub struct Constellation {
+	/// \[abbreviation, latin name, ...\]
 	pub possible_names: Vec<String>,
 	pub vertices: Vec<(f32, f32)>,
 }
@@ -29,7 +30,7 @@ impl Constellation {
 		let abbreviation = raw.abbreviation.to_owned();
 		(
 			Self {
-				possible_names: vec![raw.name_latin, abbreviation.to_owned()],
+				possible_names: vec![abbreviation.to_owned(), raw.name_latin],
 				vertices: Vec::new(),
 			},
 			abbreviation,
