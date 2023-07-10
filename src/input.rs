@@ -3,7 +3,7 @@ use eframe::{
 	epaint::{Color32, Pos2},
 };
 use nalgebra::Rotation3;
-use std::{collections::HashMap, f32::consts::PI, io::Seek};
+use std::{collections::HashMap, f32::consts::PI};
 
 use crate::markers::Marker;
 use crate::{
