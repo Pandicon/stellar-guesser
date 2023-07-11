@@ -38,21 +38,16 @@ impl StarName {
 				let hip = hipstr.parse().expect("Invalid HIP number!");
 				match raw_star.mag {
 					Some(mag) => {
-						if mag < 6.0 {
-							//We cannot see it so guessing it would be stupid.
-							return Some(Self {
-								ra: raw_star.ra,
-								dec: raw_star.dec,
-								name: raw_star.name_diacritics,
-								con: raw_star.con,
-								id: raw_star.id,
-								id_greek: raw_star.id_greek,
-								hip: hip,
-								mag,
-							});
-						} else {
-							None
-						}
+						return Some(Self {
+							ra: raw_star.ra,
+							dec: raw_star.dec,
+							name: raw_star.name_diacritics,
+							con: raw_star.con,
+							id: raw_star.id,
+							id_greek: raw_star.id_greek,
+							hip,
+							mag,
+						});
 					}
 					None => None,
 				}
