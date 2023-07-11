@@ -58,29 +58,15 @@ impl Application {
 				egui::CollapsingHeader::new(egui::RichText::new("Constellations").text_style(egui::TextStyle::Heading).size(20.0))
 					.default_open(true)
 					.show(ui, |ui| {
+						let mut any_active_constellation_changed = false;
 						egui::CollapsingHeader::new(egui::RichText::new("Use groups").text_style(egui::TextStyle::Body))
 							.default_open(true)
 							.show(ui, |ui: &mut egui::Ui| {
-								let mut any_changed = false;
 								let mut groups = self.game_handler.active_constellations_groups.keys().map(|g| g.to_string()).collect::<Vec<String>>();
 								groups.sort();
 								for group_str in &groups {
 									let entry = self.game_handler.active_constellations_groups.entry(enums::GameLearningStage::from_string(group_str)).or_insert(true);
-									any_changed |= ui.checkbox(entry, group_str).changed();
-								}
-								if any_changed {
-									for abbreviation in self.cellestial_sphere.constellations.keys() {
-										self.game_handler.active_constellations.insert(abbreviation.to_owned(), false);
-									}
-									for (group, active) in &self.game_handler.active_constellations_groups {
-										if *active {
-											if let Some(active_constellations) = self.game_handler.groups_active_constellations.get(group) {
-												for (abbreviation, active) in active_constellations {
-													self.game_handler.active_constellations.entry(abbreviation.to_owned()).and_modify(|v| *v |= *active);
-												}
-											}
-										}
-									}
+									any_active_constellation_changed |= ui.checkbox(entry, group_str).changed();
 								}
 							});
 						egui::CollapsingHeader::new(egui::RichText::new("Constellations groups").text_style(egui::TextStyle::Body))
@@ -127,11 +113,25 @@ impl Application {
 										{
 											let text = format!("{} ({})", constellation.possible_names[1], constellation.abbreviation);
 											let entry = group_active.entry(abbreviation.clone()).or_insert(true);
-											ui.checkbox(entry, text).changed();
+											any_active_constellation_changed |= ui.checkbox(entry, text).changed();
 										}
 									}
 								}
 							});
+						if any_active_constellation_changed {
+							for abbreviation in self.cellestial_sphere.constellations.keys() {
+								self.game_handler.active_constellations.insert(abbreviation.to_owned(), false);
+							}
+							for (group, active) in &self.game_handler.active_constellations_groups {
+								if *active {
+									if let Some(active_constellations) = self.game_handler.groups_active_constellations.get(group) {
+										for (abbreviation, active) in active_constellations {
+											self.game_handler.active_constellations.entry(abbreviation.to_owned()).and_modify(|v| *v |= *active);
+										}
+									}
+								}
+							}
+						}
 
 						ui.label("Set the constellations from which objects should appear in questions");
 
