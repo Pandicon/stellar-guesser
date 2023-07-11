@@ -558,6 +558,7 @@ impl GameHandler {
 						is_starname,
 						magnitude,
 						constellation_abbreviation,
+						name,
 						..
 					} => {
 						let mag = match *magnitude {
@@ -571,7 +572,7 @@ impl GameHandler {
 								|| (self.object_question_settings.show_ics && *is_ic)
 								|| (self.object_question_settings.show_bayer && *is_bayer)
 								|| (self.object_question_settings.show_starnames && *is_starname))
-							&& (mag < self.object_question_settings.magnitude_cutoff)
+							&& ((!*is_bayer && !*is_starname) || mag < self.object_question_settings.magnitude_cutoff)
 							&& *self.active_constellations.entry(constellation_abbreviation.to_lowercase()).or_insert(true)
 						{
 							possible_questions.push(question);
@@ -604,7 +605,7 @@ impl GameHandler {
 								|| (self.this_point_object_question_settings.show_ics && *is_ic)
 								|| (self.this_point_object_question_settings.show_bayer && *is_bayer)
 								|| (self.this_point_object_question_settings.show_starnames && *is_starname))
-							&& (mag < self.this_point_object_question_settings.magnitude_cutoff)
+							&& ((!*is_bayer && !*is_starname) || mag < self.this_point_object_question_settings.magnitude_cutoff)
 							&& *self.active_constellations.entry(constellation_abbreviation.to_lowercase()).or_insert(true)
 						{
 							possible_questions.push(question);
