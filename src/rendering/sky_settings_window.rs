@@ -121,6 +121,27 @@ impl Application {
 						self.cellestial_sphere.deinit_single_renderer("lines", name);
 					}
 				});
+			egui::CollapsingHeader::new(egui::RichText::new("Markers").text_style(egui::TextStyle::Heading).size(20.0))
+				.default_open(true)
+				.show(ui, |ui| {
+					let mut newly_active_marker_groups = Vec::new();
+					let mut newly_inactive_marker_groups = Vec::new();
+					for (name, active) in &mut self.cellestial_sphere.markers_categories_active {
+						let active_before = *active;
+						ui.checkbox(active, format!("Render markers from the {} file", name));
+						if !active_before && *active {
+							newly_active_marker_groups.push(name.to_owned());
+						} else if active_before && !*active {
+							newly_inactive_marker_groups.push(name.to_owned());
+						}
+					}
+					for name in &newly_active_marker_groups {
+						self.cellestial_sphere.init_single_renderer("markers", name);
+					}
+					for name in &newly_inactive_marker_groups {
+						self.cellestial_sphere.deinit_single_renderer("markers", name);
+					}
+				});
 		})
 	}
 }
