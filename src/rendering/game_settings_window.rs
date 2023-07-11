@@ -16,7 +16,7 @@ impl Application {
 						ui.checkbox(&mut self.game_handler.object_question_settings.show_ics, "Show IC objects");
 						ui.checkbox(&mut self.game_handler.object_question_settings.show_bayer, "Show Bayer designations");
 						ui.checkbox(&mut self.game_handler.object_question_settings.show_starnames, "Show star names");
-						ui.add(egui::Slider::new(&mut self.game_handler.object_question_settings.magnitude_cutoff, 0.0..=6.0).text("Star magnitude cutoff"));
+						ui.add(egui::Slider::new(&mut self.game_handler.object_question_settings.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"));
 					});
 				egui::CollapsingHeader::new(egui::RichText::new("'Which constellation is this point in' questions").text_style(egui::TextStyle::Heading).size(20.0))
 					.default_open(true)
@@ -33,7 +33,7 @@ impl Application {
 						ui.checkbox(&mut self.game_handler.this_point_object_question_settings.show_ics, "Show IC objects");
 						ui.checkbox(&mut self.game_handler.this_point_object_question_settings.show_bayer, "Show Bayer designations");
 						ui.checkbox(&mut self.game_handler.this_point_object_question_settings.show_starnames, "Show star names");
-						ui.add(egui::Slider::new(&mut self.game_handler.this_point_object_question_settings.magnitude_cutoff, 0.0..=6.0).text("tar magnitude cutoff"));
+						ui.add(egui::Slider::new(&mut self.game_handler.this_point_object_question_settings.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"));
 					});
 				egui::CollapsingHeader::new(egui::RichText::new("'What is the angle between..' questions").text_style(egui::TextStyle::Heading).size(20.0))
 					.default_open(true)
