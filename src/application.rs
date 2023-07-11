@@ -1,4 +1,4 @@
-use crate::structs::graphics_settings::GraphicsSettings;
+use crate::{enums, structs::graphics_settings::GraphicsSettings};
 use eframe::egui;
 
 use crate::caspr::CellestialSphere;
@@ -113,5 +113,30 @@ impl eframe::App for Application {
 			}
 		}
 		storage.set_string("game_inactive_constellations", inactive_constellations.join("|"));
+
+		for group in [
+			enums::GameLearningStage::NotStarted,
+			enums::GameLearningStage::Learning,
+			enums::GameLearningStage::Reviewing,
+			enums::GameLearningStage::Learned,
+		] {
+			if let Some(active_constellations_group) = self.game_handler.groups_active_constellations.get(&group) {
+				let mut group_active_constellations = Vec::new();
+				for (abbreviation, value) in active_constellations_group {
+					if *value {
+						group_active_constellations.push(abbreviation.as_str());
+					}
+				}
+				storage.set_string(&format!("game_group_active_constellations_{}", group), group_active_constellations.join("|"));
+			}
+		}
+
+		let mut inactive_constellations_groups = Vec::new();
+		for (group, value) in &self.game_handler.active_constellations_groups {
+			if !value {
+				inactive_constellations_groups.push(group.to_string());
+			}
+		}
+		storage.set_string("inactive_constellations_groups", inactive_constellations_groups.join("|"));
 	}
 }

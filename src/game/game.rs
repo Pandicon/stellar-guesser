@@ -1,6 +1,6 @@
 use std::{collections::HashMap, f32::consts::PI};
 
-use crate::{caspr::CellestialSphere, markers::Marker};
+use crate::{caspr::CellestialSphere, enums, markers::Marker};
 use eframe::epaint::Color32;
 use rand::Rng;
 
@@ -105,6 +105,8 @@ pub struct GameHandler {
 	possible_score: u32,
 	pub show_radecquestions: bool,
 	pub active_constellations: HashMap<String, bool>,
+	pub groups_active_constellations: HashMap<enums::GameLearningStage, HashMap<String, bool>>,
+	pub active_constellations_groups: HashMap<enums::GameLearningStage, bool>,
 	pub toggle_all_constellations: bool,
 }
 
@@ -121,6 +123,44 @@ impl GameHandler {
 					active_constellations.insert(inactive_constellation.to_string(), false);
 				}
 			}
+		}
+		let mut active_constellations_groups = HashMap::new();
+		for group in [
+			enums::GameLearningStage::NotStarted,
+			enums::GameLearningStage::Learning,
+			enums::GameLearningStage::Reviewing,
+			enums::GameLearningStage::Learned,
+		] {
+			active_constellations_groups.insert(group, true);
+		}
+		if let Some(storage) = storage {
+			if let Some(inactive_constellations_groups) = storage.get_string("inactive_constellations_groups") {
+				let inactive_groups = inactive_constellations_groups.split('|');
+				for inactive_group in inactive_groups {
+					active_constellations_groups.insert(enums::GameLearningStage::from_string(inactive_group), false);
+				}
+			}
+		}
+		let mut groups_active_constellations = HashMap::new();
+		for group in [
+			enums::GameLearningStage::NotStarted,
+			enums::GameLearningStage::Learning,
+			enums::GameLearningStage::Reviewing,
+			enums::GameLearningStage::Learned,
+		] {
+			let mut group_active_constellations = HashMap::new();
+			for constellation_abbreviation in cellestial_sphere.constellations.keys() {
+				group_active_constellations.insert(constellation_abbreviation.to_owned(), false);
+			}
+			if let Some(storage) = storage {
+				if let Some(active_constellations) = storage.get_string(&format!("game_group_active_constellations_{}", group)) {
+					let active_constellations = active_constellations.split('|');
+					for active_constellation in active_constellations {
+						group_active_constellations.insert(active_constellation.to_string(), true);
+					}
+				}
+			}
+			groups_active_constellations.insert(group, group_active_constellations);
 		}
 		let mut catalog: Vec<Question> = Vec::new();
 		catalog.push(Question::NoMoreQuestions);
@@ -324,6 +364,8 @@ impl GameHandler {
 			show_distance_between_questions: true,
 			show_radecquestions: true,
 			active_constellations,
+			groups_active_constellations,
+			active_constellations_groups,
 			toggle_all_constellations: true,
 		}
 	}
@@ -534,7 +576,7 @@ impl GameHandler {
 						{
 							possible_questions.push(question);
 						}
-					},
+					}
 					Question::PositionQuestion { .. } => {
 						if self.show_positions_questions {
 							possible_questions.push(question);
@@ -688,40 +730,46 @@ impl GameHandler {
 		}
 	}
 
-	pub fn reset_used_questions(&mut self,cellestial_sphere: &mut CellestialSphere) {
+	pub fn reset_used_questions(&mut self, cellestial_sphere: &mut CellestialSphere) {
 		self.used_questions = Vec::new();
 		self.score = 0;
 		self.possible_score = 0;
-		let old_catalog =self.question_catalog.to_vec();
-		self.question_catalog = old_catalog.into_iter().map(|x| {
-			match x {
-				Question::NoMoreQuestions | Question::ObjectQuestion {..} |Question::ThisPointObject { .. } => return x,
-				Question::DECQuestion {..} => {
-					let (ra,dec) = geometry::generate_random_point(&mut rand::thread_rng());
-					return Question::DECQuestion{ra,dec};
-				},
-				Question::RAQuestion {..} => {
-					let (ra,dec) = geometry::generate_random_point(&mut rand::thread_rng());
-					return Question::DECQuestion{ra,dec};
-				},
-				Question::PositionQuestion {..} => {
-					let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-					let abbrev = cellestial_sphere.determine_constellation((ra, dec));
-					let possible_constellation_names: Vec<String> = match cellestial_sphere.constellations.get(&abbrev) {
-						None => vec![String::from("Undefined")],
-						Some(constellation) => constellation.possible_names.to_owned(),
-					};
-					return Question::PositionQuestion {
-						ra,
-						dec,
-						possible_constellation_names,
-					};
-				}
-				Question::DistanceBetweenQuestion {..} => {
-					return Question::DistanceBetweenQuestion { point1: geometry::generate_random_point(&mut rand::thread_rng()), point2: geometry::generate_random_point(&mut rand::thread_rng()) };
-				}
-			};
-		}).collect();
+		let old_catalog = self.question_catalog.to_vec();
+		self.question_catalog = old_catalog
+			.into_iter()
+			.map(|x| {
+				match x {
+					Question::NoMoreQuestions | Question::ObjectQuestion { .. } | Question::ThisPointObject { .. } => return x,
+					Question::DECQuestion { .. } => {
+						let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
+						return Question::DECQuestion { ra, dec };
+					}
+					Question::RAQuestion { .. } => {
+						let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
+						return Question::DECQuestion { ra, dec };
+					}
+					Question::PositionQuestion { .. } => {
+						let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
+						let abbrev = cellestial_sphere.determine_constellation((ra, dec));
+						let possible_constellation_names: Vec<String> = match cellestial_sphere.constellations.get(&abbrev) {
+							None => vec![String::from("Undefined")],
+							Some(constellation) => constellation.possible_names.to_owned(),
+						};
+						return Question::PositionQuestion {
+							ra,
+							dec,
+							possible_constellation_names,
+						};
+					}
+					Question::DistanceBetweenQuestion { .. } => {
+						return Question::DistanceBetweenQuestion {
+							point1: geometry::generate_random_point(&mut rand::thread_rng()),
+							point2: geometry::generate_random_point(&mut rand::thread_rng()),
+						};
+					}
+				};
+			})
+			.collect();
 	}
 	pub fn show_circle_marker(&self) -> bool {
 		match &self.question_catalog[self.current_question] {
