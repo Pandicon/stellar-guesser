@@ -13,8 +13,11 @@ impl Application {
 					ui.style_mut().wrap = Some(false);
 					ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Default, format!("{}", LightPollution::Default));
 					ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Prague, format!("{}", LightPollution::Prague));
-					ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::AverageVillage, format!("{}", LightPollution::AverageVillage));
-
+					ui.selectable_value(
+						&mut self.cellestial_sphere.light_pollution_place,
+						LightPollution::AverageVillage,
+						format!("{}", LightPollution::AverageVillage),
+					);
 				});
 			if prev_light_pollution != self.cellestial_sphere.light_pollution_place {
 				let [mag_offset, mag_scale] = self.cellestial_sphere.light_pollution_place_to_mag_settings(&self.cellestial_sphere.light_pollution_place);
@@ -119,6 +122,30 @@ impl Application {
 					}
 					for name in &newly_inactive_line_groups {
 						self.cellestial_sphere.deinit_single_renderer("lines", name);
+					}
+				});
+			egui::CollapsingHeader::new(egui::RichText::new("Markers").text_style(egui::TextStyle::Heading).size(20.0))
+				.default_open(true)
+				.show(ui, |ui| {
+					let mut newly_active_marker_groups = Vec::new();
+					let mut newly_inactive_marker_groups = Vec::new();
+					for (name, active) in &mut self.cellestial_sphere.markers_categories_active {
+						if name == "game" {
+							continue;
+						}
+						let active_before = *active;
+						ui.checkbox(active, format!("Render markers from the {} file", name));
+						if !active_before && *active {
+							newly_active_marker_groups.push(name.to_owned());
+						} else if active_before && !*active {
+							newly_inactive_marker_groups.push(name.to_owned());
+						}
+					}
+					for name in &newly_active_marker_groups {
+						self.cellestial_sphere.init_single_renderer("markers", name);
+					}
+					for name in &newly_inactive_marker_groups {
+						self.cellestial_sphere.deinit_single_renderer("markers", name);
 					}
 				});
 		})

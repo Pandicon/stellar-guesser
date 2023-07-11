@@ -1,3 +1,5 @@
+use crate::enums;
+
 pub struct State {
 	pub start_timestamp: i64,
 	pub time_spent_start: i64,
@@ -20,7 +22,7 @@ pub struct WindowsState {
 	pub game_settings: GameSettingsWindowState,
 	pub graphics_settings: GraphicsSettingsWindowState,
 	pub stats: StatsWindowState,
-	pub game_question:QuestionWindowState
+	pub game_question: QuestionWindowState,
 }
 
 impl Default for WindowsState {
@@ -30,7 +32,7 @@ impl Default for WindowsState {
 			game_settings: GameSettingsWindowState::default(),
 			graphics_settings: GraphicsSettingsWindowState::default(),
 			stats: StatsWindowState::default(),
-			game_question: QuestionWindowState::default()
+			game_question: QuestionWindowState::default(),
 		}
 	}
 }
@@ -47,6 +49,7 @@ impl Default for AppInfoWindowState {
 
 pub struct GameSettingsWindowState {
 	pub opened: bool,
+	pub constellation_setting_learning_stage: enums::GameLearningStage,
 }
 
 pub struct QuestionWindowState {
@@ -55,7 +58,10 @@ pub struct QuestionWindowState {
 
 impl Default for GameSettingsWindowState {
 	fn default() -> Self {
-		Self { opened: false }
+		Self {
+			opened: false,
+			constellation_setting_learning_stage: enums::GameLearningStage::None,
+		}
 	}
 }
 

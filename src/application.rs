@@ -1,4 +1,4 @@
-use crate::structs::graphics_settings::GraphicsSettings;
+use crate::{enums, structs::graphics_settings::GraphicsSettings};
 use eframe::egui;
 
 use crate::caspr::CellestialSphere;
@@ -74,18 +74,38 @@ impl eframe::App for Application {
 	fn save(&mut self, storage: &mut dyn eframe::Storage) {
 		storage.set_string("time_spent", (self.state.time_spent_start + (self.frame_timestamp - self.state.start_timestamp)).to_string());
 
+		let mut deepsky_files_to_not_render = Vec::new();
 		for (file, active) in &self.cellestial_sphere.deepskies_categories_active {
-			storage.set_string(&format!("render_deepskies_{}", file), active.to_string());
+			if !*active {
+				deepsky_files_to_not_render.push(file.clone());
+			}
 		}
+		storage.set_string("deepsky_files_to_not_render", deepsky_files_to_not_render.join("|"));
+
+		let mut line_files_to_not_render = Vec::new();
 		for (file, active) in &self.cellestial_sphere.lines_categories_active {
-			storage.set_string(&format!("render_lines_{}", file), active.to_string());
+			if !*active {
+				line_files_to_not_render.push(file.clone());
+			}
 		}
+		storage.set_string("line_files_to_not_render", line_files_to_not_render.join("|"));
+
+		let mut marker_files_to_not_render = Vec::new();
 		for (file, active) in &self.cellestial_sphere.markers_categories_active {
-			storage.set_string(&format!("render_markers_{}", file), active.to_string());
+			if !*active {
+				marker_files_to_not_render.push(file.clone());
+			}
 		}
+		storage.set_string("marker_files_to_not_render", marker_files_to_not_render.join("|"));
+
+		let mut star_files_to_not_render = Vec::new();
 		for (file, active) in &self.cellestial_sphere.stars_categories_active {
-			storage.set_string(&format!("render_stars_{}", file), active.to_string());
+			if !*active {
+				star_files_to_not_render.push(file.clone());
+			}
 		}
+		storage.set_string("star_files_to_not_render", star_files_to_not_render.join("|"));
+
 		let mut inactive_constellations = Vec::new();
 		for (abbreviation, value) in &self.game_handler.active_constellations {
 			if !*value {
@@ -93,5 +113,30 @@ impl eframe::App for Application {
 			}
 		}
 		storage.set_string("game_inactive_constellations", inactive_constellations.join("|"));
+
+		for group in [
+			enums::GameLearningStage::NotStarted,
+			enums::GameLearningStage::Learning,
+			enums::GameLearningStage::Reviewing,
+			enums::GameLearningStage::Learned,
+		] {
+			if let Some(active_constellations_group) = self.game_handler.groups_active_constellations.get(&group) {
+				let mut group_active_constellations = Vec::new();
+				for (abbreviation, value) in active_constellations_group {
+					if *value {
+						group_active_constellations.push(abbreviation.as_str());
+					}
+				}
+				storage.set_string(&format!("game_group_active_constellations_{}", group), group_active_constellations.join("|"));
+			}
+		}
+
+		let mut inactive_constellations_groups = Vec::new();
+		for (group, value) in &self.game_handler.active_constellations_groups {
+			if !value {
+				inactive_constellations_groups.push(group.to_string());
+			}
+		}
+		storage.set_string("inactive_constellations_groups", inactive_constellations_groups.join("|"));
 	}
 }
