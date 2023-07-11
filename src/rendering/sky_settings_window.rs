@@ -127,6 +127,9 @@ impl Application {
 					let mut newly_active_marker_groups = Vec::new();
 					let mut newly_inactive_marker_groups = Vec::new();
 					for (name, active) in &mut self.cellestial_sphere.markers_categories_active {
+						if name=="game"{
+							continue;
+						}
 						let active_before = *active;
 						ui.checkbox(active, format!("Render markers from the {} file", name));
 						if !active_before && *active {
