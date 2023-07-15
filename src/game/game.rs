@@ -370,11 +370,11 @@ impl GameHandler {
 		}
 	}
 	pub fn evaluate_score(distance: f32) -> u32 {
-		if distance < 0.5 {
+		if distance < 0.2 {
 			return 3;
-		} else if distance < 1.0 {
+		} else if distance < 0.5{
 			return 2;
-		} else if distance < 3.0 {
+		} else if distance < 1.0 {
 			return 1;
 		} else {
 			return 0;
@@ -401,14 +401,14 @@ impl GameHandler {
 						answer_dec.to_string(),
 						answer_ra.to_string(),
 						distance.to_string(),
-						if distance < 0.5 {
+						if distance < 0.2 {
 							String::from("Correct!")
 						} else {
 							format!("You were {} degrees away from {} !", (distance * 100.0).round() / 100.0, name)
 						},
 					)
 				} else {
-					(String::from("-"), String::from("-"), String::from("-"), String::from("You didn't guess"))
+					(String::from("-"), String::from("-"), String::from("-"), String::from(format!("You didn't guess where {} is",name)))
 				};
 				self.answer_review_text_heading = answer_review_text_heading;
 				self.answer_review_text = format!(
