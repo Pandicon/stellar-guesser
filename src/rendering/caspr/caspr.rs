@@ -510,7 +510,7 @@ impl CellestialSphere {
 		cartesian_to_spherical(vector)
 	}
 	pub fn determine_constellation(&self, point: (f32, f32)) -> String {
-		let mut in_constellation = String::new();
+		let mut in_constellation = String::from("Undefined");
 		for constellation in &self.constellations {
 			let (abbreviation, constellation) = constellation;
 			if is_inside_polygon(constellation.vertices.to_owned(), point, MERIDIAN_CONSTELLATIONS.contains(&abbreviation.as_str())) {

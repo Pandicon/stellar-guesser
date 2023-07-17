@@ -519,7 +519,7 @@ impl GameHandler {
 					}
 					Err(_) => {
 						self.answer_review_text_heading = format!("You didn't guess");
-						self.answer_review_text = format!("The declination ascension was {:.1}°.", dec);
+						self.answer_review_text = format!("The declination was {:.1}°.", dec);
 
 						0.0
 					}
@@ -747,7 +747,7 @@ impl GameHandler {
 					}
 					Question::RAQuestion { .. } => {
 						let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-						return Question::DECQuestion { ra, dec };
+						return Question::RAQuestion { ra, dec };
 					}
 					Question::PositionQuestion { .. } => {
 						let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
