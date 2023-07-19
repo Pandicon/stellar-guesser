@@ -63,6 +63,7 @@ pub struct QuestionSettings {
 	pub show_bayer: bool,
 	pub show_starnames: bool,
 	pub magnitude_cutoff: f32,
+	pub replay_incorrect: bool,
 }
 
 impl Default for QuestionSettings {
@@ -75,6 +76,7 @@ impl Default for QuestionSettings {
 			show_bayer: true,
 			show_starnames: true,
 			magnitude_cutoff: 6.0,
+			replay_incorrect: true,
 		}
 	}
 }
@@ -346,7 +348,7 @@ impl GameHandler {
 			current_question: 0,
 			possible_no_of_questions: catalog.len() as u32,
 			question_catalog: catalog,
-			used_questions: Vec::new(),
+			used_questions: vec![0], // Don't allow it to draw the "No questions left question"
 			add_marker_on_click: false,
 			stage: 2,
 			answer_review_text_heading: String::new(),
@@ -372,7 +374,7 @@ impl GameHandler {
 	pub fn evaluate_score(distance: f32) -> u32 {
 		if distance < 0.2 {
 			return 3;
-		} else if distance < 0.5{
+		} else if distance < 0.5 {
 			return 2;
 		} else if distance < 1.0 {
 			return 1;
@@ -390,6 +392,7 @@ impl GameHandler {
 				name, ra, dec, is_bayer, is_starname, ..
 			} => {
 				self.possible_score += 3;
+				let mut correct = false;
 				let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !entry.is_empty() {
 					let answer_dec = entry[0].dec;
 					let answer_ra = entry[0].ra;
@@ -402,13 +405,14 @@ impl GameHandler {
 						answer_ra.to_string(),
 						distance.to_string(),
 						if distance < 0.2 {
+							correct = true;
 							String::from("Correct!")
 						} else {
 							format!("You were {} degrees away from {} !", (distance * 100.0).round() / 100.0, name)
 						},
 					)
 				} else {
-					(String::from("-"), String::from("-"), String::from("-"), String::from(format!("You didn't guess where {} is",name)))
+					(String::from("-"), String::from("-"), String::from("-"), String::from(format!("You didn't guess where {} is", name)))
 				};
 				self.answer_review_text_heading = answer_review_text_heading;
 				self.answer_review_text = format!(
@@ -421,6 +425,9 @@ impl GameHandler {
 					if *is_bayer || *is_starname { "circle" } else { "cross" }
 				);
 				entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, *is_bayer || *is_starname, false));
+				if !self.object_question_settings.replay_incorrect || correct {
+					self.used_questions.push(self.current_question);
+				}
 			}
 			Question::PositionQuestion { possible_constellation_names, .. } => {
 				let possible_names_edited = possible_constellation_names.iter().map(|name| name.replace(" ", "").to_lowercase()).collect::<Vec<String>>();
@@ -434,7 +441,8 @@ impl GameHandler {
 						"Inc"
 					}
 				);
-				self.answer_review_text = format!("Your answer was: {}\nThe right answers were: {}", self.answer, possible_constellation_names.join(", "))
+				self.answer_review_text = format!("Your answer was: {}\nThe right answers were: {}", self.answer, possible_constellation_names.join(", "));
+				self.used_questions.push(self.current_question);
 			}
 			Question::ThisPointObject { possible_names, .. } => {
 				let possible_names_edited = possible_names.iter().map(|name| name.replace(" ", "").to_lowercase()).collect::<Vec<String>>();
@@ -450,6 +458,9 @@ impl GameHandler {
 				);
 				self.answer_review_text = format!("Your answer was: {}\nPossible answers: {}", self.answer, possible_names.join(", "));
 				self.possible_score += 1;
+				if !self.this_point_object_question_settings.replay_incorrect || correct {
+					self.used_questions.push(self.current_question);
+				}
 			}
 			Question::DistanceBetweenQuestion { point1, point2 } => {
 				let (ra1, dec1) = point1;
@@ -480,6 +491,7 @@ impl GameHandler {
 					}
 					self.possible_score += 3;
 				}
+				self.used_questions.push(self.current_question);
 			}
 			Question::RAQuestion { ra, .. } => {
 				let answer_dist: f32 = match self.answer.parse() {
@@ -508,6 +520,7 @@ impl GameHandler {
 					}
 					self.possible_score += 3;
 				}
+				self.used_questions.push(self.current_question);
 			}
 			Question::DECQuestion { dec, .. } => {
 				let answer_dist: f32 = match self.answer.parse() {
@@ -536,6 +549,7 @@ impl GameHandler {
 					}
 					self.possible_score += 3;
 				}
+				self.used_questions.push(self.current_question);
 			}
 			Question::NoMoreQuestions => {}
 		}
@@ -544,7 +558,6 @@ impl GameHandler {
 
 	pub fn next_question(&mut self, cellestial_sphere: &mut crate::caspr::CellestialSphere) {
 		self.answer = String::new();
-		self.used_questions.push(self.current_question);
 		let mut possible_questions: Vec<usize> = Vec::new();
 		for question in 0..self.question_catalog.len() {
 			if !self.used_questions.contains(&question) {
