@@ -63,6 +63,7 @@ pub struct QuestionSettings {
 	pub show_bayer: bool,
 	pub show_starnames: bool,
 	pub magnitude_cutoff: f32,
+	pub correctness_threshold: f32,
 	pub replay_incorrect: bool,
 }
 
@@ -76,6 +77,7 @@ impl Default for QuestionSettings {
 			show_bayer: true,
 			show_starnames: true,
 			magnitude_cutoff: 6.0,
+			correctness_threshold: 0.2,
 			replay_incorrect: true,
 		}
 	}
@@ -404,7 +406,7 @@ impl GameHandler {
 						answer_dec.to_string(),
 						answer_ra.to_string(),
 						distance.to_string(),
-						if distance < 0.2 {
+						if distance < self.object_question_settings.correctness_threshold {
 							correct = true;
 							String::from("Correct!")
 						} else {
