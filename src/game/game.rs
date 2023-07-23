@@ -92,6 +92,9 @@ pub struct GameHandler {
 	/// 0 = guessing, 1 = checked, 2 = not started yet
 	pub stage: usize,
 
+	pub question_number: usize,
+	pub question_number_text: String,
+
 	pub answer_review_text_heading: String,
 	pub answer_review_text: String,
 	pub answer: String,
@@ -350,9 +353,11 @@ impl GameHandler {
 			current_question: 0,
 			possible_no_of_questions: catalog.len() as u32,
 			question_catalog: catalog,
-			used_questions: vec![0], // Don't allow it to draw the "No questions left question"
+			used_questions: Vec::new(),
 			add_marker_on_click: false,
 			stage: 2,
+			question_number: 0,
+			question_number_text: String::new(),
 			answer_review_text_heading: String::new(),
 			answer_review_text: String::new(),
 			answer: String::new(),
@@ -429,6 +434,8 @@ impl GameHandler {
 				entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, *is_bayer || *is_starname, false));
 				if !self.object_question_settings.replay_incorrect || correct {
 					self.used_questions.push(self.current_question);
+				} else {
+					self.question_number += 1;
 				}
 			}
 			Question::PositionQuestion { possible_constellation_names, .. } => {
@@ -462,6 +469,8 @@ impl GameHandler {
 				self.possible_score += 1;
 				if !self.this_point_object_question_settings.replay_incorrect || correct {
 					self.used_questions.push(self.current_question);
+				} else {
+					self.question_number += 1;
 				}
 			}
 			Question::DistanceBetweenQuestion { point1, point2 } => {
@@ -650,6 +659,11 @@ impl GameHandler {
 			self.current_question = 0;
 		} else {
 			self.current_question = possible_questions[rand::thread_rng().gen_range(0..possible_questions.len())];
+			self.question_number_text = format!(
+				"Question {}/{}",
+				self.used_questions.len() + self.question_number + 1,
+				possible_questions.len() + self.used_questions.len() + self.question_number
+			);
 
 			let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
 			self.add_marker_on_click = match self.question_catalog[self.current_question] {
@@ -750,6 +764,7 @@ impl GameHandler {
 		self.used_questions = Vec::new();
 		self.score = 0;
 		self.possible_score = 0;
+		self.question_number = 0;
 		let old_catalog = self.question_catalog.to_vec();
 		self.question_catalog = old_catalog
 			.into_iter()
