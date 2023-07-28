@@ -6,6 +6,7 @@ pub enum Inputs {
 	AltShiftI,
 	AltShiftO,
 	AltShiftS,
+	MouseMiddle,
 	Space,
 }
 

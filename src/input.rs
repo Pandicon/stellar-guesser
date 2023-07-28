@@ -12,7 +12,7 @@ use crate::{
 };
 
 mod geometry;
-const KEY_COMBINATIONS: [&str; 5] = ["alt+shift+g", "alt+shift+i", "alt+shift+o", "alt+shift+s", "space"];
+const KEY_COMBINATIONS: [&str; 6] = ["alt+shift+g", "alt+shift+i", "alt+shift+o", "alt+shift+s", "mouse-middle", "space"];
 
 impl Application {
 	pub fn handle_input(&mut self, cursor_within_central_panel: bool, ctx: &egui::Context) {
@@ -23,7 +23,7 @@ impl Application {
 				enums::Inputs::AltShiftI => self.state.windows.app_info.opened = !self.state.windows.app_info.opened,
 				enums::Inputs::AltShiftO => self.state.windows.graphics_settings.opened = !self.state.windows.graphics_settings.opened,
 				enums::Inputs::AltShiftS => self.state.windows.stats.opened = !self.state.windows.stats.opened,
-				enums::Inputs::Space => {
+				enums::Inputs::Space | enums::Inputs::MouseMiddle => {
 					if !self.game_handler.no_more_questions() {
 						if self.game_handler.stage == 0 {
 							if !self.game_handler.should_display_input() {
@@ -150,6 +150,20 @@ impl Input {
 			self.pointer_down_outside_subwindow = primary_down;
 		}
 		let mut to_handle: Vec<enums::Inputs> = Vec::new();
+		let middle_down = ctx.input(|i| i.pointer.middle_down());
+
+		if let Some(pressed) = self.currently_held.get("mouse-middle") {
+			let pressed = *pressed;
+			let held = self.currently_held.entry("mouse-middle").or_insert(true);
+			if !pressed && middle_down {
+				*held = true;
+				to_handle.push(enums::Inputs::MouseMiddle);
+			} else if pressed && !middle_down {
+				*held = false;
+			}
+		} else {
+			println!("The mouse-middle combination was not in the 'currently_held' hashmap");
+		}
 		self.zoom = 0.0;
 		for event in &input_events {
 			match event {
