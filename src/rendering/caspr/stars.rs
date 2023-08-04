@@ -70,7 +70,7 @@ impl StarRenderer {
 			&self.unit_vector,
 			cellestial_sphere.mag_to_radius(self.vmag),
 			if graphics_settings.use_default_star_colour {
-				graphics_settings.default_star_colour
+				graphics_settings.default_star_colour(&graphics_settings.colour_mode)
 			} else {
 				self.colour
 			},

@@ -1,6 +1,9 @@
 use eframe::{egui, epaint::Color32};
 
-use crate::{enums::LightPollution, Application};
+use crate::{
+	enums::{ColourMode, LightPollution},
+	Application,
+};
 
 impl Application {
 	pub fn render_sky_settings_window(&mut self, ctx: &egui::Context) -> Option<egui::InnerResponse<Option<()>>> {
@@ -27,12 +30,27 @@ impl Application {
 			egui::CollapsingHeader::new(egui::RichText::new("Stars").text_style(egui::TextStyle::Heading).size(20.0))
 				.default_open(true)
 				.show(ui, |ui| {
+					let colour_mode = self.graphics_settings.colour_mode;
+					egui::ComboBox::from_id_source("Colour mode: ")
+						.selected_text(format!("{}", self.graphics_settings.colour_mode))
+						.show_ui(ui, |ui| {
+							ui.style_mut().wrap = Some(false);
+							ui.selectable_value(&mut self.graphics_settings.colour_mode, ColourMode::Dark, format!("{}", ColourMode::Dark));
+							ui.selectable_value(&mut self.graphics_settings.colour_mode, ColourMode::Light, format!("{}", ColourMode::Light));
+						});
+					if self.graphics_settings.colour_mode != colour_mode {
+						match self.graphics_settings.colour_mode {
+							ColourMode::Dark => ctx.set_visuals(egui::Visuals::dark()),
+							ColourMode::Light => ctx.set_visuals(egui::Visuals::light()),
+						}
+					}
 					ui.checkbox(&mut self.graphics_settings.use_default_star_colour, "Use default star colour");
+					let default_star_colour = self.graphics_settings.default_star_colour(&self.graphics_settings.colour_mode);
 					let mut colour = [
-						(self.graphics_settings.default_star_colour.r() as f32) / 255.0,
-						(self.graphics_settings.default_star_colour.g() as f32) / 255.0,
-						(self.graphics_settings.default_star_colour.b() as f32) / 255.0,
-						(self.graphics_settings.default_star_colour.a() as f32) / 255.0,
+						(default_star_colour.r() as f32) / 255.0,
+						(default_star_colour.g() as f32) / 255.0,
+						(default_star_colour.b() as f32) / 255.0,
+						(default_star_colour.a() as f32) / 255.0,
 					];
 					ui.horizontal(|ui| {
 						ui.color_edit_button_rgba_premultiplied(&mut colour);
@@ -56,8 +74,17 @@ impl Application {
 							.mag_settings_to_light_pollution_place(self.cellestial_sphere.mag_offset, self.cellestial_sphere.mag_scale);
 					}
 
-					self.graphics_settings.default_star_colour =
-						Color32::from_rgba_premultiplied((colour[0] * 255.0) as u8, (colour[1] * 255.0) as u8, (colour[2] * 255.0) as u8, (colour[3] * 255.0) as u8);
+					match self.graphics_settings.colour_mode {
+						ColourMode::Dark => {
+							self.graphics_settings.default_star_colour_dark_mode =
+								Color32::from_rgba_premultiplied((colour[0] * 255.0) as u8, (colour[1] * 255.0) as u8, (colour[2] * 255.0) as u8, (colour[3] * 255.0) as u8);
+						}
+						ColourMode::Light => {
+							self.graphics_settings.default_star_colour_light_mode =
+								Color32::from_rgba_premultiplied((colour[0] * 255.0) as u8, (colour[1] * 255.0) as u8, (colour[2] * 255.0) as u8, (colour[3] * 255.0) as u8);
+						}
+					}
+
 					let mut newly_active_star_groups = Vec::new();
 					let mut newly_inactive_star_groups = Vec::new();
 					for (name, active) in &mut self.cellestial_sphere.stars_categories_active {
