@@ -31,17 +31,25 @@ impl Application {
 				.default_open(true)
 				.show(ui, |ui| {
 					let colour_mode = self.graphics_settings.colour_mode;
+					ui.label("Colour mode: ");
 					egui::ComboBox::from_id_source("Colour mode: ")
 						.selected_text(format!("{}", self.graphics_settings.colour_mode))
 						.show_ui(ui, |ui| {
 							ui.style_mut().wrap = Some(false);
 							ui.selectable_value(&mut self.graphics_settings.colour_mode, ColourMode::Dark, format!("{}", ColourMode::Dark));
 							ui.selectable_value(&mut self.graphics_settings.colour_mode, ColourMode::Light, format!("{}", ColourMode::Light));
+							ui.selectable_value(&mut self.graphics_settings.colour_mode, ColourMode::Printing, format!("{}", ColourMode::Printing));
 						});
 					if self.graphics_settings.colour_mode != colour_mode {
 						match self.graphics_settings.colour_mode {
 							ColourMode::Dark => ctx.set_visuals(egui::Visuals::dark()),
 							ColourMode::Light => ctx.set_visuals(egui::Visuals::light()),
+							ColourMode::Printing => {
+								let mut visuals = egui::Visuals::light();
+								visuals.panel_fill = Color32::WHITE;
+								visuals.window_fill = Color32::WHITE;
+								ctx.set_visuals(visuals)
+							}
 						}
 					}
 					ui.checkbox(&mut self.graphics_settings.use_default_star_colour, "Use default star colour");
@@ -81,6 +89,10 @@ impl Application {
 						}
 						ColourMode::Light => {
 							self.graphics_settings.default_star_colour_light_mode =
+								Color32::from_rgba_premultiplied((colour[0] * 255.0) as u8, (colour[1] * 255.0) as u8, (colour[2] * 255.0) as u8, (colour[3] * 255.0) as u8);
+						}
+						ColourMode::Printing => {
+							self.graphics_settings.default_star_colour_print_mode =
 								Color32::from_rgba_premultiplied((colour[0] * 255.0) as u8, (colour[1] * 255.0) as u8, (colour[2] * 255.0) as u8, (colour[3] * 255.0) as u8);
 						}
 					}

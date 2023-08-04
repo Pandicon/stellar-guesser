@@ -72,6 +72,7 @@ impl GameLearningStage {
 pub enum ColourMode {
 	Dark,
 	Light,
+	Printing,
 }
 
 impl Display for ColourMode {
@@ -79,6 +80,7 @@ impl Display for ColourMode {
 		match *self {
 			Self::Dark => write!(f, "Dark"),
 			Self::Light => write!(f, "Light"),
+			Self::Printing => write!(f, "Printing"),
 		}
 	}
 }
