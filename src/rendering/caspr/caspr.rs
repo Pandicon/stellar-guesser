@@ -527,4 +527,5 @@ impl CellestialSphere {
 		}
 		in_constellation
 	}
+	
 }
