@@ -518,19 +518,19 @@ impl GameHandler {
 			Question::RAQuestion { ra, .. } => {
 				let answer_dist: f32 = match self.answer.parse() {
 					Ok(answer) => {
-						self.answer_review_text_heading = format!("You were {:.1}° away!", answer - ra);
+						self.answer_review_text_heading = format!("You were {:.1}h away!", answer - ra/360.0*24.0);
 
-						self.answer_review_text = format!("The real right ascension was {:.1}°", ra);
+						self.answer_review_text = format!("The real right ascension was {:.1}h", ra/360.0*24.0);
 						answer
 					}
 					Err(_) => {
 						self.answer_review_text_heading = format!("You didn't guess");
-						self.answer_review_text = format!("The real right ascension was {:.1}°.", ra);
+						self.answer_review_text = format!("The real right ascension was {:.1}h.", ra/360.0*24.0);
 
 						0.0
 					}
 				};
-				let error = (ra - answer_dist).abs();
+				let error = (ra - answer_dist/24.0*360.0).abs();
 
 				if self.is_scored_mode {
 					if error < 3.0 {
