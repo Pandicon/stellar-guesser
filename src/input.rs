@@ -40,12 +40,10 @@ impl Application {
 		}
 		self.cellestial_sphere.zoom(self.input.zoom);
 
-		let pointer_position: Pos2;
-
-		match self.input.pointer_position {
-			PointerPosition::OnScreen(position) => pointer_position = position,
+		let pointer_position: Pos2 = match self.input.pointer_position {
+			PointerPosition::OnScreen(position) => position,
 			PointerPosition::OffScreen => return,
-		}
+		};
 		if cursor_within_central_panel {
 			if self.game_handler.add_marker_on_click && self.input.primary_released && !self.input.primary_dragging_last_frame {
 				let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);

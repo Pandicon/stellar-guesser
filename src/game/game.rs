@@ -466,7 +466,7 @@ impl GameHandler {
 						},
 					)
 				} else {
-					(String::from("-"), String::from("-"), String::from("-"), String::from(format!("You didn't guess where {} is", name)))
+					(String::from("-"), String::from("-"), String::from("-"), format!("You didn't guess where {} is", name))
 				};
 				self.answer_review_text_heading = answer_review_text_heading;
 				self.answer_review_text = format!(
@@ -487,8 +487,8 @@ impl GameHandler {
 				}
 			}
 			Question::PositionQuestion { possible_constellation_names, .. } => {
-				let possible_names_edited = possible_constellation_names.iter().map(|name| name.replace(" ", "").to_lowercase()).collect::<Vec<String>>();
-				let correct = possible_names_edited.contains(&self.answer.replace(" ", "").to_lowercase());
+				let possible_names_edited = possible_constellation_names.iter().map(|name| name.replace(' ', "").to_lowercase()).collect::<Vec<String>>();
+				let correct = possible_names_edited.contains(&self.answer.replace(' ', "").to_lowercase());
 				self.answer_review_text_heading = format!(
 					"{}orrect!",
 					if correct {
@@ -508,8 +508,8 @@ impl GameHandler {
 				if !images.is_empty() {
 					self.answer_image = Some(images[rand::thread_rng().gen_range(0..images.len())].clone());
 				}
-				let possible_names_edited = possible_names.iter().map(|name| name.replace(" ", "").to_lowercase()).collect::<Vec<String>>();
-				let correct = possible_names_edited.contains(&self.answer.replace(" ", "").to_lowercase());
+				let possible_names_edited = possible_names.iter().map(|name| name.replace(' ', "").to_lowercase()).collect::<Vec<String>>();
+				let correct = possible_names_edited.contains(&self.answer.replace(' ', "").to_lowercase());
 				self.answer_review_text_heading = format!(
 					"{}orrect!",
 					if correct {
@@ -539,7 +539,7 @@ impl GameHandler {
 						answer
 					}
 					Err(_) => {
-						self.answer_review_text_heading = format!("You didn't guess");
+						self.answer_review_text_heading = "You didn't guess".to_string();
 						self.answer_review_text = format!("The real distance was {:.1}°.", distance);
 
 						0.0
@@ -567,7 +567,7 @@ impl GameHandler {
 						answer
 					}
 					Err(_) => {
-						self.answer_review_text_heading = format!("You didn't guess");
+						self.answer_review_text_heading = "You didn't guess".to_string();
 						self.answer_review_text = format!("The real right ascension was {:.1}h.", ra / 360.0 * 24.0);
 
 						0.0
@@ -596,7 +596,7 @@ impl GameHandler {
 						answer
 					}
 					Err(_) => {
-						self.answer_review_text_heading = format!("You didn't guess");
+						self.answer_review_text_heading = "You didn't guess".to_string();
 						self.answer_review_text = format!("The declination was {:.1}°.", dec);
 
 						0.0
@@ -624,7 +624,7 @@ impl GameHandler {
 						answer
 					}
 					Err(_) => {
-						self.answer_review_text_heading = format!("You didn't guess");
+						self.answer_review_text_heading = "You didn't guess".to_string();
 						self.answer_review_text = format!("The  magnitude  was {:.1}.", mag);
 
 						0.0
@@ -666,10 +666,7 @@ impl GameHandler {
 						constellation_abbreviation,
 						..
 					} => {
-						let mag = match *magnitude {
-							Some(mag) => mag,
-							None => -1.0,
-						};
+						let mag = (*magnitude).unwrap_or(-1.0); // TODO: Shouldn't a default magnitude be something else?
 						if self.show_object_questions
 							&& ((self.object_question_settings.show_messiers && *is_messier)
 								|| (self.object_question_settings.show_caldwells && *is_caldwell)
@@ -699,10 +696,7 @@ impl GameHandler {
 						constellation_abbreviation,
 						..
 					} => {
-						let mag = match *magnitude {
-							Some(mag) => mag,
-							None => -1.0,
-						};
+						let mag = (*magnitude).unwrap_or(-1.0);
 						if self.show_this_point_object_questions
 							&& ((self.this_point_object_question_settings.show_messiers && *is_messier)
 								|| (self.this_point_object_question_settings.show_caldwells && *is_caldwell)
@@ -798,38 +792,24 @@ impl GameHandler {
 	}
 	pub fn get_display_question(&self) -> String {
 		match &self.question_catalog[self.current_question] {
-			Question::ObjectQuestion { name, .. } => {
-				return String::from(format!("Find {}.", name));
-			}
-			Question::PositionQuestion { .. } => {
-				return String::from("What constellation does this point lie in?");
-			}
-			Question::ThisPointObject { .. } => {
-				return String::from("What is this object?");
-			}
-			Question::DistanceBetweenQuestion { .. } => {
-				return String::from("What is the angular distance between these markers? ");
-			}
+			Question::ObjectQuestion { name, .. } => String::from(format!("Find {}.", name)),
+			Question::PositionQuestion { .. } => String::from("What constellation does this point lie in?"),
+			Question::ThisPointObject { .. } => String::from("What is this object?"),
+			Question::DistanceBetweenQuestion { .. } => String::from("What is the angular distance between these markers? "),
 			Question::NoMoreQuestions => {
 				if self.is_scored_mode {
 					let percentage = (self.score as f32) / (self.possible_score as f32) * 100.0;
-					String::from(format!(
+					format!(
 						"Game over! Your score was {}/{}, that is {:.1}% of the maximum. Click Reset if you want to play a new game!",
 						self.score, self.possible_score, percentage
-					))
+					)
 				} else {
-					return String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return the questions you already went through by clicking 'Reset and next question'.");
+					String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return the questions you already went through by clicking 'Reset and next question'.")
 				}
 			}
-			Question::DECQuestion { .. } => {
-				return String::from("What is the declination of this point?");
-			}
-			Question::RAQuestion { .. } => {
-				return String::from("What is the right ascension of this point?");
-			}
-			Question::MagQuestion { .. } => {
-				return String::from("What is the magnitude of this star? ");
-			}
+			Question::DECQuestion { .. } => String::from("What is the declination of this point?"),
+			Question::RAQuestion { .. } => String::from("What is the right ascension of this point?"),
+			Question::MagQuestion { .. } => String::from("What is the magnitude of this star? "),
 		}
 	}
 
@@ -903,13 +883,7 @@ impl GameHandler {
 	pub fn show_circle_marker(&self) -> bool {
 		match &self.question_catalog[self.current_question] {
 			Question::NoMoreQuestions | Question::PositionQuestion { .. } | Question::DistanceBetweenQuestion { .. } | Question::DECQuestion { .. } | Question::RAQuestion { .. } => false,
-			Question::ObjectQuestion { is_bayer, is_starname, .. } | Question::ThisPointObject { is_bayer, is_starname, .. } => {
-				if *is_bayer || *is_starname {
-					true
-				} else {
-					false
-				}
-			}
+			Question::ObjectQuestion { is_bayer, is_starname, .. } | Question::ThisPointObject { is_bayer, is_starname, .. } => *is_bayer || *is_starname,
 			Question::MagQuestion { .. } => true,
 		}
 	}

@@ -14,8 +14,7 @@ const ZOOM_CAP: f32 = 100.0;
 
 const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague), (4.2, 0.5, LightPollution::AverageVillage)];
 
-#[path = "../../geometry.rs"]
-mod geometry;
+use crate::geometry;
 use geometry::{cartesian_to_spherical, cast_onto_sphere, is_inside_polygon, project_point};
 
 use super::deepsky::{Deepsky, DeepskyRaw, DeepskyRenderer};
@@ -275,13 +274,13 @@ impl CellestialSphere {
 							}
 						}
 						if let Some(c_num) = &deepsky_raw.caldwell {
-							if designation.starts_with("c") {
+							if designation.starts_with('c') {
 								let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
 								res |= &number == c_num;
 							}
 						}
 						if let Some(m_num) = &deepsky_raw.messier {
-							if designation.starts_with("m") {
+							if designation.starts_with('m') {
 								let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
 								res |= &number == m_num;
 							}

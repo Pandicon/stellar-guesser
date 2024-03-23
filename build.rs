@@ -22,7 +22,7 @@ fn main() {
 	];
 
 	let const_declarations = vec![const_declaration!(BUILD_DATE = date)].join("\n");
-	fs::write(&dest_path, const_declarations).unwrap();
+	fs::write(dest_path, const_declarations).unwrap();
 	if cfg!(target_os = "windows") {
 		let mut res = winres::WindowsResource::new();
 		res.set_icon("./ico.ico");
