@@ -37,6 +37,7 @@ use constellation::Constellation;
 use self::constellation::{BorderVertex, ConstellationRaw};
 
 const MERIDIAN_CONSTELLATIONS: [&str; 10] = ["cep", "cas", "and", "peg", "pis", "cet", "scl", "phe", "tuc", "oct"];
+const OBJECT_IMAGES_FOLDER: &str = crate::OBJECT_IMAGES_ADDON_FOLDER;
 
 pub struct CellestialSphere {
 	pub stars: HashMap<String, Vec<Star>>,
@@ -140,6 +141,58 @@ impl CellestialSphere {
 	}
 
 	pub fn load(storage: Option<&dyn eframe::Storage>) -> Result<Self, Box<dyn Error>> {
+		let object_images = if let Ok(executable_dir) = std::env::current_exe() {
+			let mut images_addon_dir = executable_dir;
+			images_addon_dir.pop();
+			for part in OBJECT_IMAGES_FOLDER.split('/') {
+				if part == "." {
+					continue;
+				}
+				images_addon_dir.push(part);
+			}
+			match images_addon_dir.try_exists() {
+				Ok(false) | Err(_) => {
+					dbg!("The images add-on folder was not found");
+					None
+				}
+				Ok(true) => {
+					// The images add-on folder does exist
+					let mut list_dir = images_addon_dir.clone();
+					list_dir.push("list.csv");
+					let mut objects_images = Vec::new();
+					let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(list_dir);
+					for object_image_data in reader?.deserialize() {
+						let mut object_image_data: crate::structs::image_info::DeepskyObjectImageInfo = object_image_data?;
+						let path_raw = &object_image_data.image;
+						let mut path = images_addon_dir.clone();
+						path.push("images");
+						for part in path_raw.split('/') {
+							if part == "." {
+								continue;
+							}
+							path.push(part);
+						}
+						match path.try_exists() {
+							Ok(true) => {
+								if let Some(path) = path.to_str() {
+									let path = path.replace("\\", "/");
+									object_image_data.image = format!("file://{path}");
+								}
+							}
+							Ok(false) | Err(_) => {
+								println!("Couldn't find image {} (path checked: {:?})", path_raw, path);
+							}
+						}
+						objects_images.push(object_image_data);
+					}
+					Some(objects_images)
+				}
+			}
+		} else {
+			println!("Couldn't load the executable directory and therefore couldn't load the images");
+			None
+		};
+
 		let star_color = eframe::epaint::Color32::WHITE;
 		let mut catalog: HashMap<String, Vec<Star>> = HashMap::new();
 		let mut stars_categories_active = HashMap::new();
@@ -198,6 +251,7 @@ impl CellestialSphere {
 		let mut deepskies: HashMap<String, Vec<Deepsky>> = HashMap::new();
 		let mut deepskies_categories_active = HashMap::new();
 		let files: Result<fs::ReadDir, std::io::Error> = fs::read_dir(DEEPSKIES_FOLDER);
+		let objects_images = object_images.unwrap_or(Vec::new());
 		for file in (files?).flatten() {
 			let path = file.path();
 			let file_name = path.file_name();
@@ -213,7 +267,43 @@ impl CellestialSphere {
 
 			for deepsky_raw in reader?.deserialize() {
 				let deepsky_raw: DeepskyRaw = deepsky_raw?;
-				let deepsky = Deepsky::from_raw(deepsky_raw, star_color);
+				let deepsky_images_raw = objects_images
+					.iter()
+					.filter(|image_data| {
+						let designation = image_data.object_designation.to_lowercase().replace(' ', "");
+						let mut res = false;
+						if let Some(ngc_num) = &deepsky_raw.ngc {
+							if designation.starts_with("ngc") {
+								let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
+								res |= &number == ngc_num;
+							}
+						}
+						if let Some(ic_num) = &deepsky_raw.ic {
+							if designation.starts_with("ic") {
+								let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
+								res |= &number == ic_num;
+							}
+						}
+						if let Some(c_num) = &deepsky_raw.caldwell {
+							if designation.starts_with("c") {
+								let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
+								res |= &number == c_num;
+							}
+						}
+						if let Some(m_num) = &deepsky_raw.messier {
+							if designation.starts_with("m") {
+								let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
+								res |= &number == m_num;
+							}
+						}
+						res
+					})
+					.map(|image_data| crate::structs::image_info::ImageInfo {
+						path: image_data.image.clone(),
+						source: image_data.image_source.clone(),
+					})
+					.collect::<Vec<crate::structs::image_info::ImageInfo>>();
+				let deepsky = Deepsky::from_raw(deepsky_raw, star_color, deepsky_images_raw);
 				let entry = deepskies.entry(file_name.clone()).or_default();
 				entry.push(deepsky);
 				if !deepskies_categories_active.contains_key(&file_name) {
@@ -527,5 +617,4 @@ impl CellestialSphere {
 		}
 		in_constellation
 	}
-	
 }

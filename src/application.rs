@@ -8,11 +8,12 @@ use self::{frames_handler::FramesHandler, game::GameHandler};
 #[path = "./structs/frames_handler.rs"]
 mod frames_handler;
 #[path = "./game/game.rs"]
-mod game;
+pub mod game;
 #[path = "./input.rs"]
 mod input;
 #[path = "./structs/state.rs"]
 mod state;
+
 pub struct Application {
 	pub input: input::Input,
 	pub state: state::State,
@@ -30,6 +31,7 @@ pub struct Application {
 
 impl Application {
 	pub fn new(cc: &eframe::CreationContext<'_>, authors: String, version: String) -> Self {
+		egui_extras::install_image_loaders(&cc.egui_ctx);
 		cc.egui_ctx.set_visuals(egui::Visuals::dark());
 		let mut time_spent_start = 0;
 		if let Some(storage) = cc.storage {
@@ -41,7 +43,7 @@ impl Application {
 		}
 		let timestamp = chrono::Utc::now().timestamp();
 		let state = state::State::new(timestamp, time_spent_start);
-		let mut cellestial_sphere = CellestialSphere::load(cc.storage).expect("No catalogs are present");
+		let mut cellestial_sphere = CellestialSphere::load(cc.storage).unwrap();
 		cellestial_sphere.init();
 		Self {
 			input: input::Input::default(),

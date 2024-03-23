@@ -1,4 +1,5 @@
 use eframe::egui;
+use rand::Rng;
 
 use crate::Application;
 
@@ -37,6 +38,12 @@ impl Application {
 					ui.heading(&self.game_handler.answer_review_text_heading);
 				}
 				ui.label(&self.game_handler.answer_review_text);
+				if let Some(image) = &self.game_handler.answer_image {
+					ui.add(egui::Image::new(&image.path).max_width(600.0));
+					if let Some(image_source) = &image.source {
+						ui.hyperlink_to("Image source", image_source);
+					}
+				}
 				if ui.button("Next").clicked() {
 					self.game_handler.next_question(&mut self.cellestial_sphere);
 				}

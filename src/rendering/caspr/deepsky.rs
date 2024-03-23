@@ -2,6 +2,8 @@ use eframe::{egui, epaint::Color32};
 use nalgebra::{Matrix3, Vector3};
 use serde::Deserialize;
 
+const IMAGES_FOLDER: &str = crate::OBJECT_IMAGES_ADDON_FOLDER;
+
 #[path = "../../geometry.rs"]
 mod geometry;
 use geometry::get_point_vector;
@@ -26,6 +28,7 @@ pub struct Deepsky {
 	pub mag: String,
 	pub distance: f32,
 	pub colour: Color32,
+	pub images: Vec<crate::structs::image_info::ImageInfo>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -49,7 +52,7 @@ impl Deepsky {
 		DeepskyRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), self.colour)
 	}
 
-	pub fn from_raw(raw_deepsky: DeepskyRaw, default_colour: Color32) -> Self {
+	pub fn from_raw(raw_deepsky: DeepskyRaw, default_colour: Color32, images_data: Vec<crate::structs::image_info::ImageInfo>) -> Self {
 		let names = raw_deepsky.names.map(|raw_names| raw_names.split(';').map(|s| s.to_owned()).collect());
 		let colour = parse_colour(raw_deepsky.colour, default_colour);
 		Self {
@@ -65,6 +68,7 @@ impl Deepsky {
 			mag: raw_deepsky.mag,
 			distance: raw_deepsky.distance,
 			colour,
+			images: images_data,
 		}
 	}
 }

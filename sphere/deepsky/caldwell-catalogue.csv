@@ -1,4 +1,4 @@
-names,messier,caldwell,ngc,ic,type,constellation,ra,dec,mag,distance,colour
+names,messier,caldwell,ngc,ic,object_type,constellation,ra,dec,mag,distance,colour
 ,,1,188,,Open Cluster,Cep,11.1,85.33333333,8.1,4800,6BFFBFFF
 Bow Tie Nebula,,2,40,,Planetary Nebula,Cep,3.25,72.53333333,11.6,3500,6BFFBFFF
 ,,3,4236,,Barred Spiral Galaxy,Dra,184.175,69.46666667,9.7,7000000,6BFFBFFF

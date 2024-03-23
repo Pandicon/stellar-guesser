@@ -20,7 +20,9 @@ pub enum Question {
 		is_bayer: bool,
 		is_starname: bool,
 		magnitude: Option<f32>,
+		object_type: String,
 		constellation_abbreviation: String,
+		images: Vec<crate::structs::image_info::ImageInfo>,
 	},
 	PositionQuestion {
 		ra: f32,
@@ -38,7 +40,9 @@ pub enum Question {
 		is_bayer: bool,
 		is_starname: bool,
 		magnitude: Option<f32>,
+		object_type: String,
 		constellation_abbreviation: String,
+		images: Vec<crate::structs::image_info::ImageInfo>,
 	},
 	DistanceBetweenQuestion {
 		point1: (f32, f32),
@@ -53,9 +57,9 @@ pub enum Question {
 		dec: f32,
 	},
 	MagQuestion {
-		ra:f32,
-		dec:f32,
-		mag:f32,
+		ra: f32,
+		dec: f32,
+		mag: f32,
 	},
 	NoMoreQuestions,
 }
@@ -96,6 +100,7 @@ pub struct GameHandler {
 	pub add_marker_on_click: bool,
 	/// 0 = guessing, 1 = checked, 2 = not started yet
 	pub stage: usize,
+	pub answer_image: Option<crate::structs::image_info::ImageInfo>,
 
 	pub question_number: usize,
 	pub question_number_text: String,
@@ -117,7 +122,7 @@ pub struct GameHandler {
 	pub score: u32,
 	possible_score: u32,
 	pub show_radecquestions: bool,
-	pub show_magquestions:bool,
+	pub show_magquestions: bool,
 	pub active_constellations: HashMap<String, bool>,
 	pub groups_active_constellations: HashMap<enums::GameLearningStage, HashMap<String, bool>>,
 	pub active_constellations_groups: HashMap<enums::GameLearningStage, bool>,
@@ -185,6 +190,7 @@ impl GameHandler {
 				let is_caldwell = deepsky.caldwell.is_some();
 				let is_ngc = deepsky.ngc.is_some();
 				let is_ic = deepsky.ic.is_some();
+				let object_type = deepsky.object_type.clone().unwrap_or("Unknown".to_string());
 				if let Some(messier_name) = &deepsky.messier {
 					catalog.push(Question::ObjectQuestion {
 						name: messier_name.to_owned(),
@@ -197,7 +203,9 @@ impl GameHandler {
 						is_bayer: false,
 						is_starname: false,
 						magnitude: None,
+						object_type: object_type.clone(),
 						constellation_abbreviation: deepsky.constellation.to_owned(),
+						images: deepsky.images.clone(),
 					});
 					possible_names.push(messier_name.to_owned());
 				}
@@ -214,7 +222,9 @@ impl GameHandler {
 						is_bayer: false,
 						is_starname: false,
 						magnitude: None,
+						object_type: object_type.clone(),
 						constellation_abbreviation: deepsky.constellation.to_owned(),
+						images: deepsky.images.clone(),
 					});
 					possible_names.push(caldwell_name.to_owned());
 				}
@@ -231,7 +241,9 @@ impl GameHandler {
 						is_bayer: false,
 						is_starname: false,
 						magnitude: None,
+						object_type: object_type.clone(),
 						constellation_abbreviation: deepsky.constellation.to_owned(),
+						images: deepsky.images.clone(),
 					});
 					possible_names.push(ngc_name.to_owned());
 				}
@@ -248,7 +260,9 @@ impl GameHandler {
 						is_bayer: false,
 						is_starname: false,
 						magnitude: None,
+						object_type: object_type.clone(),
 						constellation_abbreviation: deepsky.constellation.to_owned(),
+						images: deepsky.images.clone(),
 					});
 					possible_names.push(ic_name.to_owned());
 				}
@@ -264,7 +278,9 @@ impl GameHandler {
 						is_bayer: false,
 						is_starname: false,
 						magnitude: None,
+						object_type: object_type.clone(),
 						constellation_abbreviation: deepsky.constellation.to_owned(),
+						images: deepsky.images.clone(),
 					});
 				}
 			}
@@ -283,7 +299,9 @@ impl GameHandler {
 					is_starname: true,
 					magnitude: Some(starname.mag),
 					name: starname.name.to_owned(),
+					object_type: String::from("Star"),
 					constellation_abbreviation: starname.con.to_owned(),
+					images: Vec::new(),
 				});
 				let is_bayer: bool = match &starname.id_greek {
 					Some(id) => {
@@ -304,9 +322,15 @@ impl GameHandler {
 							is_bayer: true,
 							is_starname: false,
 							magnitude: Some(starname.mag),
+							object_type: String::from("Star"),
 							constellation_abbreviation: starname.con.to_owned(),
+							images: Vec::new(),
 						});
-						catalog.push(Question::MagQuestion { ra: starname.ra, dec: starname.dec, mag: starname.mag });
+						catalog.push(Question::MagQuestion {
+							ra: starname.ra,
+							dec: starname.dec,
+							mag: starname.mag,
+						});
 						true
 					}
 					None => false,
@@ -322,7 +346,9 @@ impl GameHandler {
 					is_bayer,
 					is_starname: true,
 					magnitude: Some(starname.mag),
+					object_type: String::from("Star"),
 					constellation_abbreviation: starname.con.to_owned(),
+					images: Vec::new(),
 				})
 			}
 		}
@@ -364,6 +390,7 @@ impl GameHandler {
 			used_questions: Vec::new(),
 			add_marker_on_click: false,
 			stage: 2,
+			answer_image: None,
 			question_number: 0,
 			question_number_text: String::new(),
 			answer_review_text_heading: String::new(),
@@ -403,13 +430,24 @@ impl GameHandler {
 	pub fn check_answer(&mut self, cellestial_sphere: &mut crate::caspr::CellestialSphere) {
 		self.stage = 1;
 		self.add_marker_on_click = false;
+		self.answer_image = None;
 		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
 		match &self.question_catalog[self.current_question] {
 			Question::ObjectQuestion {
-				name, ra, dec, is_bayer, is_starname, ..
+				name,
+				ra,
+				dec,
+				is_bayer,
+				is_starname,
+				object_type,
+				images,
+				..
 			} => {
 				self.possible_score += 3;
 				let mut correct = false;
+				if !images.is_empty() {
+					self.answer_image = Some(images[rand::thread_rng().gen_range(0..images.len())].clone());
+				}
 				let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !entry.is_empty() {
 					let answer_dec = entry[0].dec;
 					let answer_ra = entry[0].ra;
@@ -433,13 +471,14 @@ impl GameHandler {
 				};
 				self.answer_review_text_heading = answer_review_text_heading;
 				self.answer_review_text = format!(
-					"Your coordinates: [dec = {}; ra = {}]\nCorrect coordinates: [dec = {}; ra = {}]\nFully precise distance: {} degrees\nYou can see the correct place marked with a yellow {}.",
+					"Your coordinates: [dec = {}; ra = {}]\nCorrect coordinates: [dec = {}; ra = {}]\nFully precise distance: {} degrees\nYou can see the correct place marked with a yellow {}.\nObject type: {}",
 					answer_dec_text,
 					answer_ra_text,
 					dec,
 					ra,
 					distance,
-					if *is_bayer || *is_starname { "circle" } else { "cross" }
+					if *is_bayer || *is_starname { "circle" } else { "cross" },
+					object_type
 				);
 				entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, *is_bayer || *is_starname, false));
 				if !self.object_question_settings.replay_incorrect || correct {
@@ -460,11 +499,16 @@ impl GameHandler {
 						"Inc"
 					}
 				);
-				self.possible_score+=1;
+				self.possible_score += 1;
 				self.answer_review_text = format!("Your answer was: {}\nThe right answers were: {}", self.answer, possible_constellation_names.join(", "));
 				self.used_questions.push(self.current_question);
 			}
-			Question::ThisPointObject { possible_names, .. } => {
+			Question::ThisPointObject {
+				possible_names, object_type, images, ..
+			} => {
+				if !images.is_empty() {
+					self.answer_image = Some(images[rand::thread_rng().gen_range(0..images.len())].clone());
+				}
 				let possible_names_edited = possible_names.iter().map(|name| name.replace(" ", "").to_lowercase()).collect::<Vec<String>>();
 				let correct = possible_names_edited.contains(&self.answer.replace(" ", "").to_lowercase());
 				self.answer_review_text_heading = format!(
@@ -476,7 +520,7 @@ impl GameHandler {
 						"Inc"
 					}
 				);
-				self.answer_review_text = format!("Your answer was: {}\nPossible answers: {}", self.answer, possible_names.join(", "));
+				self.answer_review_text = format!("Your answer was: {}\nPossible answers: {}\nObject type: {}", self.answer, possible_names.join(", "), object_type);
 				self.possible_score += 1;
 				if !self.this_point_object_question_settings.replay_incorrect || correct {
 					self.used_questions.push(self.current_question);
@@ -518,19 +562,19 @@ impl GameHandler {
 			Question::RAQuestion { ra, .. } => {
 				let answer_dist: f32 = match self.answer.parse() {
 					Ok(answer) => {
-						self.answer_review_text_heading = format!("You were {:.1}h away!", answer - ra/360.0*24.0);
+						self.answer_review_text_heading = format!("You were {:.1}h away!", answer - ra / 360.0 * 24.0);
 
-						self.answer_review_text = format!("The real right ascension was {:.1}h", ra/360.0*24.0);
+						self.answer_review_text = format!("The real right ascension was {:.1}h", ra / 360.0 * 24.0);
 						answer
 					}
 					Err(_) => {
 						self.answer_review_text_heading = format!("You didn't guess");
-						self.answer_review_text = format!("The real right ascension was {:.1}h.", ra/360.0*24.0);
+						self.answer_review_text = format!("The real right ascension was {:.1}h.", ra / 360.0 * 24.0);
 
 						0.0
 					}
 				};
-				let error = (ra - answer_dist/24.0*360.0).abs();
+				let error = (ra - answer_dist / 24.0 * 360.0).abs();
 
 				if self.is_scored_mode {
 					if error < 3.0 {
@@ -572,7 +616,7 @@ impl GameHandler {
 					self.possible_score += 3;
 				}
 			}
-			Question::MagQuestion { mag , ..} =>{
+			Question::MagQuestion { mag, .. } => {
 				let answer_mag: f32 = match self.answer.parse() {
 					Ok(answer) => {
 						self.answer_review_text_heading = format!("You were {:.1} mag away!", answer - mag);
@@ -689,7 +733,7 @@ impl GameHandler {
 							possible_questions.push(question);
 						}
 					}
-					Question::MagQuestion {ra,dec, mag} => {
+					Question::MagQuestion { ra, dec, mag } => {
 						if self.show_magquestions && *mag < self.mag_question_settings.magnitude_cutoff {
 							possible_questions.push(question)
 						}
@@ -744,7 +788,7 @@ impl GameHandler {
 					*entry = vec![Marker::new(ra, dec, Color32::GREEN, 2.0, 5.0, false, false)];
 					false
 				}
-				Question::MagQuestion { ra, dec , ..} => {
+				Question::MagQuestion { ra, dec, .. } => {
 					*entry = vec![Marker::new(ra, dec, Color32::GREEN, 2.0, 5.0, true, false)];
 					false
 				}
@@ -786,7 +830,7 @@ impl GameHandler {
 				return String::from("What is the right ascension of this point?");
 			}
 			Question::MagQuestion { .. } => {
-				return  String::from("What is the magnitude of this star? ");
+				return String::from("What is the magnitude of this star? ");
 			}
 		}
 	}
@@ -794,7 +838,12 @@ impl GameHandler {
 	pub fn should_display_input(&self) -> bool {
 		match &self.question_catalog[self.current_question] {
 			Question::ObjectQuestion { .. } | Question::NoMoreQuestions => false,
-			Question::PositionQuestion { .. } | Question::ThisPointObject { .. } | Question::DistanceBetweenQuestion { .. } | Question::DECQuestion { .. } | Question::RAQuestion { .. } | Question::MagQuestion { .. } => true,
+			Question::PositionQuestion { .. }
+			| Question::ThisPointObject { .. }
+			| Question::DistanceBetweenQuestion { .. }
+			| Question::DECQuestion { .. }
+			| Question::RAQuestion { .. }
+			| Question::MagQuestion { .. } => true,
 		}
 	}
 
@@ -821,7 +870,7 @@ impl GameHandler {
 			.into_iter()
 			.map(|x| {
 				match x {
-					Question::NoMoreQuestions | Question::ObjectQuestion { .. } | Question::ThisPointObject { .. } | Question::MagQuestion { .. }=> return x,
+					Question::NoMoreQuestions | Question::ObjectQuestion { .. } | Question::ThisPointObject { .. } | Question::MagQuestion { .. } => return x,
 					Question::DECQuestion { .. } => {
 						let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
 						return Question::DECQuestion { ra, dec };
@@ -863,7 +912,7 @@ impl GameHandler {
 					false
 				}
 			}
-			Question::MagQuestion { .. } => true
+			Question::MagQuestion { .. } => true,
 		}
 	}
 }

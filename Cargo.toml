@@ -9,13 +9,15 @@ edition = "2021"
 [dependencies]
 chrono = "0.4.26"
 csv = "1.2.2"
-eframe = { version = "0.22.0", features = [
+eframe = { version = "0.23.0", features = [
 	"accesskit",
 	"default_fonts",
 	"glow",
 	"persistence",
 ] }
+egui_extras = { version = "0.23", features = ["all_loaders", "image"] }
 help = "0.0.0"
+image = { version = "0.24", features = ["jpeg", "png", "webp"] }
 nalgebra = "0.32.2"
 rand = "0.8.5"
 serde = { version = "1.0.164", features = ["derive"] }
