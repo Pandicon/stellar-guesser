@@ -46,26 +46,28 @@ impl Application {
 			PointerPosition::OnScreen(position) => pointer_position = position,
 			PointerPosition::OffScreen => return,
 		}
-		if self.game_handler.add_marker_on_click && cursor_within_central_panel && self.input.primary_released && !self.input.primary_dragging_last_frame {
-			let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
-			let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);
-			let entry = self.cellestial_sphere.markers.entry("game".to_string()).or_default();
-			*entry = vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.game_handler.show_circle_marker(), false)];
-			self.cellestial_sphere.init_single_renderer("markers", "game");
-		}
+		if cursor_within_central_panel {
+			if self.game_handler.add_marker_on_click && self.input.primary_released && !self.input.primary_dragging_last_frame {
+				let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
+				let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);
+				let entry = self.cellestial_sphere.markers.entry("game".to_string()).or_default();
+				*entry = vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.game_handler.show_circle_marker(), false)];
+				self.cellestial_sphere.init_single_renderer("markers", "game");
+			}
+	
+			let initial_vector = self.cellestial_sphere.project_screen_pos(pointer_position - self.input.dragged);
+			let final_vector = self.cellestial_sphere.project_screen_pos(pointer_position);
+		
+			if initial_vector != final_vector {
+				// Some rotation this frame
 
-		let initial_vector = self.cellestial_sphere.project_screen_pos(pointer_position - self.input.dragged);
-		let final_vector = self.cellestial_sphere.project_screen_pos(pointer_position);
-
-		// println!("{}",final_vector)
-
-		if initial_vector != final_vector {
-			// Some rotation this frame
-
-			self.cellestial_sphere.rotation *= Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
-
-			if self.input.secondary_released {}
-			self.cellestial_sphere.init_renderers();
+				let rotation_matrix = Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
+				if !rotation_matrix.matrix()[0].is_nan(){
+					self.cellestial_sphere.rotation *= rotation_matrix
+				}
+				// if self.input.secondary_released {}
+				self.cellestial_sphere.init_renderers();
+			}
 		}
 	}
 }

@@ -13,6 +13,7 @@ const STARS_FOLDER: &str = "./sphere/stars";
 const STAR_NAMES_FOLDER: &str = "./sphere/named-stars";
 const CONSTELLATION_VERTICES: &str = "./data/constellation_vertices.csv";
 const CONSTELLATION_NAMES: &str = "./data/constellations.csv";
+const ZOOM_CAP:f32=100.0;
 
 const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague), (4.2, 0.5, LightPollution::AverageVillage)];
 
@@ -461,7 +462,7 @@ impl CellestialSphere {
 	pub fn zoom(&mut self, velocity: f32) {
 		let future_zoom = self.zoom + velocity * self.zoom;
 		//A check is needed since negative zoom breaks everything
-		if future_zoom > 0.0 {
+		if ZOOM_CAP > future_zoom && future_zoom > 0.0 {
 			self.zoom = future_zoom
 		}
 	}
