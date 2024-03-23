@@ -1,11 +1,8 @@
-#[path = "../geometry.rs"]
-mod geometry;
-
 #[cfg(test)]
 mod tests {
 	use std::f32::consts::PI;
 
-	use super::geometry;
+	use crate::geometry;
 
 	#[test]
 	fn angular_distance() {

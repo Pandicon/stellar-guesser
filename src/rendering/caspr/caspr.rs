@@ -1,7 +1,4 @@
-use crate::{
-	enums::LightPollution,
-	structs::{constellations::ConstellationData, graphics_settings::GraphicsSettings},
-};
+use crate::{enums::LightPollution, structs::graphics_settings::GraphicsSettings};
 use eframe::{egui, epaint::Color32};
 use nalgebra::{Rotation3, Vector3};
 use std::{collections::HashMap, error::Error, fs};
@@ -13,7 +10,7 @@ const STARS_FOLDER: &str = "./sphere/stars";
 const STAR_NAMES_FOLDER: &str = "./sphere/named-stars";
 const CONSTELLATION_VERTICES: &str = "./data/constellation_vertices.csv";
 const CONSTELLATION_NAMES: &str = "./data/constellations.csv";
-const ZOOM_CAP:f32=100.0;
+const ZOOM_CAP: f32 = 100.0;
 
 const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague), (4.2, 0.5, LightPollution::AverageVillage)];
 
@@ -21,21 +18,13 @@ const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, 
 mod geometry;
 use geometry::{cartesian_to_spherical, cast_onto_sphere, is_inside_polygon, project_point};
 
-mod deepsky;
-use deepsky::{Deepsky, DeepskyRaw, DeepskyRenderer};
-mod lines;
-use lines::{LineRenderer, SkyLine, SkyLineRaw};
-mod markers;
-use crate::markers::{Marker, MarkerRaw, MarkerRenderer};
-mod stars;
-use stars::{Star, StarRaw, StarRenderer};
-mod star_names;
-use star_names::{StarName, StarNameRaw};
+use super::deepsky::{Deepsky, DeepskyRaw, DeepskyRenderer};
+use super::lines::{LineRenderer, SkyLine, SkyLineRaw};
+use super::markers::{Marker, MarkerRaw, MarkerRenderer};
+use super::star_names::{StarName, StarNameRaw};
+use super::stars::{Star, StarRaw, StarRenderer};
 
-mod constellation;
-use constellation::Constellation;
-
-use self::constellation::{BorderVertex, ConstellationRaw};
+use super::constellation::{BorderVertex, Constellation, ConstellationRaw};
 
 const MERIDIAN_CONSTELLATIONS: [&str; 10] = ["cep", "cas", "and", "peg", "pis", "cet", "scl", "phe", "tuc", "oct"];
 const OBJECT_IMAGES_FOLDER: &str = crate::OBJECT_IMAGES_ADDON_FOLDER;

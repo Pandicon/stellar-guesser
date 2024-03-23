@@ -3,16 +3,14 @@ use eframe::egui;
 
 use crate::caspr::CellestialSphere;
 
-use self::{frames_handler::FramesHandler, game::GameHandler};
+use self::frames_handler::FramesHandler;
 
-#[path = "./structs/frames_handler.rs"]
-mod frames_handler;
-#[path = "./game/game.rs"]
-pub mod game;
-#[path = "./input.rs"]
-mod input;
-#[path = "./structs/state.rs"]
-mod state;
+use crate::game::game::{self, GameHandler};
+
+use crate::{
+	input,
+	structs::{frames_handler, state},
+};
 
 pub struct Application {
 	pub input: input::Input,

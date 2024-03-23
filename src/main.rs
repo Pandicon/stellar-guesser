@@ -1,21 +1,19 @@
-#[path = "./tests/root.rs"]
-mod tests;
-
-pub mod application;
-#[path = "./rendering/rendering.rs"]
-mod rendering;
-
 pub use application::Application;
 use eframe::IconData;
-use std::fs::read;
-#[path = "./rendering/caspr/caspr.rs"]
-pub mod caspr;
-pub mod enums;
-#[path = "./rendering/caspr/markers.rs"]
-pub mod markers;
-mod public_constants;
 pub use public_constants::*;
+pub use rendering::caspr::caspr;
+use std::fs::read;
+
+pub mod application;
+pub mod enums;
+pub mod game;
+pub mod geometry;
+pub mod graphics;
+pub mod input;
+mod public_constants;
+pub mod rendering;
 pub mod structs;
+mod tests;
 
 pub const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 pub const PROJECT_NAME: &str = env!("CARGO_PKG_NAME");

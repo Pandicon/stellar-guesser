@@ -1,11 +1,10 @@
 use std::{collections::HashMap, f32::consts::PI};
 
-use crate::{caspr::CellestialSphere, enums, markers::Marker};
+use crate::{caspr::CellestialSphere, enums, rendering::caspr::markers::Marker};
 use eframe::epaint::Color32;
 use rand::Rng;
 
-#[path = "../geometry.rs"]
-mod geometry;
+use crate::geometry;
 
 #[derive(Clone)]
 pub enum Question {
@@ -665,7 +664,6 @@ impl GameHandler {
 						is_starname,
 						magnitude,
 						constellation_abbreviation,
-						name,
 						..
 					} => {
 						let mag = match *magnitude {
@@ -733,7 +731,7 @@ impl GameHandler {
 							possible_questions.push(question);
 						}
 					}
-					Question::MagQuestion { ra, dec, mag } => {
+					Question::MagQuestion { mag, .. } => {
 						if self.show_magquestions && *mag < self.mag_question_settings.magnitude_cutoff {
 							possible_questions.push(question)
 						}

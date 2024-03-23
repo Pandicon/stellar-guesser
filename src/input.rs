@@ -5,13 +5,13 @@ use eframe::{
 use nalgebra::Rotation3;
 use std::{collections::HashMap, f32::consts::PI};
 
-use crate::markers::Marker;
+use crate::rendering::caspr::markers::Marker;
 use crate::{
 	enums::{self, PointerPosition},
 	Application,
 };
 
-mod geometry;
+use crate::geometry;
 const KEY_COMBINATIONS: [&str; 6] = ["alt+shift+g", "alt+shift+i", "alt+shift+o", "alt+shift+s", "mouse-middle", "space"];
 
 impl Application {
@@ -54,15 +54,15 @@ impl Application {
 				*entry = vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.game_handler.show_circle_marker(), false)];
 				self.cellestial_sphere.init_single_renderer("markers", "game");
 			}
-	
+
 			let initial_vector = self.cellestial_sphere.project_screen_pos(pointer_position - self.input.dragged);
 			let final_vector = self.cellestial_sphere.project_screen_pos(pointer_position);
-		
+
 			if initial_vector != final_vector {
 				// Some rotation this frame
 
 				let rotation_matrix = Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
-				if !rotation_matrix.matrix()[0].is_nan(){
+				if !rotation_matrix.matrix()[0].is_nan() {
 					self.cellestial_sphere.rotation *= rotation_matrix
 				}
 				// if self.input.secondary_released {}

@@ -2,17 +2,13 @@ use eframe::{egui, epaint::Color32};
 use nalgebra::{Matrix3, Vector3};
 use serde::Deserialize;
 
-const IMAGES_FOLDER: &str = crate::OBJECT_IMAGES_ADDON_FOLDER;
-
-#[path = "../../geometry.rs"]
-mod geometry;
+use crate::geometry;
 use geometry::get_point_vector;
 
-#[path = "../../graphics.rs"]
-mod graphics;
+use crate::graphics;
 use graphics::parse_colour;
 
-use super::CellestialSphere;
+use super::caspr::CellestialSphere;
 
 #[derive(Clone, Deserialize)]
 pub struct Deepsky {
