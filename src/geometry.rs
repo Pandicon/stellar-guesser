@@ -7,6 +7,7 @@ use rand::{rngs::ThreadRng, Rng};
 use crate::caspr::CellestialSphere;
 
 const POLYGONLIMIT:f32 = 180.0; 
+const VIEWPORT_OFFSET:f32=10.0;
 
 pub fn is_in_rect<T: PartialOrd>(point: [T; 2], rect: [[T; 2]; 2]) -> bool {
 	let [upper_left, bottom_right] = rect;
@@ -28,12 +29,11 @@ pub fn project_point(vector: &Vector3<f32>, zoom: f32, viewport_rect: egui::Rect
 
 	let point_coordinates = Vector2::new(vector[0] * zoom / scale_factor, vector[1] * zoom / scale_factor);
 
+	let final_coordinates = egui::Pos2::new(point_coordinates[0] / screen_ratio + rect_size[0] / 2.0, point_coordinates[1] / screen_ratio + rect_size[1] / 2.0);
+
 	(
-		egui::Pos2::new(point_coordinates[0] / screen_ratio + rect_size[0] / 2.0, point_coordinates[1] / screen_ratio + rect_size[1] / 2.0),
-		// Is it within the bounds that we want to render in? //TODO: Use the geometry::is_in_rect function
-		// TODO: Probably fix this - see how it is rendering into the top panel
-		((rect_size[0] * screen_ratio / 2.0 > point_coordinates[0]) && (point_coordinates[0] > -rect_size[0] * screen_ratio / 2.0))
-			|| ((rect_size[1] * screen_ratio / 2.0 > point_coordinates[1]) && (point_coordinates[1] > -rect_size[1] * screen_ratio / 2.0)),
+		final_coordinates,
+		is_in_rect(final_coordinates.into(), [[viewport_rect.min[0]-VIEWPORT_OFFSET,viewport_rect.min[1]-VIEWPORT_OFFSET],[viewport_rect.max[0]+VIEWPORT_OFFSET,viewport_rect.max[1]+VIEWPORT_OFFSET]])
 	)
 }
 
