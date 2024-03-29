@@ -1,7 +1,4 @@
-use eframe::{
-	egui,
-	epaint::{Color32, Pos2},
-};
+use egui::epaint::{Color32, Pos2};
 use nalgebra::Rotation3;
 use std::{collections::HashMap, f32::consts::PI};
 

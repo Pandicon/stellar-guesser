@@ -1,7 +1,7 @@
 use std::{collections::HashMap, f32::consts::PI};
 
 use crate::{caspr::CellestialSphere, enums, rendering::caspr::markers::Marker};
-use eframe::epaint::Color32;
+use egui::epaint::Color32;
 use rand::Rng;
 
 use crate::geometry;

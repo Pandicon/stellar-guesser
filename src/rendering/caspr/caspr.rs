@@ -1,5 +1,5 @@
 use crate::{enums::LightPollution, structs::graphics_settings::GraphicsSettings};
-use eframe::{egui, epaint::Color32};
+use egui::epaint::Color32;
 use nalgebra::{Rotation3, Vector3};
 use std::{collections::HashMap, error::Error, fs};
 
@@ -59,7 +59,7 @@ pub struct CellestialSphere {
 
 impl CellestialSphere {
 	//Renders a circle based on its current normal (does NOT account for the rotation of the sphere)
-	pub fn render_circle(&self, normal: &Vector3<f32>, radius: f32, color: eframe::epaint::Color32, painter: &egui::Painter) {
+	pub fn render_circle(&self, normal: &Vector3<f32>, radius: f32, color: egui::epaint::Color32, painter: &egui::Painter) {
 		let (projected_point, is_within_bounds) = project_point(normal, self.zoom, self.viewport_rect);
 
 		if is_within_bounds {
@@ -182,7 +182,7 @@ impl CellestialSphere {
 			None
 		};
 
-		let star_color = eframe::epaint::Color32::WHITE;
+		let star_color = egui::epaint::Color32::WHITE;
 		let mut catalog: HashMap<String, Vec<Star>> = HashMap::new();
 		let mut stars_categories_active = HashMap::new();
 		let files = fs::read_dir(STARS_FOLDER);

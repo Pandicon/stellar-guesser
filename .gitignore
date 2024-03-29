@@ -23,3 +23,10 @@ node_modules/
 *.exe
 
 addons/object-images/
+
+# cargo-mobile2
+.cargo/
+/gen
+
+# macOS
+.DS_Store

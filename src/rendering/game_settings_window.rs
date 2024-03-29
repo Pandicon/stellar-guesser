@@ -1,5 +1,3 @@
-use eframe::egui;
-
 use crate::{enums, Application};
 
 impl Application {

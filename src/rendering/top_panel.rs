@@ -1,7 +1,5 @@
 use std::f32::consts::PI;
 
-use eframe::egui;
-
 use crate::{enums::LightPollution, Application};
 
 impl Application {
@@ -24,7 +22,11 @@ impl Application {
 							ui.style_mut().wrap = Some(false);
 							ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Default, format!("{}", LightPollution::Default));
 							ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Prague, format!("{}", LightPollution::Prague));
-							ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::AverageVillage, format!("{}",LightPollution::AverageVillage))
+							ui.selectable_value(
+								&mut self.cellestial_sphere.light_pollution_place,
+								LightPollution::AverageVillage,
+								format!("{}", LightPollution::AverageVillage),
+							)
 						});
 					if prev_light_pollution != self.cellestial_sphere.light_pollution_place {
 						let [mag_offset, mag_scale] = self.cellestial_sphere.light_pollution_place_to_mag_settings(&self.cellestial_sphere.light_pollution_place);
@@ -57,12 +59,12 @@ impl Application {
 					if game_settings_btn.clicked() {
 						self.state.windows.game_settings.opened = true;
 					}
-				let game_question_btn = ui
-				.add(egui::Button::new(egui::RichText::new("Question").text_style(egui::TextStyle::Body)))
-				.on_hover_text("Show the question");
-				if game_question_btn.clicked() {
-					self.state.windows.game_question.opened = true;
-				}
+					let game_question_btn = ui
+						.add(egui::Button::new(egui::RichText::new("Question").text_style(egui::TextStyle::Body)))
+						.on_hover_text("Show the question");
+					if game_question_btn.clicked() {
+						self.state.windows.game_question.opened = true;
+					}
 				});
 			});
 		})

@@ -28,11 +28,11 @@ pub struct Application {
 }
 
 impl Application {
-	pub fn new(cc: &eframe::CreationContext<'_>, authors: String, version: String) -> Self {
-		egui_extras::install_image_loaders(&cc.egui_ctx);
-		cc.egui_ctx.set_visuals(egui::Visuals::dark());
+	pub fn new(ctx: &egui::Context, authors: String, version: String) -> Self {
+		egui_extras::install_image_loaders(&ctx);
+		ctx.set_visuals(egui::Visuals::dark());
 		let mut time_spent_start = 0;
-		if let Some(storage) = cc.storage {
+		if let Some(storage) = ctx.storage {
 			if let Some(time_spent_restore) = storage.get_string("time_spent") {
 				if let Ok(time_spent) = time_spent_restore.parse() {
 					time_spent_start = time_spent;
@@ -58,10 +58,8 @@ impl Application {
 			version,
 		}
 	}
-}
 
-impl eframe::App for Application {
-	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+	fn update(&mut self, ctx: &egui::Context) {
 		self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos();
 		self.frame_timestamp = chrono::Utc::now().timestamp();
 		let cursor_within_central_panel = self.render(ctx);
@@ -71,7 +69,7 @@ impl eframe::App for Application {
 		ctx.request_repaint();
 	}
 
-	fn save(&mut self, storage: &mut dyn eframe::Storage) {
+	fn save(&mut self, storage: &mut dyn egui::Storage) {
 		storage.set_string("time_spent", (self.state.time_spent_start + (self.frame_timestamp - self.state.start_timestamp)).to_string());
 
 		let mut deepsky_files_to_not_render = Vec::new();

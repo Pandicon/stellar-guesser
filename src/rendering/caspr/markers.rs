@@ -1,4 +1,4 @@
-use eframe::{egui, epaint::Color32};
+use egui::epaint::Color32;
 use nalgebra::{Matrix3, Vector3};
 use serde::Deserialize;
 
