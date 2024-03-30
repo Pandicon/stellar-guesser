@@ -1,0 +1,1 @@
+cargo android apk build --release
