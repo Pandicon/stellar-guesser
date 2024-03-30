@@ -1,5 +1,4 @@
 use crate::{enums, structs::graphics_settings::GraphicsSettings};
-use eframe::egui;
 
 use crate::caspr::CellestialSphere;
 
@@ -28,11 +27,11 @@ pub struct Application {
 }
 
 impl Application {
-	pub fn new(ctx: &egui::Context, authors: String, version: String) -> Self {
+	pub fn new(ctx: &egui::Context, authors: String, version: String, storage: &mut Option<crate::storage::Storage>) -> Self {
 		egui_extras::install_image_loaders(&ctx);
 		ctx.set_visuals(egui::Visuals::dark());
 		let mut time_spent_start = 0;
-		if let Some(storage) = ctx.storage {
+		if let Some(storage) = storage {
 			if let Some(time_spent_restore) = storage.get_string("time_spent") {
 				if let Ok(time_spent) = time_spent_restore.parse() {
 					time_spent_start = time_spent;
@@ -41,7 +40,7 @@ impl Application {
 		}
 		let timestamp = chrono::Utc::now().timestamp();
 		let state = state::State::new(timestamp, time_spent_start);
-		let mut cellestial_sphere = CellestialSphere::load(cc.storage).unwrap();
+		let mut cellestial_sphere = CellestialSphere::load(storage).unwrap();
 		cellestial_sphere.init();
 		Self {
 			input: input::Input::default(),
@@ -49,7 +48,7 @@ impl Application {
 
 			frame_timestamp: timestamp,
 			frame_timestamp_ms: chrono::Utc::now().timestamp_millis(),
-			game_handler: GameHandler::init(&mut cellestial_sphere, cc.storage),
+			game_handler: GameHandler::init(&mut cellestial_sphere, storage),
 			cellestial_sphere,
 			graphics_settings: GraphicsSettings::default(),
 			frames_handler: FramesHandler::default(),
@@ -59,7 +58,7 @@ impl Application {
 		}
 	}
 
-	fn update(&mut self, ctx: &egui::Context) {
+	pub fn update(&mut self, ctx: &egui::Context) {
 		self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos();
 		self.frame_timestamp = chrono::Utc::now().timestamp();
 		let cursor_within_central_panel = self.render(ctx);
@@ -69,7 +68,7 @@ impl Application {
 		ctx.request_repaint();
 	}
 
-	fn save(&mut self, storage: &mut dyn egui::Storage) {
+	fn save(&mut self, storage: &mut crate::storage::Storage) {
 		storage.set_string("time_spent", (self.state.time_spent_start + (self.frame_timestamp - self.state.start_timestamp)).to_string());
 
 		let mut deepsky_files_to_not_render = Vec::new();

@@ -129,7 +129,7 @@ pub struct GameHandler {
 }
 
 impl GameHandler {
-	pub fn init(cellestial_sphere: &mut CellestialSphere, storage: Option<&dyn eframe::Storage>) -> Self {
+	pub fn init(cellestial_sphere: &mut CellestialSphere, storage: &mut Option<crate::storage::Storage>) -> Self {
 		let mut active_constellations = HashMap::new();
 		for constellation_abbreviation in cellestial_sphere.constellations.keys() {
 			active_constellations.insert(constellation_abbreviation.to_owned(), true);

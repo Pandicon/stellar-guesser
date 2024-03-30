@@ -12,10 +12,9 @@ use egui_winit::State;
 const INITIAL_WIDTH: u32 = 1920;
 const INITIAL_HEIGHT: u32 = 1080;
 
-/*pub use application::Application;
+pub use application::Application;
 pub use public_constants::*;
 pub use rendering::caspr::caspr;
-use std::fs::read;
 
 pub mod application;
 pub mod enums;
@@ -25,8 +24,9 @@ pub mod graphics;
 pub mod input;
 mod public_constants;
 pub mod rendering;
+pub mod storage;
 pub mod structs;
-mod tests;*/
+mod tests;
 
 pub const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 pub const PROJECT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -124,7 +124,11 @@ fn _main(event_loop: EventLoop<Event>) {
 	} else {
 		authors_split.join(" and ")
 	};
-	let mut application = egui_demo_lib::DemoWindows::default(); // application::Application::new(cc, authors, VERSION.to_string());
+	#[cfg(target_os = "windows")]
+	let mut storage = None; //Some(storage::Storage::new());
+	#[cfg(not(target_os = "windows"))]
+	let mut storage = None; // TODO: Implement mobile storage
+	let mut application = application::Application::new(&ctx, authors, VERSION.to_string(), &mut storage); // egui_demo_lib::DemoWindows::default();
 
 	event_loop.run(move |event, event_loop, control_flow| match event {
 		Resumed => match window {
@@ -144,7 +148,7 @@ fn _main(event_loop: EventLoop<Event>) {
 				let raw_input = state.take_egui_input(window);
 
 				let full_output = ctx.run(raw_input, |ctx| {
-					application.ui(ctx);
+					application.update(ctx);
 				});
 				state.handle_platform_output(window, &ctx, full_output.platform_output);
 

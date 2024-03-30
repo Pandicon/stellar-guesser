@@ -129,7 +129,7 @@ impl CellestialSphere {
 		}
 	}
 
-	pub fn load(storage: Option<&dyn eframe::Storage>) -> Result<Self, Box<dyn Error>> {
+	pub fn load(storage: &mut Option<crate::storage::Storage>) -> Result<Self, Box<dyn Error>> {
 		let object_images = if let Ok(executable_dir) = std::env::current_exe() {
 			let mut images_addon_dir = executable_dir;
 			images_addon_dir.pop();
