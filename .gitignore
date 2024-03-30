@@ -21,6 +21,8 @@ Cargo.lock
 node_modules/
 
 *.exe
+*.apk
+/builds
 
 addons/object-images/
 
@@ -30,3 +32,6 @@ addons/object-images/
 
 # macOS
 .DS_Store
+
+# keystore
+stellar-guesser.keystore
