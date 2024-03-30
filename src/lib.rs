@@ -34,6 +34,8 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 #[cfg(target_os = "windows")]
 const ICON_PATH: &str = "./ico.png";
 
+include!(concat!(env!("OUT_DIR"), "/const_gen.rs"));
+
 /// A custom event type for the winit app.
 enum Event {
 	RequestRedraw,

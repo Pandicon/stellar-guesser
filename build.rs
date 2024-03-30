@@ -2,6 +2,14 @@ use chrono::{Datelike, Timelike, Utc};
 use const_gen::*;
 use std::{env, fs, path::Path};
 
+const DEEPSKIES_FOLDER: &str = "./sphere/deepsky";
+const LINES_FOLDER: &str = "./sphere/lines";
+const MARKERS_FOLDER: &str = "./sphere/markers";
+const STARS_FOLDER: &str = "./sphere/stars";
+const STAR_NAMES_FOLDER: &str = "./sphere/named-stars";
+const CONSTELLATION_VERTICES: &str = "./data/constellation_vertices.csv";
+const CONSTELLATION_NAMES: &str = "./data/constellations.csv";
+
 fn zero_nothing(num: i64) -> String {
 	String::from(if num < 10 { "0" } else { "" })
 }
@@ -21,8 +29,60 @@ fn main() {
 		format!("{}", curr_time.timestamp_millis()),
 	];
 
-	let const_declarations = vec![const_declaration!(BUILD_DATE = date)].join("\n");
+	let target_os = std::env::var_os("CARGO_CFG_TARGET_OS").unwrap_or("_".into());
+	let const_declarations = if target_os == "android" || target_os == "ios" {
+		let content_folder = [
+			["deepskies", DEEPSKIES_FOLDER],
+			["lines", LINES_FOLDER],
+			["markers", MARKERS_FOLDER],
+			["stars", STARS_FOLDER],
+			["star names", STAR_NAMES_FOLDER],
+		];
+		let mut sky_data = Vec::new();
+
+		for (i, d) in content_folder.iter().enumerate() {
+			let id = d[0];
+			let folder = d[1];
+			sky_data.push((id, Vec::new()));
+			let files = fs::read_dir(folder);
+			if let Ok(files) = files {
+				for file in files.flatten() {
+					let path = file.path();
+					let file_name = path.file_name();
+					if file_name.is_none() {
+						continue;
+					}
+					let file_name = file_name.unwrap().to_str();
+					if file_name.is_none() {
+						continue;
+					}
+					let file_name = file_name.unwrap().to_string();
+					let file_content = fs::read_to_string(path);
+					if let Ok(file_content) = file_content {
+						sky_data[i].1.push([file_name, file_content.replace("\"", "\\\"")]);
+					}
+				}
+			}
+		}
+		let mut other_sky_data = Vec::new();
+		if let Ok(file_content) = fs::read_to_string(CONSTELLATION_NAMES) {
+			other_sky_data.push([String::from("constellation names"), file_content.replace("\"", "\\\"")])
+		};
+		if let Ok(file_content) = fs::read_to_string(CONSTELLATION_VERTICES) {
+			other_sky_data.push([String::from("constellation vertices"), file_content.replace("\"", "\\\"")])
+		};
+
+		vec![
+			const_declaration!(pub BUILD_DATE = date),
+			const_declaration!(pub SKY_DATA_LISTS = sky_data),
+			const_declaration!(pub SKY_DATA_FILES = other_sky_data),
+		]
+		.join("\n")
+	} else {
+		vec![const_declaration!(pub BUILD_DATE = date)].join("\n")
+	};
 	fs::write(dest_path, const_declarations).unwrap();
+
 	if std::env::var_os("CARGO_CFG_WINDOWS").is_some() {
 		let mut res = winres::WindowsResource::new();
 		res.set_icon("./ico.ico");

@@ -12,6 +12,9 @@ const CONSTELLATION_VERTICES: &str = "./data/constellation_vertices.csv";
 const CONSTELLATION_NAMES: &str = "./data/constellations.csv";
 const ZOOM_CAP: f32 = 100.0;
 
+#[cfg(any(target_os = "android", target_os = "ios"))]
+use crate::{SKY_DATA_FILES, SKY_DATA_LISTS};
+
 const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague), (4.2, 0.5, LightPollution::AverageVillage)];
 
 use crate::geometry;
@@ -182,202 +185,243 @@ impl CellestialSphere {
 			None
 		};
 
+		#[cfg(target_os = "windows")]
+		let content_folder = [
+			["deepskies", DEEPSKIES_FOLDER],
+			["lines", LINES_FOLDER],
+			["markers", MARKERS_FOLDER],
+			["stars", STARS_FOLDER],
+			["star names", STAR_NAMES_FOLDER],
+		];
+
+		#[cfg(target_os = "windows")]
+		let sky_data_lists = {
+			let mut sky_data = Vec::new();
+
+			for (i, d) in content_folder.iter().enumerate() {
+				let id = d[0];
+				let folder = d[1];
+				sky_data.push((id, Vec::new()));
+				let files = fs::read_dir(folder);
+				if let Ok(files) = files {
+					for file in files.flatten() {
+						let path = file.path();
+						let file_name = path.file_name();
+						if file_name.is_none() {
+							continue;
+						}
+						let file_name = file_name.unwrap().to_str();
+						if file_name.is_none() {
+							continue;
+						}
+						let file_name = file_name.unwrap().to_string();
+						let file_content = fs::read_to_string(path);
+						if let Ok(file_content) = file_content {
+							sky_data[i].1.push([file_name, file_content.replace("\"", "\\\"")]);
+						}
+					}
+				}
+			}
+			sky_data
+		};
+		#[cfg(any(target_os = "android", target_os = "ios"))]
+		let sky_data_lists = SKY_DATA_LISTS
+			.iter()
+			.map(|(id, list)| {
+				(
+					id.clone(),
+					list.into_iter()
+						.map(|[file_name, file_content]| [String::from(*file_name), String::from(*file_content)])
+						.collect::<Vec<[String; 2]>>(),
+				)
+			})
+			.collect::<Vec<(&str, Vec<[String; 2]>)>>();
+
+		let sky_data_lists = sky_data_lists
+			.into_iter()
+			.map(|(id, list)| {
+				(
+					id,
+					list.into_iter()
+						.map(|[file_name, file_content]| [file_name, file_content.replace("\\\"", "\"")])
+						.collect::<Vec<[String; 2]>>(),
+				)
+			})
+			.collect::<Vec<(&str, Vec<[String; 2]>)>>();
+
+		#[cfg(target_os = "windows")]
+		let sky_data_files = {
+			let mut other_sky_data = Vec::new();
+			if let Ok(file_content) = fs::read_to_string(CONSTELLATION_NAMES) {
+				other_sky_data.push([String::from("constellation names"), file_content.replace("\"", "\\\"")])
+			};
+			if let Ok(file_content) = fs::read_to_string(CONSTELLATION_VERTICES) {
+				other_sky_data.push([String::from("constellation vertices"), file_content.replace("\"", "\\\"")])
+			};
+			other_sky_data
+		};
+		#[cfg(any(target_os = "android", target_os = "ios"))]
+		let sky_data_files = SKY_DATA_FILES
+			.iter()
+			.map(|[file_name, file_content]| [String::from(*file_name), String::from(*file_content)])
+			.collect::<Vec<[String; 2]>>();
+
+		let sky_data_files = sky_data_files
+			.into_iter()
+			.map(|[file_name, file_content]| [file_name, file_content.replace("\\\"", "\"")])
+			.collect::<Vec<[String; 2]>>();
+
 		let star_color = egui::epaint::Color32::WHITE;
 		let mut catalog: HashMap<String, Vec<Star>> = HashMap::new();
 		let mut stars_categories_active = HashMap::new();
-		let files = fs::read_dir(STARS_FOLDER);
-		for file in (files?).flatten() {
-			let path = file.path();
-			let file_name = path.file_name();
-			if file_name.is_none() {
-				continue;
-			}
-			let file_name = file_name.unwrap().to_str();
-			if file_name.is_none() {
-				continue;
-			}
-			let file_name = file_name.unwrap().to_string();
-			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(path);
-
-			for star_raw in reader?.deserialize() {
-				let star_raw: StarRaw = star_raw?;
-				let star = Star::from_raw(star_raw, star_color);
-				let entry = catalog.entry(file_name.clone()).or_default();
-				entry.push(star);
-				if !stars_categories_active.contains_key(&file_name) {
-					stars_categories_active.insert(file_name.clone(), true);
-				}
-			}
-		}
 
 		let mut lines: HashMap<String, Vec<SkyLine>> = HashMap::new();
 		let mut lines_categories_active = HashMap::new();
-		let files: Result<fs::ReadDir, std::io::Error> = fs::read_dir(LINES_FOLDER);
-		for file in (files?).flatten() {
-			let path = file.path();
-			let file_name = path.file_name();
-			if file_name.is_none() {
-				continue;
-			}
-			let file_name = file_name.unwrap().to_str();
-			if file_name.is_none() {
-				continue;
-			}
-			let file_name = file_name.unwrap().to_string();
-			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
-
-			for line_raw in reader?.deserialize() {
-				let line_raw: SkyLineRaw = line_raw?;
-				let line = SkyLine::from_raw(line_raw, star_color);
-				let entry = lines.entry(file_name.clone()).or_default();
-				entry.push(line);
-				if !lines_categories_active.contains_key(&file_name) {
-					lines_categories_active.insert(file_name.clone(), true);
-				}
-			}
-		}
 
 		let mut deepskies: HashMap<String, Vec<Deepsky>> = HashMap::new();
 		let mut deepskies_categories_active = HashMap::new();
-		let files: Result<fs::ReadDir, std::io::Error> = fs::read_dir(DEEPSKIES_FOLDER);
 		let objects_images = object_images.unwrap_or(Vec::new());
-		for file in (files?).flatten() {
-			let path = file.path();
-			let file_name = path.file_name();
-			if file_name.is_none() {
-				continue;
-			}
-			let file_name = file_name.unwrap().to_str();
-			if file_name.is_none() {
-				continue;
-			}
-			let file_name = file_name.unwrap().to_string();
-			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
 
-			for deepsky_raw in reader?.deserialize() {
-				let deepsky_raw: DeepskyRaw = deepsky_raw?;
-				let deepsky_images_raw = objects_images
-					.iter()
-					.filter(|image_data| {
-						let designation = image_data.object_designation.to_lowercase().replace(' ', "");
-						let mut res = false;
-						if let Some(ngc_num) = &deepsky_raw.ngc {
-							if designation.starts_with("ngc") {
-								let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
-								res |= &number == ngc_num;
-							}
-						}
-						if let Some(ic_num) = &deepsky_raw.ic {
-							if designation.starts_with("ic") {
-								let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
-								res |= &number == ic_num;
-							}
-						}
-						if let Some(c_num) = &deepsky_raw.caldwell {
-							if designation.starts_with('c') {
-								let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
-								res |= &number == c_num;
-							}
-						}
-						if let Some(m_num) = &deepsky_raw.messier {
-							if designation.starts_with('m') {
-								let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
-								res |= &number == m_num;
-							}
-						}
-						res
-					})
-					.map(|image_data| crate::structs::image_info::ImageInfo {
-						path: image_data.image.clone(),
-						source: image_data.image_source.clone(),
-					})
-					.collect::<Vec<crate::structs::image_info::ImageInfo>>();
-				let deepsky = Deepsky::from_raw(deepsky_raw, star_color, deepsky_images_raw);
-				let entry = deepskies.entry(file_name.clone()).or_default();
-				entry.push(deepsky);
-				if !deepskies_categories_active.contains_key(&file_name) {
-					deepskies_categories_active.insert(file_name.clone(), true);
-				}
-			}
-		}
 		let mut star_names: HashMap<String, Vec<StarName>> = HashMap::new();
 		let mut star_names_categories_active = HashMap::new();
-		let files: Result<fs::ReadDir, std::io::Error> = fs::read_dir(STAR_NAMES_FOLDER);
-		for file in (files?).flatten() {
-			let path = file.path();
-			let file_name = path.file_name();
-			if file_name.is_none() {
-				continue;
-			}
-			let file_name = file_name.unwrap().to_str();
-			if file_name.is_none() {
-				continue;
-			}
-			let file_name = file_name.unwrap().to_string();
-			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
-
-			for star_name_raw in reader?.deserialize() {
-				let star_name_raw: StarNameRaw = star_name_raw?;
-				let star_name = StarName::from_raw(star_name_raw);
-				match star_name {
-					Some(star_name) => {
-						let entry = star_names.entry(file_name.clone()).or_default();
-						entry.push(star_name);
-						if !star_names_categories_active.contains_key(&file_name) {
-							star_names_categories_active.insert(file_name.clone(), true);
-						}
-					}
-					None => continue,
-				}
-			}
-		}
-		//TODO:Add linking between stars and their names
 
 		let mut markers: HashMap<String, Vec<Marker>> = HashMap::new();
 		let mut markers_categories_active = HashMap::new();
 		markers.insert(String::from("game"), Vec::new());
 		markers_categories_active.insert(String::from("game"), true);
-		let files: Result<fs::ReadDir, std::io::Error> = fs::read_dir(MARKERS_FOLDER);
-		for file in (files?).flatten() {
-			let path = file.path();
-			let file_name = path.file_name();
-			if file_name.is_none() {
-				continue;
-			}
-			let file_name = file_name.unwrap().to_str();
-			if file_name.is_none() {
-				continue;
-			}
-			let file_name = file_name.unwrap().to_string();
-			let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(file.path());
 
-			for marker_raw in reader?.deserialize() {
-				let marker_raw: MarkerRaw = marker_raw?;
-				let marker = Marker::from_raw(marker_raw, star_color);
-				let entry = markers.entry(file_name.clone()).or_default();
-				entry.push(marker);
-				if !markers_categories_active.contains_key(&file_name) {
-					markers_categories_active.insert(file_name.clone(), true);
+		for (id, data) in sky_data_lists {
+			if id == "stars" {
+				for [file_name, file_contents] in &data {
+					let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+					for star_raw in reader.deserialize() {
+						let star_raw: StarRaw = star_raw?;
+						let star = Star::from_raw(star_raw, star_color);
+						let entry = catalog.entry(file_name.clone()).or_default();
+						entry.push(star);
+						if !stars_categories_active.contains_key(file_name) {
+							stars_categories_active.insert(file_name.clone(), true);
+						}
+					}
+				}
+			} else if id == "lines" {
+				for [file_name, file_contents] in &data {
+					let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+					for line_raw in reader.deserialize() {
+						let line_raw: SkyLineRaw = line_raw?;
+						let line = SkyLine::from_raw(line_raw, star_color);
+						let entry = lines.entry(file_name.clone()).or_default();
+						entry.push(line);
+						if !lines_categories_active.contains_key(file_name) {
+							lines_categories_active.insert(file_name.clone(), true);
+						}
+					}
+				}
+			} else if id == "deepskies" {
+				for [file_name, file_contents] in &data {
+					let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+					for deepsky_raw in reader.deserialize() {
+						let deepsky_raw: DeepskyRaw = deepsky_raw?;
+						let deepsky_images_raw = objects_images
+							.iter()
+							.filter(|image_data| {
+								let designation = image_data.object_designation.to_lowercase().replace(' ', "");
+								let mut res = false;
+								if let Some(ngc_num) = &deepsky_raw.ngc {
+									if designation.starts_with("ngc") {
+										let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
+										res |= &number == ngc_num;
+									}
+								}
+								if let Some(ic_num) = &deepsky_raw.ic {
+									if designation.starts_with("ic") {
+										let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
+										res |= &number == ic_num;
+									}
+								}
+								if let Some(c_num) = &deepsky_raw.caldwell {
+									if designation.starts_with('c') {
+										let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
+										res |= &number == c_num;
+									}
+								}
+								if let Some(m_num) = &deepsky_raw.messier {
+									if designation.starts_with('m') {
+										let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
+										res |= &number == m_num;
+									}
+								}
+								res
+							})
+							.map(|image_data| crate::structs::image_info::ImageInfo {
+								path: image_data.image.clone(),
+								source: image_data.image_source.clone(),
+							})
+							.collect::<Vec<crate::structs::image_info::ImageInfo>>();
+						let deepsky = Deepsky::from_raw(deepsky_raw, star_color, deepsky_images_raw);
+						let entry = deepskies.entry(file_name.clone()).or_default();
+						entry.push(deepsky);
+						if !deepskies_categories_active.contains_key(file_name) {
+							deepskies_categories_active.insert(file_name.clone(), true);
+						}
+					}
+				}
+			} else if id == "star names" {
+				//TODO: Add linking between stars and their names
+				for [file_name, file_contents] in &data {
+					let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+					for star_name_raw in reader.deserialize() {
+						let star_name_raw: StarNameRaw = star_name_raw?;
+						let star_name = StarName::from_raw(star_name_raw);
+						match star_name {
+							Some(star_name) => {
+								let entry = star_names.entry(file_name.clone()).or_default();
+								entry.push(star_name);
+								if !star_names_categories_active.contains_key(file_name) {
+									star_names_categories_active.insert(file_name.clone(), true);
+								}
+							}
+							None => continue,
+						}
+					}
+				}
+			} else if id == "markers" {
+				for [file_name, file_contents] in &data {
+					let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+					for marker_raw in reader.deserialize() {
+						let marker_raw: MarkerRaw = marker_raw?;
+						let marker = Marker::from_raw(marker_raw, star_color);
+						let entry = markers.entry(file_name.clone()).or_default();
+						entry.push(marker);
+						if !markers_categories_active.contains_key(file_name) {
+							markers_categories_active.insert(file_name.clone(), true);
+						}
+					}
 				}
 			}
 		}
+
 		let mut constellations = HashMap::new();
-		let reader = csv::Reader::from_path(CONSTELLATION_NAMES);
-		for constellation_raw in reader?.deserialize() {
-			let constellation_raw: ConstellationRaw = constellation_raw?;
-			let (constellation, abbreviation) = Constellation::from_raw(constellation_raw);
-			constellations.insert(abbreviation.to_lowercase(), constellation);
-		}
-		let reader = csv::Reader::from_path(CONSTELLATION_VERTICES);
-		for constellation_vertex in reader?.deserialize() {
-			let constellation_vertex: BorderVertex = constellation_vertex?;
-			match constellations.get_mut(&constellation_vertex.constellation.to_lowercase()) {
-				Some(constellation) => {
-					let position = constellation_vertex.get_position();
-					constellation.vertices.push(position);
+		for [id, file_contents] in sky_data_files {
+			let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+			if id == "constellation names" {
+				for constellation_raw in reader.deserialize() {
+					let constellation_raw: ConstellationRaw = constellation_raw?;
+					let (constellation, abbreviation) = Constellation::from_raw(constellation_raw);
+					constellations.insert(abbreviation.to_lowercase(), constellation);
 				}
-				None => {
-					println!("FUCK");
+			} else if id == "constellation vertices" {
+				for constellation_vertex in reader.deserialize() {
+					let constellation_vertex: BorderVertex = constellation_vertex?;
+					match constellations.get_mut(&constellation_vertex.constellation.to_lowercase()) {
+						Some(constellation) => {
+							let position = constellation_vertex.get_position();
+							constellation.vertices.push(position);
+						}
+						None => {
+							println!("FUCK");
+						}
+					}
 				}
 			}
 		}
