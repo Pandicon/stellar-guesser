@@ -24,7 +24,6 @@ fn main() {
 	let const_declarations = vec![const_declaration!(BUILD_DATE = date)].join("\n");
 	fs::write(dest_path, const_declarations).unwrap();
 	if std::env::var_os("CARGO_CFG_WINDOWS").is_some() {
-		// TODO: Make this not run for android builds
 		let mut res = winres::WindowsResource::new();
 		res.set_icon("./ico.ico");
 		res.compile().unwrap();
