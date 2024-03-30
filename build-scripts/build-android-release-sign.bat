@@ -22,6 +22,7 @@ ren app-universal-release-unsigned-aligned.apk app-universal-release-signed-alig
 cd %original_dir%
 
 copy %out_folder%\app-universal-release-signed-aligned.apk .\
+del stellar-guesser.apk
 ren app-universal-release-signed-aligned.apk stellar-guesser.apk
 
 del /Q .\builds\android\release\latest
