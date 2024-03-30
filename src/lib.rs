@@ -31,6 +31,8 @@ mod tests;*/
 pub const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 pub const PROJECT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+#[cfg(target_os = "windows")]
+const ICON_PATH: &str = "./ico.png";
 
 /// A custom event type for the winit app.
 enum Event {
@@ -42,6 +44,32 @@ enum Event {
 struct RepaintSignal(std::sync::Arc<std::sync::Mutex<winit::event_loop::EventLoopProxy<Event>>>);
 
 fn create_window<T>(event_loop: &EventLoopWindowTarget<T>, state: &mut State, painter: &mut Painter) -> winit::window::Window {
+	#[cfg(target_os = "windows")]
+	let window_icon = {
+		let icon_data = {
+			if let Ok(dynamic_image) = image::open(ICON_PATH) {
+				let image = dynamic_image.into_rgba8();
+				let (width, height) = image.dimensions();
+				let rgba = image.into_raw();
+				Some((rgba, width, height))
+			} else {
+				println!("Failed to open icon path");
+				None
+			}
+		};
+		if let Some((icon_rgba, icon_width, icon_height)) = icon_data {
+			if let Ok(icon) = winit::window::Icon::from_rgba(icon_rgba, icon_width, icon_height) {
+				Some(icon)
+			} else {
+				println!("Failed to open the icon");
+				None
+			}
+		} else {
+			None
+		}
+	};
+	#[cfg(not(target_os = "windows"))]
+	let window_icon = None;
 	let window = winit::window::WindowBuilder::new()
 		.with_decorations(true)
 		.with_resizable(true)
@@ -52,6 +80,7 @@ fn create_window<T>(event_loop: &EventLoopWindowTarget<T>, state: &mut State, pa
 			height: INITIAL_HEIGHT,
 		})
 		.with_maximized(true)
+		.with_window_icon(window_icon)
 		.build(event_loop)
 		.unwrap();
 
