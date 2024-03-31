@@ -162,6 +162,9 @@ impl Input {
 			println!("The mouse-middle combination was not in the 'currently_held' hashmap");
 		}
 		self.zoom = 0.0;
+		let mut tap_position = Pos2::new(0.0, 0.0);
+		let mut tap_released = false;
+		let mut touch_detected = false;
 		for event in &input_events {
 			match event {
 				egui::Event::Zoom(zoom) => {
@@ -173,6 +176,19 @@ impl Input {
 				}
 				egui::Event::Scroll(egui::Vec2 { y, .. }) => {
 					self.zoom = *y / 500.0;
+				}
+				egui::Event::Touch {
+					device_id: _,
+					id: _,
+					phase,
+					pos,
+					force: _,
+				} => {
+					touch_detected = true;
+					if phase == &egui::TouchPhase::End {
+						tap_released = true;
+					}
+					tap_position = *pos;
 				}
 				// Press of Shift + UpArrow
 				egui::Event::Key {
@@ -493,5 +509,9 @@ impl Input {
 			}
 		}
 		self.to_handle = to_handle;
+		if touch_detected && self.zoom == 0.0 {
+			self.pointer_position = PointerPosition::OnScreen(tap_position);
+			self.primary_released |= tap_released;
+		}
 	}
 }
