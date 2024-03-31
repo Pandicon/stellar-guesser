@@ -508,6 +508,9 @@ impl Input {
 				_ => {}
 			}
 		}
+		if self.zoom == 0.0 {
+			self.zoom = ctx.input(|i| i.zoom_delta()) - 1.0;
+		}
 		self.to_handle = to_handle;
 		if touch_detected && self.zoom == 0.0 {
 			self.pointer_position = PointerPosition::OnScreen(tap_position);
