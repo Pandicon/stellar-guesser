@@ -229,7 +229,7 @@ impl CellestialSphere {
 			.iter()
 			.map(|(id, list)| {
 				(
-					id.clone(),
+					*id,
 					list.into_iter()
 						.map(|[file_name, file_content]| [String::from(*file_name), String::from(*file_content)])
 						.collect::<Vec<[String; 2]>>(),
