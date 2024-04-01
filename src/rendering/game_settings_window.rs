@@ -76,6 +76,12 @@ impl Application {
 				if ui.button("Reset").clicked() {
 					self.game_handler.stage = 2;
 					self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
+
+					// Remove all game markers from the screen
+					*self.cellestial_sphere.markers.entry("game".to_string()).or_default() = Vec::new();
+					self.cellestial_sphere.init_single_renderer("markers", "game");
+					// Disable adding a game marker on click
+					self.game_handler.add_marker_on_click = false;
 				}
 				egui::CollapsingHeader::new(egui::RichText::new("Constellations").text_style(egui::TextStyle::Heading).size(20.0))
 					.default_open(true)
