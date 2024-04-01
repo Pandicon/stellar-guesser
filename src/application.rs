@@ -61,6 +61,8 @@ impl Application {
 	pub fn update(&mut self, ctx: &egui::Context) {
 		#[cfg(any(target_os = "ios", target_os = "android"))]
 		ctx.input_mut(|i| i.events.push(egui::Event::Text(self.input.text_from_keys.clone())));
+		self.input.input_field_had_focus_last_frame = self.input.input_field_has_focus;
+		self.input.input_field_has_focus = false;
 		self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos();
 		self.frame_timestamp = chrono::Utc::now().timestamp();
 		let cursor_within_central_panel = self.render(ctx);

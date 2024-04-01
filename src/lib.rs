@@ -131,7 +131,6 @@ fn _main(event_loop: EventLoop<Event>) {
 	#[cfg(not(target_os = "windows"))]
 	let mut storage = None; // TODO: Implement mobile storage
 	let mut application = application::Application::new(&ctx, authors, VERSION.to_string(), &mut storage); // egui_demo_lib::DemoWindows::default();
-	let mut soft_keyboard = false;
 
 	event_loop.run(move |event, event_loop, control_flow| match event {
 		Resumed => match window {
@@ -152,6 +151,15 @@ fn _main(event_loop: EventLoop<Event>) {
 
 				let full_output = ctx.run(raw_input, |ctx| {
 					application.update(ctx);
+					// toggle software keyboard
+					#[cfg(target_os = "android")]
+					if application.input.input_field_has_focus && !application.input.input_field_had_focus_last_frame {
+						// There was no focus on any text input field last frame, but there is this frame -> show the keyboard
+						show_soft_input(true);
+					} else if !application.input.input_field_has_focus && application.input.input_field_had_focus_last_frame {
+						// There was focus on some text input field last frame, but there is not this frame -> hide the keyboard
+						show_soft_input(false);
+					}
 				});
 				state.handle_platform_output(window, &ctx, full_output.platform_output);
 
@@ -180,14 +188,6 @@ fn _main(event_loop: EventLoop<Event>) {
 				}
 				winit::event::WindowEvent::CloseRequested => {
 					*control_flow = ControlFlow::Exit;
-				}
-				winit::event::WindowEvent::Touch(touch) => {
-					if touch.phase == winit::event::TouchPhase::Started {
-						// toggle software keyboard
-						soft_keyboard = !soft_keyboard;
-						#[cfg(target_os = "android")]
-						show_soft_input(soft_keyboard);
-					}
 				}
 				_ => {}
 			}

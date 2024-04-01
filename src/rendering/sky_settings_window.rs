@@ -69,11 +69,11 @@ impl Application {
 					let prev_mag_scale = self.cellestial_sphere.mag_scale;
 					ui.horizontal_wrapped(|ui| ui.label("The following two values affect the size of the stars via the following formula: radius = mag_scale * (mag_offset - magnitude)"));
 					ui.horizontal(|ui| {
-						ui.add(egui::DragValue::new(&mut self.cellestial_sphere.mag_offset).speed(0.1));
+						self.input.input_field_has_focus |= ui.add(egui::DragValue::new(&mut self.cellestial_sphere.mag_offset).speed(0.1)).has_focus();
 						ui.label("Magnitude offset (mag_offset)");
 					});
 					ui.horizontal(|ui| {
-						ui.add(egui::DragValue::new(&mut self.cellestial_sphere.mag_scale).speed(0.1));
+						self.input.input_field_has_focus |= ui.add(egui::DragValue::new(&mut self.cellestial_sphere.mag_scale).speed(0.1)).has_focus();
 						ui.label("Magnitude scale (mag_scale)");
 					});
 					if prev_mag_offset != self.cellestial_sphere.mag_offset || prev_mag_scale != self.cellestial_sphere.mag_scale {
@@ -120,7 +120,7 @@ impl Application {
 				.default_open(true)
 				.show(ui, |ui| {
 					ui.horizontal(|ui| {
-						ui.add(egui::DragValue::new(&mut self.cellestial_sphere.deepsky_render_mag_decrease).speed(0.1));
+						self.input.input_field_has_focus |= ui.add(egui::DragValue::new(&mut self.cellestial_sphere.deepsky_render_mag_decrease).speed(0.1)).has_focus();
 						ui.label("Magnitude decrease")
 							.on_hover_text("By how much should the magnitude of the deepsky objects be decreased for rendering - this way the objects can be made to be seen even without zooming in");
 					});
