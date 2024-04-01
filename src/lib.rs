@@ -131,6 +131,7 @@ fn _main(event_loop: EventLoop<Event>) {
 	#[cfg(not(target_os = "windows"))]
 	let mut storage = None; // TODO: Implement mobile storage
 	let mut application = application::Application::new(&ctx, authors, VERSION.to_string(), &mut storage); // egui_demo_lib::DemoWindows::default();
+	let mut soft_keyboard = false;
 
 	event_loop.run(move |event, event_loop, control_flow| match event {
 		Resumed => match window {
@@ -179,6 +180,14 @@ fn _main(event_loop: EventLoop<Event>) {
 				}
 				winit::event::WindowEvent::CloseRequested => {
 					*control_flow = ControlFlow::Exit;
+				}
+				winit::event::WindowEvent::Touch(touch) => {
+					if touch.phase == winit::event::TouchPhase::Started {
+						// toggle software keyboard
+						soft_keyboard = !soft_keyboard;
+						#[cfg(target_os = "android")]
+						show_soft_input(soft_keyboard);
+					}
 				}
 				_ => {}
 			}
@@ -235,4 +244,42 @@ fn android_main(app: AndroidApp) {
 
 	let event_loop = EventLoopBuilder::with_user_event().with_android_app(app).build();
 	stop_unwind(|| _main(event_loop));
+}
+
+#[cfg(target_os = "android")]
+fn show_soft_input(show: bool) -> bool {
+	let ctx = ndk_context::android_context();
+
+	let vm = unsafe { jni::JavaVM::from_raw(ctx.vm().cast()) }.unwrap();
+	let env = vm.attach_current_thread().unwrap();
+
+	let class_ctx = env.find_class("android/content/Context").unwrap();
+	let ime = env.get_static_field(class_ctx, "INPUT_METHOD_SERVICE", "Ljava/lang/String;").unwrap();
+	let ime_manager = env
+		.call_method(ctx.context() as jni::sys::jobject, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;", &[ime])
+		.unwrap()
+		.l()
+		.unwrap();
+
+	let jni_window = env.call_method(ctx.context() as jni::sys::jobject, "getWindow", "()Landroid/view/Window;", &[]).unwrap().l().unwrap();
+	let view = env.call_method(jni_window, "getDecorView", "()Landroid/view/View;", &[]).unwrap().l().unwrap();
+
+	if show {
+		let result = env
+			.call_method(ime_manager, "showSoftInput", "(Landroid/view/View;I)Z", &[view.into(), 0i32.into()])
+			.unwrap()
+			.z()
+			.unwrap();
+		log::info!("show input: {}", result);
+		result
+	} else {
+		let window_token = env.call_method(view, "getWindowToken", "()Landroid/os/IBinder;", &[]).unwrap().l().unwrap();
+		let result = env
+			.call_method(ime_manager, "hideSoftInputFromWindow", "(Landroid/os/IBinder;I)Z", &[window_token.into(), 0i32.into()])
+			.unwrap()
+			.z()
+			.unwrap();
+		log::info!("hide input: {}", result);
+		result
+	}
 }
