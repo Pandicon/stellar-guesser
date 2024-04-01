@@ -59,6 +59,8 @@ impl Application {
 	}
 
 	pub fn update(&mut self, ctx: &egui::Context) {
+		#[cfg(any(target_os = "ios", target_os = "android"))]
+		ctx.input_mut(|i| i.events.push(egui::Event::Text(self.input.text_from_keys.clone())));
 		self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos();
 		self.frame_timestamp = chrono::Utc::now().timestamp();
 		let cursor_within_central_panel = self.render(ctx);
