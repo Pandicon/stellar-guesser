@@ -1,4 +1,4 @@
-use eframe::epaint::Color32;
+use egui::epaint::Color32;
 
 pub fn parse_colour(col: Option<String>, default_colour: Color32) -> Color32 {
 	if let Some(colour_string) = col {

@@ -1,4 +1,3 @@
-use eframe::egui;
 use nalgebra::{Matrix3, Vector2, Vector3};
 use rand::{rngs::ThreadRng, Rng};
 use std::f32::consts::PI;

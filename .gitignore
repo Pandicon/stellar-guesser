@@ -21,5 +21,20 @@ Cargo.lock
 node_modules/
 
 *.exe
+*.apk
+/builds
 
 addons/object-images/
+
+# cargo-mobile2
+.cargo/
+/gen
+
+# macOS
+.DS_Store
+
+# keystore
+stellar-guesser.keystore
+
+# save file
+save.ron

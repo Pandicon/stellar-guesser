@@ -1,7 +1,4 @@
-use eframe::{
-	egui,
-	epaint::{Color32, Pos2},
-};
+use egui::epaint::{Color32, Pos2};
 use nalgebra::Rotation3;
 use std::{collections::HashMap, f32::consts::PI};
 
@@ -84,6 +81,10 @@ pub struct Input {
 
 	pointer_down_outside_subwindow: bool,
 	currently_held: HashMap<&'static str, bool>,
+
+	pub text_from_keys: String,
+	pub input_field_has_focus: bool,
+	pub input_field_had_focus_last_frame: bool,
 }
 
 impl Default for Input {
@@ -106,12 +107,17 @@ impl Default for Input {
 			primary_released: false,
 			primary_dragging: false,
 			primary_dragging_last_frame: false,
+
+			text_from_keys: String::new(),
+			input_field_has_focus: false,
+			input_field_had_focus_last_frame: false,
 		}
 	}
 }
 
 impl Input {
 	pub fn handle(&mut self, cursor_within_central_panel: bool, ctx: &egui::Context) {
+		self.text_from_keys = String::new();
 		let input_events = ctx.input(|i| i.events.clone());
 		let shift_held = ctx.input(|i| i.modifiers.shift);
 		let drag_x = ctx.input(|i: &egui::InputState| i.pointer.delta().x);
@@ -165,6 +171,9 @@ impl Input {
 			println!("The mouse-middle combination was not in the 'currently_held' hashmap");
 		}
 		self.zoom = 0.0;
+		let mut tap_position = Pos2::new(0.0, 0.0);
+		let mut tap_released = false;
+		let mut touch_detected = false;
 		for event in &input_events {
 			match event {
 				egui::Event::Zoom(zoom) => {
@@ -176,6 +185,19 @@ impl Input {
 				}
 				egui::Event::Scroll(egui::Vec2 { y, .. }) => {
 					self.zoom = *y / 500.0;
+				}
+				egui::Event::Touch {
+					device_id: _,
+					id: _,
+					phase,
+					pos,
+					force: _,
+				} => {
+					touch_detected = true;
+					if phase == &egui::TouchPhase::End {
+						tap_released = true;
+					}
+					tap_position = *pos;
 				}
 				// Press of Shift + UpArrow
 				egui::Event::Key {
@@ -359,6 +381,114 @@ impl Input {
 						println!("The alt+shift+s combination was not in the 'currently_held' hashmap");
 					}
 				}
+				// All unhandled, unmodified keys - construct the text edit string by hand
+				#[cfg(any(target_os = "ios", target_os = "android"))]
+				egui::Event::Key {
+					key,
+					pressed: true,
+					repeat: false,
+					modifiers: egui::Modifiers {
+						alt: false,
+						ctrl: false,
+						shift,
+						mac_cmd: false,
+						command: false,
+					},
+				} => {
+					let mut character = match *key {
+						egui::Key::Enter => "\n",
+						egui::Key::Space => " ",
+						egui::Key::Minus => "-",
+						egui::Key::PlusEquals => "+=",
+						egui::Key::Num0 => "0",
+						egui::Key::Num1 => "1",
+						egui::Key::Num2 => "2",
+						egui::Key::Num3 => "3",
+						egui::Key::Num4 => "4",
+						egui::Key::Num5 => "5",
+						egui::Key::Num6 => "6",
+						egui::Key::Num7 => "7",
+						egui::Key::Num8 => "8",
+						egui::Key::Num9 => "9",
+						egui::Key::A => "a",
+						egui::Key::B => "b",
+						egui::Key::C => "c",
+						egui::Key::D => "d",
+						egui::Key::E => "e",
+						egui::Key::F => "f",
+						egui::Key::G => "g",
+						egui::Key::H => "h",
+						egui::Key::I => "i",
+						egui::Key::J => "j",
+						egui::Key::K => "k",
+						egui::Key::L => "l",
+						egui::Key::M => "m",
+						egui::Key::N => "n",
+						egui::Key::O => "o",
+						egui::Key::P => "p",
+						egui::Key::Q => "q",
+						egui::Key::R => "r",
+						egui::Key::S => "s",
+						egui::Key::T => "t",
+						egui::Key::U => "u",
+						egui::Key::V => "v",
+						egui::Key::W => "w",
+						egui::Key::X => "x",
+						egui::Key::Y => "y",
+						egui::Key::Z => "z",
+						egui::Key::ArrowDown
+						| egui::Key::ArrowLeft
+						| egui::Key::ArrowRight
+						| egui::Key::ArrowUp
+						| egui::Key::Escape
+						| egui::Key::Tab
+						| egui::Key::Backspace
+						| egui::Key::Insert
+						| egui::Key::Delete
+						| egui::Key::Home
+						| egui::Key::End
+						| egui::Key::PageUp
+						| egui::Key::PageDown
+						| egui::Key::F1
+						| egui::Key::F2
+						| egui::Key::F3
+						| egui::Key::F4
+						| egui::Key::F5
+						| egui::Key::F6
+						| egui::Key::F7
+						| egui::Key::F8
+						| egui::Key::F9
+						| egui::Key::F10
+						| egui::Key::F11
+						| egui::Key::F12
+						| egui::Key::F13
+						| egui::Key::F14
+						| egui::Key::F15
+						| egui::Key::F16
+						| egui::Key::F17
+						| egui::Key::F18
+						| egui::Key::F19
+						| egui::Key::F20 => "",
+					};
+					// Could probably have a bit more fun with it, but having it doubled does work well enough...
+					if *key == egui::Key::Space && !self.input_field_has_focus {
+						// If you are typing, then you don't want this to fire
+						if let Some(pressed) = self.currently_held.get("space") {
+							if !pressed {
+								let held = self.currently_held.entry("space").or_insert(true);
+								*held = true;
+								to_handle.push(enums::Inputs::Space);
+							}
+						} else {
+							println!("The space combination was not in the 'currently_held' hashmap");
+						}
+					}
+					let c = character.to_uppercase();
+					if *shift {
+						character = &c;
+					}
+					self.text_from_keys += character;
+				}
 				// Press of Space
 				egui::Event::Key {
 					key: egui::Key::Space,
@@ -495,6 +625,13 @@ impl Input {
 				_ => {}
 			}
 		}
+		if self.zoom == 0.0 {
+			self.zoom = ctx.input(|i| i.zoom_delta()) - 1.0;
+		}
 		self.to_handle = to_handle;
+		if touch_detected && self.zoom == 0.0 {
+			self.pointer_position = PointerPosition::OnScreen(tap_position);
+			self.primary_released |= tap_released;
+		}
 	}
 }

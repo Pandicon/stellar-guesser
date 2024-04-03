@@ -1,5 +1,4 @@
 use crate::{enums, structs::graphics_settings::GraphicsSettings};
-use eframe::egui;
 
 use crate::caspr::CellestialSphere;
 
@@ -25,14 +24,19 @@ pub struct Application {
 
 	pub authors: String,
 	pub version: String,
+
+	pub last_state_save: std::time::Instant,
+	pub last_state_save_to_disk: std::time::Instant,
+	pub state_save_interval: std::time::Duration,
+	pub state_save_to_disk_interval: std::time::Duration,
 }
 
 impl Application {
-	pub fn new(cc: &eframe::CreationContext<'_>, authors: String, version: String) -> Self {
-		egui_extras::install_image_loaders(&cc.egui_ctx);
-		cc.egui_ctx.set_visuals(egui::Visuals::dark());
+	pub fn new(ctx: &egui::Context, authors: String, version: String, storage: &mut Option<crate::storage::Storage>) -> Self {
+		egui_extras::install_image_loaders(&ctx);
+		ctx.set_visuals(egui::Visuals::dark());
 		let mut time_spent_start = 0;
-		if let Some(storage) = cc.storage {
+		if let Some(storage) = storage {
 			if let Some(time_spent_restore) = storage.get_string("time_spent") {
 				if let Ok(time_spent) = time_spent_restore.parse() {
 					time_spent_start = time_spent;
@@ -41,7 +45,7 @@ impl Application {
 		}
 		let timestamp = chrono::Utc::now().timestamp();
 		let state = state::State::new(timestamp, time_spent_start);
-		let mut cellestial_sphere = CellestialSphere::load(cc.storage).unwrap();
+		let mut cellestial_sphere = CellestialSphere::load(storage).unwrap();
 		cellestial_sphere.init();
 		Self {
 			input: input::Input::default(),
@@ -49,19 +53,27 @@ impl Application {
 
 			frame_timestamp: timestamp,
 			frame_timestamp_ms: chrono::Utc::now().timestamp_millis(),
-			game_handler: GameHandler::init(&mut cellestial_sphere, cc.storage),
+			game_handler: GameHandler::init(&mut cellestial_sphere, storage),
 			cellestial_sphere,
 			graphics_settings: GraphicsSettings::default(),
 			frames_handler: FramesHandler::default(),
 
 			authors,
 			version,
+
+			last_state_save: std::time::Instant::now(),
+			last_state_save_to_disk: std::time::Instant::now(),
+			state_save_interval: std::time::Duration::from_secs(5),
+			state_save_to_disk_interval: std::time::Duration::from_secs(60),
 		}
 	}
-}
 
-impl eframe::App for Application {
-	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+	pub fn update(&mut self, ctx: &egui::Context) {
+		#[cfg(any(target_os = "ios", target_os = "android"))]
+		// Push the input text restored from key presses to events as a Text event so that input fields take it in by themselves
+		ctx.input_mut(|i| i.events.push(egui::Event::Text(self.input.text_from_keys.clone())));
+		self.input.input_field_had_focus_last_frame = self.input.input_field_has_focus;
+		self.input.input_field_has_focus = false;
 		self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos();
 		self.frame_timestamp = chrono::Utc::now().timestamp();
 		let cursor_within_central_panel = self.render(ctx);
@@ -71,7 +83,7 @@ impl eframe::App for Application {
 		ctx.request_repaint();
 	}
 
-	fn save(&mut self, storage: &mut dyn eframe::Storage) {
+	pub fn save(&mut self, storage: &mut crate::storage::Storage) {
 		storage.set_string("time_spent", (self.state.time_spent_start + (self.frame_timestamp - self.state.start_timestamp)).to_string());
 
 		let mut deepsky_files_to_not_render = Vec::new();
@@ -138,5 +150,11 @@ impl eframe::App for Application {
 			}
 		}
 		storage.set_string("inactive_constellations_groups", inactive_constellations_groups.join("|"));
+
+		let now = std::time::Instant::now();
+		if now - self.last_state_save_to_disk > self.state_save_to_disk_interval {
+			storage.save();
+			self.last_state_save_to_disk = now;
+		}
 	}
 }

@@ -1,5 +1,3 @@
-use eframe::egui;
-
 use crate::{enums, Application};
 
 impl Application {
@@ -16,12 +14,16 @@ impl Application {
 						ui.checkbox(&mut self.game_handler.object_question_settings.show_ics, "Show IC objects");
 						ui.checkbox(&mut self.game_handler.object_question_settings.show_bayer, "Show Bayer designations");
 						ui.checkbox(&mut self.game_handler.object_question_settings.show_starnames, "Show star names");
-						ui.add(egui::Slider::new(&mut self.game_handler.object_question_settings.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"));
-						ui.add(
-							egui::Slider::new(&mut self.game_handler.object_question_settings.correctness_threshold, 0.0..=180.0)
-								.text("Correctness threshold (degrees)")
-								.logarithmic(true),
-						);
+						self.input.input_field_has_focus |= ui
+							.add(egui::Slider::new(&mut self.game_handler.object_question_settings.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"))
+							.has_focus();
+						self.input.input_field_has_focus |= ui
+							.add(
+								egui::Slider::new(&mut self.game_handler.object_question_settings.correctness_threshold, 0.0..=180.0)
+									.text("Correctness threshold (degrees)")
+									.logarithmic(true),
+							)
+							.has_focus();
 						ui.checkbox(&mut self.game_handler.object_question_settings.replay_incorrect, "Replay incorrectly answered questions");
 					});
 				egui::CollapsingHeader::new(egui::RichText::new("'Which constellation is this point in' questions").text_style(egui::TextStyle::Heading).size(20.0))
@@ -39,7 +41,9 @@ impl Application {
 						ui.checkbox(&mut self.game_handler.this_point_object_question_settings.show_ics, "Show IC objects");
 						ui.checkbox(&mut self.game_handler.this_point_object_question_settings.show_bayer, "Show Bayer designations");
 						ui.checkbox(&mut self.game_handler.this_point_object_question_settings.show_starnames, "Show star names");
-						ui.add(egui::Slider::new(&mut self.game_handler.this_point_object_question_settings.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"));
+						self.input.input_field_has_focus |= ui
+							.add(egui::Slider::new(&mut self.game_handler.this_point_object_question_settings.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"))
+							.has_focus();
 						ui.checkbox(&mut self.game_handler.this_point_object_question_settings.replay_incorrect, "Replay incorrectly answered questions");
 					});
 				egui::CollapsingHeader::new(egui::RichText::new("'What is the angle between..' questions").text_style(egui::TextStyle::Heading).size(20.0))
@@ -56,18 +60,28 @@ impl Application {
 					.default_open(true)
 					.show(ui, |ui| {
 						ui.checkbox(&mut self.game_handler.show_magquestions, "Show the 'What is this object' questions");
-						ui.add(egui::Slider::new(&mut self.game_handler.mag_question_settings.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"));
+						self.input.input_field_has_focus |= ui
+							.add(egui::Slider::new(&mut self.game_handler.mag_question_settings.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"))
+							.has_focus();
 						ui.checkbox(&mut self.game_handler.this_point_object_question_settings.replay_incorrect, "Replay incorrectly answered questions");
 					});
 				ui.checkbox(&mut self.game_handler.is_scored_mode, "Play in scored mode?");
-				ui.add(
-					egui::Slider::new(&mut self.game_handler.no_of_questions, 1..=self.game_handler.possible_no_of_questions)
-						.text("Number of questions")
-						.logarithmic(true),
-				);
+				self.input.input_field_has_focus |= ui
+					.add(
+						egui::Slider::new(&mut self.game_handler.no_of_questions, 1..=self.game_handler.possible_no_of_questions)
+							.text("Number of questions")
+							.logarithmic(true),
+					)
+					.has_focus();
 				if ui.button("Reset").clicked() {
 					self.game_handler.stage = 2;
 					self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
+
+					// Remove all game markers from the screen
+					*self.cellestial_sphere.markers.entry("game".to_string()).or_default() = Vec::new();
+					self.cellestial_sphere.init_single_renderer("markers", "game");
+					// Disable adding a game marker on click
+					self.game_handler.add_marker_on_click = false;
 				}
 				egui::CollapsingHeader::new(egui::RichText::new("Constellations").text_style(egui::TextStyle::Heading).size(20.0))
 					.default_open(true)

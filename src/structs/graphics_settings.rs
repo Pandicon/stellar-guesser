@@ -1,5 +1,5 @@
 use crate::enums::ColourMode;
-use eframe::epaint::Color32;
+use egui::epaint::Color32;
 
 pub struct GraphicsSettings {
 	pub default_star_colour_dark_mode: Color32,
