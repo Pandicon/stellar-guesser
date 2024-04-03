@@ -30,7 +30,7 @@ fn main() {
 	];
 
 	let target_os = std::env::var_os("CARGO_CFG_TARGET_OS").unwrap_or("_".into());
-	let const_declarations = if target_os == "android" || target_os == "ios" {
+	let mut const_declarations_intermediate = if target_os == "android" || target_os == "ios" {
 		let content_folder = [
 			["deepskies", DEEPSKIES_FOLDER],
 			["lines", LINES_FOLDER],
@@ -72,16 +72,12 @@ fn main() {
 			other_sky_data.push([String::from("constellation vertices"), file_content.replace("\"", "\\\"")])
 		};
 
-		vec![
-			const_declaration!(pub BUILD_DATE = date),
-			const_declaration!(pub SKY_DATA_LISTS = sky_data),
-			const_declaration!(pub SKY_DATA_FILES = other_sky_data),
-		]
-		.join("\n")
+		vec![const_declaration!(pub SKY_DATA_LISTS = sky_data), const_declaration!(pub SKY_DATA_FILES = other_sky_data)]
 	} else {
-		vec![const_declaration!(pub BUILD_DATE = date)].join("\n")
+		vec![]
 	};
-	fs::write(dest_path, const_declarations).unwrap();
+	const_declarations_intermediate.push(const_declaration!(pub BUILD_DATE = date));
+	fs::write(dest_path, const_declarations_intermediate.join("\n")).unwrap();
 
 	if std::env::var_os("CARGO_CFG_WINDOWS").is_some() {
 		let mut res = winres::WindowsResource::new();
