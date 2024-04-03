@@ -35,3 +35,6 @@ addons/object-images/
 
 # keystore
 stellar-guesser.keystore
+
+# save file
+save.ron

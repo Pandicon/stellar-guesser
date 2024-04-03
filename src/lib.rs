@@ -126,11 +126,11 @@ fn _main(event_loop: EventLoop<Event>) {
 	} else {
 		authors_split.join(" and ")
 	};
-	#[cfg(target_os = "windows")]
-	let mut storage = None; //Some(storage::Storage::new());
-	#[cfg(not(target_os = "windows"))]
-	let mut storage = None; // TODO: Implement mobile storage
-	let mut application = application::Application::new(&ctx, authors, VERSION.to_string(), &mut storage); // egui_demo_lib::DemoWindows::default();
+	#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos", target_os = "android"))]
+	let mut storage = Some(storage::Storage::new());
+	#[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos", target_os = "android")))]
+	let mut storage = None; // Maybe implement iOS and other platforms storage?
+	let mut application = application::Application::new(&ctx, authors, VERSION.to_string(), &mut storage);
 
 	event_loop.run(move |event, event_loop, control_flow| match event {
 		Resumed => match window {
@@ -151,6 +151,16 @@ fn _main(event_loop: EventLoop<Event>) {
 
 				let full_output = ctx.run(raw_input, |ctx| {
 					application.update(ctx);
+
+					// Save application state
+					if let Some(storage) = &mut storage {
+						let now = std::time::Instant::now();
+						if now - application.last_state_save > application.state_save_interval {
+							application.save(storage);
+							application.last_state_save = now;
+						}
+					}
+
 					// toggle software keyboard
 					#[cfg(target_os = "android")]
 					if application.input.input_field_has_focus && !application.input.input_field_had_focus_last_frame {
@@ -197,6 +207,13 @@ fn _main(event_loop: EventLoop<Event>) {
 				if let Some(window) = window.as_ref() {
 					window.request_redraw();
 				}
+			}
+		}
+		LoopDestroyed => {
+			// Save application state
+			if let Some(storage) = &mut storage {
+				application.save(storage);
+				storage.save();
 			}
 		}
 		_ => (),
