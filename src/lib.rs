@@ -143,6 +143,11 @@ fn _main(event_loop: EventLoop<Event>) {
 			}
 		},
 		Suspended => {
+			// Save application state
+			if let Some(storage) = &mut storage {
+				application.save(storage);
+				storage.save();
+			}
 			window = None;
 		}
 		RedrawRequested(..) => {
