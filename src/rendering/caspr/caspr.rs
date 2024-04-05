@@ -133,15 +133,26 @@ impl CellestialSphere {
 	}
 
 	pub fn load(storage: &mut Option<crate::storage::Storage>) -> Result<Self, Box<dyn Error>> {
-		let object_images = if let Ok(executable_dir) = std::env::current_exe() {
-			let mut images_addon_dir = executable_dir;
-			images_addon_dir.pop();
-			for part in OBJECT_IMAGES_FOLDER.split('/') {
-				if part == "." {
-					continue;
+		#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+		let images_addon_dir_opt = {
+			if let Ok(executable_dir) = std::env::current_exe() {
+				let mut images_addon_dir = executable_dir;
+				images_addon_dir.pop();
+				for part in OBJECT_IMAGES_FOLDER.split('/') {
+					if part == "." {
+						continue;
+					}
+					images_addon_dir.push(part);
 				}
-				images_addon_dir.push(part);
+				Some(images_addon_dir)
+			} else {
+				println!("Couldn't load the executable directory and therefore couldn't load the images");
+				None
 			}
+		};
+		#[cfg(target_os = "android")]
+		let images_addon_dir_opt: Option<std::path::PathBuf> = Some(OBJECT_IMAGES_FOLDER.into());
+		let object_images = if let Some(images_addon_dir) = images_addon_dir_opt {
 			match images_addon_dir.try_exists() {
 				Ok(false) | Err(_) => {
 					dbg!("The images add-on folder was not found");
@@ -151,37 +162,41 @@ impl CellestialSphere {
 					// The images add-on folder does exist
 					let mut list_dir = images_addon_dir.clone();
 					list_dir.push("list.csv");
-					let mut objects_images = Vec::new();
-					let reader: Result<csv::Reader<std::fs::File>, csv::Error> = csv::Reader::from_path(list_dir);
-					for object_image_data in reader?.deserialize() {
-						let mut object_image_data: crate::structs::image_info::DeepskyObjectImageInfo = object_image_data?;
-						let path_raw = &object_image_data.image;
-						let mut path = images_addon_dir.clone();
-						path.push("images");
-						for part in path_raw.split('/') {
-							if part == "." {
-								continue;
+					if let Ok(list_file_content) = fs::read_to_string(list_dir) {
+						let mut objects_images = Vec::new();
+						let list_file_contents = list_file_content.replace("\"", "\\\"");
+						let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(list_file_contents.as_bytes());
+						for object_image_data in reader.deserialize() {
+							let mut object_image_data: crate::structs::image_info::DeepskyObjectImageInfo = object_image_data?;
+							let path_raw = &object_image_data.image;
+							let mut path = images_addon_dir.clone();
+							path.push("images");
+							for part in path_raw.split('/') {
+								if part == "." {
+									continue;
+								}
+								path.push(part);
 							}
-							path.push(part);
-						}
-						match path.try_exists() {
-							Ok(true) => {
-								if let Some(path) = path.to_str() {
-									let path = path.replace("\\", "/");
-									object_image_data.image = format!("file://{path}");
+							match path.try_exists() {
+								Ok(true) => {
+									if let Some(path) = path.to_str() {
+										let path = path.replace("\\", "/");
+										object_image_data.image = format!("file://{path}");
+									}
+								}
+								Ok(false) | Err(_) => {
+									println!("Couldn't find image {} (path checked: {:?})", path_raw, path);
 								}
 							}
-							Ok(false) | Err(_) => {
-								println!("Couldn't find image {} (path checked: {:?})", path_raw, path);
-							}
+							objects_images.push(object_image_data);
 						}
-						objects_images.push(object_image_data);
+						Some(objects_images)
+					} else {
+						None
 					}
-					Some(objects_images)
 				}
 			}
 		} else {
-			println!("Couldn't load the executable directory and therefore couldn't load the images");
 			None
 		};
 
