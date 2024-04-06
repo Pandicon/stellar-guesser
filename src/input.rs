@@ -202,6 +202,7 @@ impl Input {
 				// Press of Shift + UpArrow
 				egui::Event::Key {
 					key: egui::Key::ArrowUp,
+					physical_key: _,
 					pressed: true,
 					repeat: false,
 					modifiers: egui::Modifiers {
@@ -217,6 +218,7 @@ impl Input {
 				// Press of Shift + DownArrow
 				egui::Event::Key {
 					key: egui::Key::ArrowDown,
+					physical_key: _,
 					pressed: true,
 					repeat: false,
 					modifiers: egui::Modifiers {
@@ -232,6 +234,7 @@ impl Input {
 				// Press of LeftArrow
 				egui::Event::Key {
 					key: egui::Key::ArrowLeft,
+					physical_key: _,
 					pressed: true,
 					repeat: _,
 					modifiers: egui::Modifiers {
@@ -247,6 +250,7 @@ impl Input {
 				// Press of RightArrow
 				egui::Event::Key {
 					key: egui::Key::ArrowRight,
+					physical_key: _,
 					pressed: true,
 					repeat: _,
 					modifiers: egui::Modifiers {
@@ -262,6 +266,7 @@ impl Input {
 				// Press of UpArrow
 				egui::Event::Key {
 					key: egui::Key::ArrowUp,
+					physical_key: _,
 					pressed: true,
 					repeat: _,
 					modifiers: egui::Modifiers {
@@ -277,6 +282,7 @@ impl Input {
 				// Press of DownArrow
 				egui::Event::Key {
 					key: egui::Key::ArrowDown,
+					physical_key: _,
 					pressed: true,
 					repeat: _,
 					modifiers: egui::Modifiers {
@@ -292,6 +298,7 @@ impl Input {
 				// Press of Alt + Shift + G
 				egui::Event::Key {
 					key: egui::Key::G,
+					physical_key: _,
 					pressed: true,
 					repeat: false,
 					modifiers: egui::Modifiers {
@@ -315,6 +322,7 @@ impl Input {
 				// Press of Alt + Shift + I
 				egui::Event::Key {
 					key: egui::Key::I,
+					physical_key: _,
 					pressed: true,
 					repeat: false,
 					modifiers: egui::Modifiers {
@@ -338,6 +346,7 @@ impl Input {
 				// Press of Alt + Shift + O
 				egui::Event::Key {
 					key: egui::Key::O,
+					physical_key: _,
 					pressed: true,
 					repeat: false,
 					modifiers: egui::Modifiers {
@@ -361,6 +370,7 @@ impl Input {
 				// Press of Alt + Shift + S
 				egui::Event::Key {
 					key: egui::Key::S,
+					physical_key: _,
 					pressed: true,
 					repeat: false,
 					modifiers: egui::Modifiers {
@@ -385,6 +395,7 @@ impl Input {
 				#[cfg(any(target_os = "ios", target_os = "android"))]
 				egui::Event::Key {
 					key,
+					physical_key: _,
 					pressed: true,
 					repeat: false,
 					modifiers: egui::Modifiers {
@@ -399,7 +410,16 @@ impl Input {
 						egui::Key::Enter => "\n",
 						egui::Key::Space => " ",
 						egui::Key::Minus => "-",
-						egui::Key::PlusEquals => "+=",
+						egui::Key::Plus => "+",
+						egui::Key::Equals => "=",
+						egui::Key::Comma => ",",
+						egui::Key::Period => ".",
+						egui::Key::Colon => ":",
+						egui::Key::Semicolon => ";",
+						egui::Key::Backtick => "`",
+						egui::Key::Backslash => "\\",
+						egui::Key::OpenBracket => "(",
+						egui::Key::CloseBracket => ")",
 						egui::Key::Num0 => "0",
 						egui::Key::Num1 => "1",
 						egui::Key::Num2 => "2",
@@ -441,6 +461,9 @@ impl Input {
 						| egui::Key::ArrowRight
 						| egui::Key::ArrowUp
 						| egui::Key::Escape
+						| egui::Key::Cut
+						| egui::Key::Copy
+						| egui::Key::Paste
 						| egui::Key::Tab
 						| egui::Key::Backspace
 						| egui::Key::Insert
@@ -492,6 +515,7 @@ impl Input {
 				// Press of Space
 				egui::Event::Key {
 					key: egui::Key::Space,
+					physical_key: _,
 					pressed: true,
 					repeat: _,
 					modifiers: egui::Modifiers {
@@ -515,6 +539,7 @@ impl Input {
 				// Release of G
 				egui::Event::Key {
 					key: egui::Key::G,
+					physical_key: _,
 					pressed: false,
 					repeat: _,
 					modifiers: egui::Modifiers {
@@ -537,6 +562,7 @@ impl Input {
 				// Release of I
 				egui::Event::Key {
 					key: egui::Key::I,
+					physical_key: _,
 					pressed: false,
 					repeat: _,
 					modifiers: egui::Modifiers {
@@ -559,6 +585,7 @@ impl Input {
 				// Release of O
 				egui::Event::Key {
 					key: egui::Key::O,
+					physical_key: _,
 					pressed: false,
 					repeat: _,
 					modifiers: egui::Modifiers {
@@ -581,6 +608,7 @@ impl Input {
 				// Release of S
 				egui::Event::Key {
 					key: egui::Key::S,
+					physical_key: _,
 					pressed: false,
 					repeat: _,
 					modifiers: egui::Modifiers {
@@ -603,6 +631,7 @@ impl Input {
 				// Release of Space
 				egui::Event::Key {
 					key: egui::Key::Space,
+					physical_key: _,
 					pressed: false,
 					repeat: _,
 					modifiers: egui::Modifiers {
