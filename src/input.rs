@@ -1,8 +1,7 @@
-use egui::epaint::{Color32, Pos2};
+use egui::epaint::Pos2;
 use nalgebra::Rotation3;
-use std::{collections::HashMap, f32::consts::PI};
+use std::collections::HashMap;
 
-use crate::rendering::caspr::markers::Marker;
 use crate::{
 	enums::{self, PointerPosition},
 	Application,
