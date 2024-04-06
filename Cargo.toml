@@ -23,7 +23,6 @@ chrono = "0.4"
 csv = "1.2.2"
 directories-next = "2.0.0"
 egui = "0.23"
-egui_demo_lib = "0.23"
 egui_extras = { version = "0.23", features = ["all_loaders", "image"] }
 egui-wgpu = { version = "0.23", features = ["winit"] }
 egui-winit = { version = "0.23", default-features = false }
