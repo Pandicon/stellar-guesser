@@ -79,6 +79,11 @@ pub fn cartesian_to_spherical(vector: Vector3<f32>) -> (f32, f32) {
 	}
 	(dec, ra)
 }
+pub fn cast_onto_sphere_dec_ra(cellestial_sphere: &CellestialSphere, screen_position: &egui::Pos2) -> [f32; 2] {
+	let sphere_position = cast_onto_sphere(cellestial_sphere, &screen_position);
+	let (dec, ra) = cartesian_to_spherical(sphere_position);
+	[dec, ra]
+}
 /**
  * initial_position: (ra, dec) both in radians
  * final_position: (ra, dec) both in radians

@@ -108,6 +108,8 @@ pub struct GameHandler {
 	pub answer_review_text: String,
 	pub answer: String,
 
+	pub guess_marker_positions: Vec<[f32; 2]>,
+
 	pub object_question_settings: QuestionSettings,
 	pub this_point_object_question_settings: QuestionSettings,
 	pub mag_question_settings: QuestionSettings,
@@ -395,6 +397,7 @@ impl GameHandler {
 			answer_review_text_heading: String::new(),
 			answer_review_text: String::new(),
 			answer: String::new(),
+			guess_marker_positions: Vec::new(),
 			object_question_settings: QuestionSettings::default(),
 			this_point_object_question_settings: QuestionSettings::default(),
 			mag_question_settings: QuestionSettings::default(),
@@ -886,5 +889,63 @@ impl GameHandler {
 			Question::ObjectQuestion { is_bayer, is_starname, .. } | Question::ThisPointObject { is_bayer, is_starname, .. } => *is_bayer || *is_starname,
 			Question::MagQuestion { .. } => true,
 		}
+	}
+
+	pub fn show_tolerance_marker(&self) -> bool {
+		match &self.question_catalog[self.current_question] {
+			Question::NoMoreQuestions
+			| Question::PositionQuestion { .. }
+			| Question::DistanceBetweenQuestion { .. }
+			| Question::DECQuestion { .. }
+			| Question::RAQuestion { .. }
+			| Question::MagQuestion { .. }
+			| Question::ThisPointObject { .. } => false,
+			Question::ObjectQuestion { .. } => true,
+		}
+	}
+
+	fn get_question_distance_tolerance(&self) -> f32 {
+		match &self.question_catalog[self.current_question] {
+			Question::NoMoreQuestions
+			| Question::PositionQuestion { .. }
+			| Question::DistanceBetweenQuestion { .. }
+			| Question::DECQuestion { .. }
+			| Question::RAQuestion { .. }
+			| Question::MagQuestion { .. }
+			| Question::ThisPointObject { .. } => 0.0,
+			Question::ObjectQuestion { .. } => self.object_question_settings.correctness_threshold,
+		}
+	}
+
+	pub fn allow_multiple_player_marker(&self) -> bool {
+		match &self.question_catalog[self.current_question] {
+			Question::NoMoreQuestions
+			| Question::PositionQuestion { .. }
+			| Question::DistanceBetweenQuestion { .. }
+			| Question::DECQuestion { .. }
+			| Question::RAQuestion { .. }
+			| Question::MagQuestion { .. }
+			| Question::ThisPointObject { .. }
+			| Question::ObjectQuestion { .. } => false,
+		}
+	}
+
+	pub fn generate_player_markers(&self, marker_positions: &Vec<[f32; 2]>) -> Vec<Marker> {
+		let mut markers = Vec::new();
+		for &[dec, ra] in marker_positions {
+			markers.push(Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.show_circle_marker(), false));
+			if self.show_tolerance_marker() {
+				markers.push(Marker::new(
+					ra / PI * 180.0,
+					dec / PI * 180.0,
+					Color32::LIGHT_RED.gamma_multiply(0.7),
+					2.0,
+					self.get_question_distance_tolerance(),
+					true,
+					true,
+				));
+			}
+		}
+		markers
 	}
 }

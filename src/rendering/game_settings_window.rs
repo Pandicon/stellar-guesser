@@ -3,6 +3,7 @@ use crate::{enums, Application};
 impl Application {
 	pub fn render_game_settings_window(&mut self, ctx: &egui::Context) -> Option<egui::InnerResponse<Option<()>>> {
 		egui::Window::new("Game settings").open(&mut self.state.windows.game_settings.opened).show(ctx, |ui| {
+			let mut tolerance_changed = false;
 			egui::ScrollArea::vertical().show(ui, |ui| {
 				egui::CollapsingHeader::new(egui::RichText::new("'Find this object' questions").text_style(egui::TextStyle::Heading).size(20.0))
 					.default_open(true)
@@ -17,13 +18,13 @@ impl Application {
 						self.input.input_field_has_focus |= ui
 							.add(egui::Slider::new(&mut self.game_handler.object_question_settings.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"))
 							.has_focus();
-						self.input.input_field_has_focus |= ui
-							.add(
-								egui::Slider::new(&mut self.game_handler.object_question_settings.correctness_threshold, 0.0..=180.0)
-									.text("Correctness threshold (degrees)")
-									.logarithmic(true),
-							)
-							.has_focus();
+						let correctness_threshold_widget = ui.add(
+							egui::Slider::new(&mut self.game_handler.object_question_settings.correctness_threshold, 0.0..=180.0)
+								.text("Correctness threshold (degrees)")
+								.logarithmic(true),
+						);
+						self.input.input_field_has_focus |= correctness_threshold_widget.has_focus();
+						tolerance_changed |= correctness_threshold_widget.changed();
 						ui.checkbox(&mut self.game_handler.object_question_settings.replay_incorrect, "Replay incorrectly answered questions");
 					});
 				egui::CollapsingHeader::new(egui::RichText::new("'Which constellation is this point in' questions").text_style(egui::TextStyle::Heading).size(20.0))
@@ -176,6 +177,11 @@ impl Application {
 						}
 					});
 			});
+			if tolerance_changed && self.game_handler.show_tolerance_marker() {
+				let markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions);
+				self.cellestial_sphere.markers.insert("game".to_string(), markers);
+				self.cellestial_sphere.init_single_renderer("markers", "game");
+			}
 		})
 	}
 }

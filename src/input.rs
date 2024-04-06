@@ -43,10 +43,17 @@ impl Application {
 		};
 		if cursor_within_central_panel {
 			if self.game_handler.add_marker_on_click && self.input.primary_released && !self.input.primary_dragging_last_frame {
-				let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
-				let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);
+				/*let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
+				let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);*/
+				let marker_pos = geometry::cast_onto_sphere_dec_ra(&self.cellestial_sphere, &pointer_position);
+				if self.game_handler.allow_multiple_player_marker() {
+					self.game_handler.guess_marker_positions.push(marker_pos);
+				} else {
+					self.game_handler.guess_marker_positions = vec![marker_pos];
+				}
+				let new_markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions);
 				let entry = self.cellestial_sphere.markers.entry("game".to_string()).or_default();
-				*entry = vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.game_handler.show_circle_marker(), false)];
+				*entry = new_markers; // vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.game_handler.show_circle_marker(), false)];
 				self.cellestial_sphere.init_single_renderer("markers", "game");
 			}
 
