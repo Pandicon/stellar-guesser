@@ -1,9 +1,9 @@
-use crate::Application;
+use crate::{enums::GameStage, Application};
 
 impl Application {
 	pub fn render_question_window(&mut self, ctx: &egui::Context) -> Option<egui::InnerResponse<Option<()>>> {
 		egui::Window::new("Question").open(&mut self.state.windows.game_question.opened).show(ctx, |ui| {
-			if self.game_handler.stage == 0 {
+			if self.game_handler.stage == GameStage::Guessing {
 				if self.game_handler.no_more_questions() {
 					if self.game_handler.is_scored_mode {
 						ui.heading("Game over!");
@@ -30,7 +30,7 @@ impl Application {
 					}
 				}
 				ui.label(&self.game_handler.question_number_text);
-			} else if self.game_handler.stage == 1 {
+			} else if self.game_handler.stage == GameStage::Checked {
 				if !self.game_handler.answer_review_text_heading.is_empty() {
 					ui.heading(&self.game_handler.answer_review_text_heading);
 				}
@@ -45,10 +45,10 @@ impl Application {
 					self.game_handler.next_question(&mut self.cellestial_sphere);
 				}
 				ui.label(&self.game_handler.question_number_text);
-			} else if self.game_handler.stage == 2 {
+			} else if self.game_handler.stage == GameStage::NotStartedYet {
 				ui.heading("Welcome!");
 				if ui.button("Start").clicked() {
-					self.game_handler.stage = 1;
+					self.game_handler.stage = GameStage::Checked;
 					self.game_handler.next_question(&mut self.cellestial_sphere)
 				}
 			} else {

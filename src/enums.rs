@@ -84,3 +84,10 @@ impl Display for ColourMode {
 		}
 	}
 }
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum GameStage {
+	Guessing,
+	Checked,
+	NotStartedYet,
+}

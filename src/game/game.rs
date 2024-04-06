@@ -1,6 +1,10 @@
 use std::{collections::HashMap, f32::consts::PI};
 
-use crate::{caspr::CellestialSphere, enums, rendering::caspr::markers::Marker};
+use crate::{
+	caspr::CellestialSphere,
+	enums::{self, GameStage},
+	rendering::caspr::markers::Marker,
+};
 use egui::epaint::Color32;
 use rand::Rng;
 
@@ -97,8 +101,7 @@ pub struct GameHandler {
 	used_questions: Vec<usize>,
 
 	pub add_marker_on_click: bool,
-	/// 0 = guessing, 1 = checked, 2 = not started yet
-	pub stage: usize,
+	pub stage: enums::GameStage,
 	pub answer_image: Option<crate::structs::image_info::ImageInfo>,
 
 	pub question_number: usize,
@@ -390,7 +393,7 @@ impl GameHandler {
 			question_catalog: catalog,
 			used_questions: Vec::new(),
 			add_marker_on_click: false,
-			stage: 2,
+			stage: GameStage::NotStartedYet,
 			answer_image: None,
 			question_number: 0,
 			question_number_text: String::new(),
@@ -430,7 +433,7 @@ impl GameHandler {
 	}
 
 	pub fn check_answer(&mut self, cellestial_sphere: &mut crate::caspr::CellestialSphere) {
-		self.stage = 1;
+		self.stage = GameStage::Checked;
 		self.add_marker_on_click = false;
 		self.answer_image = None;
 		let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
@@ -791,7 +794,7 @@ impl GameHandler {
 			};
 			cellestial_sphere.init_single_renderer("markers", "game");
 		}
-		self.stage = 0;
+		self.stage = GameStage::Guessing;
 	}
 	pub fn get_display_question(&self) -> String {
 		match &self.question_catalog[self.current_question] {

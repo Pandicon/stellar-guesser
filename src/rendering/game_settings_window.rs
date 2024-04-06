@@ -1,4 +1,7 @@
-use crate::{enums, Application};
+use crate::{
+	enums::{self, GameStage},
+	Application,
+};
 
 impl Application {
 	pub fn render_game_settings_window(&mut self, ctx: &egui::Context) -> Option<egui::InnerResponse<Option<()>>> {
@@ -75,7 +78,7 @@ impl Application {
 					)
 					.has_focus();
 				if ui.button("Reset").clicked() {
-					self.game_handler.stage = 2;
+					self.game_handler.stage = GameStage::NotStartedYet;
 					self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
 
 					// Remove all game markers from the screen
