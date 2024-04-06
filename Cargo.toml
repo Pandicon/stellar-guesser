@@ -22,10 +22,10 @@ app-theme-parent = "Theme.MaterialComponents.DayNight.DarkActionBar"
 chrono = "0.4"
 csv = "1.2.2"
 directories-next = "2.0.0"
-egui = "0.23"
-egui_extras = { version = "0.23", features = ["all_loaders", "image"] }
-egui-wgpu = { version = "0.23", features = ["winit"] }
-egui-winit = { version = "0.23", default-features = false }
+egui = "0.25"
+egui_extras = { version = "0.25", features = ["all_loaders", "image"] }
+egui-wgpu = { version = "0.25", features = ["winit"] }
+egui-winit = { version = "0.25", default-features = false }
 image = { version = "0.24", features = ["jpeg", "png", "webp"] }
 log = "0.4.14"
 nalgebra = "0.32.2"
@@ -33,8 +33,8 @@ pollster = "0.3"
 rand = "0.8.5"
 ron = "0.8.1"
 serde = { version = "1.0.164", features = ["derive"] }
-wgpu = "0.19"
-winit = { version = "0.28", features = ["android-native-activity"] }
+wgpu = "0.18"
+winit = { version = "0.29", features = ["android-native-activity"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "0.13.1"

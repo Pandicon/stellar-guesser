@@ -4,7 +4,7 @@
 use winit::platform::android::activity::AndroidApp;
 
 use winit::event::Event::*;
-use winit::event_loop::{ControlFlow, EventLoop, EventLoopBuilder, EventLoopWindowTarget};
+use winit::event_loop::{EventLoop, EventLoopBuilder, EventLoopWindowTarget};
 
 use egui_wgpu::winit::Painter;
 use egui_winit::State;
@@ -86,7 +86,7 @@ fn create_window<T>(event_loop: &EventLoopWindowTarget<T>, state: &mut State, pa
 		.build(event_loop)
 		.unwrap();
 
-	pollster::block_on(painter.set_window(Some(&window))).unwrap();
+	pollster::block_on(painter.set_window(state.egui_ctx().viewport_id(), Some(&window))).unwrap();
 
 	// NB: calling set_window will lazily initialize render state which
 	// means we will be able to query the maximum supported texture
@@ -94,9 +94,6 @@ fn create_window<T>(event_loop: &EventLoopWindowTarget<T>, state: &mut State, pa
 	if let Some(max_size) = painter.max_texture_side() {
 		state.set_max_texture_side(max_size);
 	}
-
-	let pixels_per_point = window.scale_factor() as f32;
-	state.set_pixels_per_point(pixels_per_point);
 
 	window.request_redraw();
 
@@ -110,13 +107,13 @@ fn _main(event_loop: EventLoop<Event>) {
 		repaint_signal.0.lock().unwrap().send_event(Event::RequestRedraw).ok();
 	});
 
-	let mut state = State::new(&event_loop);
 	let mut painter = Painter::new(
 		egui_wgpu::WgpuConfiguration::default(),
 		1, // msaa samples
 		None,
 		false,
 	);
+	let mut state = State::new(ctx.clone(), ctx.viewport_id(), &event_loop, ctx.native_pixels_per_point(), painter.max_texture_side());
 	let mut window: Option<winit::window::Window> = None;
 
 	let mut authors_split = AUTHORS.split(':').collect::<Vec<&str>>();
@@ -132,13 +129,13 @@ fn _main(event_loop: EventLoop<Event>) {
 	let mut storage = None; // Maybe implement iOS and other platforms storage?
 	let mut application = application::Application::new(&ctx, authors, VERSION.to_string(), &mut storage);
 
-	event_loop.run(move |event, event_loop, control_flow| match event {
+	let run_res = event_loop.run(move |event, event_loop| match event {
 		Resumed => match window {
 			None => {
 				window = Some(create_window(event_loop, &mut state, &mut painter));
 			}
 			Some(ref window) => {
-				pollster::block_on(painter.set_window(Some(window))).unwrap();
+				pollster::block_on(painter.set_window(ctx.viewport_id(), Some(window))).unwrap();
 				window.request_redraw();
 			}
 		},
@@ -150,71 +147,83 @@ fn _main(event_loop: EventLoop<Event>) {
 			}
 			window = None;
 		}
-		RedrawRequested(..) => {
-			if let Some(window) = window.as_ref() {
-				let raw_input = state.take_egui_input(window);
-
-				let full_output = ctx.run(raw_input, |ctx| {
-					application.update(ctx);
-
-					// Save application state
-					if let Some(storage) = &mut storage {
-						let now = std::time::Instant::now();
-						if now - application.last_state_save > application.state_save_interval {
-							application.save(storage);
-							application.last_state_save = now;
-						}
-					}
-
-					// toggle software keyboard
-					#[cfg(target_os = "android")]
-					if application.input.input_field_has_focus && !application.input.input_field_had_focus_last_frame {
-						// There was no focus on any text input field last frame, but there is this frame -> show the keyboard
-						show_soft_input(true);
-					} else if !application.input.input_field_has_focus && application.input.input_field_had_focus_last_frame {
-						// There was focus on some text input field last frame, but there is not this frame -> hide the keyboard
-						show_soft_input(false);
-					}
-				});
-				state.handle_platform_output(window, &ctx, full_output.platform_output);
-
-				painter.paint_and_update_textures(
-					state.pixels_per_point(),
-					egui::Rgba::default().to_array(),
-					&ctx.tessellate(full_output.shapes),
-					&full_output.textures_delta,
-					false,
-				);
-
-				if full_output.repaint_after.is_zero() {
-					window.request_redraw();
-				}
-			}
-		}
-		MainEventsCleared | UserEvent(Event::RequestRedraw) => {
+		UserEvent(Event::RequestRedraw) => {
 			if let Some(window) = window.as_ref() {
 				window.request_redraw();
 			}
 		}
 		WindowEvent { event, .. } => {
 			match event {
+				winit::event::WindowEvent::RedrawRequested => {
+					if let Some(window) = window.as_ref() {
+						let raw_input = state.take_egui_input(window);
+
+						let full_output = ctx.run(raw_input, |ctx| {
+							application.update(ctx);
+
+							// Save application state
+							if let Some(storage) = &mut storage {
+								let now = std::time::Instant::now();
+								if now - application.last_state_save > application.state_save_interval {
+									application.save(storage);
+									application.last_state_save = now;
+								}
+							}
+
+							// toggle software keyboard
+							#[cfg(target_os = "android")]
+							if application.input.input_field_has_focus && !application.input.input_field_had_focus_last_frame {
+								// There was no focus on any text input field last frame, but there is this frame -> show the keyboard
+								show_soft_input(true);
+							} else if !application.input.input_field_has_focus && application.input.input_field_had_focus_last_frame {
+								// There was focus on some text input field last frame, but there is not this frame -> hide the keyboard
+								show_soft_input(false);
+							}
+						});
+						state.handle_platform_output(window, full_output.platform_output);
+
+						let ppp = egui_winit::pixels_per_point(&ctx, &window);
+						painter.paint_and_update_textures(
+							ctx.viewport_id(),
+							ppp,
+							egui::Rgba::default().to_array(),
+							&ctx.tessellate(full_output.shapes, ppp),
+							&full_output.textures_delta,
+							false,
+						);
+
+						if let Some(viewport_output) = full_output.viewport_output.get(&egui::ViewportId::ROOT) {
+							if viewport_output.repaint_delay.is_zero() {
+								window.request_redraw();
+							}
+						} else {
+							log::error!("No root viewport output");
+						}
+					}
+				}
 				winit::event::WindowEvent::Resized(size) => {
-					painter.on_window_resized(size.width, size.height);
+					if size.width > 0 && size.height > 0 {
+						painter.on_window_resized(
+							state.egui_ctx().viewport_id(),
+							std::num::NonZeroU32::new(size.width).unwrap(),
+							std::num::NonZeroU32::new(size.height).unwrap(),
+						);
+					}
 				}
 				winit::event::WindowEvent::CloseRequested => {
-					*control_flow = ControlFlow::Exit;
+					event_loop.exit();
 				}
 				_ => {}
 			}
 
-			let response = state.on_event(&ctx, &event);
-			if response.repaint {
-				if let Some(window) = window.as_ref() {
+			if let Some(window) = window.as_ref() {
+				let response = state.on_window_event(window, &event);
+				if response.repaint {
 					window.request_redraw();
 				}
 			}
 		}
-		LoopDestroyed => {
+		LoopExiting => {
 			// Save application state
 			if let Some(storage) = &mut storage {
 				application.save(storage);
@@ -223,6 +232,10 @@ fn _main(event_loop: EventLoop<Event>) {
 		}
 		_ => (),
 	});
+	match run_res {
+		Ok(_) => {}
+		Err(err) => log::error!("Error while running the event loop: {err:?}"),
+	}
 }
 
 #[cfg(any(target_os = "ios", target_os = "android"))]
@@ -253,7 +266,14 @@ pub fn main() {
 	env_logger::builder().filter_level(log::LevelFilter::Warn).parse_default_env().init();
 
 	let event_loop = EventLoopBuilder::with_user_event().build();
-	_main(event_loop);
+	match event_loop {
+		Ok(event_loop) => {
+			_main(event_loop);
+		}
+		Err(err) => {
+			log::error!("Failed to create event loop: {err:?}");
+		}
+	}
 }
 
 #[allow(dead_code)]
@@ -265,7 +285,14 @@ fn android_main(app: AndroidApp) {
 	android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Warn));
 
 	let event_loop = EventLoopBuilder::with_user_event().with_android_app(app).build();
-	stop_unwind(|| _main(event_loop));
+	match event_loop {
+		Ok(event_loop) => {
+			stop_unwind(|| _main(event_loop));
+		}
+		Err(err) => {
+			log::error!("Failed to create event loop: {err:?}");
+		}
+	}
 }
 
 #[cfg(target_os = "android")]
