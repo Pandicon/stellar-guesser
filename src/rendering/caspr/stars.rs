@@ -17,6 +17,7 @@ pub struct Star {
 	pub dec: f32,
 	pub vmag: f32,
 	pub colour: Color32,
+	#[allow(dead_code)]
 	name_str: Option<String>,
 	pub name: Option<StarName>,
 }

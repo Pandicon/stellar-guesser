@@ -34,7 +34,7 @@ pub struct FramesHandler {
 impl Default for FramesHandler {
 	fn default() -> Self {
 		Self {
-			last_frame: chrono::Local::now().timestamp_nanos(),
+			last_frame: chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds."),
 			fps_display_holder: String::new(),
 			average_fps_display_holder: String::new(),
 			fps_current: 0.0,
@@ -66,8 +66,8 @@ impl FramesHandler {
 		} else {
 			self.previous_frames.push(self.current_frame);
 		}
-		self.current_frame.duration_total_ns = chrono::Local::now().timestamp_nanos() - self.last_frame;
-		self.current_frame.duration_raw_ns = chrono::Local::now().timestamp_nanos() - self.current_frame.timestamp_ns;
+		self.current_frame.duration_total_ns = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.") - self.last_frame;
+		self.current_frame.duration_raw_ns = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.") - self.current_frame.timestamp_ns;
 		self.fps_current = 1_000_000_000.0 / (self.current_frame.duration_total_ns as f64);
 		self.average_frame = self.get_average_frame();
 		self.fps_average = 1_000_000_000.0 / ((self.average_frame.duration_total_ns) as f64);

@@ -14,20 +14,27 @@ pub struct StarName {
 
 #[derive(Clone, Deserialize)]
 pub struct StarNameRaw {
+	#[allow(dead_code)]
 	name_ascii: String,
 	name_diacritics: String,
+	#[allow(dead_code)]
 	designation: String,
 	id: Option<String>,
 	id_greek: Option<String>,
 	con: String,
+	#[allow(dead_code)]
 	num: Option<String>,
+	#[allow(dead_code)]
 	wsd_j: Option<String>,
 	mag: Option<f32>,
+	#[allow(dead_code)]
 	bnd: Option<String>,
 	hip: Option<String>,
+	#[allow(dead_code)]
 	hd: Option<String>,
 	ra: f32,
 	dec: f32,
+	#[allow(dead_code)]
 	date: String,
 }
 

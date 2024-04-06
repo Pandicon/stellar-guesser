@@ -74,12 +74,12 @@ impl Application {
 		ctx.input_mut(|i| i.events.push(egui::Event::Text(self.input.text_from_keys.clone())));
 		self.input.input_field_had_focus_last_frame = self.input.input_field_has_focus;
 		self.input.input_field_has_focus = false;
-		self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos();
+		self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
 		self.frame_timestamp = chrono::Utc::now().timestamp();
 		let cursor_within_central_panel = self.render(ctx);
 		self.handle_input(cursor_within_central_panel, ctx);
 		self.frames_handler.handle();
-		self.frames_handler.last_frame = chrono::Local::now().timestamp_nanos();
+		self.frames_handler.last_frame = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
 		ctx.request_repaint();
 	}
 

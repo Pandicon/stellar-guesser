@@ -4,7 +4,7 @@ use std::f32::consts::PI;
 
 use crate::caspr::CellestialSphere;
 
-const POLYGONLIMIT: f32 = 180.0;
+// const POLYGONLIMIT: f32 = 180.0;
 const VIEWPORT_OFFSET: f32 = 10.0;
 
 pub fn is_in_rect<T: PartialOrd>(point: [T; 2], rect: [[T; 2]; 2]) -> bool {
