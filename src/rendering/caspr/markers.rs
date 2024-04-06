@@ -58,7 +58,7 @@ impl Marker {
 				)
 			})
 		};
-		Some(MarkerRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), other_vec, &self))
+		Some(MarkerRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), other_vec, self))
 	}
 
 	pub fn from_raw(raw_marker: MarkerRaw, default_colour: Color32) -> Self {

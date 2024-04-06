@@ -112,7 +112,7 @@ impl CellestialSphere {
 		//some stuff lol
 		for line_renderers in self.line_renderers.values() {
 			for line_renderer in line_renderers {
-				line_renderer.render(&self, painter);
+				line_renderer.render(self, painter);
 			}
 		}
 		for star_renderers in self.star_renderers.values() {
@@ -127,7 +127,7 @@ impl CellestialSphere {
 		}
 		for deepsky_renderers in self.deepsky_renderers.values() {
 			for deepsky_renderer in deepsky_renderers {
-				deepsky_renderer.render(&self, painter);
+				deepsky_renderer.render(self, painter);
 			}
 		}
 	}
@@ -344,25 +344,25 @@ impl CellestialSphere {
 								let mut res = false;
 								if let Some(ngc_num) = &deepsky_raw.ngc {
 									if designation.starts_with("ngc") {
-										let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
+										let number = designation.chars().filter(|c| c.is_ascii_digit()).collect::<String>();
 										res |= &number == ngc_num;
 									}
 								}
 								if let Some(ic_num) = &deepsky_raw.ic {
 									if designation.starts_with("ic") {
-										let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
+										let number = designation.chars().filter(|c| c.is_ascii_digit()).collect::<String>();
 										res |= &number == ic_num;
 									}
 								}
 								if let Some(c_num) = &deepsky_raw.caldwell {
 									if designation.starts_with('c') {
-										let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
+										let number = designation.chars().filter(|c| c.is_ascii_digit()).collect::<String>();
 										res |= &number == c_num;
 									}
 								}
 								if let Some(m_num) = &deepsky_raw.messier {
 									if designation.starts_with('m') {
-										let number = designation.chars().filter(|c| c.is_digit(10)).collect::<String>();
+										let number = designation.chars().filter(|c| c.is_ascii_digit()).collect::<String>();
 										res |= &number == m_num;
 									}
 								}

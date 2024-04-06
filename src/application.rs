@@ -33,7 +33,7 @@ pub struct Application {
 
 impl Application {
 	pub fn new(ctx: &egui::Context, authors: String, version: String, storage: &mut Option<crate::storage::Storage>) -> Self {
-		egui_extras::install_image_loaders(&ctx);
+		egui_extras::install_image_loaders(ctx);
 		ctx.set_visuals(egui::Visuals::dark());
 		let mut time_spent_start = 0;
 		if let Some(storage) = storage {

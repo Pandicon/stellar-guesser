@@ -798,7 +798,7 @@ impl GameHandler {
 	}
 	pub fn get_display_question(&self) -> String {
 		match &self.question_catalog[self.current_question] {
-			Question::ObjectQuestion { name, .. } => String::from(format!("Find {}.", name)),
+			Question::ObjectQuestion { name, .. } => format!("Find {}.", name),
 			Question::PositionQuestion { .. } => String::from("What constellation does this point lie in?"),
 			Question::ThisPointObject { .. } => String::from("What is this object?"),
 			Question::DistanceBetweenQuestion { .. } => String::from("What is the angular distance between these markers? "),

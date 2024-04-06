@@ -182,12 +182,12 @@ fn _main(event_loop: EventLoop<Event>) {
 						});
 						state.handle_platform_output(window, full_output.platform_output);
 
-						let ppp = egui_winit::pixels_per_point(&ctx, &window);
+						let pixels_per_point = egui_winit::pixels_per_point(&ctx, window);
 						painter.paint_and_update_textures(
 							ctx.viewport_id(),
-							ppp,
+							pixels_per_point,
 							egui::Rgba::default().to_array(),
-							&ctx.tessellate(full_output.shapes, ppp),
+							&ctx.tessellate(full_output.shapes, pixels_per_point),
 							&full_output.textures_delta,
 							false,
 						);

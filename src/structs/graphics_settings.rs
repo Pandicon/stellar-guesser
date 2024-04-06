@@ -23,10 +23,10 @@ impl Default for GraphicsSettings {
 
 impl GraphicsSettings {
 	pub fn default_star_colour(&self, colour_mode: &ColourMode) -> Color32 {
-		match colour_mode {
-			&ColourMode::Dark => self.default_star_colour_dark_mode,
-			&ColourMode::Light => self.default_star_colour_light_mode,
-			&ColourMode::Printing => self.default_star_colour_print_mode,
+		match *colour_mode {
+			ColourMode::Dark => self.default_star_colour_dark_mode,
+			ColourMode::Light => self.default_star_colour_light_mode,
+			ColourMode::Printing => self.default_star_colour_print_mode,
 		}
 	}
 }
