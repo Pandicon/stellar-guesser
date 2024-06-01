@@ -105,6 +105,7 @@ pub enum StorageKeys {
 	GameSettingsFindThisObject,
 	GameSettingsWhatIsThisObject,
 	GameSettingsGuessTheMagnitude,
+	GameSettings,
 }
 
 impl AsRef<str> for StorageKeys {
@@ -122,6 +123,7 @@ impl AsRef<str> for StorageKeys {
 			Self::GameSettingsFindThisObject => "game_settings_find_this_object",
 			Self::GameSettingsWhatIsThisObject => "game_settings_what_is_this_object",
 			Self::GameSettingsGuessTheMagnitude => "game_settings_guess_the_magnitude",
+			Self::GameSettings => "game_settings",
 		}
 	}
 }

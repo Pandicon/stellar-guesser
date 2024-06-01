@@ -3,6 +3,7 @@ use std::{collections::HashMap, f32::consts::PI};
 use crate::{
 	caspr::CellestialSphere,
 	enums::{self, GameStage, StorageKeys},
+	game::questions_settings,
 	rendering::caspr::markers::Marker,
 };
 use egui::epaint::Color32;
@@ -67,36 +68,6 @@ pub enum Question {
 	NoMoreQuestions,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-pub struct QuestionSettings {
-	pub show_messiers: bool,
-	pub show_caldwells: bool,
-	pub show_ngcs: bool,
-	pub show_ics: bool,
-	pub show_bayer: bool,
-	pub show_starnames: bool,
-	pub magnitude_cutoff: f32,
-	pub correctness_threshold: f32,
-	pub replay_incorrect: bool,
-}
-
-impl Default for QuestionSettings {
-	fn default() -> Self {
-		Self {
-			show_messiers: true,
-			show_caldwells: true,
-			show_ngcs: true,
-			show_ics: true,
-			show_bayer: true,
-			show_starnames: true,
-			magnitude_cutoff: 6.0,
-			correctness_threshold: 0.2,
-			replay_incorrect: true,
-		}
-	}
-}
-
 pub struct GameHandler {
 	current_question: usize,
 	question_catalog: Vec<Question>,
@@ -115,20 +86,13 @@ pub struct GameHandler {
 
 	pub guess_marker_positions: Vec<[f32; 2]>,
 
-	pub object_question_settings: QuestionSettings,
-	pub this_point_object_question_settings: QuestionSettings,
-	pub mag_question_settings: QuestionSettings,
-	pub show_object_questions: bool,
-	pub show_positions_questions: bool,
-	pub show_this_point_object_questions: bool,
-	pub show_distance_between_questions: bool,
+	pub questions_settings: questions_settings::QuestionsSettings,
+
 	pub no_of_questions: u32,
 	pub possible_no_of_questions: u32,
 	pub is_scored_mode: bool,
 	pub score: u32,
 	possible_score: u32,
-	pub show_radecquestions: bool,
-	pub show_magquestions: bool,
 	pub active_constellations: HashMap<String, bool>,
 	pub groups_active_constellations: HashMap<enums::GameLearningStage, HashMap<String, bool>>,
 	pub active_constellations_groups: HashMap<enums::GameLearningStage, bool>,
@@ -389,32 +353,12 @@ impl GameHandler {
 		// *entry = Vec::new();
 		// cellestial_sphere.init_single_renderer("markers", "game");
 
-		let mut find_this_object_question_settings = QuestionSettings::default();
+		let mut questions_settings = questions_settings::QuestionsSettings::default();
 		if let Some(storage) = storage {
-			if let Some(object_question_settings_str) = storage.get_string(StorageKeys::GameSettingsFindThisObject.as_ref()) {
+			if let Some(object_question_settings_str) = storage.get_string(StorageKeys::GameSettings.as_ref()) {
 				match serde_json::from_str(&object_question_settings_str) {
-					Ok(data) => find_this_object_question_settings = data,
-					Err(err) => log::error!("Failed to deserialize 'Find this object' game settings: {:?}", err),
-				}
-			}
-		}
-
-		let mut what_is_this_object_question_settings = QuestionSettings::default();
-		if let Some(storage) = storage {
-			if let Some(object_question_settings_str) = storage.get_string(StorageKeys::GameSettingsWhatIsThisObject.as_ref()) {
-				match serde_json::from_str(&object_question_settings_str) {
-					Ok(data) => what_is_this_object_question_settings = data,
-					Err(err) => log::error!("Failed to deserialize 'What is this object' game settings: {:?}", err),
-				}
-			}
-		}
-
-		let mut guess_the_magnitude_question_settings = QuestionSettings::default();
-		if let Some(storage) = storage {
-			if let Some(object_question_settings_str) = storage.get_string(StorageKeys::GameSettingsGuessTheMagnitude.as_ref()) {
-				match serde_json::from_str(&object_question_settings_str) {
-					Ok(data) => guess_the_magnitude_question_settings = data,
-					Err(err) => log::error!("Failed to deserialize 'Guess the magnitude' game settings: {:?}", err),
+					Ok(data) => questions_settings = data,
+					Err(err) => log::error!("Failed to deserialize game settings: {:?}", err),
 				}
 			}
 		}
@@ -433,19 +377,11 @@ impl GameHandler {
 			answer_review_text: String::new(),
 			answer: String::new(),
 			guess_marker_positions: Vec::new(),
-			object_question_settings: find_this_object_question_settings,
-			this_point_object_question_settings: what_is_this_object_question_settings,
-			mag_question_settings: guess_the_magnitude_question_settings,
-			show_object_questions: true,
-			show_positions_questions: true,
-			show_this_point_object_questions: true,
-			show_magquestions: true,
+			questions_settings,
 			no_of_questions: 15,
 			is_scored_mode: false,
 			score: 0,
 			possible_score: 0,
-			show_distance_between_questions: true,
-			show_radecquestions: true,
 			active_constellations,
 			groups_active_constellations,
 			active_constellations_groups,
@@ -496,7 +432,7 @@ impl GameHandler {
 						answer_dec.to_string(),
 						answer_ra.to_string(),
 						distance.to_string(),
-						if distance < self.object_question_settings.correctness_threshold {
+						if distance < self.questions_settings.find_this_object.correctness_threshold {
 							correct = true;
 							String::from("Correct!")
 						} else {
@@ -518,7 +454,7 @@ impl GameHandler {
 					object_type
 				);
 				entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, *is_bayer || *is_starname, false));
-				if !self.object_question_settings.replay_incorrect || correct {
+				if !self.questions_settings.find_this_object.replay_incorrect || correct {
 					self.used_questions.push(self.current_question);
 				} else {
 					self.question_number += 1;
@@ -559,7 +495,7 @@ impl GameHandler {
 				);
 				self.answer_review_text = format!("Your answer was: {}\nPossible answers: {}\nObject type: {}", self.answer, possible_names.join(", "), object_type);
 				self.possible_score += 1;
-				if !self.this_point_object_question_settings.replay_incorrect || correct {
+				if !self.questions_settings.what_is_this_object.replay_incorrect || correct {
 					self.used_questions.push(self.current_question);
 				} else {
 					self.question_number += 1;
@@ -705,21 +641,21 @@ impl GameHandler {
 						..
 					} => {
 						let mag = (*magnitude).unwrap_or(-1.0); // TODO: Shouldn't a default magnitude be something else?
-						if self.show_object_questions
-							&& ((self.object_question_settings.show_messiers && *is_messier)
-								|| (self.object_question_settings.show_caldwells && *is_caldwell)
-								|| (self.object_question_settings.show_ngcs && *is_ngc)
-								|| (self.object_question_settings.show_ics && *is_ic)
-								|| (self.object_question_settings.show_bayer && *is_bayer)
-								|| (self.object_question_settings.show_starnames && *is_starname))
-							&& ((!*is_bayer && !*is_starname) || mag < self.object_question_settings.magnitude_cutoff)
+						if self.questions_settings.find_this_object.show
+							&& ((self.questions_settings.find_this_object.show_messiers && *is_messier)
+								|| (self.questions_settings.find_this_object.show_caldwells && *is_caldwell)
+								|| (self.questions_settings.find_this_object.show_ngcs && *is_ngc)
+								|| (self.questions_settings.find_this_object.show_ics && *is_ic)
+								|| (self.questions_settings.find_this_object.show_bayer && *is_bayer)
+								|| (self.questions_settings.find_this_object.show_starnames && *is_starname))
+							&& ((!*is_bayer && !*is_starname) || mag < self.questions_settings.find_this_object.magnitude_cutoff)
 							&& *self.active_constellations.entry(constellation_abbreviation.to_lowercase()).or_insert(true)
 						{
 							possible_questions.push(question);
 						}
 					}
 					Question::PositionQuestion { .. } => {
-						if self.show_positions_questions {
+						if self.questions_settings.what_constellation_is_this_point_in.show {
 							possible_questions.push(question);
 						}
 					}
@@ -735,36 +671,36 @@ impl GameHandler {
 						..
 					} => {
 						let mag = (*magnitude).unwrap_or(-1.0);
-						if self.show_this_point_object_questions
-							&& ((self.this_point_object_question_settings.show_messiers && *is_messier)
-								|| (self.this_point_object_question_settings.show_caldwells && *is_caldwell)
-								|| (self.this_point_object_question_settings.show_ngcs && *is_ngc)
-								|| (self.this_point_object_question_settings.show_ics && *is_ic)
-								|| (self.this_point_object_question_settings.show_bayer && *is_bayer)
-								|| (self.this_point_object_question_settings.show_starnames && *is_starname))
-							&& ((!*is_bayer && !*is_starname) || mag < self.this_point_object_question_settings.magnitude_cutoff)
+						if self.questions_settings.what_is_this_object.show
+							&& ((self.questions_settings.what_is_this_object.show_messiers && *is_messier)
+								|| (self.questions_settings.what_is_this_object.show_caldwells && *is_caldwell)
+								|| (self.questions_settings.what_is_this_object.show_ngcs && *is_ngc)
+								|| (self.questions_settings.what_is_this_object.show_ics && *is_ic)
+								|| (self.questions_settings.what_is_this_object.show_bayer && *is_bayer)
+								|| (self.questions_settings.what_is_this_object.show_starnames && *is_starname))
+							&& ((!*is_bayer && !*is_starname) || mag < self.questions_settings.what_is_this_object.magnitude_cutoff)
 							&& *self.active_constellations.entry(constellation_abbreviation.to_lowercase()).or_insert(true)
 						{
 							possible_questions.push(question);
 						}
 					}
 					Question::DistanceBetweenQuestion { point1: _point1, point2: _point2 } => {
-						if self.show_distance_between_questions {
+						if self.questions_settings.angular_separation.show {
 							possible_questions.push(question);
 						}
 					}
 					Question::DECQuestion { .. } => {
-						if self.show_radecquestions {
+						if self.questions_settings.guess_rad_dec.show {
 							possible_questions.push(question);
 						}
 					}
 					Question::RAQuestion { .. } => {
-						if self.show_radecquestions {
+						if self.questions_settings.guess_rad_dec.show {
 							possible_questions.push(question);
 						}
 					}
 					Question::MagQuestion { mag, .. } => {
-						if self.show_magquestions && *mag < self.mag_question_settings.magnitude_cutoff {
+						if self.questions_settings.guess_the_magnitude.show && *mag < self.questions_settings.guess_the_magnitude.magnitude_cutoff {
 							possible_questions.push(question)
 						}
 					}
@@ -948,7 +884,7 @@ impl GameHandler {
 			| Question::RAQuestion { .. }
 			| Question::MagQuestion { .. }
 			| Question::ThisPointObject { .. } => 0.0,
-			Question::ObjectQuestion { .. } => self.object_question_settings.correctness_threshold,
+			Question::ObjectQuestion { .. } => self.questions_settings.find_this_object.correctness_threshold,
 		}
 	}
 

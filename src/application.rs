@@ -4,7 +4,7 @@ use crate::caspr::CellestialSphere;
 
 use self::frames_handler::FramesHandler;
 
-use crate::game::game::{self, GameHandler};
+use crate::game::game_handler::{self, GameHandler};
 
 use crate::{
 	enums::StorageKeys,
@@ -21,7 +21,7 @@ pub struct Application {
 	pub cellestial_sphere: CellestialSphere,
 	pub graphics_settings: GraphicsSettings,
 	pub frames_handler: FramesHandler,
-	pub game_handler: game::GameHandler,
+	pub game_handler: game_handler::GameHandler,
 
 	pub authors: String,
 	pub version: String,
@@ -155,19 +155,9 @@ impl Application {
 		}
 		storage.set_string(StorageKeys::GameInactiveConstellationGroups.as_ref(), inactive_constellations_groups.join("|"));
 
-		match serde_json::to_string(&self.game_handler.object_question_settings) {
-			Ok(string) => storage.set_string(StorageKeys::GameSettingsFindThisObject.as_ref(), string),
-			Err(err) => log::error!("Failed to serialize 'Find this object' game settings: {:?}", err),
-		}
-
-		match serde_json::to_string(&self.game_handler.this_point_object_question_settings) {
-			Ok(string) => storage.set_string(StorageKeys::GameSettingsWhatIsThisObject.as_ref(), string),
-			Err(err) => log::error!("Failed to serialize 'Guess the object' game settings: {:?}", err),
-		}
-
-		match serde_json::to_string(&self.game_handler.mag_question_settings) {
-			Ok(string) => storage.set_string(StorageKeys::GameSettingsGuessTheMagnitude.as_ref(), string),
-			Err(err) => log::error!("Failed to serialize 'Guess the magnitude' game settings: {:?}", err),
+		match serde_json::to_string(&self.game_handler.questions_settings) {
+			Ok(string) => storage.set_string(StorageKeys::GameSettings.as_ref(), string),
+			Err(err) => log::error!("Failed to serialize game settings: {:?}", err),
 		}
 
 		let now = std::time::Instant::now();
