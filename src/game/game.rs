@@ -2,7 +2,7 @@ use std::{collections::HashMap, f32::consts::PI};
 
 use crate::{
 	caspr::CellestialSphere,
-	enums::{self, GameStage},
+	enums::{self, GameStage, StorageKeys},
 	rendering::caspr::markers::Marker,
 };
 use egui::epaint::Color32;
@@ -142,7 +142,7 @@ impl GameHandler {
 			active_constellations.insert(constellation_abbreviation.to_owned(), true);
 		}
 		if let Some(storage) = storage {
-			if let Some(inactive_constellations) = storage.get_string("game_inactive_constellations") {
+			if let Some(inactive_constellations) = storage.get_string(StorageKeys::GameInactiveConstellations.as_ref()) {
 				let inactive_constellations = inactive_constellations.split('|');
 				for inactive_constellation in inactive_constellations {
 					active_constellations.insert(inactive_constellation.to_string(), false);
@@ -159,7 +159,7 @@ impl GameHandler {
 			active_constellations_groups.insert(group, true);
 		}
 		if let Some(storage) = storage {
-			if let Some(inactive_constellations_groups) = storage.get_string("inactive_constellations_groups") {
+			if let Some(inactive_constellations_groups) = storage.get_string(StorageKeys::GameInactiveConstellationGroups.as_ref()) {
 				let inactive_groups = inactive_constellations_groups.split('|');
 				for inactive_group in inactive_groups {
 					active_constellations_groups.insert(enums::GameLearningStage::from_string(inactive_group), false);
@@ -178,7 +178,7 @@ impl GameHandler {
 				group_active_constellations.insert(constellation_abbreviation.to_owned(), false);
 			}
 			if let Some(storage) = storage {
-				if let Some(active_constellations) = storage.get_string(&format!("game_group_active_constellations_{}", group)) {
+				if let Some(active_constellations) = storage.get_string(&format!("{}_{}", StorageKeys::GameGroupActiveConstellellations, group)) {
 					let active_constellations = active_constellations.split('|');
 					for active_constellation in active_constellations {
 						group_active_constellations.insert(active_constellation.to_string(), true);
@@ -391,7 +391,7 @@ impl GameHandler {
 
 		let mut find_this_object_question_settings = QuestionSettings::default();
 		if let Some(storage) = storage {
-			if let Some(object_question_settings_str) = storage.get_string("game_settings_find_this_object") {
+			if let Some(object_question_settings_str) = storage.get_string(StorageKeys::GameSettingsFindThisObject.as_ref()) {
 				match serde_json::from_str(&object_question_settings_str) {
 					Ok(data) => find_this_object_question_settings = data,
 					Err(err) => log::error!("Failed to deserialize 'Find this object' game settings: {:?}", err),
@@ -401,7 +401,7 @@ impl GameHandler {
 
 		let mut what_is_this_object_question_settings = QuestionSettings::default();
 		if let Some(storage) = storage {
-			if let Some(object_question_settings_str) = storage.get_string("game_settings_what_is_this_object") {
+			if let Some(object_question_settings_str) = storage.get_string(StorageKeys::GameSettingsWhatIsThisObject.as_ref()) {
 				match serde_json::from_str(&object_question_settings_str) {
 					Ok(data) => what_is_this_object_question_settings = data,
 					Err(err) => log::error!("Failed to deserialize 'What is this object' game settings: {:?}", err),
@@ -411,7 +411,7 @@ impl GameHandler {
 
 		let mut guess_the_magnitude_question_settings = QuestionSettings::default();
 		if let Some(storage) = storage {
-			if let Some(object_question_settings_str) = storage.get_string("game_settings_guess_the_magnitude") {
+			if let Some(object_question_settings_str) = storage.get_string(StorageKeys::GameSettingsGuessTheMagnitude.as_ref()) {
 				match serde_json::from_str(&object_question_settings_str) {
 					Ok(data) => guess_the_magnitude_question_settings = data,
 					Err(err) => log::error!("Failed to deserialize 'Guess the magnitude' game settings: {:?}", err),

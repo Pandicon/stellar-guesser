@@ -91,3 +91,43 @@ pub enum GameStage {
 	Checked,
 	NotStartedYet,
 }
+
+pub enum StorageKeys {
+	TimeSpent,
+	DeepskyFilesToNotRender,
+	LineFilesToNotRender,
+	MarkerFilesToNotRender,
+	StarFilesToNotRender,
+	StarNamesFilesToNotUse,
+	GameInactiveConstellations,
+	GameGroupActiveConstellellations,
+	GameInactiveConstellationGroups,
+	GameSettingsFindThisObject,
+	GameSettingsWhatIsThisObject,
+	GameSettingsGuessTheMagnitude,
+}
+
+impl AsRef<str> for StorageKeys {
+	fn as_ref(&self) -> &str {
+		match *self {
+			Self::TimeSpent => "time_spent",
+			Self::DeepskyFilesToNotRender => "deepsky_files_to_not_render",
+			Self::LineFilesToNotRender => "line_files_to_not_render",
+			Self::MarkerFilesToNotRender => "marker_files_to_not_render",
+			Self::StarFilesToNotRender => "star_files_to_not_render",
+			Self::StarNamesFilesToNotUse => "star_names_files_to_not_use",
+			Self::GameInactiveConstellations => "game_inactive_constellations",
+			Self::GameGroupActiveConstellellations => "game_group_active_constellations",
+			Self::GameInactiveConstellationGroups => "game_inactive_constellations_groups",
+			Self::GameSettingsFindThisObject => "game_settings_find_this_object",
+			Self::GameSettingsWhatIsThisObject => "game_settings_what_is_this_object",
+			Self::GameSettingsGuessTheMagnitude => "game_settings_guess_the_magnitude",
+		}
+	}
+}
+
+impl Display for StorageKeys {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{}", self.as_ref())
+	}
+}

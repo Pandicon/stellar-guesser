@@ -1,3 +1,4 @@
+use crate::enums::StorageKeys;
 use crate::{enums::LightPollution, structs::graphics_settings::GraphicsSettings};
 use egui::epaint::Color32;
 use nalgebra::{Rotation3, Vector3};
@@ -442,27 +443,27 @@ impl CellestialSphere {
 		}
 
 		if let Some(storage) = storage {
-			if let Some(star_files_to_not_render) = storage.get_string("star_files_to_not_render") {
+			if let Some(star_files_to_not_render) = storage.get_string(StorageKeys::StarFilesToNotRender.as_ref()) {
 				for file_name in star_files_to_not_render.split('|') {
 					stars_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
 				}
 			}
-			if let Some(line_files_to_not_render) = storage.get_string("line_files_to_not_render") {
+			if let Some(line_files_to_not_render) = storage.get_string(StorageKeys::LineFilesToNotRender.as_ref()) {
 				for file_name in line_files_to_not_render.split('|') {
 					lines_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
 				}
 			}
-			if let Some(deepsky_files_to_not_render) = storage.get_string("deepsky_files_to_not_render") {
+			if let Some(deepsky_files_to_not_render) = storage.get_string(StorageKeys::DeepskyFilesToNotRender.as_ref()) {
 				for file_name in deepsky_files_to_not_render.split('|') {
 					deepskies_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
 				}
 			}
-			if let Some(marker_files_to_not_render) = storage.get_string("marker_files_to_not_render") {
+			if let Some(marker_files_to_not_render) = storage.get_string(StorageKeys::MarkerFilesToNotRender.as_ref()) {
 				for file_name in marker_files_to_not_render.split('|') {
 					markers_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
 				}
 			}
-			if let Some(star_names_files_to_not_use) = storage.get_string("star_names_files_to_not_use") {
+			if let Some(star_names_files_to_not_use) = storage.get_string(StorageKeys::StarNamesFilesToNotUse.as_ref()) {
 				for file_name in star_names_files_to_not_use.split('|') {
 					star_names_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
 				}
