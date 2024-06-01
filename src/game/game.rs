@@ -67,6 +67,8 @@ pub enum Question {
 	NoMoreQuestions,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct QuestionSettings {
 	pub show_messiers: bool,
 	pub show_caldwells: bool,
@@ -387,6 +389,36 @@ impl GameHandler {
 		// *entry = Vec::new();
 		// cellestial_sphere.init_single_renderer("markers", "game");
 
+		let mut find_this_object_question_settings = QuestionSettings::default();
+		if let Some(storage) = storage {
+			if let Some(object_question_settings_str) = storage.get_string("game_settings_find_this_object") {
+				match serde_json::from_str(&object_question_settings_str) {
+					Ok(data) => find_this_object_question_settings = data,
+					Err(err) => log::error!("Failed to deserialize 'Find this object' game settings: {:?}", err),
+				}
+			}
+		}
+
+		let mut what_is_this_object_question_settings = QuestionSettings::default();
+		if let Some(storage) = storage {
+			if let Some(object_question_settings_str) = storage.get_string("game_settings_what_is_this_object") {
+				match serde_json::from_str(&object_question_settings_str) {
+					Ok(data) => what_is_this_object_question_settings = data,
+					Err(err) => log::error!("Failed to deserialize 'What is this object' game settings: {:?}", err),
+				}
+			}
+		}
+
+		let mut guess_the_magnitude_question_settings = QuestionSettings::default();
+		if let Some(storage) = storage {
+			if let Some(object_question_settings_str) = storage.get_string("game_settings_guess_the_magnitude") {
+				match serde_json::from_str(&object_question_settings_str) {
+					Ok(data) => guess_the_magnitude_question_settings = data,
+					Err(err) => log::error!("Failed to deserialize 'Guess the magnitude' game settings: {:?}", err),
+				}
+			}
+		}
+
 		Self {
 			current_question: 0,
 			possible_no_of_questions: catalog.len() as u32,
@@ -401,9 +433,9 @@ impl GameHandler {
 			answer_review_text: String::new(),
 			answer: String::new(),
 			guess_marker_positions: Vec::new(),
-			object_question_settings: QuestionSettings::default(),
-			this_point_object_question_settings: QuestionSettings::default(),
-			mag_question_settings: QuestionSettings::default(),
+			object_question_settings: find_this_object_question_settings,
+			this_point_object_question_settings: what_is_this_object_question_settings,
+			mag_question_settings: guess_the_magnitude_question_settings,
 			show_object_questions: true,
 			show_positions_questions: true,
 			show_this_point_object_questions: true,

@@ -151,6 +151,21 @@ impl Application {
 		}
 		storage.set_string("inactive_constellations_groups", inactive_constellations_groups.join("|"));
 
+		match serde_json::to_string(&self.game_handler.object_question_settings) {
+			Ok(string) => storage.set_string("game_settings_find_this_object", string),
+			Err(err) => log::error!("Failed to serialize 'Find this object' game settings: {:?}", err),
+		}
+
+		match serde_json::to_string(&self.game_handler.this_point_object_question_settings) {
+			Ok(string) => storage.set_string("game_settings_what_is_this_object", string),
+			Err(err) => log::error!("Failed to serialize 'Guess the object' game settings: {:?}", err),
+		}
+
+		match serde_json::to_string(&self.game_handler.mag_question_settings) {
+			Ok(string) => storage.set_string("game_settings_guess_the_magnitude", string),
+			Err(err) => log::error!("Failed to serialize 'Guess the magnitude' game settings: {:?}", err),
+		}
+
 		let now = std::time::Instant::now();
 		if now - self.last_state_save_to_disk > self.state_save_to_disk_interval {
 			storage.save();
