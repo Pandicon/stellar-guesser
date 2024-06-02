@@ -1,3 +1,4 @@
+use crate::rendering::caspr::sky_settings;
 use crate::{enums, structs::graphics_settings::GraphicsSettings};
 
 use crate::caspr::CellestialSphere;
@@ -90,38 +91,6 @@ impl Application {
 			(self.state.time_spent_start + (self.frame_timestamp - self.state.start_timestamp)).to_string(),
 		);
 
-		let mut deepsky_files_to_not_render = Vec::new();
-		for (file, active) in &self.cellestial_sphere.deepskies_categories_active {
-			if !*active {
-				deepsky_files_to_not_render.push(file.clone());
-			}
-		}
-		storage.set_string(StorageKeys::DeepskyFilesToNotRender.as_ref(), deepsky_files_to_not_render.join("|"));
-
-		let mut line_files_to_not_render = Vec::new();
-		for (file, active) in &self.cellestial_sphere.lines_categories_active {
-			if !*active {
-				line_files_to_not_render.push(file.clone());
-			}
-		}
-		storage.set_string(StorageKeys::LineFilesToNotRender.as_ref(), line_files_to_not_render.join("|"));
-
-		let mut marker_files_to_not_render = Vec::new();
-		for (file, active) in &self.cellestial_sphere.markers_categories_active {
-			if !*active {
-				marker_files_to_not_render.push(file.clone());
-			}
-		}
-		storage.set_string(StorageKeys::MarkerFilesToNotRender.as_ref(), marker_files_to_not_render.join("|"));
-
-		let mut star_files_to_not_render = Vec::new();
-		for (file, active) in &self.cellestial_sphere.stars_categories_active {
-			if !*active {
-				star_files_to_not_render.push(file.clone());
-			}
-		}
-		storage.set_string(StorageKeys::StarFilesToNotRender.as_ref(), star_files_to_not_render.join("|"));
-
 		let mut inactive_constellations = Vec::new();
 		for (abbreviation, value) in &self.game_handler.active_constellations {
 			if !*value {
@@ -163,6 +132,11 @@ impl Application {
 		match serde_json::to_string(&self.game_handler.game_settings) {
 			Ok(string) => storage.set_string(StorageKeys::GameSettings.as_ref(), string),
 			Err(err) => log::error!("Failed to serialize game settings: {:?}", err),
+		}
+
+		match serde_json::to_string(&sky_settings::SkySettingsRaw::from_sky_settings(&self.cellestial_sphere.sky_settings)) {
+			Ok(string) => storage.set_string(StorageKeys::SkySettings.as_ref(), string),
+			Err(err) => log::error!("Failed to serialize sky settings: {:?}", err),
 		}
 
 		let now = std::time::Instant::now();

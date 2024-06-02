@@ -104,6 +104,7 @@ pub enum StorageKeys {
 	GameInactiveConstellationGroups,
 	GameSettings,
 	GameQuestionSettings,
+	SkySettings,
 }
 
 impl AsRef<str> for StorageKeys {
@@ -120,6 +121,7 @@ impl AsRef<str> for StorageKeys {
 			Self::GameInactiveConstellationGroups => "game_inactive_constellations_groups",
 			Self::GameSettings => "game_settings",
 			Self::GameQuestionSettings => "game_question_settings",
+			Self::SkySettings => "sky_settings",
 		}
 	}
 }
