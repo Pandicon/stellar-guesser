@@ -196,7 +196,7 @@ impl CellestialSphere {
 			None
 		};
 
-		#[cfg(target_os = "windows")]
+		#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 		let content_folder = [
 			["deepskies", DEEPSKIES_FOLDER],
 			["lines", LINES_FOLDER],
@@ -205,7 +205,7 @@ impl CellestialSphere {
 			["star names", STAR_NAMES_FOLDER],
 		];
 
-		#[cfg(target_os = "windows")]
+		#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 		let sky_data_lists = {
 			let mut sky_data = Vec::new();
 
@@ -260,7 +260,7 @@ impl CellestialSphere {
 			})
 			.collect::<Vec<(&str, Vec<[String; 2]>)>>();
 
-		#[cfg(target_os = "windows")]
+		#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 		let sky_data_files = {
 			let mut other_sky_data = Vec::new();
 			if let Ok(file_content) = fs::read_to_string(CONSTELLATION_NAMES) {
