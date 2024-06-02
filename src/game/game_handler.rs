@@ -1,9 +1,9 @@
 use std::{collections::HashMap, f32::consts::PI};
 
 use crate::{
-    caspr::CellestialSphere,
     enums::{self, GameStage, StorageKeys},
     game::questions_settings,
+    renderer::CellestialSphere,
     rendering::caspr::markers::Marker,
 };
 use egui::epaint::Color32;
@@ -400,17 +400,17 @@ impl GameHandler {
     }
     pub fn evaluate_score(distance: f32) -> u32 {
         if distance < 0.2 {
-            return 3;
+            3
         } else if distance < 0.5 {
-            return 2;
+            2
         } else if distance < 1.0 {
-            return 1;
+            1
         } else {
-            return 0;
+            0
         }
     }
 
-    pub fn check_answer(&mut self, cellestial_sphere: &mut crate::caspr::CellestialSphere) {
+    pub fn check_answer(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere) {
         self.stage = GameStage::Checked;
         self.add_marker_on_click = false;
         self.answer_image = None;
@@ -633,7 +633,7 @@ impl GameHandler {
         cellestial_sphere.init_single_renderer("markers", "game");
     }
 
-    pub fn next_question(&mut self, cellestial_sphere: &mut crate::caspr::CellestialSphere) {
+    pub fn next_question(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere) {
         self.answer = String::new();
         let mut possible_questions: Vec<usize> = Vec::new();
         for question in 0..self.question_catalog.len() {
@@ -830,37 +830,33 @@ impl GameHandler {
         let old_catalog = self.question_catalog.to_vec();
         self.question_catalog = old_catalog
             .into_iter()
-            .map(|x| {
-                match x {
-                    Question::NoMoreQuestions | Question::ObjectQuestion { .. } | Question::ThisPointObject { .. } | Question::MagQuestion { .. } => return x,
-                    Question::DECQuestion { .. } => {
-                        let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-                        return Question::DECQuestion { ra, dec };
+            .map(|question| match question {
+                Question::NoMoreQuestions | Question::ObjectQuestion { .. } | Question::ThisPointObject { .. } | Question::MagQuestion { .. } => question,
+                Question::DECQuestion { .. } => {
+                    let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
+                    Question::DECQuestion { ra, dec }
+                }
+                Question::RAQuestion { .. } => {
+                    let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
+                    Question::RAQuestion { ra, dec }
+                }
+                Question::PositionQuestion { .. } => {
+                    let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
+                    let abbrev = cellestial_sphere.determine_constellation((ra, dec));
+                    let possible_constellation_names: Vec<String> = match cellestial_sphere.constellations.get(&abbrev) {
+                        None => vec![String::from("Undefined")],
+                        Some(constellation) => constellation.possible_names.to_owned(),
+                    };
+                    Question::PositionQuestion {
+                        ra,
+                        dec,
+                        possible_constellation_names,
                     }
-                    Question::RAQuestion { .. } => {
-                        let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-                        return Question::RAQuestion { ra, dec };
-                    }
-                    Question::PositionQuestion { .. } => {
-                        let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-                        let abbrev = cellestial_sphere.determine_constellation((ra, dec));
-                        let possible_constellation_names: Vec<String> = match cellestial_sphere.constellations.get(&abbrev) {
-                            None => vec![String::from("Undefined")],
-                            Some(constellation) => constellation.possible_names.to_owned(),
-                        };
-                        return Question::PositionQuestion {
-                            ra,
-                            dec,
-                            possible_constellation_names,
-                        };
-                    }
-                    Question::DistanceBetweenQuestion { .. } => {
-                        return Question::DistanceBetweenQuestion {
-                            point1: geometry::generate_random_point(&mut rand::thread_rng()),
-                            point2: geometry::generate_random_point(&mut rand::thread_rng()),
-                        };
-                    }
-                };
+                }
+                Question::DistanceBetweenQuestion { .. } => Question::DistanceBetweenQuestion {
+                    point1: geometry::generate_random_point(&mut rand::thread_rng()),
+                    point2: geometry::generate_random_point(&mut rand::thread_rng()),
+                },
             })
             .collect();
     }

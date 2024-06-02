@@ -84,6 +84,13 @@ impl Storage {
     }
 }
 
+impl Default for Storage {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Drop for Storage {
     fn drop(&mut self) {
         if let Some(last_save_join_handle) = self.last_save_join_handle.take() {

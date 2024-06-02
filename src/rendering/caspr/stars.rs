@@ -9,7 +9,7 @@ use geometry::get_point_vector;
 use crate::graphics;
 use graphics::parse_colour;
 
-use super::{caspr::CellestialSphere, star_names::StarName};
+use super::{renderer::CellestialSphere, star_names::StarName};
 
 #[derive(Clone, Deserialize)]
 pub struct Star {

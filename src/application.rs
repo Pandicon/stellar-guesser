@@ -1,7 +1,7 @@
 use crate::rendering::caspr::sky_settings;
 use crate::{enums, structs::graphics_settings::GraphicsSettings};
 
-use crate::caspr::CellestialSphere;
+use crate::renderer::CellestialSphere;
 
 use self::frames_handler::FramesHandler;
 

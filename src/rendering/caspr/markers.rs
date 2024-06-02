@@ -8,7 +8,7 @@ use geometry::get_point_vector;
 use crate::graphics;
 use graphics::parse_colour;
 
-use crate::caspr::CellestialSphere;
+use crate::renderer::CellestialSphere;
 
 #[derive(Clone, Copy, Deserialize)]
 pub struct Marker {
@@ -85,6 +85,7 @@ impl Marker {
      * angular_size - if the half_size is in degrees or in pixels
      */
     pub fn new(ra: f32, dec: f32, colour: Color32, line_width: f32, half_size: f32, circular: bool, angular_size: bool) -> Self {
+        #[allow(clippy::collapsible_else_if)]
         let [angular_radius, pixel_radius, angular_width, pixel_width] = if circular {
             if angular_size {
                 [Some(half_size), None, None, None]

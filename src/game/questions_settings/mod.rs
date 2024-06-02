@@ -16,6 +16,7 @@ pub struct QuestionsSettings {
     pub what_is_this_object: what_is_this_object::WhatIsThisObjectQuestionsSettings,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for QuestionsSettings {
     fn default() -> Self {
         Self {

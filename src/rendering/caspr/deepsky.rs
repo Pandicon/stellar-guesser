@@ -8,7 +8,7 @@ use geometry::get_point_vector;
 use crate::graphics;
 use graphics::parse_colour;
 
-use super::caspr::CellestialSphere;
+use super::renderer::CellestialSphere;
 
 #[derive(Clone, Deserialize)]
 pub struct Deepsky {

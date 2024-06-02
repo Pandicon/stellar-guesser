@@ -80,7 +80,7 @@ fn hash_map_to_string(hash_map: &HashMap<String, bool>) -> String {
         .join(SEPARATOR)
 }
 
-fn string_to_partial_hash_map(string: &String) -> HashMap<String, bool> {
+fn string_to_partial_hash_map(string: &str) -> HashMap<String, bool> {
     let mut hash_map = HashMap::new();
     if !string.is_empty() {
         let spl = string.split(SEPARATOR);

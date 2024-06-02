@@ -2,7 +2,7 @@ use nalgebra::{Matrix3, Vector2, Vector3};
 use rand::{rngs::ThreadRng, Rng};
 use std::f32::consts::PI;
 
-use crate::caspr::CellestialSphere;
+use crate::renderer::CellestialSphere;
 
 // const POLYGONLIMIT: f32 = 180.0;
 const VIEWPORT_OFFSET: f32 = 10.0;
@@ -80,7 +80,7 @@ pub fn cartesian_to_spherical(vector: Vector3<f32>) -> (f32, f32) {
     (dec, ra)
 }
 pub fn cast_onto_sphere_dec_ra(cellestial_sphere: &CellestialSphere, screen_position: &egui::Pos2) -> [f32; 2] {
-    let sphere_position = cast_onto_sphere(cellestial_sphere, &screen_position);
+    let sphere_position = cast_onto_sphere(cellestial_sphere, screen_position);
     let (dec, ra) = cartesian_to_spherical(sphere_position);
     [dec, ra]
 }

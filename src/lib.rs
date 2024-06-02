@@ -1,5 +1,7 @@
 // Most of the code here comes from the https://github.com/rust-mobile/rust-android-examples template
 
+#![allow(clippy::redundant_static_lifetimes)] // Comes from const_gen
+
 #[cfg(target_os = "android")]
 use winit::platform::android::activity::AndroidApp;
 
@@ -14,7 +16,7 @@ const INITIAL_HEIGHT: u32 = 1080;
 
 pub use application::Application;
 pub use public_constants::*;
-pub use rendering::caspr::caspr;
+pub use rendering::caspr::renderer;
 
 pub mod application;
 pub mod enums;

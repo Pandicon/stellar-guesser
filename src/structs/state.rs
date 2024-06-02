@@ -25,6 +25,7 @@ pub struct WindowsState {
     pub game_question: QuestionWindowState,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for WindowsState {
     fn default() -> Self {
         Self {
@@ -41,6 +42,7 @@ pub struct AppInfoWindowState {
     pub opened: bool,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for AppInfoWindowState {
     fn default() -> Self {
         Self { opened: false }
@@ -69,11 +71,13 @@ pub struct GraphicsSettingsWindowState {
     pub opened: bool,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for GraphicsSettingsWindowState {
     fn default() -> Self {
         Self { opened: false }
     }
 }
+
 impl Default for QuestionWindowState {
     fn default() -> Self {
         Self { opened: true }
@@ -84,6 +88,7 @@ pub struct StatsWindowState {
     pub opened: bool,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for StatsWindowState {
     fn default() -> Self {
         Self { opened: false }

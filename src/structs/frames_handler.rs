@@ -5,6 +5,7 @@ pub struct Frame {
     pub duration_raw_ns: i64,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for Frame {
     fn default() -> Self {
         Self {

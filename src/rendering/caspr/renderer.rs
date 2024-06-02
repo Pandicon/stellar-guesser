@@ -1,5 +1,4 @@
-use crate::enums::StorageKeys;
-use crate::{enums::LightPollution, structs::graphics_settings::GraphicsSettings};
+use crate::{enums::{LightPollution, StorageKeys}, structs::graphics_settings::GraphicsSettings};
 use egui::epaint::Color32;
 use nalgebra::{Rotation3, Vector3};
 use std::{collections::HashMap, error::Error, fs};
@@ -75,6 +74,7 @@ impl CellestialSphere {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn render_marker(&self, centre_vector: &Vector3<f32>, other_vector: &Option<Vector3<f32>>, circle: bool, pixel_size: Option<f32>, colour: Color32, width: f32, painter: &egui::Painter) {
         let (centre_point, is_centre_within_bounds) = project_point(centre_vector, self.zoom, self.viewport_rect);
         if !is_centre_within_bounds {
@@ -160,6 +160,7 @@ impl CellestialSphere {
                     list_dir.push("list.csv");
                     if let Ok(list_file_content) = fs::read_to_string(list_dir) {
                         let mut objects_images = Vec::new();
+                        #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
                         let list_file_contents = list_file_content.replace("\"", "\\\"");
                         let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(list_file_contents.as_bytes());
                         for object_image_data in reader.deserialize() {
@@ -176,7 +177,7 @@ impl CellestialSphere {
                             match path.try_exists() {
                                 Ok(true) => {
                                     if let Some(path) = path.to_str() {
-                                        let path = path.replace("\\", "/");
+                                        let path = path.replace('\\', "/");
                                         object_image_data.image = format!("file://{path}");
                                     }
                                 }
@@ -228,6 +229,7 @@ impl CellestialSphere {
                         let file_name = file_name.unwrap().to_string();
                         let file_content = fs::read_to_string(path);
                         if let Ok(file_content) = file_content {
+                            #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
                             sky_data[i].1.push([file_name, file_content.replace("\"", "\\\"")]);
                         }
                     }
@@ -264,9 +266,11 @@ impl CellestialSphere {
         let sky_data_files = {
             let mut other_sky_data = Vec::new();
             if let Ok(file_content) = fs::read_to_string(CONSTELLATION_NAMES) {
+                #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
                 other_sky_data.push([String::from("constellation names"), file_content.replace("\"", "\\\"")])
             };
             if let Ok(file_content) = fs::read_to_string(CONSTELLATION_VERTICES) {
+                #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
                 other_sky_data.push([String::from("constellation vertices"), file_content.replace("\"", "\\\"")])
             };
             other_sky_data
@@ -586,9 +590,9 @@ impl CellestialSphere {
     pub fn mag_to_radius(&self, vmag: f32) -> f32 {
         let mag = self.sky_settings.mag_scale * (self.sky_settings.mag_offset - vmag) + 0.5;
         if mag < 0.35 {
-            return 0.0;
+            0.0
         } else {
-            return mag;
+            mag
         }
     }
 
