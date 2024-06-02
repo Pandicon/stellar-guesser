@@ -1,12 +1,14 @@
+use crate::rendering::caspr::sky_settings;
 use crate::{enums, structs::graphics_settings::GraphicsSettings};
 
 use crate::caspr::CellestialSphere;
 
 use self::frames_handler::FramesHandler;
 
-use crate::game::game::{self, GameHandler};
+use crate::game::game_handler::{self, GameHandler};
 
 use crate::{
+	enums::StorageKeys,
 	input,
 	structs::{frames_handler, state},
 };
@@ -20,7 +22,7 @@ pub struct Application {
 	pub cellestial_sphere: CellestialSphere,
 	pub graphics_settings: GraphicsSettings,
 	pub frames_handler: FramesHandler,
-	pub game_handler: game::GameHandler,
+	pub game_handler: game_handler::GameHandler,
 
 	pub authors: String,
 	pub version: String,
@@ -37,7 +39,7 @@ impl Application {
 		ctx.set_visuals(egui::Visuals::dark());
 		let mut time_spent_start = 0;
 		if let Some(storage) = storage {
-			if let Some(time_spent_restore) = storage.get_string("time_spent") {
+			if let Some(time_spent_restore) = storage.get_string(StorageKeys::TimeSpent.as_ref()) {
 				if let Ok(time_spent) = time_spent_restore.parse() {
 					time_spent_start = time_spent;
 				}
@@ -84,39 +86,10 @@ impl Application {
 	}
 
 	pub fn save(&mut self, storage: &mut crate::storage::Storage) {
-		storage.set_string("time_spent", (self.state.time_spent_start + (self.frame_timestamp - self.state.start_timestamp)).to_string());
-
-		let mut deepsky_files_to_not_render = Vec::new();
-		for (file, active) in &self.cellestial_sphere.deepskies_categories_active {
-			if !*active {
-				deepsky_files_to_not_render.push(file.clone());
-			}
-		}
-		storage.set_string("deepsky_files_to_not_render", deepsky_files_to_not_render.join("|"));
-
-		let mut line_files_to_not_render = Vec::new();
-		for (file, active) in &self.cellestial_sphere.lines_categories_active {
-			if !*active {
-				line_files_to_not_render.push(file.clone());
-			}
-		}
-		storage.set_string("line_files_to_not_render", line_files_to_not_render.join("|"));
-
-		let mut marker_files_to_not_render = Vec::new();
-		for (file, active) in &self.cellestial_sphere.markers_categories_active {
-			if !*active {
-				marker_files_to_not_render.push(file.clone());
-			}
-		}
-		storage.set_string("marker_files_to_not_render", marker_files_to_not_render.join("|"));
-
-		let mut star_files_to_not_render = Vec::new();
-		for (file, active) in &self.cellestial_sphere.stars_categories_active {
-			if !*active {
-				star_files_to_not_render.push(file.clone());
-			}
-		}
-		storage.set_string("star_files_to_not_render", star_files_to_not_render.join("|"));
+		storage.set_string(
+			StorageKeys::TimeSpent.as_ref(),
+			(self.state.time_spent_start + (self.frame_timestamp - self.state.start_timestamp)).to_string(),
+		);
 
 		let mut inactive_constellations = Vec::new();
 		for (abbreviation, value) in &self.game_handler.active_constellations {
@@ -124,7 +97,7 @@ impl Application {
 				inactive_constellations.push(abbreviation.as_str());
 			}
 		}
-		storage.set_string("game_inactive_constellations", inactive_constellations.join("|"));
+		storage.set_string(StorageKeys::GameInactiveConstellations.as_ref(), inactive_constellations.join("|"));
 
 		for group in [
 			enums::GameLearningStage::NotStarted,
@@ -139,7 +112,7 @@ impl Application {
 						group_active_constellations.push(abbreviation.as_str());
 					}
 				}
-				storage.set_string(&format!("game_group_active_constellations_{}", group), group_active_constellations.join("|"));
+				storage.set_string(&format!("{}_{}", StorageKeys::GameInactiveConstellationGroups, group), group_active_constellations.join("|"));
 			}
 		}
 
@@ -149,7 +122,22 @@ impl Application {
 				inactive_constellations_groups.push(group.to_string());
 			}
 		}
-		storage.set_string("inactive_constellations_groups", inactive_constellations_groups.join("|"));
+		storage.set_string(StorageKeys::GameInactiveConstellationGroups.as_ref(), inactive_constellations_groups.join("|"));
+
+		match serde_json::to_string(&self.game_handler.questions_settings) {
+			Ok(string) => storage.set_string(StorageKeys::GameQuestionSettings.as_ref(), string),
+			Err(err) => log::error!("Failed to serialize game question settings: {:?}", err),
+		}
+
+		match serde_json::to_string(&self.game_handler.game_settings) {
+			Ok(string) => storage.set_string(StorageKeys::GameSettings.as_ref(), string),
+			Err(err) => log::error!("Failed to serialize game settings: {:?}", err),
+		}
+
+		match serde_json::to_string(&sky_settings::SkySettingsRaw::from_sky_settings(&self.cellestial_sphere.sky_settings)) {
+			Ok(string) => storage.set_string(StorageKeys::SkySettings.as_ref(), string),
+			Err(err) => log::error!("Failed to serialize sky settings: {:?}", err),
+		}
 
 		let now = std::time::Instant::now();
 		if now - self.last_state_save_to_disk > self.state_save_to_disk_interval {

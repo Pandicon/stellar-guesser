@@ -1,3 +1,4 @@
+use crate::enums::StorageKeys;
 use crate::{enums::LightPollution, structs::graphics_settings::GraphicsSettings};
 use egui::epaint::Color32;
 use nalgebra::{Rotation3, Vector3};
@@ -23,6 +24,7 @@ use geometry::{cartesian_to_spherical, cast_onto_sphere, is_inside_polygon, proj
 use super::deepsky::{Deepsky, DeepskyRaw, DeepskyRenderer};
 use super::lines::{LineRenderer, SkyLine, SkyLineRaw};
 use super::markers::{Marker, MarkerRaw, MarkerRenderer};
+use super::sky_settings;
 use super::star_names::{StarName, StarNameRaw};
 use super::stars::{Star, StarRaw, StarRenderer};
 
@@ -32,32 +34,26 @@ const MERIDIAN_CONSTELLATIONS: [&str; 10] = ["cep", "cas", "and", "peg", "pis", 
 const OBJECT_IMAGES_FOLDER: &str = crate::OBJECT_IMAGES_ADDON_FOLDER;
 
 pub struct CellestialSphere {
+	pub sky_settings: sky_settings::SkySettings,
+
 	pub stars: HashMap<String, Vec<Star>>,
-	pub stars_categories_active: HashMap<String, bool>,
 	pub lines: HashMap<String, Vec<SkyLine>>,
-	pub lines_categories_active: HashMap<String, bool>,
 	pub deepskies: HashMap<String, Vec<Deepsky>>,
-	pub deepskies_categories_active: HashMap<String, bool>,
 	pub markers: HashMap<String, Vec<Marker>>,
-	pub markers_categories_active: HashMap<String, bool>,
 	pub star_names: HashMap<String, Vec<StarName>>,
 	pub constellations: HashMap<String, Constellation>,
-	pub star_names_categories_active: HashMap<String, bool>,
 	pub zoom: f32,
 	star_renderers: HashMap<String, Vec<StarRenderer>>,
 	line_renderers: HashMap<String, Vec<LineRenderer>>,
 	deepsky_renderers: HashMap<String, Vec<DeepskyRenderer>>,
 	marker_renderers: HashMap<String, Vec<MarkerRenderer>>,
 
-	pub mag_scale: f32,
-	pub mag_offset: f32,
 	pub light_pollution_place: LightPollution,
-	light_pollution_place_to_mag: HashMap<LightPollution, [f32; 2]>,
+	pub light_pollution_place_to_mag: HashMap<LightPollution, [f32; 2]>,
 
 	pub viewport_rect: egui::Rect,
 
 	pub rotation: Rotation3<f32>,
-	pub deepsky_render_mag_decrease: f32,
 }
 
 impl CellestialSphere {
@@ -200,7 +196,7 @@ impl CellestialSphere {
 			None
 		};
 
-		#[cfg(target_os = "windows")]
+		#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 		let content_folder = [
 			["deepskies", DEEPSKIES_FOLDER],
 			["lines", LINES_FOLDER],
@@ -209,7 +205,7 @@ impl CellestialSphere {
 			["star names", STAR_NAMES_FOLDER],
 		];
 
-		#[cfg(target_os = "windows")]
+		#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 		let sky_data_lists = {
 			let mut sky_data = Vec::new();
 
@@ -264,7 +260,7 @@ impl CellestialSphere {
 			})
 			.collect::<Vec<(&str, Vec<[String; 2]>)>>();
 
-		#[cfg(target_os = "windows")]
+		#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 		let sky_data_files = {
 			let mut other_sky_data = Vec::new();
 			if let Ok(file_content) = fs::read_to_string(CONSTELLATION_NAMES) {
@@ -286,24 +282,29 @@ impl CellestialSphere {
 			.map(|[file_name, file_content]| [file_name, file_content.replace("\\\"", "\"")])
 			.collect::<Vec<[String; 2]>>();
 
+		let mut sky_settings = sky_settings::SkySettings::from_raw(&sky_settings::SkySettingsRaw::default());
+		if let Some(storage) = storage {
+			if let Some(sky_settings_raw_str) = storage.get_string(StorageKeys::SkySettings.as_ref()) {
+				match serde_json::from_str(&sky_settings_raw_str) {
+					Ok(data) => sky_settings = sky_settings::SkySettings::from_raw(&data),
+					Err(err) => log::error!("Failed to deserialize sky settings: {:?}", err),
+				}
+			}
+		}
+		sky_settings.markers_categories_active.insert(String::from("game"), true);
+
 		let star_color = egui::epaint::Color32::WHITE;
 		let mut catalog: HashMap<String, Vec<Star>> = HashMap::new();
-		let mut stars_categories_active = HashMap::new();
 
 		let mut lines: HashMap<String, Vec<SkyLine>> = HashMap::new();
-		let mut lines_categories_active = HashMap::new();
 
 		let mut deepskies: HashMap<String, Vec<Deepsky>> = HashMap::new();
-		let mut deepskies_categories_active = HashMap::new();
 		let objects_images = object_images.unwrap_or(Vec::new());
 
 		let mut star_names: HashMap<String, Vec<StarName>> = HashMap::new();
-		let mut star_names_categories_active = HashMap::new();
 
 		let mut markers: HashMap<String, Vec<Marker>> = HashMap::new();
-		let mut markers_categories_active = HashMap::new();
 		markers.insert(String::from("game"), Vec::new());
-		markers_categories_active.insert(String::from("game"), true);
 
 		for (id, data) in sky_data_lists {
 			if id == "stars" {
@@ -314,8 +315,8 @@ impl CellestialSphere {
 						let star = Star::from_raw(star_raw, star_color);
 						let entry = catalog.entry(file_name.clone()).or_default();
 						entry.push(star);
-						if !stars_categories_active.contains_key(file_name) {
-							stars_categories_active.insert(file_name.clone(), true);
+						if !sky_settings.stars_categories_active.contains_key(file_name) {
+							sky_settings.stars_categories_active.insert(file_name.clone(), true);
 						}
 					}
 				}
@@ -327,8 +328,8 @@ impl CellestialSphere {
 						let line = SkyLine::from_raw(line_raw, star_color);
 						let entry = lines.entry(file_name.clone()).or_default();
 						entry.push(line);
-						if !lines_categories_active.contains_key(file_name) {
-							lines_categories_active.insert(file_name.clone(), true);
+						if !sky_settings.lines_categories_active.contains_key(file_name) {
+							sky_settings.lines_categories_active.insert(file_name.clone(), true);
 						}
 					}
 				}
@@ -376,8 +377,8 @@ impl CellestialSphere {
 						let deepsky = Deepsky::from_raw(deepsky_raw, star_color, deepsky_images_raw);
 						let entry = deepskies.entry(file_name.clone()).or_default();
 						entry.push(deepsky);
-						if !deepskies_categories_active.contains_key(file_name) {
-							deepskies_categories_active.insert(file_name.clone(), true);
+						if !sky_settings.deepskies_categories_active.contains_key(file_name) {
+							sky_settings.deepskies_categories_active.insert(file_name.clone(), true);
 						}
 					}
 				}
@@ -392,8 +393,8 @@ impl CellestialSphere {
 							Some(star_name) => {
 								let entry = star_names.entry(file_name.clone()).or_default();
 								entry.push(star_name);
-								if !star_names_categories_active.contains_key(file_name) {
-									star_names_categories_active.insert(file_name.clone(), true);
+								if !sky_settings.star_names_categories_active.contains_key(file_name) {
+									sky_settings.star_names_categories_active.insert(file_name.clone(), true);
 								}
 							}
 							None => continue,
@@ -408,8 +409,8 @@ impl CellestialSphere {
 						let marker = Marker::from_raw(marker_raw, star_color);
 						let entry = markers.entry(file_name.clone()).or_default();
 						entry.push(marker);
-						if !markers_categories_active.contains_key(file_name) {
-							markers_categories_active.insert(file_name.clone(), true);
+						if !sky_settings.markers_categories_active.contains_key(file_name) {
+							sky_settings.markers_categories_active.insert(file_name.clone(), true);
 						}
 					}
 				}
@@ -441,51 +442,21 @@ impl CellestialSphere {
 			}
 		}
 
-		if let Some(storage) = storage {
-			if let Some(star_files_to_not_render) = storage.get_string("star_files_to_not_render") {
-				for file_name in star_files_to_not_render.split('|') {
-					stars_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
-				}
-			}
-			if let Some(line_files_to_not_render) = storage.get_string("line_files_to_not_render") {
-				for file_name in line_files_to_not_render.split('|') {
-					lines_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
-				}
-			}
-			if let Some(deepsky_files_to_not_render) = storage.get_string("deepsky_files_to_not_render") {
-				for file_name in deepsky_files_to_not_render.split('|') {
-					deepskies_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
-				}
-			}
-			if let Some(marker_files_to_not_render) = storage.get_string("marker_files_to_not_render") {
-				for file_name in marker_files_to_not_render.split('|') {
-					markers_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
-				}
-			}
-			if let Some(star_names_files_to_not_use) = storage.get_string("star_names_files_to_not_use") {
-				for file_name in star_names_files_to_not_use.split('|') {
-					star_names_categories_active.entry(file_name.to_string()).and_modify(|val| *val = false);
-				}
-			}
-		}
-
 		let mut light_pollution_place_to_mag: HashMap<LightPollution, [f32; 2]> = HashMap::with_capacity(MAG_TO_LIGHT_POLLUTION_RAW.len());
 		for &(mag_offset, mag_scale, place) in &MAG_TO_LIGHT_POLLUTION_RAW {
 			light_pollution_place_to_mag.insert(place, [mag_offset, mag_scale]);
 		}
 
+		let light_pollution_place = CellestialSphere::mag_settings_to_light_pollution_place(sky_settings.mag_offset, sky_settings.mag_scale, &light_pollution_place_to_mag);
+
 		let viewport_rect = egui::Rect::from_two_pos(egui::pos2(0.0, 0.0), egui::pos2(0.0, 0.0));
 		Ok(Self {
+			sky_settings,
 			stars: catalog,
-			stars_categories_active,
 			lines,
-			lines_categories_active,
 			deepskies,
-			deepskies_categories_active,
 			markers,
-			markers_categories_active,
 			star_names,
-			star_names_categories_active,
 			constellations,
 			zoom: 1.0,
 			star_renderers: HashMap::new(),
@@ -493,13 +464,10 @@ impl CellestialSphere {
 			deepsky_renderers: HashMap::new(),
 			marker_renderers: HashMap::new(),
 
-			mag_scale: 0.3,
-			mag_offset: 6.0,
-			light_pollution_place: LightPollution::Default,
+			light_pollution_place,
 			light_pollution_place_to_mag,
 
 			viewport_rect,
-			deepsky_render_mag_decrease: 0.0,
 
 			rotation: Rotation3::new(Vector3::new(0.0, 0.0, 0.0)),
 		})
@@ -520,8 +488,8 @@ impl CellestialSphere {
 
 	pub fn init(&mut self) {
 		let [mag_offset, mag_scale] = self.light_pollution_place_to_mag_settings(&self.light_pollution_place);
-		self.mag_offset = mag_offset;
-		self.mag_scale = mag_scale;
+		self.sky_settings.mag_offset = mag_offset;
+		self.sky_settings.mag_scale = mag_scale;
 		self.init_renderers();
 	}
 
@@ -529,7 +497,7 @@ impl CellestialSphere {
 		self.star_renderers = HashMap::new();
 		let mut active_star_groups = Vec::new();
 		for name in self.stars.keys() {
-			let active = self.stars_categories_active.entry(name.to_owned()).or_insert(true);
+			let active = self.sky_settings.stars_categories_active.entry(name.to_owned()).or_insert(true);
 			if !*active {
 				continue;
 			}
@@ -542,7 +510,7 @@ impl CellestialSphere {
 		self.line_renderers = HashMap::new();
 		let mut active_line_groups = Vec::new();
 		for name in self.lines.keys() {
-			let active = self.lines_categories_active.entry(name.to_owned()).or_insert(true);
+			let active = self.sky_settings.lines_categories_active.entry(name.to_owned()).or_insert(true);
 			if !*active {
 				continue;
 			}
@@ -555,7 +523,7 @@ impl CellestialSphere {
 		self.deepsky_renderers = HashMap::new();
 		let mut active_deepsky_groups = Vec::new();
 		for name in self.deepskies.keys() {
-			let active = self.deepskies_categories_active.entry(name.to_owned()).or_insert(true);
+			let active = self.sky_settings.deepskies_categories_active.entry(name.to_owned()).or_insert(true);
 			if !*active {
 				continue;
 			}
@@ -568,7 +536,7 @@ impl CellestialSphere {
 		self.marker_renderers = HashMap::new();
 		let mut active_markers_groups = Vec::new();
 		for name in self.markers.keys() {
-			let active = self.markers_categories_active.entry(name.to_owned()).or_insert(true);
+			let active = self.sky_settings.markers_categories_active.entry(name.to_owned()).or_insert(true);
 			if !*active {
 				continue;
 			}
@@ -616,7 +584,7 @@ impl CellestialSphere {
 	}
 
 	pub fn mag_to_radius(&self, vmag: f32) -> f32 {
-		let mag = self.mag_scale * (self.mag_offset - vmag) + 0.5;
+		let mag = self.sky_settings.mag_scale * (self.sky_settings.mag_offset - vmag) + 0.5;
 		if mag < 0.35 {
 			return 0.0;
 		} else {
@@ -628,8 +596,8 @@ impl CellestialSphere {
 		cast_onto_sphere(self, &screen_pos)
 	}
 
-	pub fn mag_settings_to_light_pollution_place(&self, mag_offset: f32, mag_scale: f32) -> LightPollution {
-		for (&place, &[mag_off, mag_sca]) in &self.light_pollution_place_to_mag {
+	pub fn mag_settings_to_light_pollution_place(mag_offset: f32, mag_scale: f32, light_pollution_place_to_mag: &HashMap<LightPollution, [f32; 2]>) -> LightPollution {
+		for (&place, &[mag_off, mag_sca]) in light_pollution_place_to_mag {
 			if mag_off == mag_offset && mag_sca == mag_scale {
 				return place;
 			}
@@ -641,7 +609,7 @@ impl CellestialSphere {
 		if let Some(settings) = self.light_pollution_place_to_mag.get(place) {
 			*settings
 		} else {
-			[self.mag_offset, self.mag_scale]
+			[self.sky_settings.mag_offset, self.sky_settings.mag_scale]
 		}
 	}
 	pub fn to_equatorial_coordinates(vector: Vector3<f32>) -> (f32, f32) {

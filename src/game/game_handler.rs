@@ -2,13 +2,16 @@ use std::{collections::HashMap, f32::consts::PI};
 
 use crate::{
 	caspr::CellestialSphere,
-	enums::{self, GameStage},
+	enums::{self, GameStage, StorageKeys},
+	game::questions_settings,
 	rendering::caspr::markers::Marker,
 };
 use egui::epaint::Color32;
 use rand::Rng;
 
 use crate::geometry;
+
+use super::game_settings;
 
 #[derive(Clone)]
 pub enum Question {
@@ -67,34 +70,6 @@ pub enum Question {
 	NoMoreQuestions,
 }
 
-pub struct QuestionSettings {
-	pub show_messiers: bool,
-	pub show_caldwells: bool,
-	pub show_ngcs: bool,
-	pub show_ics: bool,
-	pub show_bayer: bool,
-	pub show_starnames: bool,
-	pub magnitude_cutoff: f32,
-	pub correctness_threshold: f32,
-	pub replay_incorrect: bool,
-}
-
-impl Default for QuestionSettings {
-	fn default() -> Self {
-		Self {
-			show_messiers: true,
-			show_caldwells: true,
-			show_ngcs: true,
-			show_ics: true,
-			show_bayer: true,
-			show_starnames: true,
-			magnitude_cutoff: 6.0,
-			correctness_threshold: 0.2,
-			replay_incorrect: true,
-		}
-	}
-}
-
 pub struct GameHandler {
 	current_question: usize,
 	question_catalog: Vec<Question>,
@@ -113,20 +88,12 @@ pub struct GameHandler {
 
 	pub guess_marker_positions: Vec<[f32; 2]>,
 
-	pub object_question_settings: QuestionSettings,
-	pub this_point_object_question_settings: QuestionSettings,
-	pub mag_question_settings: QuestionSettings,
-	pub show_object_questions: bool,
-	pub show_positions_questions: bool,
-	pub show_this_point_object_questions: bool,
-	pub show_distance_between_questions: bool,
-	pub no_of_questions: u32,
+	pub game_settings: game_settings::GameSettings,
+	pub questions_settings: questions_settings::QuestionsSettings,
+
 	pub possible_no_of_questions: u32,
-	pub is_scored_mode: bool,
 	pub score: u32,
 	possible_score: u32,
-	pub show_radecquestions: bool,
-	pub show_magquestions: bool,
 	pub active_constellations: HashMap<String, bool>,
 	pub groups_active_constellations: HashMap<enums::GameLearningStage, HashMap<String, bool>>,
 	pub active_constellations_groups: HashMap<enums::GameLearningStage, bool>,
@@ -140,7 +107,7 @@ impl GameHandler {
 			active_constellations.insert(constellation_abbreviation.to_owned(), true);
 		}
 		if let Some(storage) = storage {
-			if let Some(inactive_constellations) = storage.get_string("game_inactive_constellations") {
+			if let Some(inactive_constellations) = storage.get_string(StorageKeys::GameInactiveConstellations.as_ref()) {
 				let inactive_constellations = inactive_constellations.split('|');
 				for inactive_constellation in inactive_constellations {
 					active_constellations.insert(inactive_constellation.to_string(), false);
@@ -157,7 +124,7 @@ impl GameHandler {
 			active_constellations_groups.insert(group, true);
 		}
 		if let Some(storage) = storage {
-			if let Some(inactive_constellations_groups) = storage.get_string("inactive_constellations_groups") {
+			if let Some(inactive_constellations_groups) = storage.get_string(StorageKeys::GameInactiveConstellationGroups.as_ref()) {
 				let inactive_groups = inactive_constellations_groups.split('|');
 				for inactive_group in inactive_groups {
 					active_constellations_groups.insert(enums::GameLearningStage::from_string(inactive_group), false);
@@ -176,7 +143,7 @@ impl GameHandler {
 				group_active_constellations.insert(constellation_abbreviation.to_owned(), false);
 			}
 			if let Some(storage) = storage {
-				if let Some(active_constellations) = storage.get_string(&format!("game_group_active_constellations_{}", group)) {
+				if let Some(active_constellations) = storage.get_string(&format!("{}_{}", StorageKeys::GameGroupActiveConstellellations, group)) {
 					let active_constellations = active_constellations.split('|');
 					for active_constellation in active_constellations {
 						group_active_constellations.insert(active_constellation.to_string(), true);
@@ -387,6 +354,26 @@ impl GameHandler {
 		// *entry = Vec::new();
 		// cellestial_sphere.init_single_renderer("markers", "game");
 
+		let mut questions_settings = questions_settings::QuestionsSettings::default();
+		if let Some(storage) = storage {
+			if let Some(question_settings_str) = storage.get_string(StorageKeys::GameQuestionSettings.as_ref()) {
+				match serde_json::from_str(&question_settings_str) {
+					Ok(data) => questions_settings = data,
+					Err(err) => log::error!("Failed to deserialize question game settings: {:?}", err),
+				}
+			}
+		}
+
+		let mut game_settings = game_settings::GameSettings::default();
+		if let Some(storage) = storage {
+			if let Some(game_settings_str) = storage.get_string(StorageKeys::GameSettings.as_ref()) {
+				match serde_json::from_str(&game_settings_str) {
+					Ok(data) => game_settings = data,
+					Err(err) => log::error!("Failed to deserialize game settings: {:?}", err),
+				}
+			}
+		}
+
 		Self {
 			current_question: 0,
 			possible_no_of_questions: catalog.len() as u32,
@@ -401,19 +388,10 @@ impl GameHandler {
 			answer_review_text: String::new(),
 			answer: String::new(),
 			guess_marker_positions: Vec::new(),
-			object_question_settings: QuestionSettings::default(),
-			this_point_object_question_settings: QuestionSettings::default(),
-			mag_question_settings: QuestionSettings::default(),
-			show_object_questions: true,
-			show_positions_questions: true,
-			show_this_point_object_questions: true,
-			show_magquestions: true,
-			no_of_questions: 15,
-			is_scored_mode: false,
+			questions_settings,
+			game_settings,
 			score: 0,
 			possible_score: 0,
-			show_distance_between_questions: true,
-			show_radecquestions: true,
 			active_constellations,
 			groups_active_constellations,
 			active_constellations_groups,
@@ -457,14 +435,14 @@ impl GameHandler {
 					let answer_dec = entry[0].dec;
 					let answer_ra = entry[0].ra;
 					let distance = geometry::angular_distance((ra * PI / 180.0, dec * PI / 180.0), (answer_ra * PI / 180.0, answer_dec * PI / 180.0)) * 180.0 / PI;
-					if self.is_scored_mode {
+					if self.game_settings.is_scored_mode {
 						self.score += GameHandler::evaluate_score(distance);
 					}
 					(
 						answer_dec.to_string(),
 						answer_ra.to_string(),
 						distance.to_string(),
-						if distance < self.object_question_settings.correctness_threshold {
+						if distance < self.questions_settings.find_this_object.correctness_threshold {
 							correct = true;
 							String::from("Correct!")
 						} else {
@@ -486,7 +464,7 @@ impl GameHandler {
 					object_type
 				);
 				entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, *is_bayer || *is_starname, false));
-				if !self.object_question_settings.replay_incorrect || correct {
+				if !self.questions_settings.find_this_object.replay_incorrect || correct {
 					self.used_questions.push(self.current_question);
 				} else {
 					self.question_number += 1;
@@ -527,7 +505,7 @@ impl GameHandler {
 				);
 				self.answer_review_text = format!("Your answer was: {}\nPossible answers: {}\nObject type: {}", self.answer, possible_names.join(", "), object_type);
 				self.possible_score += 1;
-				if !self.this_point_object_question_settings.replay_incorrect || correct {
+				if !self.questions_settings.what_is_this_object.replay_incorrect || correct {
 					self.used_questions.push(self.current_question);
 				} else {
 					self.question_number += 1;
@@ -551,7 +529,7 @@ impl GameHandler {
 						0.0
 					}
 				};
-				if self.is_scored_mode {
+				if self.game_settings.is_scored_mode {
 					let error = 1.0 - (answer_dist / distance).abs();
 					if error < 0.03 {
 						self.score += 3;
@@ -581,7 +559,7 @@ impl GameHandler {
 				};
 				let error = (ra - answer_dist / 24.0 * 360.0).abs();
 
-				if self.is_scored_mode {
+				if self.game_settings.is_scored_mode {
 					if error < 3.0 {
 						self.score += 3;
 					} else if error < 5.0 {
@@ -610,7 +588,7 @@ impl GameHandler {
 				};
 				let error = (dec - answer_dist).abs();
 
-				if self.is_scored_mode {
+				if self.game_settings.is_scored_mode {
 					if error < 3.0 {
 						self.score += 3;
 					} else if error < 5.0 {
@@ -638,7 +616,7 @@ impl GameHandler {
 				};
 				let error = (mag - answer_mag).abs();
 
-				if self.is_scored_mode {
+				if self.game_settings.is_scored_mode {
 					if error < 3.0 {
 						self.score += 3;
 					} else if error < 5.0 {
@@ -673,21 +651,21 @@ impl GameHandler {
 						..
 					} => {
 						let mag = (*magnitude).unwrap_or(-1.0); // TODO: Shouldn't a default magnitude be something else?
-						if self.show_object_questions
-							&& ((self.object_question_settings.show_messiers && *is_messier)
-								|| (self.object_question_settings.show_caldwells && *is_caldwell)
-								|| (self.object_question_settings.show_ngcs && *is_ngc)
-								|| (self.object_question_settings.show_ics && *is_ic)
-								|| (self.object_question_settings.show_bayer && *is_bayer)
-								|| (self.object_question_settings.show_starnames && *is_starname))
-							&& ((!*is_bayer && !*is_starname) || mag < self.object_question_settings.magnitude_cutoff)
+						if self.questions_settings.find_this_object.show
+							&& ((self.questions_settings.find_this_object.show_messiers && *is_messier)
+								|| (self.questions_settings.find_this_object.show_caldwells && *is_caldwell)
+								|| (self.questions_settings.find_this_object.show_ngcs && *is_ngc)
+								|| (self.questions_settings.find_this_object.show_ics && *is_ic)
+								|| (self.questions_settings.find_this_object.show_bayer && *is_bayer)
+								|| (self.questions_settings.find_this_object.show_starnames && *is_starname))
+							&& ((!*is_bayer && !*is_starname) || mag < self.questions_settings.find_this_object.magnitude_cutoff)
 							&& *self.active_constellations.entry(constellation_abbreviation.to_lowercase()).or_insert(true)
 						{
 							possible_questions.push(question);
 						}
 					}
 					Question::PositionQuestion { .. } => {
-						if self.show_positions_questions {
+						if self.questions_settings.what_constellation_is_this_point_in.show {
 							possible_questions.push(question);
 						}
 					}
@@ -703,36 +681,36 @@ impl GameHandler {
 						..
 					} => {
 						let mag = (*magnitude).unwrap_or(-1.0);
-						if self.show_this_point_object_questions
-							&& ((self.this_point_object_question_settings.show_messiers && *is_messier)
-								|| (self.this_point_object_question_settings.show_caldwells && *is_caldwell)
-								|| (self.this_point_object_question_settings.show_ngcs && *is_ngc)
-								|| (self.this_point_object_question_settings.show_ics && *is_ic)
-								|| (self.this_point_object_question_settings.show_bayer && *is_bayer)
-								|| (self.this_point_object_question_settings.show_starnames && *is_starname))
-							&& ((!*is_bayer && !*is_starname) || mag < self.this_point_object_question_settings.magnitude_cutoff)
+						if self.questions_settings.what_is_this_object.show
+							&& ((self.questions_settings.what_is_this_object.show_messiers && *is_messier)
+								|| (self.questions_settings.what_is_this_object.show_caldwells && *is_caldwell)
+								|| (self.questions_settings.what_is_this_object.show_ngcs && *is_ngc)
+								|| (self.questions_settings.what_is_this_object.show_ics && *is_ic)
+								|| (self.questions_settings.what_is_this_object.show_bayer && *is_bayer)
+								|| (self.questions_settings.what_is_this_object.show_starnames && *is_starname))
+							&& ((!*is_bayer && !*is_starname) || mag < self.questions_settings.what_is_this_object.magnitude_cutoff)
 							&& *self.active_constellations.entry(constellation_abbreviation.to_lowercase()).or_insert(true)
 						{
 							possible_questions.push(question);
 						}
 					}
 					Question::DistanceBetweenQuestion { point1: _point1, point2: _point2 } => {
-						if self.show_distance_between_questions {
+						if self.questions_settings.angular_separation.show {
 							possible_questions.push(question);
 						}
 					}
 					Question::DECQuestion { .. } => {
-						if self.show_radecquestions {
+						if self.questions_settings.guess_rad_dec.show {
 							possible_questions.push(question);
 						}
 					}
 					Question::RAQuestion { .. } => {
-						if self.show_radecquestions {
+						if self.questions_settings.guess_rad_dec.show {
 							possible_questions.push(question);
 						}
 					}
 					Question::MagQuestion { mag, .. } => {
-						if self.show_magquestions && *mag < self.mag_question_settings.magnitude_cutoff {
+						if self.questions_settings.guess_the_magnitude.show && *mag < self.questions_settings.guess_the_magnitude.magnitude_cutoff {
 							possible_questions.push(question)
 						}
 					}
@@ -741,7 +719,7 @@ impl GameHandler {
 			}
 		}
 
-		if possible_questions.is_empty() || (self.is_scored_mode && self.used_questions.len() as u32 > self.no_of_questions) {
+		if possible_questions.is_empty() || (self.game_settings.is_scored_mode && self.used_questions.len() as u32 > self.game_settings.no_of_questions) {
 			self.current_question = 0;
 		} else {
 			self.current_question = possible_questions[rand::thread_rng().gen_range(0..possible_questions.len())];
@@ -803,7 +781,7 @@ impl GameHandler {
 			Question::ThisPointObject { .. } => String::from("What is this object?"),
 			Question::DistanceBetweenQuestion { .. } => String::from("What is the angular distance between these markers? "),
 			Question::NoMoreQuestions => {
-				if self.is_scored_mode {
+				if self.game_settings.is_scored_mode {
 					let percentage = (self.score as f32) / (self.possible_score as f32) * 100.0;
 					format!(
 						"Game over! Your score was {}/{}, that is {:.1}% of the maximum. Click Reset if you want to play a new game!",
@@ -916,7 +894,7 @@ impl GameHandler {
 			| Question::RAQuestion { .. }
 			| Question::MagQuestion { .. }
 			| Question::ThisPointObject { .. } => 0.0,
-			Question::ObjectQuestion { .. } => self.object_question_settings.correctness_threshold,
+			Question::ObjectQuestion { .. } => self.questions_settings.find_this_object.correctness_threshold,
 		}
 	}
 
