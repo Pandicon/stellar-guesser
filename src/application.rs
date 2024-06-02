@@ -156,6 +156,11 @@ impl Application {
 		storage.set_string(StorageKeys::GameInactiveConstellationGroups.as_ref(), inactive_constellations_groups.join("|"));
 
 		match serde_json::to_string(&self.game_handler.questions_settings) {
+			Ok(string) => storage.set_string(StorageKeys::GameQuestionSettings.as_ref(), string),
+			Err(err) => log::error!("Failed to serialize game question settings: {:?}", err),
+		}
+
+		match serde_json::to_string(&self.game_handler.game_settings) {
 			Ok(string) => storage.set_string(StorageKeys::GameSettings.as_ref(), string),
 			Err(err) => log::error!("Failed to serialize game settings: {:?}", err),
 		}

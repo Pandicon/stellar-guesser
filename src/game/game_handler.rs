@@ -11,6 +11,8 @@ use rand::Rng;
 
 use crate::geometry;
 
+use super::game_settings;
+
 #[derive(Clone)]
 pub enum Question {
 	ObjectQuestion {
@@ -86,11 +88,10 @@ pub struct GameHandler {
 
 	pub guess_marker_positions: Vec<[f32; 2]>,
 
+	pub game_settings: game_settings::GameSettings,
 	pub questions_settings: questions_settings::QuestionsSettings,
 
-	pub no_of_questions: u32,
 	pub possible_no_of_questions: u32,
-	pub is_scored_mode: bool,
 	pub score: u32,
 	possible_score: u32,
 	pub active_constellations: HashMap<String, bool>,
@@ -355,9 +356,19 @@ impl GameHandler {
 
 		let mut questions_settings = questions_settings::QuestionsSettings::default();
 		if let Some(storage) = storage {
-			if let Some(object_question_settings_str) = storage.get_string(StorageKeys::GameSettings.as_ref()) {
-				match serde_json::from_str(&object_question_settings_str) {
+			if let Some(question_settings_str) = storage.get_string(StorageKeys::GameQuestionSettings.as_ref()) {
+				match serde_json::from_str(&question_settings_str) {
 					Ok(data) => questions_settings = data,
+					Err(err) => log::error!("Failed to deserialize question game settings: {:?}", err),
+				}
+			}
+		}
+
+		let mut game_settings = game_settings::GameSettings::default();
+		if let Some(storage) = storage {
+			if let Some(game_settings_str) = storage.get_string(StorageKeys::GameSettings.as_ref()) {
+				match serde_json::from_str(&game_settings_str) {
+					Ok(data) => game_settings = data,
 					Err(err) => log::error!("Failed to deserialize game settings: {:?}", err),
 				}
 			}
@@ -378,8 +389,7 @@ impl GameHandler {
 			answer: String::new(),
 			guess_marker_positions: Vec::new(),
 			questions_settings,
-			no_of_questions: 15,
-			is_scored_mode: false,
+			game_settings,
 			score: 0,
 			possible_score: 0,
 			active_constellations,
@@ -425,7 +435,7 @@ impl GameHandler {
 					let answer_dec = entry[0].dec;
 					let answer_ra = entry[0].ra;
 					let distance = geometry::angular_distance((ra * PI / 180.0, dec * PI / 180.0), (answer_ra * PI / 180.0, answer_dec * PI / 180.0)) * 180.0 / PI;
-					if self.is_scored_mode {
+					if self.game_settings.is_scored_mode {
 						self.score += GameHandler::evaluate_score(distance);
 					}
 					(
@@ -519,7 +529,7 @@ impl GameHandler {
 						0.0
 					}
 				};
-				if self.is_scored_mode {
+				if self.game_settings.is_scored_mode {
 					let error = 1.0 - (answer_dist / distance).abs();
 					if error < 0.03 {
 						self.score += 3;
@@ -549,7 +559,7 @@ impl GameHandler {
 				};
 				let error = (ra - answer_dist / 24.0 * 360.0).abs();
 
-				if self.is_scored_mode {
+				if self.game_settings.is_scored_mode {
 					if error < 3.0 {
 						self.score += 3;
 					} else if error < 5.0 {
@@ -578,7 +588,7 @@ impl GameHandler {
 				};
 				let error = (dec - answer_dist).abs();
 
-				if self.is_scored_mode {
+				if self.game_settings.is_scored_mode {
 					if error < 3.0 {
 						self.score += 3;
 					} else if error < 5.0 {
@@ -606,7 +616,7 @@ impl GameHandler {
 				};
 				let error = (mag - answer_mag).abs();
 
-				if self.is_scored_mode {
+				if self.game_settings.is_scored_mode {
 					if error < 3.0 {
 						self.score += 3;
 					} else if error < 5.0 {
@@ -709,7 +719,7 @@ impl GameHandler {
 			}
 		}
 
-		if possible_questions.is_empty() || (self.is_scored_mode && self.used_questions.len() as u32 > self.no_of_questions) {
+		if possible_questions.is_empty() || (self.game_settings.is_scored_mode && self.used_questions.len() as u32 > self.game_settings.no_of_questions) {
 			self.current_question = 0;
 		} else {
 			self.current_question = possible_questions[rand::thread_rng().gen_range(0..possible_questions.len())];
@@ -771,7 +781,7 @@ impl GameHandler {
 			Question::ThisPointObject { .. } => String::from("What is this object?"),
 			Question::DistanceBetweenQuestion { .. } => String::from("What is the angular distance between these markers? "),
 			Question::NoMoreQuestions => {
-				if self.is_scored_mode {
+				if self.game_settings.is_scored_mode {
 					let percentage = (self.score as f32) / (self.possible_score as f32) * 100.0;
 					format!(
 						"Game over! Your score was {}/{}, that is {:.1}% of the maximum. Click Reset if you want to play a new game!",

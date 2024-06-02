@@ -5,7 +5,7 @@ impl Application {
 		egui::Window::new("Question").open(&mut self.state.windows.game_question.opened).show(ctx, |ui| {
 			if self.game_handler.stage == GameStage::Guessing {
 				if self.game_handler.no_more_questions() {
-					if self.game_handler.is_scored_mode {
+					if self.game_handler.game_settings.is_scored_mode {
 						ui.heading("Game over!");
 					} else {
 						ui.heading("No more questions left");

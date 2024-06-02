@@ -72,10 +72,10 @@ impl Application {
 							.has_focus();
 						ui.checkbox(&mut self.game_handler.questions_settings.guess_the_magnitude.replay_incorrect, "Replay incorrectly answered questions");
 					});
-				ui.checkbox(&mut self.game_handler.is_scored_mode, "Play in scored mode?");
+				ui.checkbox(&mut self.game_handler.game_settings.is_scored_mode, "Play in scored mode?");
 				self.input.input_field_has_focus |= ui
 					.add(
-						egui::Slider::new(&mut self.game_handler.no_of_questions, 1..=self.game_handler.possible_no_of_questions)
+						egui::Slider::new(&mut self.game_handler.game_settings.no_of_questions, 1..=self.game_handler.possible_no_of_questions)
 							.text("Number of questions")
 							.logarithmic(true),
 					)

@@ -102,10 +102,8 @@ pub enum StorageKeys {
 	GameInactiveConstellations,
 	GameGroupActiveConstellellations,
 	GameInactiveConstellationGroups,
-	GameSettingsFindThisObject,
-	GameSettingsWhatIsThisObject,
-	GameSettingsGuessTheMagnitude,
 	GameSettings,
+	GameQuestionSettings,
 }
 
 impl AsRef<str> for StorageKeys {
@@ -120,10 +118,8 @@ impl AsRef<str> for StorageKeys {
 			Self::GameInactiveConstellations => "game_inactive_constellations",
 			Self::GameGroupActiveConstellellations => "game_group_active_constellations",
 			Self::GameInactiveConstellationGroups => "game_inactive_constellations_groups",
-			Self::GameSettingsFindThisObject => "game_settings_find_this_object",
-			Self::GameSettingsWhatIsThisObject => "game_settings_what_is_this_object",
-			Self::GameSettingsGuessTheMagnitude => "game_settings_guess_the_magnitude",
 			Self::GameSettings => "game_settings",
+			Self::GameQuestionSettings => "game_question_settings",
 		}
 	}
 }
