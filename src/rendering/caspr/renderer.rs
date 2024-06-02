@@ -1,4 +1,7 @@
-use crate::{enums::{LightPollution, StorageKeys}, structs::graphics_settings::GraphicsSettings};
+use crate::{
+    enums::{LightPollution, StorageKeys},
+    structs::graphics_settings::GraphicsSettings,
+};
 use egui::epaint::Color32;
 use nalgebra::{Rotation3, Vector3};
 use std::{collections::HashMap, error::Error, fs};
@@ -624,7 +627,7 @@ impl CellestialSphere {
         for constellation in &self.constellations {
             let (abbreviation, constellation) = constellation;
             if is_inside_polygon(constellation.vertices.to_owned(), point, MERIDIAN_CONSTELLATIONS.contains(&abbreviation.as_str())) {
-                in_constellation = abbreviation.to_owned();
+                abbreviation.clone_into(&mut in_constellation);
             }
         }
         if in_constellation == "Undefined" {
