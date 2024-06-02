@@ -28,7 +28,7 @@ addons/object-images/
 
 # cargo-mobile2
 .cargo/
-/gen
+/gen/android
 
 # macOS
 .DS_Store
