@@ -1,8 +1,8 @@
 use egui::epaint::Color32;
 
 use crate::{
-    renderer::CellestialSphere,
     enums::{ColourMode, LightPollution},
+    renderer::CellestialSphere,
     Application,
 };
 
