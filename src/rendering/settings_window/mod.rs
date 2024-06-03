@@ -11,6 +11,7 @@ impl Application {
                 ui.selectable_value(&mut self.state.windows.settings.subwindow, SettingsSubWindow::Game, SettingsSubWindow::Game.as_ref());
                 ui.selectable_value(&mut self.state.windows.settings.subwindow, SettingsSubWindow::Sky, SettingsSubWindow::Sky.as_ref());
             });
+            ui.separator();
             match self.state.windows.settings.subwindow {
                 SettingsSubWindow::Game => self.render_game_settings_window(ui),
                 SettingsSubWindow::Sky => self.render_sky_settings_window(ctx, ui),

@@ -32,12 +32,16 @@ impl Default for GameSettingsWindowState {
     }
 }
 
-pub struct SkySettingsWindowState {}
+pub struct SkySettingsWindowState {
+    pub subwindow: SkySettingsSubWindow,
+}
 
 #[allow(clippy::derivable_impls)]
 impl Default for SkySettingsWindowState {
     fn default() -> Self {
-        Self {}
+        Self {
+            subwindow: SkySettingsSubWindow::General,
+        }
     }
 }
 
@@ -57,6 +61,33 @@ impl AsRef<str> for SettingsSubWindow {
 }
 
 impl Display for SettingsSubWindow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
+#[derive(PartialEq)]
+pub enum SkySettingsSubWindow {
+    General,
+    Stars,
+    Deepsky,
+    Lines,
+    Markers,
+}
+
+impl AsRef<str> for SkySettingsSubWindow {
+    fn as_ref(&self) -> &str {
+        match *self {
+            Self::General => "General",
+            Self::Stars => "Stars",
+            Self::Deepsky => "Deepsky objects",
+            Self::Lines => "Lines",
+            Self::Markers => "Markers",
+        }
+    }
+}
+
+impl Display for SkySettingsSubWindow {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.as_ref())
     }
