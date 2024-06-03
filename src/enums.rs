@@ -2,7 +2,6 @@ use egui::epaint::Pos2;
 use std::fmt::Display;
 
 pub enum Inputs {
-    AltShiftG,
     AltShiftI,
     AltShiftO,
     AltShiftS,

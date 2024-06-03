@@ -45,17 +45,11 @@ fn render_right_controls(app: &mut crate::application::Application, ui: &mut egu
     if stats_btn.clicked() {
         app.state.windows.stats.opened = true;
     }
-    let graphics_settings_btn = ui
-        .add(egui::Button::new(egui::RichText::new("Sky settings").text_style(egui::TextStyle::Body)))
-        .on_hover_text("Show the sky settings");
-    if graphics_settings_btn.clicked() {
-        app.state.windows.graphics_settings.opened = true;
-    }
-    let game_settings_btn = ui
-        .add(egui::Button::new(egui::RichText::new("Game settings").text_style(egui::TextStyle::Body)))
-        .on_hover_text("Show the game settings");
-    if game_settings_btn.clicked() {
-        app.state.windows.game_settings.opened = true;
+    let settings_btn = ui
+        .add(egui::Button::new(egui::RichText::new("Settings").text_style(egui::TextStyle::Body)))
+        .on_hover_text("Show the settings");
+    if settings_btn.clicked() {
+        app.state.windows.settings.opened = true;
     }
     let game_question_btn = ui
         .add(egui::Button::new(egui::RichText::new("Question").text_style(egui::TextStyle::Body)))
