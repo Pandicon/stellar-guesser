@@ -22,12 +22,28 @@ impl Default for SettingsWindowState {
 
 pub struct GameSettingsWindowState {
     pub constellation_setting_learning_stage: enums::GameLearningStage,
+    pub subwindow: GameSettingsSubWindow,
+    pub questions_subwindow: GameSettingsQuestionsSubWindowState,
 }
 
 impl Default for GameSettingsWindowState {
     fn default() -> Self {
         Self {
             constellation_setting_learning_stage: enums::GameLearningStage::None,
+            subwindow: GameSettingsSubWindow::General,
+            questions_subwindow: GameSettingsQuestionsSubWindowState::default(),
+        }
+    }
+}
+
+pub struct GameSettingsQuestionsSubWindowState {
+    pub subwindow: GameSettingsQuestionsSubWindow,
+}
+
+impl Default for GameSettingsQuestionsSubWindowState {
+    fn default() -> Self {
+        Self {
+            subwindow: GameSettingsQuestionsSubWindow::FindThisObject,
         }
     }
 }
@@ -61,6 +77,58 @@ impl AsRef<str> for SettingsSubWindow {
 }
 
 impl Display for SettingsSubWindow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
+#[derive(PartialEq)]
+pub enum GameSettingsSubWindow {
+    General,
+    Questions,
+    Constellations,
+}
+
+impl AsRef<str> for GameSettingsSubWindow {
+    fn as_ref(&self) -> &str {
+        match *self {
+            Self::General => "General",
+            Self::Questions => "Questions",
+            Self::Constellations => "Constellations",
+        }
+    }
+}
+
+impl Display for GameSettingsSubWindow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
+#[derive(PartialEq)]
+pub enum GameSettingsQuestionsSubWindow {
+    FindThisObject,
+    WhatIsThisObject,
+    WhichConstellationIsThisPointIn,
+    GuessTheAngularDistance,
+    GuessTheCoordinates,
+    GuessTheMagnitude,
+}
+
+impl AsRef<str> for GameSettingsQuestionsSubWindow {
+    fn as_ref(&self) -> &str {
+        match *self {
+            Self::FindThisObject => "Find this object",
+            Self::WhatIsThisObject => "What is this object",
+            Self::WhichConstellationIsThisPointIn => "Which constellation is this point in",
+            Self::GuessTheAngularDistance => "Guess the angular distance",
+            Self::GuessTheCoordinates => "Guess the coordinates",
+            Self::GuessTheMagnitude => "Guess the magnitude",
+        }
+    }
+}
+
+impl Display for GameSettingsQuestionsSubWindow {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.as_ref())
     }

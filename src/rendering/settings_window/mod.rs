@@ -1,6 +1,6 @@
 use crate::{structs::state::windows::settings::SettingsSubWindow, Application};
 
-pub mod game_settings_window;
+pub mod game_settings;
 pub mod sky_settings_window;
 
 impl Application {
