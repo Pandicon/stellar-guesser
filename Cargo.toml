@@ -49,3 +49,10 @@ env_logger = "0.11"
 chrono = "0.4.26"
 const-gen = "1.0.0"
 winres = "0.1.12"
+
+[profile.dev]
+debug-assertions = false
+[profile.dev.package.stellar-guesser]
+debug-assertions = true
+[profile.dev.package.ring]
+debug-assertions = true
