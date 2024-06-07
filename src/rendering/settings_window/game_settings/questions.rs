@@ -2,38 +2,19 @@ use crate::{structs::state::windows::settings::GameSettingsQuestionsSubWindow, A
 
 impl Application {
     pub fn render_game_settings_questions_subwindow(&mut self, ui: &mut egui::Ui, tolerance_changed: &mut bool) {
-        // TODO: Somehow solve the issue that the row is very wide
         ui.horizontal(|ui| {
-            ui.selectable_value(
-                &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
-                GameSettingsQuestionsSubWindow::FindThisObject,
-                GameSettingsQuestionsSubWindow::FindThisObject.as_ref(),
-            );
-            ui.selectable_value(
-                &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
-                GameSettingsQuestionsSubWindow::WhatIsThisObject,
-                GameSettingsQuestionsSubWindow::WhatIsThisObject.as_ref(),
-            );
-            ui.selectable_value(
-                &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
-                GameSettingsQuestionsSubWindow::WhichConstellationIsThisPointIn,
-                GameSettingsQuestionsSubWindow::WhichConstellationIsThisPointIn.as_ref(),
-            );
-            ui.selectable_value(
-                &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
-                GameSettingsQuestionsSubWindow::GuessTheAngularDistance,
-                GameSettingsQuestionsSubWindow::GuessTheAngularDistance.as_ref(),
-            );
-            ui.selectable_value(
-                &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
-                GameSettingsQuestionsSubWindow::GuessTheCoordinates,
-                GameSettingsQuestionsSubWindow::GuessTheCoordinates.as_ref(),
-            );
-            ui.selectable_value(
-                &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
-                GameSettingsQuestionsSubWindow::GuessTheMagnitude,
-                GameSettingsQuestionsSubWindow::GuessTheMagnitude.as_ref(),
-            );
+            // If adding new question types, make sure that the picker gets collapsed into a combo box on an appropriately wide/narrow screens
+            if self.screen_width.narrow() {
+                ui.label("Question type: ");
+                egui::ComboBox::from_id_source("Question type: ")
+                    .selected_text(format!("{}", self.state.windows.settings.game_settings.questions_subwindow.subwindow))
+                    .show_ui(ui, |ui: &mut egui::Ui| {
+                        ui.style_mut().wrap = Some(false);
+                        self.render_question_type_picker(ui);
+                    });
+            } else {
+                self.render_question_type_picker(ui);
+            }
         });
         ui.separator();
         match self.state.windows.settings.game_settings.questions_subwindow.subwindow {
@@ -44,6 +25,40 @@ impl Application {
             GameSettingsQuestionsSubWindow::GuessTheCoordinates => self.render_game_settings_coordinates_subwindow(ui),
             GameSettingsQuestionsSubWindow::GuessTheMagnitude => self.render_game_settings_magnitude_subwindow(ui),
         }
+    }
+
+    // If adding new question types, make sure that the picker gets collapsed into a combo box on an appropriately wide/narrow screens
+    fn render_question_type_picker(&mut self, ui: &mut egui::Ui) {
+        ui.selectable_value(
+            &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
+            GameSettingsQuestionsSubWindow::FindThisObject,
+            GameSettingsQuestionsSubWindow::FindThisObject.as_ref(),
+        );
+        ui.selectable_value(
+            &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
+            GameSettingsQuestionsSubWindow::WhatIsThisObject,
+            GameSettingsQuestionsSubWindow::WhatIsThisObject.as_ref(),
+        );
+        ui.selectable_value(
+            &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
+            GameSettingsQuestionsSubWindow::WhichConstellationIsThisPointIn,
+            GameSettingsQuestionsSubWindow::WhichConstellationIsThisPointIn.as_ref(),
+        );
+        ui.selectable_value(
+            &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
+            GameSettingsQuestionsSubWindow::GuessTheAngularDistance,
+            GameSettingsQuestionsSubWindow::GuessTheAngularDistance.as_ref(),
+        );
+        ui.selectable_value(
+            &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
+            GameSettingsQuestionsSubWindow::GuessTheCoordinates,
+            GameSettingsQuestionsSubWindow::GuessTheCoordinates.as_ref(),
+        );
+        ui.selectable_value(
+            &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
+            GameSettingsQuestionsSubWindow::GuessTheMagnitude,
+            GameSettingsQuestionsSubWindow::GuessTheMagnitude.as_ref(),
+        );
     }
 
     fn render_game_settings_find_this_object_subwindow(&mut self, ui: &mut egui::Ui, tolerance_changed: &mut bool) {
