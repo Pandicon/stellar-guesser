@@ -1,7 +1,4 @@
-use crate::{
-    enums::GameStage,
-    Application,
-};
+use crate::{enums::GameStage, Application};
 
 impl Application {
     pub fn render_game_settings_general_subwindow(&mut self, ui: &mut egui::Ui) {

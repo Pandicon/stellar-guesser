@@ -1,7 +1,4 @@
-use crate::{
-    enums,
-    Application,
-};
+use crate::{enums, Application};
 
 impl Application {
     pub fn render_game_settings_constellations_subwindow(&mut self, ui: &mut egui::Ui) {
