@@ -4,21 +4,18 @@ use crate::{enums::LightPollution, Application};
 
 impl Application {
     pub fn render_top_panel(&mut self, ctx: &egui::Context) -> egui::InnerResponse<()> {
-        let narrow_screen = ctx.screen_rect().size().x <= 900.0;
-        let very_narrow_screen = ctx.screen_rect().size().x <= 600.0;
-
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
                     ui.label(format!("FOV: {:.3}°", 4.0 * (1.0 / self.cellestial_sphere.get_zoom()).atan() / PI * 180.0));
-                    if !very_narrow_screen {
+                    if !self.screen_width.very_narrow() {
                         render_left_controls(self, ui);
                     }
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if narrow_screen {
+                    if self.screen_width.narrow() {
                         ui.menu_button("Settings & Controls", |ui| {
-                            if very_narrow_screen {
+                            if self.screen_width.very_narrow() {
                                 render_left_controls(self, ui);
                             }
                             render_right_controls(self, ui);
@@ -45,17 +42,11 @@ fn render_right_controls(app: &mut crate::application::Application, ui: &mut egu
     if stats_btn.clicked() {
         app.state.windows.stats.opened = true;
     }
-    let graphics_settings_btn = ui
-        .add(egui::Button::new(egui::RichText::new("Sky settings").text_style(egui::TextStyle::Body)))
-        .on_hover_text("Show the sky settings");
-    if graphics_settings_btn.clicked() {
-        app.state.windows.graphics_settings.opened = true;
-    }
-    let game_settings_btn = ui
-        .add(egui::Button::new(egui::RichText::new("Game settings").text_style(egui::TextStyle::Body)))
-        .on_hover_text("Show the game settings");
-    if game_settings_btn.clicked() {
-        app.state.windows.game_settings.opened = true;
+    let settings_btn = ui
+        .add(egui::Button::new(egui::RichText::new("Settings").text_style(egui::TextStyle::Body)))
+        .on_hover_text("Show the settings");
+    if settings_btn.clicked() {
+        app.state.windows.settings.opened = true;
     }
     let game_question_btn = ui
         .add(egui::Button::new(egui::RichText::new("Question").text_style(egui::TextStyle::Body)))

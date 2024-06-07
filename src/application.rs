@@ -1,3 +1,4 @@
+use crate::enums::ScreenWidth;
 use crate::rendering::caspr::sky_settings;
 use crate::{enums, structs::graphics_settings::GraphicsSettings};
 
@@ -31,6 +32,8 @@ pub struct Application {
     pub last_state_save_to_disk: std::time::Instant,
     pub state_save_interval: std::time::Duration,
     pub state_save_to_disk_interval: std::time::Duration,
+
+    pub screen_width: ScreenWidth,
 }
 
 impl Application {
@@ -67,6 +70,8 @@ impl Application {
             last_state_save_to_disk: std::time::Instant::now(),
             state_save_interval: std::time::Duration::from_secs(5),
             state_save_to_disk_interval: std::time::Duration::from_secs(60),
+
+            screen_width: ScreenWidth::from_width(ctx.screen_rect().size().x),
         }
     }
 
@@ -78,6 +83,7 @@ impl Application {
         self.input.input_field_has_focus = false;
         self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
         self.frame_timestamp = chrono::Utc::now().timestamp();
+        self.screen_width = ScreenWidth::from_width(ctx.screen_rect().size().x);
         let cursor_within_central_panel = self.render(ctx);
         self.handle_input(cursor_within_central_panel, ctx);
         self.frames_handler.handle();

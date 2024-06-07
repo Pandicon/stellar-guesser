@@ -2,7 +2,6 @@ use egui::epaint::Pos2;
 use std::fmt::Display;
 
 pub enum Inputs {
-    AltShiftG,
     AltShiftI,
     AltShiftO,
     AltShiftS,
@@ -129,5 +128,37 @@ impl AsRef<str> for StorageKeys {
 impl Display for StorageKeys {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.as_ref())
+    }
+}
+
+pub enum ScreenWidth {
+    Normal,
+    Narrow,
+    VeryNarrow,
+}
+
+impl ScreenWidth {
+    pub fn narrow(&self) -> bool {
+        match *self {
+            Self::Normal => false,
+            Self::Narrow | Self::VeryNarrow => true,
+        }
+    }
+
+    pub fn very_narrow(&self) -> bool {
+        match *self {
+            Self::Normal | Self::Narrow => false,
+            Self::VeryNarrow => true,
+        }
+    }
+
+    pub fn from_width(width: f32) -> Self {
+        if width <= 600.0 {
+            return Self::VeryNarrow;
+        }
+        if width <= 900.0 {
+            return Self::Narrow;
+        }
+        Self::Normal
     }
 }

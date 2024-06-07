@@ -15,9 +15,8 @@ impl Application {
         self.input.handle(cursor_within_central_panel, ctx);
         for input_to_handle in &self.input.to_handle {
             match input_to_handle {
-                enums::Inputs::AltShiftG => self.state.windows.game_settings.opened = !self.state.windows.game_settings.opened,
                 enums::Inputs::AltShiftI => self.state.windows.app_info.opened = !self.state.windows.app_info.opened,
-                enums::Inputs::AltShiftO => self.state.windows.graphics_settings.opened = !self.state.windows.graphics_settings.opened,
+                enums::Inputs::AltShiftO => self.state.windows.settings.opened = !self.state.windows.settings.opened,
                 enums::Inputs::AltShiftS => self.state.windows.stats.opened = !self.state.windows.stats.opened,
                 enums::Inputs::Space | enums::Inputs::MouseMiddle => {
                     if !self.game_handler.no_more_questions() {
@@ -308,31 +307,6 @@ impl Input {
                         },
                 } => {
                     self.dragged.y += 1.0;
-                }
-                // Press of Alt + Shift + G
-                egui::Event::Key {
-                    key: egui::Key::G,
-                    physical_key: _,
-                    pressed: true,
-                    repeat: false,
-                    modifiers:
-                        egui::Modifiers {
-                            alt: true,
-                            ctrl: _,
-                            shift: true,
-                            mac_cmd: _,
-                            command: _,
-                        },
-                } => {
-                    if let Some(pressed) = self.currently_held.get("alt+shift+g") {
-                        if !pressed {
-                            let held = self.currently_held.entry("alt+shift+g").or_insert(true);
-                            *held = true;
-                            to_handle.push(enums::Inputs::AltShiftG);
-                        }
-                    } else {
-                        println!("The alt+shift+g combination was not in the 'currently_held' hashmap");
-                    }
                 }
                 // Press of Alt + Shift + I
                 egui::Event::Key {
