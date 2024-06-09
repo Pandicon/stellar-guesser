@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use egui::epaint::Color32;
 
 use crate::{
@@ -77,6 +79,7 @@ impl Application {
                 ui.selectable_value(&mut self.graphics_settings.colour_mode, ColourMode::Printing, format!("{}", ColourMode::Printing));
             });
         if self.graphics_settings.colour_mode != colour_mode {
+            log::error!("{}", serde_json::to_string_pretty(&ctx.style().visuals).unwrap());
             match self.graphics_settings.colour_mode {
                 ColourMode::Dark => ctx.set_visuals(egui::Visuals::dark()),
                 ColourMode::Light => ctx.set_visuals(egui::Visuals::light()),
@@ -186,21 +189,32 @@ impl Application {
     }
 
     pub fn render_sky_settings_lines_subwindow(&mut self, ui: &mut egui::Ui) {
-        let mut newly_active_line_groups = Vec::new();
-        let mut newly_inactive_line_groups = Vec::new();
-        for (name, active) in &mut self.cellestial_sphere.sky_settings.lines_categories_active {
-            let active_before = *active;
-            ui.checkbox(active, format!("Render lines from the {} file", name));
-            if !active_before && *active {
-                newly_active_line_groups.push(name.to_owned());
-            } else if active_before && !*active {
-                newly_inactive_line_groups.push(name.to_owned());
+        let mut line_groups_to_init = HashSet::new();
+        let mut line_groups_to_deinit = HashSet::new();
+        for (name, lines_set) in &mut self.cellestial_sphere.lines {
+            ui.heading(name);
+            if ui.checkbox(&mut lines_set.active, format!("Render lines from the {} file", name)).changed() {
+                if lines_set.active {
+                    line_groups_to_init.insert(name.to_owned());
+                } else {
+                    line_groups_to_deinit.insert(name.to_owned());
+                }
+                self.cellestial_sphere.sky_settings.lines_categories_active.insert(name.to_owned(), lines_set.active);
             }
+            let mut colour = lines_set.colour.to_srgba_unmultiplied().map(|n| (n as f32) / 255.0);
+            ui.horizontal(|ui| {
+                ui.label("Line colour: ");
+                if ui.color_edit_button_rgba_unmultiplied(&mut colour).changed() {
+                    line_groups_to_init.insert(name.to_owned());
+                }
+            });
+            let colour = colour.map(|n| (n * 255.0) as u8);
+            lines_set.colour = Color32::from_rgba_unmultiplied(colour[0], colour[1], colour[2], colour[3]);
         }
-        for name in &newly_active_line_groups {
+        for name in &line_groups_to_init {
             self.cellestial_sphere.init_single_renderer("lines", name);
         }
-        for name in &newly_inactive_line_groups {
+        for name in &line_groups_to_deinit {
             self.cellestial_sphere.deinit_single_renderer("lines", name);
         }
     }

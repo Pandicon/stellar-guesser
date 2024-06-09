@@ -24,7 +24,7 @@ use crate::geometry;
 use geometry::{cartesian_to_spherical, cast_onto_sphere, is_inside_polygon, project_point};
 
 use super::deepsky::{Deepsky, DeepskyRaw, DeepskyRenderer};
-use super::lines::{LineRenderer, SkyLine, SkyLineRaw};
+use super::lines::{LineRenderer, SkyLine, SkyLineRaw, SkyLines};
 use super::markers::{Marker, MarkerRaw, MarkerRenderer};
 use super::sky_settings;
 use super::star_names::{StarName, StarNameRaw};
@@ -39,7 +39,7 @@ pub struct CellestialSphere {
     pub sky_settings: sky_settings::SkySettings,
 
     pub stars: HashMap<String, Vec<Star>>,
-    pub lines: HashMap<String, Vec<SkyLine>>,
+    pub lines: HashMap<String, SkyLines>,
     pub deepskies: HashMap<String, Vec<Deepsky>>,
     pub markers: HashMap<String, Vec<Marker>>,
     pub star_names: HashMap<String, Vec<StarName>>,
@@ -303,7 +303,7 @@ impl CellestialSphere {
         let star_color = egui::epaint::Color32::WHITE;
         let mut catalog: HashMap<String, Vec<Star>> = HashMap::new();
 
-        let mut lines: HashMap<String, Vec<SkyLine>> = HashMap::new();
+        let mut lines: HashMap<String, SkyLines> = HashMap::new();
 
         let mut deepskies: HashMap<String, Vec<Deepsky>> = HashMap::new();
         let objects_images = object_images.unwrap_or(Vec::new());
@@ -330,14 +330,26 @@ impl CellestialSphere {
             } else if id == "lines" {
                 for [file_name, file_contents] in &data {
                     let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+                    let mut line_colour = None;
+                    let mut lines_vec = Vec::new();
                     for line_raw in reader.deserialize() {
                         let line_raw: SkyLineRaw = line_raw?;
-                        let line = SkyLine::from_raw(line_raw, star_color);
-                        let entry = lines.entry(file_name.clone()).or_default();
-                        entry.push(line);
-                        if !sky_settings.lines_categories_active.contains_key(file_name) {
-                            sky_settings.lines_categories_active.insert(file_name.clone(), true);
+                        let (line, colour) = SkyLine::from_raw(line_raw);
+                        if line_colour.is_none() {
+                            line_colour = colour;
                         }
+                        lines_vec.push(line);
+                    }
+                    lines.insert(
+                        file_name.clone(),
+                        SkyLines {
+                            colour: line_colour.unwrap_or(star_color),
+                            active: *sky_settings.lines_categories_active.get(file_name).unwrap_or(&true),
+                            lines: lines_vec,
+                        },
+                    );
+                    if !sky_settings.lines_categories_active.contains_key(file_name) {
+                        sky_settings.lines_categories_active.insert(file_name.clone(), true);
                     }
                 }
             } else if id == "deepskies" {
@@ -563,7 +575,7 @@ impl CellestialSphere {
         } else if category == "lines" {
             if let Some(lines) = self.lines.get(name) {
                 self.line_renderers
-                    .insert(name.to_string(), lines.iter().map(|line| line.get_renderer(self.rotation.matrix())).collect());
+                    .insert(name.to_string(), lines.lines.iter().map(|line| line.get_renderer(self.rotation.matrix(), lines.colour)).collect());
             }
         } else if category == "deepskies" {
             if let Some(deepskies) = self.deepskies.get(name) {
