@@ -78,6 +78,11 @@ impl Application {
             match self.themes.get(&selected_theme_name) {
                 Some(theme) => {
                     self.theme = theme.clone();
+                    for (name, lines) in &self.cellestial_sphere.lines {
+                        if !self.theme.game_visuals.lines_colours.contains_key(name) {
+                            self.theme.game_visuals.lines_colours.insert(name.clone(), lines.colour);
+                        }
+                    }
                     ctx.set_visuals(self.theme.egui_visuals.clone());
                 }
                 None => log::error!("Failed to get the selected theme: {}", selected_theme_name),
