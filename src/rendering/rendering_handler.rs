@@ -46,7 +46,7 @@ impl Application {
             self.cellestial_sphere.viewport_rect = viewport_rect;
 
             let painter = ui.painter();
-            self.cellestial_sphere.render_sky(painter, &self.graphics_settings);
+            self.cellestial_sphere.render_sky(painter, &self.graphics_settings, &self.theme);
         });
         central_panel_response.response.hovered()
     }

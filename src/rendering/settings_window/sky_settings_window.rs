@@ -2,12 +2,7 @@ use std::collections::HashSet;
 
 use egui::epaint::Color32;
 
-use crate::{
-    enums::{ColourMode, LightPollution},
-    renderer::CellestialSphere,
-    structs::state::windows::settings::SkySettingsSubWindow,
-    Application,
-};
+use crate::{enums::LightPollution, renderer::CellestialSphere, structs::state::windows::settings::SkySettingsSubWindow, Application};
 
 impl Application {
     pub fn render_sky_settings_window(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
@@ -68,44 +63,37 @@ impl Application {
             self.cellestial_sphere.sky_settings.mag_offset = mag_offset;
             self.cellestial_sphere.sky_settings.mag_scale = mag_scale;
         }
-        let colour_mode = self.graphics_settings.colour_mode;
+        let colour_mode = self.theme.name.clone();
+        let mut selected_theme_name = self.theme.name.clone();
         ui.label("Colour mode: ");
-        egui::ComboBox::from_id_source("Colour mode: ")
-            .selected_text(format!("{}", self.graphics_settings.colour_mode))
-            .show_ui(ui, |ui| {
-                ui.style_mut().wrap = Some(false);
-                ui.selectable_value(&mut self.graphics_settings.colour_mode, ColourMode::Dark, format!("{}", ColourMode::Dark));
-                ui.selectable_value(&mut self.graphics_settings.colour_mode, ColourMode::Light, format!("{}", ColourMode::Light));
-                ui.selectable_value(&mut self.graphics_settings.colour_mode, ColourMode::Printing, format!("{}", ColourMode::Printing));
-            });
-        if self.graphics_settings.colour_mode != colour_mode {
-            log::error!("{}", serde_json::to_string_pretty(&ctx.style().visuals).unwrap());
-            match self.graphics_settings.colour_mode {
-                ColourMode::Dark => ctx.set_visuals(egui::Visuals::dark()),
-                ColourMode::Light => ctx.set_visuals(egui::Visuals::light()),
-                ColourMode::Printing => {
-                    let mut visuals = egui::Visuals::light();
-                    visuals.panel_fill = Color32::WHITE;
-                    visuals.window_fill = Color32::WHITE;
-                    ctx.set_visuals(visuals)
+        egui::ComboBox::from_id_source("Colour mode: ").selected_text(format!("{}", self.theme.name)).show_ui(ui, |ui| {
+            ui.style_mut().wrap = Some(false);
+            let mut themes = self.themes.keys().collect::<Vec<&String>>();
+            themes.sort();
+            for theme_name in themes {
+                ui.selectable_value(&mut selected_theme_name, theme_name.to_owned(), format!("{}", theme_name));
+            }
+        });
+        if selected_theme_name != colour_mode {
+            match self.themes.get(&selected_theme_name) {
+                Some(theme) => {
+                    self.theme = theme.clone();
+                    ctx.set_visuals(self.theme.egui_visuals.clone());
                 }
+                None => log::error!("Failed to get the selected theme: {}", selected_theme_name),
             }
         }
     }
 
     pub fn render_sky_settings_stars_subwindow(&mut self, ui: &mut egui::Ui) {
         ui.checkbox(&mut self.graphics_settings.use_default_star_colour, "Use default star colour");
-        let default_star_colour = self.graphics_settings.default_star_colour(&self.graphics_settings.colour_mode);
-        let mut colour = [
-            (default_star_colour.r() as f32) / 255.0,
-            (default_star_colour.g() as f32) / 255.0,
-            (default_star_colour.b() as f32) / 255.0,
-            (default_star_colour.a() as f32) / 255.0,
-        ];
+        let mut default_star_colour = self.theme.game_visuals.default_star_colour.to_srgba_unmultiplied().map(|n| (n as f32) / 255.0);
         ui.horizontal(|ui| {
-            ui.color_edit_button_rgba_premultiplied(&mut colour);
+            ui.color_edit_button_rgba_unmultiplied(&mut default_star_colour);
             ui.label("Default star colour");
         });
+        let default_star_colour = default_star_colour.map(|n| (n * 255.0) as u8);
+        self.theme.game_visuals.default_star_colour = Color32::from_rgba_unmultiplied(default_star_colour[0], default_star_colour[1], default_star_colour[2], default_star_colour[3]);
 
         let prev_mag_offset = self.cellestial_sphere.sky_settings.mag_offset;
         let prev_mag_scale = self.cellestial_sphere.sky_settings.mag_scale;
@@ -124,21 +112,6 @@ impl Application {
                 self.cellestial_sphere.sky_settings.mag_scale,
                 &self.cellestial_sphere.light_pollution_place_to_mag,
             );
-        }
-
-        match self.graphics_settings.colour_mode {
-            ColourMode::Dark => {
-                self.graphics_settings.default_star_colour_dark_mode =
-                    Color32::from_rgba_premultiplied((colour[0] * 255.0) as u8, (colour[1] * 255.0) as u8, (colour[2] * 255.0) as u8, (colour[3] * 255.0) as u8);
-            }
-            ColourMode::Light => {
-                self.graphics_settings.default_star_colour_light_mode =
-                    Color32::from_rgba_premultiplied((colour[0] * 255.0) as u8, (colour[1] * 255.0) as u8, (colour[2] * 255.0) as u8, (colour[3] * 255.0) as u8);
-            }
-            ColourMode::Printing => {
-                self.graphics_settings.default_star_colour_print_mode =
-                    Color32::from_rgba_premultiplied((colour[0] * 255.0) as u8, (colour[1] * 255.0) as u8, (colour[2] * 255.0) as u8, (colour[3] * 255.0) as u8);
-            }
         }
 
         let mut newly_active_star_groups = Vec::new();

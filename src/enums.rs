@@ -68,23 +68,6 @@ impl GameLearningStage {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-pub enum ColourMode {
-    Dark,
-    Light,
-    Printing,
-}
-
-impl Display for ColourMode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
-            Self::Dark => write!(f, "Dark"),
-            Self::Light => write!(f, "Light"),
-            Self::Printing => write!(f, "Printing"),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum GameStage {
     Guessing,
     Checked,

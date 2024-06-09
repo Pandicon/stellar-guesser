@@ -1,5 +1,6 @@
 use crate::{
     enums::{LightPollution, StorageKeys},
+    rendering::themes::Theme,
     structs::graphics_settings::GraphicsSettings,
 };
 use egui::epaint::Color32;
@@ -107,7 +108,7 @@ impl CellestialSphere {
     }
 
     //Renders the entire sphere view
-    pub fn render_sky(&self, painter: &egui::Painter, graphics_settings: &GraphicsSettings) {
+    pub fn render_sky(&self, painter: &egui::Painter, graphics_settings: &GraphicsSettings, theme: &Theme) {
         //some stuff lol
         for line_renderers in self.line_renderers.values() {
             for line_renderer in line_renderers {
@@ -116,7 +117,7 @@ impl CellestialSphere {
         }
         for star_renderers in self.star_renderers.values() {
             for star_renderer in star_renderers {
-                star_renderer.render(self, painter, graphics_settings);
+                star_renderer.render(self, painter, graphics_settings, theme);
             }
         }
         for marker_renderers in self.marker_renderers.values() {
