@@ -154,7 +154,7 @@ impl CellestialSphere {
         let object_images = if let Some(images_addon_dir) = images_addon_dir_opt {
             match images_addon_dir.try_exists() {
                 Ok(false) | Err(_) => {
-                    dbg!("The images add-on folder was not found");
+                    log::warn!("The images add-on folder ({:?}) was not found", images_addon_dir);
                     None
                 }
                 Ok(true) => {
