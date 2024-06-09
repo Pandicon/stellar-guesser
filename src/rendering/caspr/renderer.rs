@@ -1,6 +1,7 @@
 use crate::{
     enums::{LightPollution, StorageKeys},
-    rendering::themes::Theme, structs::graphics_settings::GraphicsSettings,
+    rendering::themes::Theme,
+    structs::graphics_settings::GraphicsSettings,
 };
 use egui::epaint::Color32;
 use nalgebra::{Rotation3, Vector3};

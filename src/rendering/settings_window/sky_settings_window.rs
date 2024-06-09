@@ -66,12 +66,12 @@ impl Application {
         let previous_theme_name = self.theme.name.clone();
         let mut selected_theme_name = self.theme.name.clone();
         ui.label("Colour mode: ");
-        egui::ComboBox::from_id_source("Colour mode: ").selected_text(format!("{}", self.theme.name)).show_ui(ui, |ui| {
+        egui::ComboBox::from_id_source("Colour mode: ").selected_text(&self.theme.name).show_ui(ui, |ui| {
             ui.style_mut().wrap = Some(false);
             let mut themes = self.themes.keys().collect::<Vec<&String>>();
             themes.sort();
             for theme_name in themes {
-                ui.selectable_value(&mut selected_theme_name, theme_name.to_owned(), format!("{}", theme_name));
+                ui.selectable_value(&mut selected_theme_name, theme_name.to_owned(), theme_name);
             }
         });
         if selected_theme_name != previous_theme_name {
