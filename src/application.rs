@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use crate::enums::ScreenWidth;
+use crate::enums::{self, ScreenWidth};
 use crate::rendering::caspr::sky_settings;
 use crate::rendering::themes::{self, Theme};
-use crate::{enums, structs::graphics_settings::GraphicsSettings};
 
 use crate::renderer::CellestialSphere;
+use crate::structs::graphics_settings;
 
 use self::frames_handler::FramesHandler;
 
@@ -24,10 +24,10 @@ pub struct Application {
     pub frame_timestamp: i64,
     pub frame_timestamp_ms: i64,
     pub cellestial_sphere: CellestialSphere,
-    pub graphics_settings: GraphicsSettings,
     pub frames_handler: FramesHandler,
     pub game_handler: game_handler::GameHandler,
 
+    pub graphics_settings: graphics_settings::GraphicsSettings,
     pub theme: Theme,
     pub themes: HashMap<String, Theme>,
 
@@ -56,7 +56,11 @@ impl Application {
         }
         let timestamp = chrono::Utc::now().timestamp();
         let state = state::State::new(timestamp, time_spent_start);
-        let mut cellestial_sphere = CellestialSphere::load(storage).unwrap();
+
+        let mut graphics_settings = graphics_settings::GraphicsSettings::default(); // TODO: Restore these settings
+        let mut theme = themes::Theme::dark(); // TODO: Restore the selected theme
+        let mut cellestial_sphere = CellestialSphere::load(storage, &mut theme).unwrap();
+        graphics_settings.use_default_star_colour = theme.game_visuals.use_default_star_colour;
         cellestial_sphere.init();
         Self {
             input: input::Input::default(),
@@ -66,10 +70,10 @@ impl Application {
             frame_timestamp_ms: chrono::Utc::now().timestamp_millis(),
             game_handler: GameHandler::init(&mut cellestial_sphere, storage),
             cellestial_sphere,
-            graphics_settings: GraphicsSettings::default(),
             frames_handler: FramesHandler::default(),
 
-            theme: themes::Theme::dark(), // TODO: Restore the selected theme
+            graphics_settings,
+            theme,
             themes: themes::default_themes(),
 
             authors,

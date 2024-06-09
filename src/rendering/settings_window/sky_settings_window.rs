@@ -63,7 +63,7 @@ impl Application {
             self.cellestial_sphere.sky_settings.mag_offset = mag_offset;
             self.cellestial_sphere.sky_settings.mag_scale = mag_scale;
         }
-        let colour_mode = self.theme.name.clone();
+        let previous_theme_name = self.theme.name.clone();
         let mut selected_theme_name = self.theme.name.clone();
         ui.label("Colour mode: ");
         egui::ComboBox::from_id_source("Colour mode: ").selected_text(format!("{}", self.theme.name)).show_ui(ui, |ui| {
@@ -74,7 +74,7 @@ impl Application {
                 ui.selectable_value(&mut selected_theme_name, theme_name.to_owned(), format!("{}", theme_name));
             }
         });
-        if selected_theme_name != colour_mode {
+        if selected_theme_name != previous_theme_name {
             match self.themes.get(&selected_theme_name) {
                 Some(theme) => {
                     self.theme = theme.clone();
@@ -87,6 +87,7 @@ impl Application {
 
     pub fn render_sky_settings_stars_subwindow(&mut self, ui: &mut egui::Ui) {
         ui.checkbox(&mut self.graphics_settings.use_default_star_colour, "Use default star colour");
+        self.theme.game_visuals.use_default_star_colour = self.graphics_settings.use_default_star_colour;
         let mut default_star_colour = self.theme.game_visuals.default_star_colour.to_srgba_unmultiplied().map(|n| (n as f32) / 255.0);
         ui.horizontal(|ui| {
             ui.color_edit_button_rgba_unmultiplied(&mut default_star_colour);
@@ -183,6 +184,7 @@ impl Application {
             });
             let colour = colour.map(|n| (n * 255.0) as u8);
             lines_set.colour = Color32::from_rgba_unmultiplied(colour[0], colour[1], colour[2], colour[3]);
+            self.theme.game_visuals.lines_colours.insert(name.clone(), lines_set.colour);
         }
         for name in &line_groups_to_init {
             self.cellestial_sphere.init_single_renderer("lines", name);

@@ -1,7 +1,6 @@
 use crate::{
     enums::{LightPollution, StorageKeys},
-    rendering::themes::Theme,
-    structs::graphics_settings::GraphicsSettings,
+    rendering::themes::Theme, structs::graphics_settings::GraphicsSettings,
 };
 use egui::epaint::Color32;
 use nalgebra::{Rotation3, Vector3};
@@ -132,7 +131,7 @@ impl CellestialSphere {
         }
     }
 
-    pub fn load(storage: &mut Option<crate::storage::Storage>) -> Result<Self, Box<dyn Error>> {
+    pub fn load(storage: &mut Option<crate::storage::Storage>, theme: &mut Theme) -> Result<Self, Box<dyn Error>> {
         #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
         let images_addon_dir_opt = {
             if let Ok(executable_dir) = std::env::current_exe() {
@@ -341,16 +340,20 @@ impl CellestialSphere {
                         }
                         lines_vec.push(line);
                     }
+                    let line_colour = line_colour.unwrap_or(theme.game_visuals.default_colour);
                     lines.insert(
                         file_name.clone(),
                         SkyLines {
-                            colour: line_colour.unwrap_or(star_color),
+                            colour: line_colour,
                             active: *sky_settings.lines_categories_active.get(file_name).unwrap_or(&true),
                             lines: lines_vec,
                         },
                     );
                     if !sky_settings.lines_categories_active.contains_key(file_name) {
                         sky_settings.lines_categories_active.insert(file_name.clone(), true);
+                    }
+                    if !theme.game_visuals.lines_colours.contains_key(file_name) {
+                        theme.game_visuals.lines_colours.insert(file_name.clone(), line_colour);
                     }
                 }
             } else if id == "deepskies" {

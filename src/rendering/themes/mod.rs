@@ -14,7 +14,9 @@ impl Theme {
         Self {
             name: "Dark".into(),
             game_visuals: Visuals {
+                default_colour: Color32::WHITE,
                 default_star_colour: Color32::WHITE,
+                use_default_star_colour: false,
                 lines_colours: HashMap::new(),
             },
             egui_visuals: egui::Visuals::dark(),
@@ -24,7 +26,9 @@ impl Theme {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct Visuals {
+    pub default_colour: Color32,
     pub default_star_colour: Color32,
+    pub use_default_star_colour: bool,
     pub lines_colours: HashMap<String, Color32>,
 }
 
@@ -37,7 +41,9 @@ pub fn default_themes() -> HashMap<String, Theme> {
         Theme {
             name: "Light".into(),
             game_visuals: Visuals {
+                default_colour: Color32::BLACK,
                 default_star_colour: Color32::BLACK,
+                use_default_star_colour: true,
                 lines_colours: HashMap::new(),
             },
             egui_visuals: egui::Visuals::light(),
@@ -51,7 +57,9 @@ pub fn default_themes() -> HashMap<String, Theme> {
         Theme {
             name: "Printing".into(),
             game_visuals: Visuals {
+                default_colour: Color32::BLACK,
                 default_star_colour: Color32::BLACK,
+                use_default_star_colour: true,
                 lines_colours: HashMap::new(),
             },
             egui_visuals,
