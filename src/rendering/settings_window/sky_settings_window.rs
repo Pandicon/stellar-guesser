@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use egui::epaint::Color32;
 
-use crate::{enums::LightPollution, renderer::CellestialSphere, structs::state::windows::settings::SkySettingsSubWindow, Application};
+use crate::{enums::LightPollution, files, public_constants, renderer::CellestialSphere, structs::state::windows::settings::SkySettingsSubWindow, Application};
 
 impl Application {
     pub fn render_sky_settings_window(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
@@ -65,8 +65,8 @@ impl Application {
         }
         let previous_theme_name = self.theme.name.clone();
         let mut selected_theme_name = self.theme.name.clone();
-        ui.label("Colour mode: ");
-        egui::ComboBox::from_id_source("Colour mode: ").selected_text(&self.theme.name).show_ui(ui, |ui| {
+        ui.label("Theme: ");
+        egui::ComboBox::from_id_source("Theme: ").selected_text(&self.theme.name).show_ui(ui, |ui| {
             ui.style_mut().wrap = Some(false);
             let mut themes = self.themes.themes_names().collect::<Vec<&String>>();
             themes.sort();
@@ -80,6 +80,31 @@ impl Application {
                     self.apply_theme(ctx, theme.clone());
                 }
                 None => log::error!("Failed to get the selected theme: {}", selected_theme_name),
+            }
+        }
+        ui.heading("Export theme");
+        ui.label("Export the current settings into a theme");
+        ui.horizontal(|ui| {
+            ui.label("Theme name: ");
+            ui.text_edit_singleline(&mut self.theme.name);
+        });
+        if ui.button("Export").clicked() {
+            if let Some(path) = files::get_dir_opt(public_constants::THEMES_FOLDER) {
+                let dialog = rfd::FileDialog::new().add_filter("Theme", &["json"]).set_directory(&path);
+                let save_path_opt: Option<std::path::PathBuf> = dialog.save_file();
+                match save_path_opt {
+                    Some(save_path) => match serde_json::to_string_pretty(&self.theme) {
+                        Ok(theme_to_save) => {
+                            if let Err(err) = std::fs::write(save_path, theme_to_save) {
+                                log::error!("Failed to save the theme: {err}");
+                            } else {
+                                self.themes.insert(self.theme.name.clone(), self.theme.clone());
+                            }
+                        }
+                        Err(err) => log::error!("Failed to serialize the theme: {err}"),
+                    },
+                    None => log::info!("Theme saving cancelled by the user"),
+                }
             }
         }
     }

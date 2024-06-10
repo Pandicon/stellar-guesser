@@ -5,20 +5,19 @@ pub struct FileData {
     pub content: String,
 }
 
-pub fn load_all_files_folder(folder: &str) -> Vec<FileData> {
-    let mut files_data = Vec::new();
+pub fn get_dir_opt(folder: &str) -> Option<std::path::PathBuf> {
     #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
     let dir_opt = {
         if let Ok(executable_dir) = std::env::current_exe() {
-            let mut images_addon_dir = executable_dir;
-            images_addon_dir.pop();
+            let mut dir = executable_dir;
+            dir.pop();
             for part in folder.split('/') {
                 if part == "." {
                     continue;
                 }
-                images_addon_dir.push(part);
+                dir.push(part);
             }
-            Some(images_addon_dir)
+            Some(dir)
         } else {
             log::error!("Couldn't load the executable directory and therefore couldn't locate the {folder} folder");
             None
@@ -26,6 +25,12 @@ pub fn load_all_files_folder(folder: &str) -> Vec<FileData> {
     };
     #[cfg(target_os = "android")]
     let dir_opt: Option<std::path::PathBuf> = Some(folder.into());
+    dir_opt
+}
+
+pub fn load_all_files_folder(folder: &str) -> Vec<FileData> {
+    let mut files_data = Vec::new();
+    let dir_opt = get_dir_opt(folder);
     if let Some(dir) = dir_opt {
         match dir.try_exists() {
             Ok(false) | Err(_) => {
