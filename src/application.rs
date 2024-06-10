@@ -1,6 +1,7 @@
 use crate::enums::{self, ScreenWidth};
 use crate::rendering::caspr::sky_settings;
 use crate::rendering::themes::{self, Theme, ThemesHandler};
+use crate::{files, public_constants};
 
 use crate::renderer::CellestialSphere;
 use crate::structs::graphics_settings;
@@ -55,6 +56,14 @@ impl Application {
         let timestamp = chrono::Utc::now().timestamp();
         let state = state::State::new(timestamp, time_spent_start);
 
+        let mut themes = themes::default_themes();
+        let themes_files = files::load_all_files_folder(public_constants::THEMES_FOLDER);
+        for file in themes_files {
+            if let Err(err) = themes.add_theme_str(&file.content) {
+                log::error!("Failed to load a theme: {err}");
+            }
+        }
+
         let mut graphics_settings = graphics_settings::GraphicsSettings::default(); // TODO: Restore these settings
         let mut theme = themes::Theme::dark(); // TODO: Restore the selected theme
         let mut cellestial_sphere = CellestialSphere::load(storage, &mut theme).unwrap();
@@ -72,7 +81,7 @@ impl Application {
 
             graphics_settings,
             theme,
-            themes: themes::default_themes(),
+            themes,
 
             authors,
             version,
