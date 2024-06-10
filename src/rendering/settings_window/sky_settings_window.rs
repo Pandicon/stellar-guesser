@@ -90,7 +90,7 @@ impl Application {
         });
         if ui.button("Export").clicked() {
             if let Some(path) = files::get_dir_opt(public_constants::THEMES_FOLDER) {
-                let dialog = rfd::FileDialog::new().add_filter("Theme", &["json"]).set_directory(&path);
+                let dialog = rfd::FileDialog::new().add_filter("Theme", &["json"]).set_directory(path);
                 let save_path_opt: Option<std::path::PathBuf> = dialog.save_file();
                 match save_path_opt {
                     Some(save_path) => match serde_json::to_string_pretty(&self.theme) {
