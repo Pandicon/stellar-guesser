@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use egui::Color32;
 
+use crate::Application;
+
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct Theme {
     pub name: String,
@@ -93,4 +95,28 @@ pub fn default_themes() -> ThemesHandler {
         },
     );
     ThemesHandler::from_hash_map(themes)
+}
+
+impl Application {
+    pub fn apply_theme(&mut self, ctx: &egui::Context, theme: Theme) {
+        self.theme = theme;
+        let mut lines_to_reinit = Vec::new();
+        for (name, lines) in &mut self.cellestial_sphere.lines {
+            match self.theme.game_visuals.lines_colours.get(name) {
+                Some(colour) => {
+                    lines.colour = *colour;
+                    if lines.active {
+                        lines_to_reinit.push(name.clone());
+                    }
+                }
+                None => {
+                    self.theme.game_visuals.lines_colours.insert(name.clone(), lines.colour);
+                }
+            }
+        }
+        for name in lines_to_reinit {
+            self.cellestial_sphere.init_single_renderer("lines", &name);
+        }
+        ctx.set_visuals(self.theme.egui_visuals.clone());
+    }
 }
