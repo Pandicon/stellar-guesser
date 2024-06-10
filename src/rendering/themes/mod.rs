@@ -24,6 +24,33 @@ impl Theme {
     }
 }
 
+pub struct ThemesHandler {
+    data: HashMap<String, Theme>,
+}
+
+impl ThemesHandler {
+    pub fn insert(&mut self, name: String, theme: Theme) -> Option<Theme> {
+        self.data.insert(name, theme)
+    }
+
+    pub fn get(&self, name: &str) -> Option<&Theme> {
+        self.data.get(name)
+    }
+
+    pub fn themes_names(&self) -> std::collections::hash_map::Keys<String, Theme> {
+        self.data.keys()
+    }
+
+    pub fn add_theme_str(&mut self, data_str: &str) -> Result<Option<Theme>, serde_json::Error> {
+        let theme: Theme = serde_json::from_str(data_str)?;
+        Ok(self.insert(theme.name.clone(), theme))
+    }
+
+    pub fn from_hash_map(data: HashMap<String, Theme>) -> Self {
+        Self { data }
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct Visuals {
     pub default_colour: Color32,
@@ -32,7 +59,7 @@ pub struct Visuals {
     pub lines_colours: HashMap<String, Color32>,
 }
 
-pub fn default_themes() -> HashMap<String, Theme> {
+pub fn default_themes() -> ThemesHandler {
     let mut themes = HashMap::new();
     let dark_theme = Theme::dark();
     themes.insert(dark_theme.name.clone(), dark_theme);
@@ -65,5 +92,5 @@ pub fn default_themes() -> HashMap<String, Theme> {
             egui_visuals,
         },
     );
-    themes
+    ThemesHandler::from_hash_map(themes)
 }

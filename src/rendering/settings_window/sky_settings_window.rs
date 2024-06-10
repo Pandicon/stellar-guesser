@@ -68,7 +68,7 @@ impl Application {
         ui.label("Colour mode: ");
         egui::ComboBox::from_id_source("Colour mode: ").selected_text(&self.theme.name).show_ui(ui, |ui| {
             ui.style_mut().wrap = Some(false);
-            let mut themes = self.themes.keys().collect::<Vec<&String>>();
+            let mut themes = self.themes.themes_names().collect::<Vec<&String>>();
             themes.sort();
             for theme_name in themes {
                 ui.selectable_value(&mut selected_theme_name, theme_name.to_owned(), theme_name);

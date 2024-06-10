@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 use crate::enums::{self, ScreenWidth};
 use crate::rendering::caspr::sky_settings;
-use crate::rendering::themes::{self, Theme};
+use crate::rendering::themes::{self, Theme, ThemesHandler};
 
 use crate::renderer::CellestialSphere;
 use crate::structs::graphics_settings;
@@ -29,7 +27,7 @@ pub struct Application {
 
     pub graphics_settings: graphics_settings::GraphicsSettings,
     pub theme: Theme,
-    pub themes: HashMap<String, Theme>,
+    pub themes: ThemesHandler,
 
     pub authors: String,
     pub version: String,
