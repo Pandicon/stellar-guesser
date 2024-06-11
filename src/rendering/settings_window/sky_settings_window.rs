@@ -34,13 +34,15 @@ impl Application {
             );
         });
         ui.separator();
-        match self.state.windows.settings.sky_settings.subwindow {
-            SkySettingsSubWindow::General => self.render_sky_settings_general_subwindow(ctx, ui),
-            SkySettingsSubWindow::Stars => self.render_sky_settings_stars_subwindow(ui),
-            SkySettingsSubWindow::Deepsky => self.render_sky_settings_deepsky_subwindow(ui),
-            SkySettingsSubWindow::Lines => self.render_sky_settings_lines_subwindow(ui),
-            SkySettingsSubWindow::Markers => self.render_sky_settings_markers_subwindow(ui),
-        }
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, true])
+            .show(ui, |ui| match self.state.windows.settings.sky_settings.subwindow {
+                SkySettingsSubWindow::General => self.render_sky_settings_general_subwindow(ctx, ui),
+                SkySettingsSubWindow::Stars => self.render_sky_settings_stars_subwindow(ui),
+                SkySettingsSubWindow::Deepsky => self.render_sky_settings_deepsky_subwindow(ui),
+                SkySettingsSubWindow::Lines => self.render_sky_settings_lines_subwindow(ui),
+                SkySettingsSubWindow::Markers => self.render_sky_settings_markers_subwindow(ui),
+            });
     }
 
     pub fn render_sky_settings_general_subwindow(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
@@ -217,15 +219,12 @@ impl Application {
                 }
                 self.cellestial_sphere.sky_settings.lines_categories_active.insert(name.to_owned(), lines_set.active);
             }
-            let mut colour = lines_set.colour.to_srgba_unmultiplied().map(|n| (n as f32) / 255.0);
             ui.horizontal(|ui| {
                 ui.label("Line colour: ");
-                if ui.color_edit_button_rgba_unmultiplied(&mut colour).changed() {
+                if ui.color_edit_button_srgba(&mut lines_set.colour).changed() {
                     line_groups_to_init.insert(name.to_owned());
                 }
             });
-            let colour = colour.map(|n| (n * 255.0) as u8);
-            lines_set.colour = Color32::from_rgba_unmultiplied(colour[0], colour[1], colour[2], colour[3]);
             self.theme.game_visuals.lines_colours.insert(name.clone(), lines_set.colour);
         }
         for name in &line_groups_to_init {
