@@ -86,15 +86,33 @@ impl Application {
         ui.label("Export the current settings into a theme");
         ui.horizontal(|ui| {
             ui.label("Theme name: ");
-            ui.text_edit_singleline(&mut self.theme.name);
+            self.input.input_field_has_focus |= ui.text_edit_singleline(&mut self.theme.name).has_focus();
         });
         if ui.button("Export").clicked() {
             if let Some(path) = files::get_dir_opt(public_constants::THEMES_FOLDER) {
-                let dialog = rfd::FileDialog::new().add_filter("Theme", &["json"]).set_directory(path);
-                let save_path_opt: Option<std::path::PathBuf> = dialog.save_file();
+                #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+                let save_path_opt: Option<std::path::PathBuf> = {
+                    let dialog = rfd::FileDialog::new().add_filter("Theme", &["json"]).set_directory(path);
+                    dialog.save_file()
+                };
+                #[cfg(any(target_os = "android", target_os = "ios"))]
+                let save_path_opt: Option<std::path::PathBuf> = {
+                    let mut save_path_intermediate = path;
+                    save_path_intermediate.push(format!("{}--{}.json", &self.theme.name, chrono::Local::now().timestamp_millis()));
+                    Some(save_path_intermediate)
+                };
                 match save_path_opt {
                     Some(save_path) => match serde_json::to_string_pretty(&self.theme) {
                         Ok(theme_to_save) => {
+                            if let Some(dir) = save_path.parent() {
+                                if !dir.exists() {
+                                    if let Err(err) = std::fs::create_dir_all(dir) {
+                                        log::error!("Failed to create the folders for the theme: {err}");
+                                    }
+                                }
+                            } else {
+                                log::warn!("No theme folder: {:?}", save_path);
+                            }
                             if let Err(err) = std::fs::write(save_path, theme_to_save) {
                                 log::error!("Failed to save the theme: {err}");
                             } else {
