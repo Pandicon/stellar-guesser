@@ -1,3 +1,4 @@
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct GraphicsSettings {
     pub use_default_star_colour: bool,
 }

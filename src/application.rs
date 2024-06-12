@@ -55,15 +55,25 @@ impl Application {
 
         let mut time_spent_start = 0;
         let mut theme = themes::Theme::dark(); // Default in case the restored theme does not exist
+        let mut graphics_settings = graphics_settings::GraphicsSettings::default(); // Default in case there are no saved graphics settings
         if let Some(storage) = storage {
             if let Some(time_spent_restore) = storage.get_string(StorageKeys::TimeSpent.as_ref()) {
-                if let Ok(time_spent) = time_spent_restore.parse() {
-                    time_spent_start = time_spent;
+                match time_spent_restore.parse() {
+                    Ok(time_spent) => time_spent_start = time_spent,
+                    Err(err) => log::error!("Failed to parse the time spent: {err}"),
                 }
             }
             if let Some(theme_name) = storage.get_string(StorageKeys::Theme.as_ref()) {
                 if let Some(theme_loaded) = themes.get(&theme_name) {
                     theme = theme_loaded.clone();
+                    // IMPORTANT: Due to this setting, the theme has to be loaded before the graphics settings, else they will always be overwritten by the theme default
+                    graphics_settings.use_default_star_colour = theme.game_visuals.use_default_star_colour;
+                }
+            }
+            if let Some(graphics_settings_str) = storage.get_string(StorageKeys::GraphicsSettings.as_ref()) {
+                match serde_json::from_str(&graphics_settings_str) {
+                    Ok(graphics_settings_loaded) => graphics_settings = graphics_settings_loaded,
+                    Err(err) => log::error!("Failed to deserialize the graphics settings: {err}"),
                 }
             }
         }
@@ -72,9 +82,7 @@ impl Application {
         let timestamp = chrono::Utc::now().timestamp();
         let state = state::State::new(timestamp, time_spent_start);
 
-        let mut graphics_settings = graphics_settings::GraphicsSettings::default(); // TODO: Restore these settings
         let mut cellestial_sphere = CellestialSphere::load(storage, &mut theme).unwrap();
-        graphics_settings.use_default_star_colour = theme.game_visuals.use_default_star_colour;
         cellestial_sphere.init();
         Self {
             input: input::Input::default(),
@@ -173,6 +181,11 @@ impl Application {
         }
 
         storage.set_string(StorageKeys::Theme.as_ref(), self.theme.name.clone());
+
+        match serde_json::to_string(&self.graphics_settings) {
+            Ok(string) => storage.set_string(StorageKeys::GraphicsSettings.as_ref(), string),
+            Err(err) => log::error!("Failed to serialize graphics settings: {:?}", err),
+        }
 
         let now = std::time::Instant::now();
         if now - self.last_state_save_to_disk > self.state_save_to_disk_interval {
