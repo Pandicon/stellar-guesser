@@ -19,7 +19,20 @@ impl Theme {
                 default_colour: Color32::WHITE,
                 default_star_colour: Color32::WHITE,
                 use_default_star_colour: false,
-                lines_colours: HashMap::new(),
+                lines_colours: HashMap::from(
+                    [
+                        ("celestial-lines-of-latitude.csv", [217, 98, 13, 255]),
+                        ("celestial-meridians.csv", [217, 98, 13, 255]),
+                        ("asterisms.csv", [107, 119, 255, 255]),
+                        ("constellation-borders.csv", [135, 197, 255, 255]),
+                        ("ecliptic.csv", [107, 255, 107, 255]),
+                        ("celestial-equator.csv", [217, 13, 13, 255]),
+                        ("galactic-equator.csv", [166, 107, 255, 255]),
+                        ("constellation-connections.csv", [107, 119, 255, 255]),
+                        ("prime-meridian.csv", [217, 13, 13, 255]),
+                    ]
+                    .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
+                ),
             },
             egui_visuals: egui::Visuals::dark(),
         }
@@ -73,7 +86,20 @@ pub fn default_themes() -> ThemesHandler {
                 default_colour: Color32::BLACK,
                 default_star_colour: Color32::BLACK,
                 use_default_star_colour: true,
-                lines_colours: HashMap::new(),
+                lines_colours: HashMap::from(
+                    [
+                        ("celestial-lines-of-latitude.csv", [217, 98, 13, 255]),
+                        ("celestial-meridians.csv", [217, 98, 13, 255]),
+                        ("asterisms.csv", [107, 119, 255, 255]),
+                        ("constellation-borders.csv", [135, 197, 255, 255]),
+                        ("ecliptic.csv", [107, 255, 107, 255]),
+                        ("celestial-equator.csv", [217, 13, 13, 255]),
+                        ("galactic-equator.csv", [166, 107, 255, 255]),
+                        ("constellation-connections.csv", [107, 119, 255, 255]),
+                        ("prime-meridian.csv", [217, 13, 13, 255]),
+                    ]
+                    .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
+                ),
             },
             egui_visuals: egui::Visuals::light(),
         },
@@ -89,7 +115,20 @@ pub fn default_themes() -> ThemesHandler {
                 default_colour: Color32::BLACK,
                 default_star_colour: Color32::BLACK,
                 use_default_star_colour: true,
-                lines_colours: HashMap::new(),
+                lines_colours: HashMap::from(
+                    [
+                        ("celestial-lines-of-latitude.csv", [217, 98, 13, 255]),
+                        ("celestial-meridians.csv", [217, 98, 13, 255]),
+                        ("asterisms.csv", [107, 119, 255, 255]),
+                        ("constellation-borders.csv", [135, 197, 255, 255]),
+                        ("ecliptic.csv", [107, 255, 107, 255]),
+                        ("celestial-equator.csv", [217, 13, 13, 255]),
+                        ("galactic-equator.csv", [166, 107, 255, 255]),
+                        ("constellation-connections.csv", [107, 119, 255, 255]),
+                        ("prime-meridian.csv", [217, 13, 13, 255]),
+                    ]
+                    .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
+                ),
             },
             egui_visuals,
         },
