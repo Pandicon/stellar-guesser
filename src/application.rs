@@ -44,17 +44,6 @@ pub struct Application {
 impl Application {
     pub fn new(ctx: &egui::Context, authors: String, version: String, storage: &mut Option<crate::storage::Storage>) -> Self {
         egui_extras::install_image_loaders(ctx);
-        ctx.set_visuals(egui::Visuals::dark());
-        let mut time_spent_start = 0;
-        if let Some(storage) = storage {
-            if let Some(time_spent_restore) = storage.get_string(StorageKeys::TimeSpent.as_ref()) {
-                if let Ok(time_spent) = time_spent_restore.parse() {
-                    time_spent_start = time_spent;
-                }
-            }
-        }
-        let timestamp = chrono::Utc::now().timestamp();
-        let state = state::State::new(timestamp, time_spent_start);
 
         let mut themes = themes::default_themes();
         let themes_files = files::load_all_files_folder(public_constants::THEMES_FOLDER);
@@ -64,8 +53,26 @@ impl Application {
             }
         }
 
+        let mut time_spent_start = 0;
+        let mut theme = themes::Theme::dark(); // Default in case the restored theme does not exist
+        if let Some(storage) = storage {
+            if let Some(time_spent_restore) = storage.get_string(StorageKeys::TimeSpent.as_ref()) {
+                if let Ok(time_spent) = time_spent_restore.parse() {
+                    time_spent_start = time_spent;
+                }
+            }
+            if let Some(theme_name) = storage.get_string(StorageKeys::Theme.as_ref()) {
+                if let Some(theme_loaded) = themes.get(&theme_name) {
+                    theme = theme_loaded.clone();
+                }
+            }
+        }
+        ctx.set_visuals(theme.egui_visuals.clone());
+
+        let timestamp = chrono::Utc::now().timestamp();
+        let state = state::State::new(timestamp, time_spent_start);
+
         let mut graphics_settings = graphics_settings::GraphicsSettings::default(); // TODO: Restore these settings
-        let mut theme = themes::Theme::dark(); // TODO: Restore the selected theme
         let mut cellestial_sphere = CellestialSphere::load(storage, &mut theme).unwrap();
         graphics_settings.use_default_star_colour = theme.game_visuals.use_default_star_colour;
         cellestial_sphere.init();
@@ -164,6 +171,8 @@ impl Application {
             Ok(string) => storage.set_string(StorageKeys::SkySettings.as_ref(), string),
             Err(err) => log::error!("Failed to serialize sky settings: {:?}", err),
         }
+
+        storage.set_string(StorageKeys::Theme.as_ref(), self.theme.name.clone());
 
         let now = std::time::Instant::now();
         if now - self.last_state_save_to_disk > self.state_save_to_disk_interval {

@@ -87,6 +87,7 @@ pub enum StorageKeys {
     GameSettings,
     GameQuestionSettings,
     SkySettings,
+    Theme
 }
 
 impl AsRef<str> for StorageKeys {
@@ -104,6 +105,7 @@ impl AsRef<str> for StorageKeys {
             Self::GameSettings => "game_settings",
             Self::GameQuestionSettings => "game_question_settings",
             Self::SkySettings => "sky_settings",
+            Self::Theme => "theme",
         }
     }
 }

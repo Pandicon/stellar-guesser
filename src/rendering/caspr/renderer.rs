@@ -341,7 +341,13 @@ impl CellestialSphere {
                         }
                         lines_vec.push(line);
                     }
-                    let line_colour = line_colour.unwrap_or(theme.game_visuals.default_colour);
+                    // Try to get the colour from the theme, then if the theme does not handle these lines, try to use the colour found in the lines declaration file. Only if that does not exist, use the default colour.
+                    let line_colour = theme
+                        .game_visuals
+                        .lines_colours
+                        .get(file_name)
+                        .cloned()
+                        .unwrap_or(line_colour.unwrap_or(theme.game_visuals.default_colour));
                     lines.insert(
                         file_name.clone(),
                         SkyLines {
