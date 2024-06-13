@@ -4,7 +4,7 @@ use egui::Color32;
 
 use crate::Application;
 
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 pub struct Theme {
     pub name: String,
     pub game_visuals: Visuals,
@@ -66,7 +66,7 @@ impl ThemesHandler {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 pub struct Visuals {
     pub default_colour: Color32,
     pub default_star_colour: Color32,

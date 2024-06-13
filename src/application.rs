@@ -63,11 +63,19 @@ impl Application {
                     Err(err) => log::error!("Failed to parse the time spent: {err}"),
                 }
             }
-            if let Some(theme_name) = storage.get_string(StorageKeys::Theme.as_ref()) {
-                if let Some(theme_loaded) = themes.get(&theme_name) {
-                    theme = theme_loaded.clone();
-                    // IMPORTANT: Due to this setting, the theme has to be loaded before the graphics settings, else they will always be overwritten by the theme default
-                    graphics_settings.use_default_star_colour = theme.game_visuals.use_default_star_colour;
+            if let Some(theme_str) = storage.get_string(StorageKeys::Theme.as_ref()) {
+                match serde_json::from_str(&theme_str) {
+                    Ok(theme_loaded) => {
+                        theme = theme_loaded;
+                        if let Some(same_name_theme) = themes.get(&theme.name) {
+                            if same_name_theme != &theme {
+                                theme.name += " (restored)";
+                            }
+                        }
+                        // IMPORTANT: Due to this setting, the theme has to be loaded before the graphics settings, else they will always be overwritten by the theme default
+                        graphics_settings.use_default_star_colour = theme.game_visuals.use_default_star_colour;
+                    }
+                    Err(err) => log::error!("Failed to deserialize the theme: {err}"),
                 }
             }
             if let Some(graphics_settings_str) = storage.get_string(StorageKeys::GraphicsSettings.as_ref()) {
@@ -180,7 +188,10 @@ impl Application {
             Err(err) => log::error!("Failed to serialize sky settings: {:?}", err),
         }
 
-        storage.set_string(StorageKeys::Theme.as_ref(), self.theme.name.clone());
+        match serde_json::to_string(&self.theme) {
+            Ok(string) => storage.set_string(StorageKeys::Theme.as_ref(), string),
+            Err(err) => log::error!("Failed to serialize the theme: {:?}", err),
+        }
 
         match serde_json::to_string(&self.graphics_settings) {
             Ok(string) => storage.set_string(StorageKeys::GraphicsSettings.as_ref(), string),
