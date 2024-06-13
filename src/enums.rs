@@ -88,7 +88,7 @@ pub enum StorageKeys {
     GameQuestionSettings,
     SkySettings,
     Theme,
-    GraphicsSettings
+    GraphicsSettings,
 }
 
 impl AsRef<str> for StorageKeys {
