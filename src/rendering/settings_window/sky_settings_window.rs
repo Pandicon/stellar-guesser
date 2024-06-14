@@ -236,24 +236,30 @@ impl Application {
     }
 
     pub fn render_sky_settings_markers_subwindow(&mut self, ui: &mut egui::Ui) {
-        let mut newly_active_marker_groups = Vec::new();
-        let mut newly_inactive_marker_groups = Vec::new();
-        for (name, active) in &mut self.cellestial_sphere.sky_settings.markers_categories_active {
-            if name == "game" {
-                continue;
+        let mut marker_groups_to_init = HashSet::new();
+        let mut marker_groups_to_deinit = HashSet::new();
+        for (name, markers_set) in &mut self.cellestial_sphere.markers {
+            ui.heading(name);
+            if ui.checkbox(&mut markers_set.active, format!("Render markers from the {} file", name)).changed() {
+                if markers_set.active {
+                    marker_groups_to_init.insert(name.to_owned());
+                } else {
+                    marker_groups_to_deinit.insert(name.to_owned());
+                }
+                self.cellestial_sphere.sky_settings.markers_categories_active.insert(name.to_owned(), markers_set.active);
             }
-            let active_before = *active;
-            ui.checkbox(active, format!("Render markers from the {} file", name));
-            if !active_before && *active {
-                newly_active_marker_groups.push(name.to_owned());
-            } else if active_before && !*active {
-                newly_inactive_marker_groups.push(name.to_owned());
-            }
+            ui.horizontal(|ui| {
+                ui.label("Marker colour: ");
+                if ui.color_edit_button_srgba(&mut markers_set.colour).changed() {
+                    marker_groups_to_init.insert(name.to_owned());
+                }
+            });
+            self.theme.game_visuals.markers_colours.insert(name.clone(), markers_set.colour);
         }
-        for name in &newly_active_marker_groups {
+        for name in &marker_groups_to_init {
             self.cellestial_sphere.init_single_renderer("markers", name);
         }
-        for name in &newly_inactive_marker_groups {
+        for name in &marker_groups_to_deinit {
             self.cellestial_sphere.deinit_single_renderer("markers", name);
         }
     }

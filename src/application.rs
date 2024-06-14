@@ -49,7 +49,7 @@ impl Application {
         let themes_files = files::load_all_files_folder(public_constants::THEMES_FOLDER);
         for file in themes_files {
             if let Err(err) = themes.add_theme_str(&file.content) {
-                log::error!("Failed to load a theme: {err}");
+                log::error!("Failed to load a theme (from file {}): {err}", file.name);
             }
         }
 

@@ -33,6 +33,8 @@ impl Theme {
                     ]
                     .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
                 ),
+                markers_colours: HashMap::new(),
+                deepskies_colours: HashMap::new(),
             },
             egui_visuals: egui::Visuals::dark(),
         }
@@ -72,6 +74,8 @@ pub struct Visuals {
     pub default_star_colour: Color32,
     pub use_default_star_colour: bool,
     pub lines_colours: HashMap<String, Color32>,
+    pub markers_colours: HashMap<String, Color32>,
+    pub deepskies_colours: HashMap<String, Color32>,
 }
 
 pub fn default_themes() -> ThemesHandler {
@@ -100,6 +104,8 @@ pub fn default_themes() -> ThemesHandler {
                     ]
                     .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
                 ),
+                markers_colours: HashMap::new(),
+                deepskies_colours: HashMap::new(),
             },
             egui_visuals: egui::Visuals::light(),
         },
@@ -129,6 +135,8 @@ pub fn default_themes() -> ThemesHandler {
                     ]
                     .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
                 ),
+                markers_colours: HashMap::new(),
+                deepskies_colours: HashMap::new(),
             },
             egui_visuals,
         },
@@ -155,6 +163,23 @@ impl Application {
         }
         for name in lines_to_reinit {
             self.cellestial_sphere.init_single_renderer("lines", &name);
+        }
+        let mut markers_to_reinit = Vec::new();
+        for (name, markers) in &mut self.cellestial_sphere.markers {
+            match self.theme.game_visuals.markers_colours.get(name) {
+                Some(colour) => {
+                    markers.colour = *colour;
+                    if markers.active {
+                        markers_to_reinit.push(name.clone());
+                    }
+                }
+                None => {
+                    self.theme.game_visuals.markers_colours.insert(name.clone(), markers.colour);
+                }
+            }
+        }
+        for name in markers_to_reinit {
+            self.cellestial_sphere.init_single_renderer("markers", &name);
         }
         ctx.set_visuals(self.theme.egui_visuals.clone());
     }

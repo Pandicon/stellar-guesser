@@ -52,8 +52,7 @@ impl Application {
                     self.game_handler.guess_marker_positions = vec![marker_pos];
                 }
                 let new_markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions);
-                let entry = self.cellestial_sphere.markers.entry("game".to_string()).or_default();
-                *entry = new_markers; // vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.game_handler.show_circle_marker(), false)];
+                self.cellestial_sphere.game_markers.markers = new_markers; // vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.game_handler.show_circle_marker(), false)];
                 self.cellestial_sphere.init_single_renderer("markers", "game");
             }
 
