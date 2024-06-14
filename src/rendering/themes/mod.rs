@@ -73,8 +73,11 @@ pub struct Visuals {
     pub default_colour: Color32,
     pub default_star_colour: Color32,
     pub use_default_star_colour: bool,
+    #[serde(default)]
     pub lines_colours: HashMap<String, Color32>,
+    #[serde(default)]
     pub markers_colours: HashMap<String, Color32>,
+    #[serde(default)]
     pub deepskies_colours: HashMap<String, Color32>,
 }
 
