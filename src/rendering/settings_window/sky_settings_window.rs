@@ -2,7 +2,10 @@ use std::collections::HashSet;
 
 use egui::epaint::Color32;
 
-use crate::{enums::LightPollution, files, public_constants, renderer::CellestialSphere, structs::state::windows::settings::SkySettingsSubWindow, Application};
+use crate::{
+    enums::LightPollution, files, public_constants, renderer::CellestialSphere, rendering::caspr::markers::game_markers::GameMarker, structs::state::windows::settings::SkySettingsSubWindow,
+    Application,
+};
 
 impl Application {
     pub fn render_sky_settings_window(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
@@ -236,6 +239,31 @@ impl Application {
     }
 
     pub fn render_sky_settings_markers_subwindow(&mut self, ui: &mut egui::Ui) {
+        let mut game_markers_changed = false;
+        ui.heading("Game markers");
+        ui.horizontal(|ui| {
+            ui.label("Guess marker colour: ");
+            game_markers_changed |= ui.color_edit_button_srgba(&mut self.theme.game_visuals.game_markers_colours.exact).changed();
+        });
+        ui.horizontal(|ui| {
+            ui.label("Tolerance marker colour: ");
+            game_markers_changed |= ui.color_edit_button_srgba(&mut self.theme.game_visuals.game_markers_colours.tolerance).changed();
+        });
+        ui.horizontal(|ui| {
+            ui.label("Task marker colour: ");
+            game_markers_changed |= ui.color_edit_button_srgba(&mut self.theme.game_visuals.game_markers_colours.task).changed();
+        });
+        ui.horizontal(|ui| {
+            ui.label("Corrent answer marker colour: ");
+            game_markers_changed |= ui.color_edit_button_srgba(&mut self.theme.game_visuals.game_markers_colours.correct_answer).changed();
+        });
+        if game_markers_changed {
+            for marker in self.cellestial_sphere.game_markers.markers.iter_mut() {
+                marker.colour = GameMarker::get_colour(marker.marker_type, &self.theme.game_visuals.game_markers_colours);
+            }
+            self.cellestial_sphere.init_single_renderer("markers", "game");
+        }
+        ui.separator();
         let mut marker_groups_to_init = HashSet::new();
         let mut marker_groups_to_deinit = HashSet::new();
         for (name, markers_set) in &mut self.cellestial_sphere.markers {

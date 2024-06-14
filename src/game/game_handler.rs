@@ -4,9 +4,11 @@ use crate::{
     enums::{self, GameStage, StorageKeys},
     game::questions_settings,
     renderer::CellestialSphere,
-    rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType},
+    rendering::{
+        caspr::markers::game_markers::{GameMarker, GameMarkerType},
+        themes::Theme,
+    },
 };
-use egui::epaint::Color32;
 use rand::Rng;
 
 use crate::geometry;
@@ -410,7 +412,7 @@ impl GameHandler {
         }
     }
 
-    pub fn check_answer(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere) {
+    pub fn check_answer(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme) {
         self.stage = GameStage::Checked;
         self.add_marker_on_click = false;
         self.answer_image = None;
@@ -463,7 +465,16 @@ impl GameHandler {
 					if *is_bayer || *is_starname { "circle" } else { "cross" },
 					object_type
 				);
-                markers.push(GameMarker::new(GameMarkerType::Exact, *ra, *dec, Color32::YELLOW, 2.0, 5.0, *is_bayer || *is_starname, false));
+                markers.push(GameMarker::new(
+                    GameMarkerType::CorrectAnswer,
+                    *ra,
+                    *dec,
+                    2.0,
+                    5.0,
+                    *is_bayer || *is_starname,
+                    false,
+                    &theme.game_visuals.game_markers_colours,
+                ));
                 if !self.questions_settings.find_this_object.replay_incorrect || correct {
                     self.used_questions.push(self.current_question);
                 } else {
@@ -633,7 +644,7 @@ impl GameHandler {
         cellestial_sphere.init_single_renderer("markers", "game");
     }
 
-    pub fn next_question(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere) {
+    pub fn next_question(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme) {
         self.answer = String::new();
         let mut possible_questions: Vec<usize> = Vec::new();
         for question in 0..self.question_catalog.len() {
@@ -736,14 +747,14 @@ impl GameHandler {
                     true
                 }
                 Question::PositionQuestion { ra, dec, .. } => {
-                    markers = vec![GameMarker::new(GameMarkerType::Exact, ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)];
+                    markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)];
                     false
                 }
                 Question::ThisPointObject { ra, dec, is_bayer, is_starname, .. } => {
                     markers = if is_bayer || is_starname {
-                        vec![GameMarker::new(GameMarkerType::Exact, ra, dec, Color32::YELLOW, 2.0, 5.0, true, false)]
+                        vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, true, false, &theme.game_visuals.game_markers_colours)]
                     } else {
-                        vec![GameMarker::new(GameMarkerType::Exact, ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)]
+                        vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)]
                     };
                     false
                 }
@@ -751,21 +762,21 @@ impl GameHandler {
                     let (ra1, dec1) = point1;
                     let (ra2, dec2) = point2;
                     markers = vec![
-                        GameMarker::new(GameMarkerType::Exact, ra1, dec1, Color32::GREEN, 2.0, 5.0, false, false),
-                        GameMarker::new(GameMarkerType::Exact, ra2, dec2, Color32::GREEN, 2.0, 5.0, false, false),
+                        GameMarker::new(GameMarkerType::Task, ra1, dec1, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
+                        GameMarker::new(GameMarkerType::Task, ra2, dec2, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
                     ];
                     false
                 }
                 Question::DECQuestion { ra, dec } => {
-                    markers = vec![GameMarker::new(GameMarkerType::Exact, ra, dec, Color32::GREEN, 2.0, 5.0, false, false)];
+                    markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)];
                     false
                 }
                 Question::RAQuestion { ra, dec } => {
-                    markers = vec![GameMarker::new(GameMarkerType::Exact, ra, dec, Color32::GREEN, 2.0, 5.0, false, false)];
+                    markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)];
                     false
                 }
                 Question::MagQuestion { ra, dec, .. } => {
-                    markers = vec![GameMarker::new(GameMarkerType::Exact, ra, dec, Color32::GREEN, 2.0, 5.0, true, false)];
+                    markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, true, false, &theme.game_visuals.game_markers_colours)];
                     false
                 }
                 Question::NoMoreQuestions => false,
@@ -908,29 +919,29 @@ impl GameHandler {
         }
     }
 
-    pub fn generate_player_markers(&self, marker_positions: &Vec<[f32; 2]>) -> Vec<GameMarker> {
+    pub fn generate_player_markers(&self, marker_positions: &Vec<[f32; 2]>, theme: &Theme) -> Vec<GameMarker> {
         let mut markers = Vec::new();
         for &[dec, ra] in marker_positions {
             markers.push(GameMarker::new(
                 GameMarkerType::Exact,
                 ra / PI * 180.0,
                 dec / PI * 180.0,
-                Color32::RED.gamma_multiply(0.7),
                 2.0,
                 5.0,
                 self.show_circle_marker(),
                 false,
+                &theme.game_visuals.game_markers_colours,
             ));
             if self.show_tolerance_marker() {
                 markers.push(GameMarker::new(
                     GameMarkerType::Tolerance,
                     ra / PI * 180.0,
                     dec / PI * 180.0,
-                    Color32::LIGHT_RED.gamma_multiply(0.7),
                     2.0,
                     self.get_question_distance_tolerance(),
                     true,
                     true,
+                    &theme.game_visuals.game_markers_colours,
                 ));
             }
         }

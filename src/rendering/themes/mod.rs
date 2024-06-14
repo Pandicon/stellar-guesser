@@ -34,6 +34,7 @@ impl Theme {
                     .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
                 ),
                 markers_colours: HashMap::new(),
+                game_markers_colours: GameMarkersColours::default(),
                 deepskies_colours: HashMap::new(),
             },
             egui_visuals: egui::Visuals::dark(),
@@ -78,7 +79,28 @@ pub struct Visuals {
     #[serde(default)]
     pub markers_colours: HashMap<String, Color32>,
     #[serde(default)]
+    pub game_markers_colours: GameMarkersColours,
+    #[serde(default)]
     pub deepskies_colours: HashMap<String, Color32>,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Clone, PartialEq, Debug)]
+pub struct GameMarkersColours {
+    pub exact: Color32,
+    pub tolerance: Color32,
+    pub task: Color32,
+    pub correct_answer: Color32,
+}
+
+impl Default for GameMarkersColours {
+    fn default() -> Self {
+        Self {
+            exact: Color32::RED,
+            tolerance: Color32::LIGHT_RED,
+            task: Color32::YELLOW,
+            correct_answer: Color32::YELLOW,
+        }
+    }
 }
 
 pub fn default_themes() -> ThemesHandler {
@@ -108,6 +130,7 @@ pub fn default_themes() -> ThemesHandler {
                     .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
                 ),
                 markers_colours: HashMap::new(),
+                game_markers_colours: GameMarkersColours::default(),
                 deepskies_colours: HashMap::new(),
             },
             egui_visuals: egui::Visuals::light(),
@@ -139,6 +162,7 @@ pub fn default_themes() -> ThemesHandler {
                     .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
                 ),
                 markers_colours: HashMap::new(),
+                game_markers_colours: GameMarkersColours::default(),
                 deepskies_colours: HashMap::new(),
             },
             egui_visuals,

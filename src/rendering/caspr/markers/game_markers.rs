@@ -1,7 +1,7 @@
 use egui::Color32;
 use nalgebra::Matrix3;
 
-use crate::geometry::get_point_vector;
+use crate::{geometry::get_point_vector, rendering::themes::GameMarkersColours};
 
 use super::{Marker, MarkerRenderer};
 
@@ -11,8 +11,8 @@ pub struct GameMarkers {
 }
 
 pub struct GameMarker {
-    pub colour: Color32,
     pub marker_type: GameMarkerType,
+    pub colour: Color32,
 
     pub ra: f32,
     pub dec: f32,
@@ -33,7 +33,7 @@ impl GameMarker {
      * circular - if the marker is circular or not, if not then it is a cross
      * angular_size - if the half_size is in degrees or in pixels
      */
-    pub fn new(marker_type: GameMarkerType, ra: f32, dec: f32, colour: Color32, line_width: f32, half_size: f32, circular: bool, angular_size: bool) -> Self {
+    pub fn new(marker_type: GameMarkerType, ra: f32, dec: f32, line_width: f32, half_size: f32, circular: bool, angular_size: bool, game_markers_colours: &GameMarkersColours) -> Self {
         #[allow(clippy::collapsible_else_if)]
         let [angular_radius, pixel_radius, angular_width, pixel_width] = if circular {
             if angular_size {
@@ -49,8 +49,8 @@ impl GameMarker {
             }
         };
         Self {
-            colour,
             marker_type,
+            colour: Self::get_colour(marker_type, game_markers_colours),
 
             ra,
             dec,
@@ -104,11 +104,25 @@ impl GameMarker {
             pixel_width: self.pixel_width,
         }
     }
+
+    pub fn get_colour(marker_type: GameMarkerType, game_markers_colours: &GameMarkersColours) -> Color32 {
+        match marker_type {
+            GameMarkerType::Exact => game_markers_colours.exact,
+            GameMarkerType::Tolerance => game_markers_colours.tolerance,
+            GameMarkerType::Task => game_markers_colours.task,
+            GameMarkerType::CorrectAnswer => game_markers_colours.correct_answer,
+        }
+    }
 }
 
+#[derive(Clone, Copy)]
 pub enum GameMarkerType {
     /// A marker showing the exact chosen location
     Exact,
     /// A marker indicating the tolerance of a guess
     Tolerance,
+    /// A marker marking the task (an object to guess etc.)
+    Task,
+    /// A marker marking the correct answer
+    CorrectAnswer,
 }
