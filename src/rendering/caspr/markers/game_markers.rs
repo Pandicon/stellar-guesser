@@ -33,6 +33,7 @@ impl GameMarker {
      * circular - if the marker is circular or not, if not then it is a cross
      * angular_size - if the half_size is in degrees or in pixels
      */
+    #[allow(clippy::too_many_arguments)]
     pub fn new(marker_type: GameMarkerType, ra: f32, dec: f32, line_width: f32, half_size: f32, circular: bool, angular_size: bool, game_markers_colours: &GameMarkersColours) -> Self {
         #[allow(clippy::collapsible_else_if)]
         let [angular_radius, pixel_radius, angular_width, pixel_width] = if circular {
