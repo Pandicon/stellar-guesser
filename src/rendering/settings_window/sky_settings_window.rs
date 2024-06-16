@@ -190,21 +190,31 @@ impl Application {
             ui.label("Magnitude decrease")
                 .on_hover_text("By how much should the magnitude of the deepsky objects be decreased for rendering - this way the objects can be made to be seen even without zooming in");
         });
-        let mut newly_active_deepsky_groups = Vec::new();
-        let mut newly_inactive_deepsky_groups = Vec::new();
-        for (name, active) in &mut self.cellestial_sphere.sky_settings.deepskies_categories_active {
-            let active_before = *active;
-            ui.checkbox(active, format!("Render deepsky objects from the {} file", name));
-            if !active_before && *active {
-                newly_active_deepsky_groups.push(name.to_owned());
-            } else if active_before && !*active {
-                newly_inactive_deepsky_groups.push(name.to_owned());
+
+        let mut deepsky_groups_to_init = HashSet::new();
+        let mut deepsky_groups_to_deinit = HashSet::new();
+        for (name, deepskies_set) in &mut self.cellestial_sphere.deepskies {
+            ui.heading(name);
+            if ui.checkbox(&mut deepskies_set.active, format!("Render deepsky objects from the {} file", name)).changed() {
+                if deepskies_set.active {
+                    deepsky_groups_to_init.insert(name.to_owned());
+                } else {
+                    deepsky_groups_to_deinit.insert(name.to_owned());
+                }
+                self.cellestial_sphere.sky_settings.deepskies_categories_active.insert(name.to_owned(), deepskies_set.active);
             }
+            ui.horizontal(|ui| {
+                ui.label("Marker colour: ");
+                if ui.color_edit_button_srgba(&mut deepskies_set.colour).changed() {
+                    deepsky_groups_to_init.insert(name.to_owned());
+                }
+            });
+            self.theme.game_visuals.deepskies_colours.insert(name.clone(), deepskies_set.colour);
         }
-        for name in &newly_active_deepsky_groups {
+        for name in &deepsky_groups_to_init {
             self.cellestial_sphere.init_single_renderer("deepskies", name);
         }
-        for name in &newly_inactive_deepsky_groups {
+        for name in &deepsky_groups_to_deinit {
             self.cellestial_sphere.deinit_single_renderer("deepskies", name);
         }
     }
