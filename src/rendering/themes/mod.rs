@@ -33,9 +33,21 @@ impl Theme {
                     ]
                     .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
                 ),
-                markers_colours: HashMap::new(),
+                markers_colours: HashMap::from(
+                    [
+                        ("galactic_poles.csv", [166, 107, 255, 255]),
+                        ("first_point_of_aries.csv", [255, 251, 0, 255]),
+                        ("galactic_centre_anticentre.csv", [146, 81, 245, 255]),
+                        ("celestial_poles.csv", [217, 13, 13, 255]),
+                        ("ecliptic_poles.csv", [107, 255, 107, 255]),
+                    ]
+                    .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
+                ),
                 game_markers_colours: GameMarkersColours::default(),
-                deepskies_colours: HashMap::new(),
+                deepskies_colours: HashMap::from(
+                    [("messier-catalogue.csv", [107, 238, 255, 255]), ("caldwell-catalogue.csv", [107, 255, 191, 255])]
+                        .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
+                ),
             },
             egui_visuals: egui::Visuals::dark(),
         }
@@ -129,9 +141,25 @@ pub fn default_themes() -> ThemesHandler {
                     ]
                     .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
                 ),
-                markers_colours: HashMap::new(),
-                game_markers_colours: GameMarkersColours::default(),
-                deepskies_colours: HashMap::new(),
+                markers_colours: HashMap::from(
+                    [
+                        ("galactic_poles.csv", [166, 107, 255, 255]),
+                        ("first_point_of_aries.csv", [255, 155, 0, 255]),
+                        ("galactic_centre_anticentre.csv", [146, 81, 245, 255]),
+                        ("celestial_poles.csv", [217, 13, 13, 255]),
+                        ("ecliptic_poles.csv", [107, 255, 107, 255]),
+                    ]
+                    .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
+                ),
+                game_markers_colours: GameMarkersColours {
+                    task: Color32::from_rgba_unmultiplied(255, 155, 0, 255),
+                    correct_answer: Color32::from_rgba_unmultiplied(255, 155, 0, 255),
+                    ..Default::default()
+                },
+                deepskies_colours: HashMap::from(
+                    [("messier-catalogue.csv", [62, 211, 228, 255]), ("caldwell-catalogue.csv", [75, 227, 165, 255])]
+                        .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
+                ),
             },
             egui_visuals: egui::Visuals::light(),
         },
@@ -161,9 +189,25 @@ pub fn default_themes() -> ThemesHandler {
                     ]
                     .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
                 ),
-                markers_colours: HashMap::new(),
-                game_markers_colours: GameMarkersColours::default(),
-                deepskies_colours: HashMap::new(),
+                markers_colours: HashMap::from(
+                    [
+                        ("galactic_poles.csv", [166, 107, 255, 255]),
+                        ("first_point_of_aries.csv", [255, 155, 0, 255]),
+                        ("galactic_centre_anticentre.csv", [146, 81, 245, 255]),
+                        ("celestial_poles.csv", [217, 13, 13, 255]),
+                        ("ecliptic_poles.csv", [107, 255, 107, 255]),
+                    ]
+                    .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
+                ),
+                game_markers_colours: GameMarkersColours {
+                    task: Color32::from_rgba_unmultiplied(255, 155, 0, 255),
+                    correct_answer: Color32::from_rgba_unmultiplied(255, 155, 0, 255),
+                    ..Default::default()
+                },
+                deepskies_colours: HashMap::from(
+                    [("messier-catalogue.csv", [62, 211, 228, 255]), ("caldwell-catalogue.csv", [75, 227, 165, 255])]
+                        .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
+                ),
             },
             egui_visuals,
         },
