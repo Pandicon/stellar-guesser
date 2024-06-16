@@ -456,7 +456,7 @@ impl GameHandler {
                 };
                 self.answer_review_text_heading = answer_review_text_heading;
                 self.answer_review_text = format!(
-					"Your coordinates: [dec = {}; ra = {}]\nCorrect coordinates: [dec = {}; ra = {}]\nFully precise distance: {} degrees\nYou can see the correct place marked with a yellow {}.\nObject type: {}",
+					"Your coordinates: [dec = {}; ra = {}]\nCorrect coordinates: [dec = {}; ra = {}]\nFully precise distance: {} degrees\nYou can see the correct place marked with a new {}.\nObject type: {}",
 					answer_dec_text,
 					answer_ra_text,
 					dec,
