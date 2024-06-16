@@ -30,7 +30,7 @@ use super::sky_settings;
 use super::star_names::{StarName, StarNameRaw};
 use super::stars::{Star, StarRaw, StarRenderer};
 use super::{
-    deepsky::{Deepsky, DeepskyRaw, DeepskyRenderer},
+    deepsky::{Deepskies, Deepsky, DeepskyRaw, DeepskyRenderer},
     markers::game_markers::GameMarkers,
 };
 
@@ -44,7 +44,7 @@ pub struct CellestialSphere {
 
     pub stars: HashMap<String, Vec<Star>>,
     pub lines: HashMap<String, SkyLines>,
-    pub deepskies: HashMap<String, Vec<Deepsky>>,
+    pub deepskies: HashMap<String, Deepskies>,
     pub markers: HashMap<String, Markers>,
     pub game_markers: GameMarkers,
     pub star_names: HashMap<String, Vec<StarName>>,
@@ -309,7 +309,7 @@ impl CellestialSphere {
 
         let mut lines: HashMap<String, SkyLines> = HashMap::new();
 
-        let mut deepskies: HashMap<String, Vec<Deepsky>> = HashMap::new();
+        let mut deepskies: HashMap<String, Deepskies> = HashMap::new();
         let objects_images = object_images.unwrap_or(Vec::new());
 
         let mut star_names: HashMap<String, Vec<StarName>> = HashMap::new();
@@ -368,6 +368,8 @@ impl CellestialSphere {
             } else if id == "deepskies" {
                 for [file_name, file_contents] in &data {
                     let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+                    let mut deepskies_colour = None;
+                    let mut deepskies_vec = Vec::new();
                     for deepsky_raw in reader.deserialize() {
                         let deepsky_raw: DeepskyRaw = deepsky_raw?;
                         let deepsky_images_raw = objects_images
@@ -406,12 +408,32 @@ impl CellestialSphere {
                                 source: image_data.image_source.clone(),
                             })
                             .collect::<Vec<crate::structs::image_info::ImageInfo>>();
-                        let deepsky = Deepsky::from_raw(deepsky_raw, star_color, deepsky_images_raw);
-                        let entry = deepskies.entry(file_name.clone()).or_default();
-                        entry.push(deepsky);
-                        if !sky_settings.deepskies_categories_active.contains_key(file_name) {
-                            sky_settings.deepskies_categories_active.insert(file_name.clone(), true);
+                        let (deepsky, colour) = Deepsky::from_raw(deepsky_raw, deepsky_images_raw);
+                        if deepskies_colour.is_none() {
+                            deepskies_colour = colour;
                         }
+                        deepskies_vec.push(deepsky);
+                    }
+                    // Try to get the colour from the theme, then if the theme does not handle these lines, try to use the colour found in the lines declaration file. Only if that does not exist, use the default colour.
+                    let deepskies_colour = theme
+                        .game_visuals
+                        .deepskies_colours
+                        .get(file_name)
+                        .cloned()
+                        .unwrap_or(deepskies_colour.unwrap_or(theme.game_visuals.default_colour));
+                    deepskies.insert(
+                        file_name.clone(),
+                        Deepskies {
+                            colour: deepskies_colour,
+                            active: *sky_settings.deepskies_categories_active.get(file_name).unwrap_or(&true),
+                            deepskies: deepskies_vec,
+                        },
+                    );
+                    if !sky_settings.deepskies_categories_active.contains_key(file_name) {
+                        sky_settings.deepskies_categories_active.insert(file_name.clone(), true);
+                    }
+                    if !theme.game_visuals.deepskies_colours.contains_key(file_name) {
+                        theme.game_visuals.deepskies_colours.insert(file_name.clone(), deepskies_colour);
                     }
                 }
             } else if id == "star names" {
@@ -620,8 +642,10 @@ impl CellestialSphere {
             }
         } else if category == "deepskies" {
             if let Some(deepskies) = self.deepskies.get(name) {
-                self.deepsky_renderers
-                    .insert(name.to_string(), deepskies.iter().map(|deepsky| deepsky.get_renderer(self.rotation.matrix())).collect());
+                self.deepsky_renderers.insert(
+                    name.to_string(),
+                    deepskies.deepskies.iter().map(|deepsky| deepsky.get_renderer(self.rotation.matrix(), deepskies.colour)).collect(),
+                );
             }
         } else if category == "markers" {
             if name == "game" {

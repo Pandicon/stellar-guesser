@@ -156,8 +156,8 @@ impl GameHandler {
         }
         let mut catalog: Vec<Question> = Vec::new();
         catalog.push(Question::NoMoreQuestions);
-        for file in cellestial_sphere.deepskies.values() {
-            for deepsky in file {
+        for deepskies_group in cellestial_sphere.deepskies.values() {
+            for deepsky in &deepskies_group.deepskies {
                 let mut possible_names = Vec::new();
                 let is_messier = deepsky.messier.is_some();
                 let is_caldwell = deepsky.caldwell.is_some();

@@ -174,6 +174,23 @@ pub fn default_themes() -> ThemesHandler {
 impl Application {
     pub fn apply_theme(&mut self, ctx: &egui::Context, theme: Theme) {
         self.theme = theme;
+        let mut deepskies_to_reinit = Vec::new();
+        for (name, deepskies) in &mut self.cellestial_sphere.deepskies {
+            match self.theme.game_visuals.deepskies_colours.get(name) {
+                Some(colour) => {
+                    deepskies.colour = *colour;
+                    if deepskies.active {
+                        deepskies_to_reinit.push(name.clone());
+                    }
+                }
+                None => {
+                    self.theme.game_visuals.deepskies_colours.insert(name.clone(), deepskies.colour);
+                }
+            }
+        }
+        for name in deepskies_to_reinit {
+            self.cellestial_sphere.init_single_renderer("deepskies", &name);
+        }
         let mut lines_to_reinit = Vec::new();
         for (name, lines) in &mut self.cellestial_sphere.lines {
             match self.theme.game_visuals.lines_colours.get(name) {
