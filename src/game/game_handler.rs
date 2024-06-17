@@ -4,9 +4,11 @@ use crate::{
     enums::{self, GameStage, StorageKeys},
     game::questions_settings,
     renderer::CellestialSphere,
-    rendering::caspr::markers::Marker,
+    rendering::{
+        caspr::markers::game_markers::{GameMarker, GameMarkerType},
+        themes::Theme,
+    },
 };
-use egui::epaint::Color32;
 use rand::Rng;
 
 use crate::geometry;
@@ -154,8 +156,8 @@ impl GameHandler {
         }
         let mut catalog: Vec<Question> = Vec::new();
         catalog.push(Question::NoMoreQuestions);
-        for file in cellestial_sphere.deepskies.values() {
-            for deepsky in file {
+        for deepskies_group in cellestial_sphere.deepskies.values() {
+            for deepsky in &deepskies_group.deepskies {
                 let mut possible_names = Vec::new();
                 let is_messier = deepsky.messier.is_some();
                 let is_caldwell = deepsky.caldwell.is_some();
@@ -410,11 +412,11 @@ impl GameHandler {
         }
     }
 
-    pub fn check_answer(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere) {
+    pub fn check_answer(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme) {
         self.stage = GameStage::Checked;
         self.add_marker_on_click = false;
         self.answer_image = None;
-        let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
+        let markers = &mut cellestial_sphere.game_markers.markers;
         match &self.question_catalog[self.current_question] {
             Question::ObjectQuestion {
                 name,
@@ -431,9 +433,9 @@ impl GameHandler {
                 if !images.is_empty() {
                     self.answer_image = Some(images[rand::thread_rng().gen_range(0..images.len())].clone());
                 }
-                let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !entry.is_empty() {
-                    let answer_dec = entry[0].dec;
-                    let answer_ra = entry[0].ra;
+                let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !markers.is_empty() {
+                    let answer_dec = markers[0].dec;
+                    let answer_ra = markers[0].ra;
                     let distance = geometry::angular_distance((ra * PI / 180.0, dec * PI / 180.0), (answer_ra * PI / 180.0, answer_dec * PI / 180.0)) * 180.0 / PI;
                     if self.game_settings.is_scored_mode {
                         self.score += GameHandler::evaluate_score(distance);
@@ -454,7 +456,7 @@ impl GameHandler {
                 };
                 self.answer_review_text_heading = answer_review_text_heading;
                 self.answer_review_text = format!(
-					"Your coordinates: [dec = {}; ra = {}]\nCorrect coordinates: [dec = {}; ra = {}]\nFully precise distance: {} degrees\nYou can see the correct place marked with a yellow {}.\nObject type: {}",
+					"Your coordinates: [dec = {}; ra = {}]\nCorrect coordinates: [dec = {}; ra = {}]\nFully precise distance: {} degrees\nYou can see the correct place marked with a new {}.\nObject type: {}",
 					answer_dec_text,
 					answer_ra_text,
 					dec,
@@ -463,7 +465,16 @@ impl GameHandler {
 					if *is_bayer || *is_starname { "circle" } else { "cross" },
 					object_type
 				);
-                entry.push(Marker::new(*ra, *dec, Color32::YELLOW, 2.0, 5.0, *is_bayer || *is_starname, false));
+                markers.push(GameMarker::new(
+                    GameMarkerType::CorrectAnswer,
+                    *ra,
+                    *dec,
+                    2.0,
+                    5.0,
+                    *is_bayer || *is_starname,
+                    false,
+                    &theme.game_visuals.game_markers_colours,
+                ));
                 if !self.questions_settings.find_this_object.replay_incorrect || correct {
                     self.used_questions.push(self.current_question);
                 } else {
@@ -633,7 +644,7 @@ impl GameHandler {
         cellestial_sphere.init_single_renderer("markers", "game");
     }
 
-    pub fn next_question(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere) {
+    pub fn next_question(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme) {
         self.answer = String::new();
         let mut possible_questions: Vec<usize> = Vec::new();
         for question in 0..self.question_catalog.len() {
@@ -729,47 +740,48 @@ impl GameHandler {
                 possible_questions.len() + self.used_questions.len() + self.question_number
             );
 
-            let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
+            let mut markers = Vec::new();
             self.add_marker_on_click = match self.question_catalog[self.current_question] {
                 Question::ObjectQuestion { .. } => {
-                    *entry = Vec::new();
+                    markers = Vec::new();
                     true
                 }
                 Question::PositionQuestion { ra, dec, .. } => {
-                    *entry = vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)];
+                    markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)];
                     false
                 }
                 Question::ThisPointObject { ra, dec, is_bayer, is_starname, .. } => {
-                    *entry = if is_bayer || is_starname {
-                        vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, true, false)]
+                    markers = if is_bayer || is_starname {
+                        vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, true, false, &theme.game_visuals.game_markers_colours)]
                     } else {
-                        vec![Marker::new(ra, dec, Color32::YELLOW, 2.0, 5.0, false, false)]
+                        vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)]
                     };
                     false
                 }
                 Question::DistanceBetweenQuestion { point1, point2 } => {
                     let (ra1, dec1) = point1;
                     let (ra2, dec2) = point2;
-                    *entry = vec![
-                        Marker::new(ra1, dec1, Color32::GREEN, 2.0, 5.0, false, false),
-                        Marker::new(ra2, dec2, Color32::GREEN, 2.0, 5.0, false, false),
+                    markers = vec![
+                        GameMarker::new(GameMarkerType::Task, ra1, dec1, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
+                        GameMarker::new(GameMarkerType::Task, ra2, dec2, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
                     ];
                     false
                 }
                 Question::DECQuestion { ra, dec } => {
-                    *entry = vec![Marker::new(ra, dec, Color32::GREEN, 2.0, 5.0, false, false)];
+                    markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)];
                     false
                 }
                 Question::RAQuestion { ra, dec } => {
-                    *entry = vec![Marker::new(ra, dec, Color32::GREEN, 2.0, 5.0, false, false)];
+                    markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)];
                     false
                 }
                 Question::MagQuestion { ra, dec, .. } => {
-                    *entry = vec![Marker::new(ra, dec, Color32::GREEN, 2.0, 5.0, true, false)];
+                    markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, true, false, &theme.game_visuals.game_markers_colours)];
                     false
                 }
                 Question::NoMoreQuestions => false,
             };
+            cellestial_sphere.game_markers.markers = markers;
             cellestial_sphere.init_single_renderer("markers", "game");
         }
         self.stage = GameStage::Guessing;
@@ -907,19 +919,29 @@ impl GameHandler {
         }
     }
 
-    pub fn generate_player_markers(&self, marker_positions: &Vec<[f32; 2]>) -> Vec<Marker> {
+    pub fn generate_player_markers(&self, marker_positions: &Vec<[f32; 2]>, theme: &Theme) -> Vec<GameMarker> {
         let mut markers = Vec::new();
         for &[dec, ra] in marker_positions {
-            markers.push(Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.show_circle_marker(), false));
+            markers.push(GameMarker::new(
+                GameMarkerType::Exact,
+                ra / PI * 180.0,
+                dec / PI * 180.0,
+                2.0,
+                5.0,
+                self.show_circle_marker(),
+                false,
+                &theme.game_visuals.game_markers_colours,
+            ));
             if self.show_tolerance_marker() {
-                markers.push(Marker::new(
+                markers.push(GameMarker::new(
+                    GameMarkerType::Tolerance,
                     ra / PI * 180.0,
                     dec / PI * 180.0,
-                    Color32::LIGHT_RED.gamma_multiply(0.7),
                     2.0,
                     self.get_question_distance_tolerance(),
                     true,
                     true,
+                    &theme.game_visuals.game_markers_colours,
                 ));
             }
         }

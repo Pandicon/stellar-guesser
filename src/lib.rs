@@ -20,6 +20,7 @@ pub use rendering::caspr::renderer;
 
 pub mod application;
 pub mod enums;
+pub mod files;
 pub mod game;
 pub mod geometry;
 pub mod graphics;

@@ -13,11 +13,11 @@ impl Application {
                     ui.label(self.game_handler.get_display_question());
                     ui.horizontal(|ui| {
                         if ui.button("Next question").clicked() {
-                            self.game_handler.next_question(&mut self.cellestial_sphere);
+                            self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
                         }
                         if ui.button("Reset").clicked() {
                             self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
-                            self.game_handler.next_question(&mut self.cellestial_sphere);
+                            self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
                         }
                     });
                 } else {
@@ -26,7 +26,7 @@ impl Application {
                         self.input.input_field_has_focus |= ui.text_edit_singleline(&mut self.game_handler.answer).has_focus();
                     }
                     if ui.button("Check").clicked() {
-                        self.game_handler.check_answer(&mut self.cellestial_sphere);
+                        self.game_handler.check_answer(&mut self.cellestial_sphere, &self.theme);
                     }
                 }
                 ui.label(&self.game_handler.question_number_text);
@@ -42,14 +42,14 @@ impl Application {
                     }
                 }
                 if ui.button("Next").clicked() {
-                    self.game_handler.next_question(&mut self.cellestial_sphere);
+                    self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
                 }
                 ui.label(&self.game_handler.question_number_text);
             } else if self.game_handler.stage == GameStage::NotStartedYet {
                 ui.heading("Welcome!");
                 if ui.button("Start").clicked() {
                     self.game_handler.stage = GameStage::Checked;
-                    self.game_handler.next_question(&mut self.cellestial_sphere)
+                    self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme)
                 }
             } else {
                 unimplemented!();

@@ -23,11 +23,11 @@ impl Application {
                         match self.game_handler.stage {
                             GameStage::Guessing => {
                                 if !self.game_handler.should_display_input() {
-                                    self.game_handler.check_answer(&mut self.cellestial_sphere);
+                                    self.game_handler.check_answer(&mut self.cellestial_sphere, &self.theme);
                                 }
                             }
                             GameStage::Checked => {
-                                self.game_handler.next_question(&mut self.cellestial_sphere);
+                                self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
                             }
                             GameStage::NotStartedYet => unimplemented!(),
                         }
@@ -51,9 +51,8 @@ impl Application {
                 } else {
                     self.game_handler.guess_marker_positions = vec![marker_pos];
                 }
-                let new_markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions);
-                let entry = self.cellestial_sphere.markers.entry("game".to_string()).or_default();
-                *entry = new_markers; // vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.game_handler.show_circle_marker(), false)];
+                let new_markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions, &self.theme);
+                self.cellestial_sphere.game_markers.markers = new_markers; // vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.game_handler.show_circle_marker(), false)];
                 self.cellestial_sphere.init_single_renderer("markers", "game");
             }
 

@@ -68,23 +68,6 @@ impl GameLearningStage {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-pub enum ColourMode {
-    Dark,
-    Light,
-    Printing,
-}
-
-impl Display for ColourMode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
-            Self::Dark => write!(f, "Dark"),
-            Self::Light => write!(f, "Light"),
-            Self::Printing => write!(f, "Printing"),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum GameStage {
     Guessing,
     Checked,
@@ -104,6 +87,8 @@ pub enum StorageKeys {
     GameSettings,
     GameQuestionSettings,
     SkySettings,
+    Theme,
+    GraphicsSettings,
 }
 
 impl AsRef<str> for StorageKeys {
@@ -121,6 +106,8 @@ impl AsRef<str> for StorageKeys {
             Self::GameSettings => "game_settings",
             Self::GameQuestionSettings => "game_question_settings",
             Self::SkySettings => "sky_settings",
+            Self::Theme => "theme",
+            Self::GraphicsSettings => "graphics_settings",
         }
     }
 }

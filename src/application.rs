@@ -1,8 +1,10 @@
-use crate::enums::ScreenWidth;
+use crate::enums::{self, ScreenWidth};
 use crate::rendering::caspr::sky_settings;
-use crate::{enums, structs::graphics_settings::GraphicsSettings};
+use crate::rendering::themes::{self, Theme, ThemesHandler};
+use crate::{files, public_constants};
 
 use crate::renderer::CellestialSphere;
+use crate::structs::graphics_settings;
 
 use self::frames_handler::FramesHandler;
 
@@ -21,9 +23,12 @@ pub struct Application {
     pub frame_timestamp: i64,
     pub frame_timestamp_ms: i64,
     pub cellestial_sphere: CellestialSphere,
-    pub graphics_settings: GraphicsSettings,
     pub frames_handler: FramesHandler,
     pub game_handler: game_handler::GameHandler,
+
+    pub graphics_settings: graphics_settings::GraphicsSettings,
+    pub theme: Theme,
+    pub themes: ThemesHandler,
 
     pub authors: String,
     pub version: String,
@@ -39,18 +44,53 @@ pub struct Application {
 impl Application {
     pub fn new(ctx: &egui::Context, authors: String, version: String, storage: &mut Option<crate::storage::Storage>) -> Self {
         egui_extras::install_image_loaders(ctx);
-        ctx.set_visuals(egui::Visuals::dark());
+
+        let mut themes = themes::default_themes();
+        let themes_files = files::load_all_files_folder(public_constants::THEMES_FOLDER);
+        for file in themes_files {
+            if let Err(err) = themes.add_theme_str(&file.content) {
+                log::error!("Failed to load a theme (from file {}): {err}", file.name);
+            }
+        }
+
         let mut time_spent_start = 0;
+        let mut theme = themes::Theme::dark(); // Default in case the restored theme does not exist
+        let mut graphics_settings = graphics_settings::GraphicsSettings::default(); // Default in case there are no saved graphics settings
         if let Some(storage) = storage {
             if let Some(time_spent_restore) = storage.get_string(StorageKeys::TimeSpent.as_ref()) {
-                if let Ok(time_spent) = time_spent_restore.parse() {
-                    time_spent_start = time_spent;
+                match time_spent_restore.parse() {
+                    Ok(time_spent) => time_spent_start = time_spent,
+                    Err(err) => log::error!("Failed to parse the time spent: {err}"),
+                }
+            }
+            if let Some(theme_str) = storage.get_string(StorageKeys::Theme.as_ref()) {
+                match serde_json::from_str(&theme_str) {
+                    Ok(theme_loaded) => {
+                        theme = theme_loaded;
+                        if let Some(same_name_theme) = themes.get(&theme.name) {
+                            if same_name_theme != &theme {
+                                theme.name += " (restored)";
+                            }
+                        }
+                        // IMPORTANT: Due to this setting, the theme has to be loaded before the graphics settings, else they will always be overwritten by the theme default
+                        graphics_settings.use_default_star_colour = theme.game_visuals.use_default_star_colour;
+                    }
+                    Err(err) => log::error!("Failed to deserialize the theme: {err}"),
+                }
+            }
+            if let Some(graphics_settings_str) = storage.get_string(StorageKeys::GraphicsSettings.as_ref()) {
+                match serde_json::from_str(&graphics_settings_str) {
+                    Ok(graphics_settings_loaded) => graphics_settings = graphics_settings_loaded,
+                    Err(err) => log::error!("Failed to deserialize the graphics settings: {err}"),
                 }
             }
         }
+        ctx.set_visuals(theme.egui_visuals.clone());
+
         let timestamp = chrono::Utc::now().timestamp();
         let state = state::State::new(timestamp, time_spent_start);
-        let mut cellestial_sphere = CellestialSphere::load(storage).unwrap();
+
+        let mut cellestial_sphere = CellestialSphere::load(storage, &mut theme).unwrap();
         cellestial_sphere.init();
         Self {
             input: input::Input::default(),
@@ -60,8 +100,11 @@ impl Application {
             frame_timestamp_ms: chrono::Utc::now().timestamp_millis(),
             game_handler: GameHandler::init(&mut cellestial_sphere, storage),
             cellestial_sphere,
-            graphics_settings: GraphicsSettings::default(),
             frames_handler: FramesHandler::default(),
+
+            graphics_settings,
+            theme,
+            themes,
 
             authors,
             version,
@@ -143,6 +186,16 @@ impl Application {
         match serde_json::to_string(&sky_settings::SkySettingsRaw::from_sky_settings(&self.cellestial_sphere.sky_settings)) {
             Ok(string) => storage.set_string(StorageKeys::SkySettings.as_ref(), string),
             Err(err) => log::error!("Failed to serialize sky settings: {:?}", err),
+        }
+
+        match serde_json::to_string(&self.theme) {
+            Ok(string) => storage.set_string(StorageKeys::Theme.as_ref(), string),
+            Err(err) => log::error!("Failed to serialize the theme: {:?}", err),
+        }
+
+        match serde_json::to_string(&self.graphics_settings) {
+            Ok(string) => storage.set_string(StorageKeys::GraphicsSettings.as_ref(), string),
+            Err(err) => log::error!("Failed to serialize graphics settings: {:?}", err),
         }
 
         let now = std::time::Instant::now();

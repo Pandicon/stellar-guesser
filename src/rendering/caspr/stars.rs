@@ -1,4 +1,4 @@
-use crate::structs::graphics_settings::GraphicsSettings;
+use crate::{rendering::themes::Theme, structs::graphics_settings::GraphicsSettings};
 use egui::epaint::Color32;
 use nalgebra::{Matrix3, Vector3};
 use serde::Deserialize;
@@ -64,12 +64,12 @@ impl StarRenderer {
         }
     }
 
-    pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter, graphics_settings: &GraphicsSettings) {
+    pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter, graphics_settings: &GraphicsSettings, theme: &Theme) {
         cellestial_sphere.render_circle(
             &self.unit_vector,
             cellestial_sphere.mag_to_radius(self.vmag),
             if graphics_settings.use_default_star_colour {
-                graphics_settings.default_star_colour(&graphics_settings.colour_mode)
+                theme.game_visuals.default_star_colour
             } else {
                 self.colour
             },

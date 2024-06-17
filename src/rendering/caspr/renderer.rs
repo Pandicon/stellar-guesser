@@ -1,5 +1,6 @@
 use crate::{
     enums::{LightPollution, StorageKeys},
+    rendering::themes::Theme,
     structs::graphics_settings::GraphicsSettings,
 };
 use egui::epaint::Color32;
@@ -23,12 +24,15 @@ const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, 
 use crate::geometry;
 use geometry::{cartesian_to_spherical, cast_onto_sphere, is_inside_polygon, project_point};
 
-use super::deepsky::{Deepsky, DeepskyRaw, DeepskyRenderer};
-use super::lines::{LineRenderer, SkyLine, SkyLineRaw};
-use super::markers::{Marker, MarkerRaw, MarkerRenderer};
+use super::lines::{LineRenderer, SkyLine, SkyLineRaw, SkyLines};
+use super::markers::{Marker, MarkerRaw, MarkerRenderer, Markers};
 use super::sky_settings;
 use super::star_names::{StarName, StarNameRaw};
 use super::stars::{Star, StarRaw, StarRenderer};
+use super::{
+    deepsky::{Deepskies, Deepsky, DeepskyRaw, DeepskyRenderer},
+    markers::game_markers::GameMarkers,
+};
 
 use super::constellation::{BorderVertex, Constellation, ConstellationRaw};
 
@@ -39,9 +43,10 @@ pub struct CellestialSphere {
     pub sky_settings: sky_settings::SkySettings,
 
     pub stars: HashMap<String, Vec<Star>>,
-    pub lines: HashMap<String, Vec<SkyLine>>,
-    pub deepskies: HashMap<String, Vec<Deepsky>>,
-    pub markers: HashMap<String, Vec<Marker>>,
+    pub lines: HashMap<String, SkyLines>,
+    pub deepskies: HashMap<String, Deepskies>,
+    pub markers: HashMap<String, Markers>,
+    pub game_markers: GameMarkers,
     pub star_names: HashMap<String, Vec<StarName>>,
     pub constellations: HashMap<String, Constellation>,
     pub zoom: f32,
@@ -107,7 +112,7 @@ impl CellestialSphere {
     }
 
     //Renders the entire sphere view
-    pub fn render_sky(&self, painter: &egui::Painter, graphics_settings: &GraphicsSettings) {
+    pub fn render_sky(&self, painter: &egui::Painter, graphics_settings: &GraphicsSettings, theme: &Theme) {
         //some stuff lol
         for line_renderers in self.line_renderers.values() {
             for line_renderer in line_renderers {
@@ -116,7 +121,7 @@ impl CellestialSphere {
         }
         for star_renderers in self.star_renderers.values() {
             for star_renderer in star_renderers {
-                star_renderer.render(self, painter, graphics_settings);
+                star_renderer.render(self, painter, graphics_settings, theme);
             }
         }
         for marker_renderers in self.marker_renderers.values() {
@@ -131,7 +136,7 @@ impl CellestialSphere {
         }
     }
 
-    pub fn load(storage: &mut Option<crate::storage::Storage>) -> Result<Self, Box<dyn Error>> {
+    pub fn load(storage: &mut Option<crate::storage::Storage>, theme: &mut Theme) -> Result<Self, Box<dyn Error>> {
         #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
         let images_addon_dir_opt = {
             if let Ok(executable_dir) = std::env::current_exe() {
@@ -298,20 +303,18 @@ impl CellestialSphere {
                 }
             }
         }
-        sky_settings.markers_categories_active.insert(String::from("game"), true);
 
         let star_color = egui::epaint::Color32::WHITE;
         let mut catalog: HashMap<String, Vec<Star>> = HashMap::new();
 
-        let mut lines: HashMap<String, Vec<SkyLine>> = HashMap::new();
+        let mut lines: HashMap<String, SkyLines> = HashMap::new();
 
-        let mut deepskies: HashMap<String, Vec<Deepsky>> = HashMap::new();
+        let mut deepskies: HashMap<String, Deepskies> = HashMap::new();
         let objects_images = object_images.unwrap_or(Vec::new());
 
         let mut star_names: HashMap<String, Vec<StarName>> = HashMap::new();
 
-        let mut markers: HashMap<String, Vec<Marker>> = HashMap::new();
-        markers.insert(String::from("game"), Vec::new());
+        let mut markers: HashMap<String, Markers> = HashMap::new();
 
         for (id, data) in sky_data_lists {
             if id == "stars" {
@@ -330,19 +333,43 @@ impl CellestialSphere {
             } else if id == "lines" {
                 for [file_name, file_contents] in &data {
                     let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+                    let mut line_colour = None;
+                    let mut lines_vec = Vec::new();
                     for line_raw in reader.deserialize() {
                         let line_raw: SkyLineRaw = line_raw?;
-                        let line = SkyLine::from_raw(line_raw, star_color);
-                        let entry = lines.entry(file_name.clone()).or_default();
-                        entry.push(line);
-                        if !sky_settings.lines_categories_active.contains_key(file_name) {
-                            sky_settings.lines_categories_active.insert(file_name.clone(), true);
+                        let (line, colour) = SkyLine::from_raw(line_raw);
+                        if line_colour.is_none() {
+                            line_colour = colour;
                         }
+                        lines_vec.push(line);
+                    }
+                    // Try to get the colour from the theme, then if the theme does not handle these lines, try to use the colour found in the lines declaration file. Only if that does not exist, use the default colour.
+                    let line_colour = theme
+                        .game_visuals
+                        .lines_colours
+                        .get(file_name)
+                        .cloned()
+                        .unwrap_or(line_colour.unwrap_or(theme.game_visuals.default_colour));
+                    lines.insert(
+                        file_name.clone(),
+                        SkyLines {
+                            colour: line_colour,
+                            active: *sky_settings.lines_categories_active.get(file_name).unwrap_or(&true),
+                            lines: lines_vec,
+                        },
+                    );
+                    if !sky_settings.lines_categories_active.contains_key(file_name) {
+                        sky_settings.lines_categories_active.insert(file_name.clone(), true);
+                    }
+                    if !theme.game_visuals.lines_colours.contains_key(file_name) {
+                        theme.game_visuals.lines_colours.insert(file_name.clone(), line_colour);
                     }
                 }
             } else if id == "deepskies" {
                 for [file_name, file_contents] in &data {
                     let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+                    let mut deepskies_colour = None;
+                    let mut deepskies_vec = Vec::new();
                     for deepsky_raw in reader.deserialize() {
                         let deepsky_raw: DeepskyRaw = deepsky_raw?;
                         let deepsky_images_raw = objects_images
@@ -381,12 +408,32 @@ impl CellestialSphere {
                                 source: image_data.image_source.clone(),
                             })
                             .collect::<Vec<crate::structs::image_info::ImageInfo>>();
-                        let deepsky = Deepsky::from_raw(deepsky_raw, star_color, deepsky_images_raw);
-                        let entry = deepskies.entry(file_name.clone()).or_default();
-                        entry.push(deepsky);
-                        if !sky_settings.deepskies_categories_active.contains_key(file_name) {
-                            sky_settings.deepskies_categories_active.insert(file_name.clone(), true);
+                        let (deepsky, colour) = Deepsky::from_raw(deepsky_raw, deepsky_images_raw);
+                        if deepskies_colour.is_none() {
+                            deepskies_colour = colour;
                         }
+                        deepskies_vec.push(deepsky);
+                    }
+                    // Try to get the colour from the theme, then if the theme does not handle these lines, try to use the colour found in the lines declaration file. Only if that does not exist, use the default colour.
+                    let deepskies_colour = theme
+                        .game_visuals
+                        .deepskies_colours
+                        .get(file_name)
+                        .cloned()
+                        .unwrap_or(deepskies_colour.unwrap_or(theme.game_visuals.default_colour));
+                    deepskies.insert(
+                        file_name.clone(),
+                        Deepskies {
+                            colour: deepskies_colour,
+                            active: *sky_settings.deepskies_categories_active.get(file_name).unwrap_or(&true),
+                            deepskies: deepskies_vec,
+                        },
+                    );
+                    if !sky_settings.deepskies_categories_active.contains_key(file_name) {
+                        sky_settings.deepskies_categories_active.insert(file_name.clone(), true);
+                    }
+                    if !theme.game_visuals.deepskies_colours.contains_key(file_name) {
+                        theme.game_visuals.deepskies_colours.insert(file_name.clone(), deepskies_colour);
                     }
                 }
             } else if id == "star names" {
@@ -411,14 +458,36 @@ impl CellestialSphere {
             } else if id == "markers" {
                 for [file_name, file_contents] in &data {
                     let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+                    let mut markers_colour = None;
+                    let mut markers_vec = Vec::new();
                     for marker_raw in reader.deserialize() {
                         let marker_raw: MarkerRaw = marker_raw?;
-                        let marker = Marker::from_raw(marker_raw, star_color);
-                        let entry = markers.entry(file_name.clone()).or_default();
-                        entry.push(marker);
-                        if !sky_settings.markers_categories_active.contains_key(file_name) {
-                            sky_settings.markers_categories_active.insert(file_name.clone(), true);
+                        let (marker, colour) = Marker::from_raw(marker_raw);
+                        if markers_colour.is_none() {
+                            markers_colour = colour;
                         }
+                        markers_vec.push(marker);
+                    }
+                    // Try to get the colour from the theme, then if the theme does not handle these markers, try to use the colour found in the markers declaration file. Only if that does not exist, use the default colour.
+                    let marker_colour = theme
+                        .game_visuals
+                        .markers_colours
+                        .get(file_name)
+                        .cloned()
+                        .unwrap_or(markers_colour.unwrap_or(theme.game_visuals.default_colour));
+                    markers.insert(
+                        file_name.clone(),
+                        Markers {
+                            colour: marker_colour,
+                            active: *sky_settings.markers_categories_active.get(file_name).unwrap_or(&true),
+                            markers: markers_vec,
+                        },
+                    );
+                    if !sky_settings.markers_categories_active.contains_key(file_name) {
+                        sky_settings.markers_categories_active.insert(file_name.clone(), true);
+                    }
+                    if !theme.game_visuals.markers_colours.contains_key(file_name) {
+                        theme.game_visuals.markers_colours.insert(file_name.clone(), marker_colour);
                     }
                 }
             }
@@ -463,6 +532,7 @@ impl CellestialSphere {
             lines,
             deepskies,
             markers,
+            game_markers: GameMarkers { active: true, markers: Vec::new() },
             star_names,
             constellations,
             zoom: 1.0,
@@ -516,9 +586,8 @@ impl CellestialSphere {
 
         self.line_renderers = HashMap::new();
         let mut active_line_groups = Vec::new();
-        for name in self.lines.keys() {
-            let active = self.sky_settings.lines_categories_active.entry(name.to_owned()).or_insert(true);
-            if !*active {
+        for (name, lines) in &self.lines {
+            if !lines.active {
                 continue;
             }
             active_line_groups.push(name.to_owned());
@@ -542,15 +611,21 @@ impl CellestialSphere {
 
         self.marker_renderers = HashMap::new();
         let mut active_markers_groups = Vec::new();
-        for name in self.markers.keys() {
-            let active = self.sky_settings.markers_categories_active.entry(name.to_owned()).or_insert(true);
-            if !*active {
+        for (name, markers) in &self.markers {
+            if !markers.active {
                 continue;
             }
             active_markers_groups.push(name.to_owned());
         }
         for name in active_markers_groups {
             self.init_single_renderer("markers", &name);
+        }
+        if self.game_markers.active {
+            self.init_single_renderer("markers", "game");
+        }
+
+        if self.game_markers.active {
+            self.init_single_renderer("markers", "game");
         }
     }
 
@@ -563,17 +638,26 @@ impl CellestialSphere {
         } else if category == "lines" {
             if let Some(lines) = self.lines.get(name) {
                 self.line_renderers
-                    .insert(name.to_string(), lines.iter().map(|line| line.get_renderer(self.rotation.matrix())).collect());
+                    .insert(name.to_string(), lines.lines.iter().map(|line| line.get_renderer(self.rotation.matrix(), lines.colour)).collect());
             }
         } else if category == "deepskies" {
             if let Some(deepskies) = self.deepskies.get(name) {
-                self.deepsky_renderers
-                    .insert(name.to_string(), deepskies.iter().map(|deepsky| deepsky.get_renderer(self.rotation.matrix())).collect());
+                self.deepsky_renderers.insert(
+                    name.to_string(),
+                    deepskies.deepskies.iter().map(|deepsky| deepsky.get_renderer(self.rotation.matrix(), deepskies.colour)).collect(),
+                );
             }
         } else if category == "markers" {
-            if let Some(markers) = self.markers.get(name) {
-                self.marker_renderers
-                    .insert(name.to_string(), markers.iter().filter_map(|marker| marker.get_renderer(self.rotation.matrix())).collect());
+            if name == "game" {
+                self.marker_renderers.insert(
+                    name.to_string(),
+                    self.game_markers.markers.iter().filter_map(|marker| marker.get_renderer(self.rotation.matrix())).collect(),
+                );
+            } else if let Some(markers) = self.markers.get(name) {
+                self.marker_renderers.insert(
+                    name.to_string(),
+                    markers.markers.iter().filter_map(|marker| marker.get_renderer(self.rotation.matrix(), markers.colour)).collect(),
+                );
             }
         }
     }

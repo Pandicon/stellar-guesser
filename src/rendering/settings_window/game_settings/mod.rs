@@ -33,8 +33,8 @@ impl Application {
                 GameSettingsSubWindow::Constellations => self.render_game_settings_constellations_subwindow(ui),
             });
         if tolerance_changed && self.game_handler.show_tolerance_marker() {
-            let markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions);
-            self.cellestial_sphere.markers.insert("game".to_string(), markers);
+            let markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions, &self.theme);
+            self.cellestial_sphere.game_markers.markers = markers;
             self.cellestial_sphere.init_single_renderer("markers", "game");
         }
     }

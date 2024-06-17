@@ -6,39 +6,46 @@ use crate::geometry;
 use geometry::get_point_vector;
 
 use crate::graphics;
-use graphics::parse_colour;
+use graphics::parse_colour_option;
 
 use super::renderer::CellestialSphere;
+
+pub struct SkyLines {
+    pub colour: Color32,
+    pub active: bool,
+    pub lines: Vec<SkyLine>,
+}
 
 pub struct SkyLine {
     pub ra_start: f32,
     pub dec_start: f32,
     pub ra_end: f32,
     pub dec_end: f32,
-    pub colour: Color32,
     pub width: f32,
 }
 
 impl SkyLine {
-    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>) -> LineRenderer {
+    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, colour: Color32) -> LineRenderer {
         LineRenderer::new(
             get_point_vector(self.ra_start, self.dec_start, rotation_matrix),
             get_point_vector(self.ra_end, self.dec_end, rotation_matrix),
-            self.colour,
+            colour,
             self.width,
         )
     }
 
-    pub fn from_raw(raw_line: SkyLineRaw, default_colour: Color32) -> Self {
-        let colour = parse_colour(raw_line.colour, default_colour);
-        Self {
-            ra_start: raw_line.ra_start,
-            dec_start: raw_line.dec_start,
-            ra_end: raw_line.ra_end,
-            dec_end: raw_line.dec_end,
+    pub fn from_raw(raw_line: SkyLineRaw) -> (Self, Option<Color32>) {
+        let colour = parse_colour_option(raw_line.colour);
+        (
+            Self {
+                ra_start: raw_line.ra_start,
+                dec_start: raw_line.dec_start,
+                ra_end: raw_line.ra_end,
+                dec_end: raw_line.dec_end,
+                width: raw_line.width,
+            },
             colour,
-            width: raw_line.width,
-        }
+        )
     }
 }
 

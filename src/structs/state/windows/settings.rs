@@ -71,7 +71,7 @@ impl AsRef<str> for SettingsSubWindow {
     fn as_ref(&self) -> &str {
         match *self {
             Self::Game => "Game settings",
-            Self::Sky => "Sky settings",
+            Self::Sky => "Sky and theme settings",
         }
     }
 }

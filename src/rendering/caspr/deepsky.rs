@@ -2,13 +2,16 @@ use egui::epaint::Color32;
 use nalgebra::{Matrix3, Vector3};
 use serde::Deserialize;
 
-use crate::geometry;
+use crate::{geometry, graphics::parse_colour_option};
 use geometry::get_point_vector;
 
-use crate::graphics;
-use graphics::parse_colour;
-
 use super::renderer::CellestialSphere;
+
+pub struct Deepskies {
+    pub colour: Color32,
+    pub active: bool,
+    pub deepskies: Vec<Deepsky>,
+}
 
 #[derive(Clone, Deserialize)]
 pub struct Deepsky {
@@ -23,7 +26,6 @@ pub struct Deepsky {
     pub dec: f32,
     pub mag: String,
     pub distance: f32,
-    pub colour: Color32,
     pub images: Vec<crate::structs::image_info::ImageInfo>,
 }
 
@@ -44,28 +46,30 @@ pub struct DeepskyRaw {
 }
 
 impl Deepsky {
-    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>) -> DeepskyRenderer {
-        DeepskyRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), self.colour)
+    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, colour: Color32) -> DeepskyRenderer {
+        DeepskyRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), colour)
     }
 
-    pub fn from_raw(raw_deepsky: DeepskyRaw, default_colour: Color32, images_data: Vec<crate::structs::image_info::ImageInfo>) -> Self {
+    pub fn from_raw(raw_deepsky: DeepskyRaw, images_data: Vec<crate::structs::image_info::ImageInfo>) -> (Self, Option<Color32>) {
         let names = raw_deepsky.names.map(|raw_names| raw_names.split(';').map(|s| s.to_owned()).collect());
-        let colour = parse_colour(raw_deepsky.colour, default_colour);
-        Self {
-            names,
-            messier: raw_deepsky.messier,
-            caldwell: raw_deepsky.caldwell,
-            ngc: raw_deepsky.ngc,
-            ic: raw_deepsky.ic,
-            object_type: raw_deepsky.object_type,
-            constellation: raw_deepsky.constellation,
-            ra: raw_deepsky.ra,
-            dec: raw_deepsky.dec,
-            mag: raw_deepsky.mag,
-            distance: raw_deepsky.distance,
+        let colour = parse_colour_option(raw_deepsky.colour);
+        (
+            Self {
+                names,
+                messier: raw_deepsky.messier,
+                caldwell: raw_deepsky.caldwell,
+                ngc: raw_deepsky.ngc,
+                ic: raw_deepsky.ic,
+                object_type: raw_deepsky.object_type,
+                constellation: raw_deepsky.constellation,
+                ra: raw_deepsky.ra,
+                dec: raw_deepsky.dec,
+                mag: raw_deepsky.mag,
+                distance: raw_deepsky.distance,
+                images: images_data,
+            },
             colour,
-            images: images_data,
-        }
+        )
     }
 }
 
