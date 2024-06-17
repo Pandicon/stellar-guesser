@@ -1,4 +1,4 @@
-use crate::{enums::GameStage, Application};
+use crate::{enums::{GameStage, RendererCategory}, Application};
 
 impl Application {
     pub fn render_game_settings_general_subwindow(&mut self, ui: &mut egui::Ui) {
@@ -15,7 +15,7 @@ impl Application {
             self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
 
             // Remove all game markers from the screen
-            self.cellestial_sphere.deinit_single_renderer("markers", "game");
+            self.cellestial_sphere.deinit_single_renderer(RendererCategory::Markers, "game");
             // Disable adding a game marker on click
             self.game_handler.add_marker_on_click = false;
         }

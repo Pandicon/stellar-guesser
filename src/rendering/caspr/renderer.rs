@@ -1,5 +1,5 @@
 use crate::{
-    enums::{LightPollution, StorageKeys},
+    enums::{LightPollution, RendererCategory, StorageKeys},
     rendering::themes::Theme,
     structs::graphics_settings::GraphicsSettings,
 };
@@ -581,7 +581,7 @@ impl CellestialSphere {
             active_star_groups.push(name.to_owned());
         }
         for name in active_star_groups {
-            self.init_single_renderer("stars", &name);
+            self.init_single_renderer(RendererCategory::Stars, &name);
         }
 
         self.line_renderers = HashMap::new();
@@ -593,7 +593,7 @@ impl CellestialSphere {
             active_line_groups.push(name.to_owned());
         }
         for name in active_line_groups {
-            self.init_single_renderer("lines", &name);
+            self.init_single_renderer(RendererCategory::Lines, &name);
         }
 
         self.deepsky_renderers = HashMap::new();
@@ -606,7 +606,7 @@ impl CellestialSphere {
             active_deepsky_groups.push(name.to_owned());
         }
         for name in active_deepsky_groups {
-            self.init_single_renderer("deepskies", &name);
+            self.init_single_renderer(RendererCategory::Deepskies, &name);
         }
 
         self.marker_renderers = HashMap::new();
@@ -618,59 +618,69 @@ impl CellestialSphere {
             active_markers_groups.push(name.to_owned());
         }
         for name in active_markers_groups {
-            self.init_single_renderer("markers", &name);
+            self.init_single_renderer(RendererCategory::Markers, &name);
         }
         if self.game_markers.active {
-            self.init_single_renderer("markers", "game");
+            self.init_single_renderer(RendererCategory::Markers, "game");
         }
 
         if self.game_markers.active {
-            self.init_single_renderer("markers", "game");
+            self.init_single_renderer(RendererCategory::Markers, "game");
         }
     }
 
-    pub fn init_single_renderer(&mut self, category: &str, name: &str) {
-        if category == "stars" {
-            if let Some(stars) = self.stars.get(name) {
-                self.star_renderers
-                    .insert(name.to_string(), stars.iter().map(|star| star.get_renderer(self.rotation.matrix())).collect());
+    pub fn init_single_renderer(&mut self, category: RendererCategory, name: &str) {
+        match category {
+            RendererCategory::Stars => {
+                if let Some(stars) = self.stars.get(name) {
+                    self.star_renderers
+                        .insert(name.to_string(), stars.iter().map(|star| star.get_renderer(self.rotation.matrix())).collect());
+                }
             }
-        } else if category == "lines" {
-            if let Some(lines) = self.lines.get(name) {
-                self.line_renderers
-                    .insert(name.to_string(), lines.lines.iter().map(|line| line.get_renderer(self.rotation.matrix(), lines.colour)).collect());
+            RendererCategory::Lines => {
+                if let Some(lines) = self.lines.get(name) {
+                    self.line_renderers
+                        .insert(name.to_string(), lines.lines.iter().map(|line| line.get_renderer(self.rotation.matrix(), lines.colour)).collect());
+                }
             }
-        } else if category == "deepskies" {
-            if let Some(deepskies) = self.deepskies.get(name) {
-                self.deepsky_renderers.insert(
-                    name.to_string(),
-                    deepskies.deepskies.iter().map(|deepsky| deepsky.get_renderer(self.rotation.matrix(), deepskies.colour)).collect(),
-                );
+            RendererCategory::Deepskies => {
+                if let Some(deepskies) = self.deepskies.get(name) {
+                    self.deepsky_renderers.insert(
+                        name.to_string(),
+                        deepskies.deepskies.iter().map(|deepsky| deepsky.get_renderer(self.rotation.matrix(), deepskies.colour)).collect(),
+                    );
+                }
             }
-        } else if category == "markers" {
-            if name == "game" {
-                self.marker_renderers.insert(
-                    name.to_string(),
-                    self.game_markers.markers.iter().filter_map(|marker| marker.get_renderer(self.rotation.matrix())).collect(),
-                );
-            } else if let Some(markers) = self.markers.get(name) {
-                self.marker_renderers.insert(
-                    name.to_string(),
-                    markers.markers.iter().filter_map(|marker| marker.get_renderer(self.rotation.matrix(), markers.colour)).collect(),
-                );
+            RendererCategory::Markers => {
+                if name == "game" {
+                    self.marker_renderers.insert(
+                        name.to_string(),
+                        self.game_markers.markers.iter().filter_map(|marker| marker.get_renderer(self.rotation.matrix())).collect(),
+                    );
+                } else if let Some(markers) = self.markers.get(name) {
+                    self.marker_renderers.insert(
+                        name.to_string(),
+                        markers.markers.iter().filter_map(|marker| marker.get_renderer(self.rotation.matrix(), markers.colour)).collect(),
+                    );
+                }
             }
         }
     }
 
-    pub fn deinit_single_renderer(&mut self, category: &str, name: &str) {
-        if category == "stars" {
-            self.star_renderers.insert(name.to_string(), Vec::new());
-        } else if category == "lines" {
-            self.line_renderers.insert(name.to_string(), Vec::new());
-        } else if category == "deepskies" {
-            self.deepsky_renderers.insert(name.to_string(), Vec::new());
-        } else if category == "markers" {
-            self.marker_renderers.insert(name.to_string(), Vec::new());
+    pub fn deinit_single_renderer(&mut self, category: RendererCategory, name: &str) {
+        match category {
+            RendererCategory::Stars => {
+                self.star_renderers.insert(name.to_string(), Vec::new());
+            }
+            RendererCategory::Lines => {
+                self.line_renderers.insert(name.to_string(), Vec::new());
+            }
+            RendererCategory::Deepskies => {
+                self.deepsky_renderers.insert(name.to_string(), Vec::new());
+            }
+            RendererCategory::Markers => {
+                self.marker_renderers.insert(name.to_string(), Vec::new());
+            }
         }
     }
 

@@ -3,7 +3,11 @@ use std::collections::HashSet;
 use egui::epaint::Color32;
 
 use crate::{
-    enums::LightPollution, files, public_constants, renderer::CellestialSphere, rendering::caspr::markers::game_markers::GameMarker, structs::state::windows::settings::SkySettingsSubWindow,
+    enums::{LightPollution, RendererCategory},
+    files, public_constants,
+    renderer::CellestialSphere,
+    rendering::caspr::markers::game_markers::GameMarker,
+    structs::state::windows::settings::SkySettingsSubWindow,
     Application,
 };
 
@@ -175,10 +179,10 @@ impl Application {
         }
 
         for name in &newly_active_star_groups {
-            self.cellestial_sphere.init_single_renderer("stars", name);
+            self.cellestial_sphere.init_single_renderer(RendererCategory::Stars, name);
         }
         for name in &newly_inactive_star_groups {
-            self.cellestial_sphere.deinit_single_renderer("stars", name);
+            self.cellestial_sphere.deinit_single_renderer(RendererCategory::Stars, name);
         }
     }
 
@@ -212,10 +216,10 @@ impl Application {
             self.theme.game_visuals.deepskies_colours.insert(name.clone(), deepskies_set.colour);
         }
         for name in &deepsky_groups_to_init {
-            self.cellestial_sphere.init_single_renderer("deepskies", name);
+            self.cellestial_sphere.init_single_renderer(RendererCategory::Deepskies, name);
         }
         for name in &deepsky_groups_to_deinit {
-            self.cellestial_sphere.deinit_single_renderer("deepskies", name);
+            self.cellestial_sphere.deinit_single_renderer(RendererCategory::Deepskies, name);
         }
     }
 
@@ -241,10 +245,10 @@ impl Application {
             self.theme.game_visuals.lines_colours.insert(name.clone(), lines_set.colour);
         }
         for name in &line_groups_to_init {
-            self.cellestial_sphere.init_single_renderer("lines", name);
+            self.cellestial_sphere.init_single_renderer(RendererCategory::Lines, name);
         }
         for name in &line_groups_to_deinit {
-            self.cellestial_sphere.deinit_single_renderer("lines", name);
+            self.cellestial_sphere.deinit_single_renderer(RendererCategory::Lines, name);
         }
     }
 
@@ -271,7 +275,7 @@ impl Application {
             for marker in self.cellestial_sphere.game_markers.markers.iter_mut() {
                 marker.colour = GameMarker::get_colour(marker.marker_type, &self.theme.game_visuals.game_markers_colours);
             }
-            self.cellestial_sphere.init_single_renderer("markers", "game");
+            self.cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
         }
         ui.separator();
         let mut marker_groups_to_init = HashSet::new();
@@ -295,10 +299,10 @@ impl Application {
             self.theme.game_visuals.markers_colours.insert(name.clone(), markers_set.colour);
         }
         for name in &marker_groups_to_init {
-            self.cellestial_sphere.init_single_renderer("markers", name);
+            self.cellestial_sphere.init_single_renderer(RendererCategory::Markers, name);
         }
         for name in &marker_groups_to_deinit {
-            self.cellestial_sphere.deinit_single_renderer("markers", name);
+            self.cellestial_sphere.deinit_single_renderer(RendererCategory::Markers, name);
         }
     }
 }

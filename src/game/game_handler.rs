@@ -1,7 +1,7 @@
 use std::{collections::HashMap, f32::consts::PI};
 
 use crate::{
-    enums::{self, GameStage, StorageKeys},
+    enums::{self, GameStage, RendererCategory, StorageKeys},
     game::questions_settings,
     renderer::CellestialSphere,
     rendering::{
@@ -641,7 +641,7 @@ impl GameHandler {
             }
             Question::NoMoreQuestions => {}
         }
-        cellestial_sphere.init_single_renderer("markers", "game");
+        cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
     }
 
     pub fn next_question(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme) {
@@ -782,7 +782,7 @@ impl GameHandler {
                 Question::NoMoreQuestions => false,
             };
             cellestial_sphere.game_markers.markers = markers;
-            cellestial_sphere.init_single_renderer("markers", "game");
+            cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
         }
         self.stage = GameStage::Guessing;
     }

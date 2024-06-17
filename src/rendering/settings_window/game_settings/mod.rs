@@ -1,4 +1,4 @@
-use crate::{structs::state::windows::settings::GameSettingsSubWindow, Application};
+use crate::{enums::RendererCategory, structs::state::windows::settings::GameSettingsSubWindow, Application};
 
 pub mod constellations;
 pub mod general;
@@ -35,7 +35,7 @@ impl Application {
         if tolerance_changed && self.game_handler.show_tolerance_marker() {
             let markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions, &self.theme);
             self.cellestial_sphere.game_markers.markers = markers;
-            self.cellestial_sphere.init_single_renderer("markers", "game");
+            self.cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
         }
     }
 }

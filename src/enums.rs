@@ -149,3 +149,10 @@ impl ScreenWidth {
         Self::Normal
     }
 }
+
+pub enum RendererCategory {
+    Stars,
+    Lines,
+    Deepskies,
+    Markers
+}
