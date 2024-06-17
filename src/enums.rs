@@ -154,5 +154,5 @@ pub enum RendererCategory {
     Stars,
     Lines,
     Deepskies,
-    Markers
+    Markers,
 }
