@@ -80,7 +80,8 @@ fn main() {
         vec![]
     };
     const_declarations_intermediate.push(const_declaration!(pub BUILD_DATE = date));
-    fs::write(dest_path, const_declarations_intermediate.join("\n")).unwrap();
+    const_declarations_intermediate.push(const_declaration!(pub BUILD_PROFILE = std::env::var("PROFILE").expect("The 'PROFILE' environment variable is missing")));
+    fs::write(dest_path, const_declarations_intermediate.join("\n")).expect("Failed to save the const declarations");
 
     if std::env::var_os("CARGO_CFG_WINDOWS").is_some() {
         let mut res = winres::WindowsResource::new();
