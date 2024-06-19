@@ -1,11 +1,12 @@
 use crate::{
     enums::{LightPollution, RendererCategory, StorageKeys},
+    geometry::{intersections, LineSegment, Rectangle},
     rendering::themes::Theme,
     structs::graphics_settings::GraphicsSettings,
 };
 use egui::epaint::Color32;
 use nalgebra::{Rotation3, Vector3};
-use std::{collections::HashMap, error::Error, fs};
+use std::{collections::HashMap, error::Error, f32::consts::PI, fs};
 
 const DEEPSKIES_FOLDER: &str = "./sphere/deepsky";
 const LINES_FOLDER: &str = "./sphere/lines";
@@ -50,6 +51,8 @@ pub struct CellestialSphere {
     pub star_names: HashMap<String, Vec<StarName>>,
     pub constellations: HashMap<String, Constellation>,
     pub zoom: f32,
+    pub fov: f32,
+    pub camera_z: f32,
     star_renderers: HashMap<String, Vec<StarRenderer>>,
     line_renderers: HashMap<String, Vec<LineRenderer>>,
     deepsky_renderers: HashMap<String, Vec<DeepskyRenderer>>,
@@ -77,7 +80,20 @@ impl CellestialSphere {
         let (start_point, is_start_within_bounds) = project_point(start, self.zoom, self.viewport_rect);
         let (end_point, is_end_within_bounds) = project_point(end, self.zoom, self.viewport_rect);
 
-        if is_start_within_bounds || is_end_within_bounds {
+        let screen_rect = Rectangle::from(self.viewport_rect);
+
+        // Allow the whole half sphere or what is within the FOV (whichever is greater)
+        // This gets rid of lines on the other half of the sphere while also not removing lines that should be visible at large zooms
+        let modified_camera_z = self.camera_z.max(0.0);
+
+        // Neither the starting point nor the ending point is visible AND either of them is behind the camera
+        // This avoids lines from the part of the sky that is behind us (north pole when looking at the south pole) being drawn over the screen
+        if !(is_start_within_bounds || is_end_within_bounds) && (modified_camera_z < start.z || modified_camera_z < end.z) {
+            return;
+        }
+        // Neither the starting point nor the ending point is behind the camera OR either of them is on the screen (out of the FOV cone, but within the screen rectangle) -> the line should be drawn
+        // TODO: Fix it when the line crosses a corner of the screen - both of the end points go out of the screen and behind the camera while a part of the line should still be visible
+        if is_start_within_bounds || is_end_within_bounds || intersections::rect_segment(screen_rect, LineSegment::new(start_point, end_point)) {
             painter.line_segment([start_point, end_point], egui::Stroke::new(width, colour));
         }
     }
@@ -526,6 +542,8 @@ impl CellestialSphere {
         let light_pollution_place = CellestialSphere::mag_settings_to_light_pollution_place(sky_settings.mag_offset, sky_settings.mag_scale, &light_pollution_place_to_mag);
 
         let viewport_rect = egui::Rect::from_two_pos(egui::pos2(0.0, 0.0), egui::pos2(0.0, 0.0));
+        let zoom = 1.0;
+        let fov = Self::zoom_to_fov(zoom);
         Ok(Self {
             sky_settings,
             stars: catalog,
@@ -535,7 +553,9 @@ impl CellestialSphere {
             game_markers: GameMarkers { active: true, markers: Vec::new() },
             star_names,
             constellations,
-            zoom: 1.0,
+            zoom,
+            fov,
+            camera_z: Self::fov_to_camera_z(fov),
             star_renderers: HashMap::new(),
             line_renderers: HashMap::new(),
             deepsky_renderers: HashMap::new(),
@@ -555,12 +575,22 @@ impl CellestialSphere {
         let future_zoom = self.zoom + velocity * self.zoom;
         //A check is needed since negative zoom breaks everything
         if ZOOM_CAP > future_zoom && future_zoom > 0.0 {
-            self.zoom = future_zoom
+            self.zoom = future_zoom;
+            self.fov = Self::zoom_to_fov(self.zoom);
+            self.camera_z = Self::fov_to_camera_z(self.fov);
         }
     }
 
     pub fn get_zoom(&self) -> f32 {
         self.zoom
+    }
+
+    pub fn zoom_to_fov(zoom: f32) -> f32 {
+        4.0 * (1.0 / zoom).atan() / PI * 180.0
+    }
+
+    pub fn fov_to_camera_z(fov_deg: f32) -> f32 {
+        -((fov_deg / 180.0 * PI) / 2.0).cos()
     }
 
     pub fn init(&mut self) {

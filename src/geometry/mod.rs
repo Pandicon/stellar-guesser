@@ -1,11 +1,75 @@
+use egui::Pos2;
 use nalgebra::{Matrix3, Vector2, Vector3};
 use rand::{rngs::ThreadRng, Rng};
 use std::f32::consts::PI;
 
 use crate::renderer::CellestialSphere;
 
+pub mod intersections;
+
 // const POLYGONLIMIT: f32 = 180.0;
 const VIEWPORT_OFFSET: f32 = 10.0;
+
+#[derive(Clone, Copy)]
+pub struct LineSegment {
+    pub start: Pos2,
+    pub end: Pos2,
+}
+
+impl LineSegment {
+    pub fn new(start: Pos2, end: Pos2) -> Self {
+        Self { start, end }
+    }
+}
+
+impl From<[[f32; 2]; 2]> for LineSegment {
+    fn from(value: [[f32; 2]; 2]) -> Self {
+        Self {
+            start: Pos2::from(value[0]),
+            end: Pos2::from(value[1]),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct Rectangle {
+    pub top_left: Pos2,
+    pub top_right: Pos2,
+    pub bottom_left: Pos2,
+    pub bottom_right: Pos2,
+}
+
+impl Rectangle {
+    pub fn sides(&self) -> [LineSegment; 4] {
+        [
+            LineSegment::new(self.top_left, self.bottom_left),
+            LineSegment::new(self.bottom_left, self.bottom_right),
+            LineSegment::new(self.bottom_right, self.top_right),
+            LineSegment::new(self.top_right, self.top_left),
+        ]
+    }
+}
+
+impl From<egui::Rect> for Rectangle {
+    fn from(value: egui::Rect) -> Self {
+        let mut left_x = value.min.x;
+        let mut right_x = value.max.x;
+        if left_x > right_x {
+            std::mem::swap(&mut left_x, &mut right_x);
+        }
+        let mut top_y = value.min.y;
+        let mut bottom_y = value.max.y;
+        if bottom_y > top_y {
+            std::mem::swap(&mut top_y, &mut bottom_y);
+        }
+        Self {
+            top_left: Pos2::new(left_x, top_y),
+            top_right: Pos2::new(right_x, top_y),
+            bottom_left: Pos2::new(left_x, bottom_y),
+            bottom_right: Pos2::new(right_x, bottom_y),
+        }
+    }
+}
 
 pub fn is_in_rect<T: PartialOrd>(point: [T; 2], rect: [[T; 2]; 2]) -> bool {
     let [upper_left, bottom_right] = rect;
@@ -109,14 +173,11 @@ pub fn angular_distance(initial_position: (f32, f32), final_position: (f32, f32)
 pub fn generate_random_point(rng: &mut ThreadRng) -> (f32, f32) {
     (rng.gen_range(0.0..360.0), rng.gen_range(-90.0..90.0))
 }
-pub fn ccw(a: (f32, f32), b: (f32, f32), c: (f32, f32)) -> bool {
-    let (ax, ay) = a;
-    let (bx, by) = b;
-    let (cx, cy) = c;
-    (cy - ay) * (bx - ax) > (by - ay) * (cx - ax)
+pub fn ccw(a: Pos2, b: Pos2, c: Pos2) -> bool {
+    (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x)
 }
-pub fn intersect(a: (f32, f32), b: (f32, f32), c: (f32, f32), d: (f32, f32)) -> bool {
-    ccw(a, c, d) != ccw(b, c, d) && ccw(a, b, c) != ccw(a, b, d)
+pub fn intersect(a: LineSegment, b: LineSegment) -> bool {
+    ccw(a.start, b.start, b.end) != ccw(a.end, b.start, b.end) && ccw(a.start, a.end, b.start) != ccw(a.start, a.end, b.end)
 }
 
 pub fn is_inside_polygon(polygon: Vec<(f32, f32)>, point: (f32, f32), meridian_constellation: bool) -> bool {
@@ -129,11 +190,14 @@ pub fn is_inside_polygon(polygon: Vec<(f32, f32)>, point: (f32, f32), meridian_c
         let (fra, fdec) = endpoint;
         #[allow(clippy::collapsible_else_if)] // I believe this is more readable
         if meridian_constellation {
-            if intersect(((ira + 180.0) % 360.0, idec), ((fra + 180.0) % 360.0, fdec), ((pra + 180.0) % 360.0, pdec), (0.0, 0.0)) {
+            if intersect(
+                LineSegment::from([[(ira + 180.0) % 360.0, idec], [(fra + 180.0) % 360.0, fdec]]),
+                LineSegment::from([[(pra + 180.0) % 360.0, pdec], [0.0, 0.0]]),
+            ) {
                 crossed += 1;
             }
         } else {
-            if intersect((ira, idec), (fra, fdec), (pra, pdec), (0.0, 0.0)) {
+            if intersect(LineSegment::from([[ira, idec], [fra, fdec]]), LineSegment::from([[pra, pdec], [0.0, 0.0]])) {
                 crossed += 1;
             }
         }

@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 use crate::{enums::LightPollution, Application};
 
 impl Application {
@@ -7,7 +5,7 @@ impl Application {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                    ui.label(format!("FOV: {:.3}°", 4.0 * (1.0 / self.cellestial_sphere.get_zoom()).atan() / PI * 180.0));
+                    ui.label(format!("FOV: {:.3}°", self.cellestial_sphere.fov));
                     if !self.screen_width.very_narrow() {
                         render_left_controls(self, ui);
                     }
