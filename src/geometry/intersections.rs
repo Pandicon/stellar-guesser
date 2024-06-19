@@ -14,7 +14,7 @@ pub fn segment_segment(a: LineSegment, b: LineSegment) -> bool {
     }
     let r1 = top1 / bottom;
     let r2 = top2 / bottom;
-    return 0.0 <= r1 && r1 <= 1.0 && 0.0 <= r2 && r2 <= 1.0;
+    (0.0..=1.0).contains(&r1) && (0.0..=1.0).contains(&r2)
 }
 
 pub fn rect_segment(rect: Rectangle, segment: LineSegment) -> bool {
