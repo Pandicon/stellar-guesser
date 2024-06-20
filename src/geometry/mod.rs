@@ -171,7 +171,10 @@ pub fn angular_distance(initial_position: (f32, f32), final_position: (f32, f32)
     // (i_dec.cos() * f_dec.cos() + i_dec.sin() * i_dec.sin() * (i_ra - f_ra).cos()).acos()
 }
 pub fn generate_random_point(rng: &mut ThreadRng) -> (f32, f32) {
-    (rng.gen_range(0.0..360.0), rng.gen_range(-90.0..90.0))
+    // Generate a random right ascension as normal
+    // Then generate a height from the dec = 0 plane and compute the declination from that (since having a uniform distribution of declinations results in higher points density at the poles)
+    // This works since it essentially generates a random point on a cyllinder and then projects it onto the sphere using an "inverse orthographic projection", which conserves areas and therefore also the fact that the points are uniformly distributed across the area.
+    (rng.gen_range(0.0..360.0), (90.0 - rng.gen_range(-1.0_f32..=1.0_f32).acos() * 180.0 / PI).clamp(-90.0, 90.0))
 }
 pub fn ccw(a: Pos2, b: Pos2, c: Pos2) -> bool {
     (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x)
