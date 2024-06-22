@@ -7,10 +7,12 @@ resolver = "2"
 
 [lib]
 crate-type = ["staticlib", "cdylib", "rlib"]
+bench = false
 
 [[bin]]
 name = "stellar-guesser-desktop"
 path = "gen/bin/desktop.rs"
+bench = false
 
 [package.metadata.cargo-android]
 app-dependencies = ["com.google.android.material:material:1.8.0"]
@@ -51,9 +53,16 @@ chrono = "0.4.26"
 const-gen = "1.0.0"
 winres = "0.1.12"
 
+[dev-dependencies]
+criterion = "0.5"
+
 [profile.dev]
 debug-assertions = false
 [profile.dev.package.stellar-guesser]
 debug-assertions = true
 [profile.dev.package.ring]
 debug-assertions = true
+
+[[bench]]
+name = "intersections"
+harness = false
