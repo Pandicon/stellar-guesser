@@ -554,9 +554,9 @@ impl GameHandler {
                 self.used_questions.push(self.current_question);
             }
             Question::RAQuestion { ra, .. } => {
-                let answer_dist: f32 = match self.answer.parse() {
+                let answer_dist: f32 = match self.answer.parse::<f32>() {
                     Ok(answer) => {
-                        self.answer_review_text_heading = format!("You were {:.1}h away!", (answer - ra / 360.0 * 24.0)).abs();
+                        self.answer_review_text_heading = format!("You were {:.1}h away!", (answer - ra).abs() / 360.0 * 24.0);
 
                         self.answer_review_text = format!("The real right ascension was {:.1}h", ra / 360.0 * 24.0);
                         answer
@@ -583,7 +583,7 @@ impl GameHandler {
                 self.used_questions.push(self.current_question);
             }
             Question::DECQuestion { dec, .. } => {
-                let answer_dist: f32 = match self.answer.parse() {
+                let answer_dist: f32 = match self.answer.parse::<f32>() {
                     Ok(answer) => {
                         self.answer_review_text_heading = format!("You were {:.1}° away!", (answer - dec).abs());
 
