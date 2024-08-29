@@ -20,7 +20,7 @@ const ZOOM_CAP: f32 = 100.0;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 use crate::{SKY_DATA_FILES, SKY_DATA_LISTS};
 
-const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague), (4.2, 0.5, LightPollution::AverageVillage)];
+const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague), (4.5, 0.8, LightPollution::AverageVillage)];
 
 use crate::geometry;
 use geometry::{cartesian_to_spherical, cast_onto_sphere, is_inside_polygon, project_point};

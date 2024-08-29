@@ -556,7 +556,7 @@ impl GameHandler {
             Question::RAQuestion { ra, .. } => {
                 let answer_dist: f32 = match self.answer.parse::<f32>() {
                     Ok(answer) => {
-                        self.answer_review_text_heading = format!("You were {:.1}h away!", (answer - ra).abs() / 360.0 * 24.0);
+                        self.answer_review_text_heading = format!("You were {:.1}h away!", (answer - ra/ 360.0 * 24.0).abs() );
 
                         self.answer_review_text = format!("The real right ascension was {:.1}h", ra / 360.0 * 24.0);
                         answer
@@ -571,11 +571,11 @@ impl GameHandler {
                 let error = (ra - answer_dist / 24.0 * 360.0).abs();
 
                 if self.game_settings.is_scored_mode {
-                    if error < 3.0 {
+                    if error < 0.1 {
                         self.score += 3;
-                    } else if error < 5.0 {
+                    } else if error < 0.3 {
                         self.score += 2;
-                    } else if error < 10.0 {
+                    } else if error < 0.7 {
                         self.score += 1;
                     }
                     self.possible_score += 3;
