@@ -53,6 +53,15 @@ impl Application {
             }
         }
 
+        let mut fonts = egui::FontDefinitions::default();
+        fonts
+            .font_data
+            .insert("inter_medium".to_owned(), egui::FontData::from_static(include_bytes!("../assets/fonts/inter/Inter-Medium.otf"))); // .ttf and .otf supported
+
+        // Put the Inter Medium font first (highest priority):
+        fonts.families.get_mut(&egui::FontFamily::Proportional).unwrap().insert(0, "inter_medium".to_owned());
+        ctx.set_fonts(fonts);
+
         let mut time_spent_start = 0;
         let mut theme = themes::Theme::dark(); // Default in case the restored theme does not exist
         let mut graphics_settings = graphics_settings::GraphicsSettings::default(); // Default in case there are no saved graphics settings
