@@ -1,0 +1,4 @@
+{
+	"content_server_url": "http://127.0.0.1:3876",
+	"main_server_url": "http://127.0.0.1:3877"
+}

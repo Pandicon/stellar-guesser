@@ -19,6 +19,7 @@ pub use public_constants::*;
 pub use rendering::caspr::renderer;
 
 pub mod application;
+pub mod config;
 pub mod enums;
 pub mod files;
 pub mod game;
@@ -27,6 +28,7 @@ pub mod graphics;
 pub mod input;
 mod public_constants;
 pub mod rendering;
+pub mod server_communication;
 pub mod storage;
 pub mod structs;
 mod tests;
@@ -36,6 +38,13 @@ pub const PROJECT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 #[cfg(target_os = "windows")]
 const ICON_PATH: &str = "./ico.png";
+
+#[cfg(target_os = "android")]
+pub const PLATFORM: &str = "android";
+#[cfg(target_os = "windows")]
+pub const PLATFORM: &str = "windows";
+
+pub static CONFIG: once_cell::sync::Lazy<config::Config> = once_cell::sync::Lazy::new(config::get_config);
 
 include!(concat!(env!("OUT_DIR"), "/const_gen.rs"));
 
@@ -104,6 +113,7 @@ fn create_window<T>(event_loop: &EventLoopWindowTarget<T>, state: &mut State, pa
 }
 
 fn _main(event_loop: EventLoop<Event>) {
+    let _main_server_url = &CONFIG.main_server_url; // Force the config to load at the start
     let ctx = egui::Context::default();
     let repaint_signal = RepaintSignal(std::sync::Arc::new(std::sync::Mutex::new(event_loop.create_proxy())));
     ctx.set_request_repaint_callback(move |_| {

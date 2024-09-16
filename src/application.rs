@@ -1,7 +1,7 @@
 use crate::enums::{self, ScreenWidth};
 use crate::rendering::caspr::sky_settings;
 use crate::rendering::themes::{self, Theme, ThemesHandler};
-use crate::{files, public_constants};
+use crate::{files, public_constants, structs};
 
 use crate::renderer::CellestialSphere;
 use crate::structs::graphics_settings;
@@ -13,7 +13,10 @@ use crate::game::game_handler::{self, GameHandler};
 use crate::{
     enums::StorageKeys,
     input,
-    structs::{frames_handler, state},
+    structs::{
+        frames_handler,
+        state::{self, threads_communication},
+    },
 };
 
 pub struct Application {
@@ -31,7 +34,7 @@ pub struct Application {
     pub themes: ThemesHandler,
 
     pub authors: String,
-    pub version: String,
+    pub version: structs::version_information::VersionInformation,
 
     pub last_state_save: std::time::Instant,
     pub last_state_save_to_disk: std::time::Instant,
@@ -39,6 +42,8 @@ pub struct Application {
     pub state_save_to_disk_interval: std::time::Duration,
 
     pub screen_width: ScreenWidth,
+
+    pub threads_communication: threads_communication::ThreadsCommunication,
 }
 
 impl Application {
@@ -116,7 +121,7 @@ impl Application {
             themes,
 
             authors,
-            version,
+            version: structs::version_information::VersionInformation::only_current(version),
 
             last_state_save: std::time::Instant::now(),
             last_state_save_to_disk: std::time::Instant::now(),
@@ -124,6 +129,8 @@ impl Application {
             state_save_to_disk_interval: std::time::Duration::from_secs(60),
 
             screen_width: ScreenWidth::from_width(ctx.screen_rect().size().x),
+
+            threads_communication: threads_communication::ThreadsCommunication::default(),
         }
     }
 
@@ -138,6 +145,7 @@ impl Application {
         self.screen_width = ScreenWidth::from_width(ctx.screen_rect().size().x);
         let cursor_within_central_panel = self.render(ctx);
         self.handle_input(cursor_within_central_panel, ctx);
+        self.receive_threads_messages();
         self.frames_handler.handle();
         self.frames_handler.last_frame = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
         ctx.request_repaint();
