@@ -21,17 +21,36 @@ impl Application {
             if let Ok(response_res) = check_updates_setup.receiver.try_recv() {
                 match response_res {
                     Ok(response) => {
+                        match check_updates_setup.show_popup {
+                            CheckUpdatesShowPopup::OnFoundUpdate => {
+                                if response.newer_version_exists {
+                                    self.toasts
+                                        .info(format!("An update to version {} is available!", response.newest_found_version))
+                                        .set_duration(Some(std::time::Duration::from_secs(15)));
+                                }
+                            }
+                            CheckUpdatesShowPopup::IfInfoWindowClosed => {
+                                if !self.state.windows.app_info.opened {
+                                    if response.newer_version_exists {
+                                        self.toasts
+                                            .info(format!("An update to version {} is available!", response.newest_found_version))
+                                            .set_duration(Some(std::time::Duration::from_secs(15)));
+                                    } else {
+                                        self.toasts.info("No updates found.").set_duration(Some(std::time::Duration::from_secs(15)));
+                                    }
+                                }
+                            }
+                        }
+
                         self.version.update_available = Some(response.newer_version_exists);
                         self.version.latest_version = Some(response.newest_version);
                         self.version.latest_released_version = Some(response.newest_found_version);
 
                         self.threads_communication.check_updates = None;
-
-                        // TODO: Show a pop-up informing about the result, based on the setting
                     }
                     Err(err) => {
                         log::error!("Failed to fetch update information: {}", err);
-                        // TODO: Show a pop-up informing about the error
+                        self.toasts.error("Failed to fetch update information").set_duration(Some(std::time::Duration::from_secs(15)));
                     }
                 }
             }

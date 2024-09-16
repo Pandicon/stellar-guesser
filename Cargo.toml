@@ -26,6 +26,7 @@ csv = "1.2.2"
 directories-next = "2.0.0"
 egui = "0.25"
 egui_extras = { version = "0.25", features = ["all_loaders", "image"] }
+egui-notify = "0.12.0"                                                   # It depends on egui itself, so the version of egui used by this app and by egui-notify have to match
 egui-wgpu = { version = "0.25", features = ["winit"] }
 egui-winit = { version = "0.25", default-features = false }
 image = { version = "0.24", features = ["jpeg", "png", "webp"] }

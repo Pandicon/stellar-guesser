@@ -1,7 +1,7 @@
 use crate::enums::{self, ScreenWidth};
 use crate::rendering::caspr::sky_settings;
 use crate::rendering::themes::{self, Theme, ThemesHandler};
-use crate::{files, public_constants, structs};
+use crate::{files, public_constants, server_communication, structs};
 
 use crate::renderer::CellestialSphere;
 use crate::structs::graphics_settings;
@@ -44,6 +44,8 @@ pub struct Application {
     pub screen_width: ScreenWidth,
 
     pub threads_communication: threads_communication::ThreadsCommunication,
+
+    pub toasts: egui_notify::Toasts,
 }
 
 impl Application {
@@ -106,7 +108,7 @@ impl Application {
 
         let mut cellestial_sphere = CellestialSphere::load(storage, &mut theme).unwrap();
         cellestial_sphere.init();
-        Self {
+        let mut app = Self {
             input: input::Input::default(),
             state,
 
@@ -131,7 +133,16 @@ impl Application {
             screen_width: ScreenWidth::from_width(ctx.screen_rect().size().x),
 
             threads_communication: threads_communication::ThreadsCommunication::default(),
-        }
+
+            toasts: egui_notify::Toasts::default().with_anchor(egui_notify::Anchor::BottomRight),
+        };
+        server_communication::check_for_updates::check_for_updates(
+            &mut app.threads_communication,
+            crate::PLATFORM,
+            crate::VERSION,
+            threads_communication::CheckUpdatesShowPopup::OnFoundUpdate,
+        );
+        app
     }
 
     pub fn update(&mut self, ctx: &egui::Context) {
@@ -146,6 +157,7 @@ impl Application {
         let cursor_within_central_panel = self.render(ctx);
         self.handle_input(cursor_within_central_panel, ctx);
         self.receive_threads_messages();
+        self.toasts.show(ctx);
         self.frames_handler.handle();
         self.frames_handler.last_frame = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
         ctx.request_repaint();
