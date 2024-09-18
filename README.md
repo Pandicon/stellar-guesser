@@ -15,5 +15,7 @@ To change the app id or version, go to `./gen/android/app/` and find the `build.
 
 To change the app icon, go to `./gen/android/app/src/main/res/` and change out the icon in each of the `mipmap-...` folders. Also delete/move out the `drawable`, `drawable-v24`, and `mipmap-anydpi-v26` folders (the ones with xml files in them), or find a way to replace those too.
 
+Also in `./gen/android/app/src/main/`, see the `AndroidManifest.xml` file and add in a line containing `<uses-permission android:name="android.permission.INTERNET"/>` - this way the app will be able to access the internet. It should go inside the `manifest` tag, but outside the `application` tag.
+
 ## Credits
 The native events handling and window creation was generated from the [agdk-egui example](https://github.com/rust-mobile/rust-android-examples).

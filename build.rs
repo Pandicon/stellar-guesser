@@ -30,6 +30,7 @@ fn main() {
     ];
 
     let target_os = std::env::var_os("CARGO_CFG_TARGET_OS").unwrap_or("_".into());
+    let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     let mut const_declarations_intermediate = if target_os == "android" || target_os == "ios" {
         let content_folder = [
             ["deepskies", DEEPSKIES_FOLDER],
@@ -82,6 +83,35 @@ fn main() {
     const_declarations_intermediate.push(const_declaration!(pub BUILD_DATE = date));
     const_declarations_intermediate.push(const_declaration!(pub BUILD_PROFILE = std::env::var("PROFILE").expect("The 'PROFILE' environment variable is missing")));
     fs::write(dest_path, const_declarations_intermediate.join("\n")).expect("Failed to save the const declarations");
+
+    if target_os == "android" && false {
+		panic!("AAA");
+		// Link against the math library
+		println!("cargo:rustc-link-lib=m");
+        println!("cargo:rustc-link-search=native=C:/Users/Uzivatel/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/aarch64-linux-android");
+        // Specify the directory containing your custom OpenSSL libraries
+        match target_arch.as_str() {
+            "aarch64" => {
+                println!("cargo:rustc-link-search=native=./build_libs/openssl/aarch64");
+            }
+            "arm" => {
+                println!("cargo:rustc-link-search=native=./build_libs/openssl/armv7");
+            }
+            "x86_64" => {
+                println!("cargo:rustc-link-search=native=./build_libs/openssl/x86_64");
+            }
+            "x86" => {
+                println!("cargo:rustc-link-search=native=./build_libs/openssl/i686");
+            }
+            _ => {
+                panic!("Unsupported android architecture: {}", target_arch);
+            }
+        }
+
+		// Link against the OpenSSL libraries
+		println!("cargo:rustc-link-lib=ssl");
+		println!("cargo:rustc-link-lib=crypto");
+    }
 
     if std::env::var_os("CARGO_CFG_WINDOWS").is_some() {
         let mut res = winres::WindowsResource::new();
