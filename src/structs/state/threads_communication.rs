@@ -51,6 +51,8 @@ impl Application {
                     Err(err) => {
                         log::error!("Failed to fetch update information: {}", err);
                         self.toasts.error("Failed to fetch update information").set_duration(Some(std::time::Duration::from_secs(15)));
+
+                        self.threads_communication.check_updates = None;
                     }
                 }
             }
