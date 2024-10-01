@@ -59,6 +59,15 @@ impl SphericalPoint {
         // cos(x) ~ 1-x^2/2 for small x -> 1 - cos(x) ~ x^2/2 -> tolerance needs to be squared if it is supposed to serve as a tolerance on "how many radians apart can the vectors point to still consider them as equal"
         (1.0 - cos_angle) < tolerance.powi(2)
     }
+
+    /// Calculates -1/tan(distance between points)
+    ///
+    /// Useful when sorting points based on distance without needing to know the actual distance as it avoid inverse trigonometric functions. -1/tan(x) is increasing for 0 < x < pi, which is (more than) the needed range
+    pub fn minus_cotan_distance(&self, other: &Self) -> f32 {
+        let angle_sin = self.cartesian().cross(&other.cartesian()).magnitude();
+        let angle_cos = self.cartesian().dot(&other.cartesian());
+        -angle_cos/angle_sin
+    }
 }
 
 #[cfg(test)]
