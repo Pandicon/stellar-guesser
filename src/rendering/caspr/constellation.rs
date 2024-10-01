@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use crate::geometry::spherical::point::SphericalPoint;
 
 #[derive(Clone, Deserialize)]
 pub struct BorderVertex {
@@ -8,8 +9,8 @@ pub struct BorderVertex {
 }
 
 impl BorderVertex {
-    pub fn get_position(&self) -> (f32, f32) {
-        (self.ra, self.dec)
+    pub fn get_position(&self) -> SphericalPoint {
+        SphericalPoint::new(self.ra, self.dec)
     }
 }
 
@@ -23,7 +24,7 @@ pub struct Constellation {
     pub abbreviation: String,
     /// \[abbreviation, latin name, ...\]
     pub possible_names: Vec<String>,
-    pub vertices: Vec<(f32, f32)>,
+    pub vertices: Vec<SphericalPoint>,
 }
 
 impl Constellation {
