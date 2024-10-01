@@ -23,6 +23,7 @@ node_modules/
 *.exe
 *.apk
 /builds
+stellar-guesser.zip
 
 addons/object-images/
 
@@ -38,3 +39,9 @@ stellar-guesser.keystore
 
 # save file
 save.ron
+
+.idea/
+.vscode/
+
+# Some old, machine specific or testing things
+old/
