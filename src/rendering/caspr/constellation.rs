@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::geometry::spherical::point::SphericalPoint;
+use spherical_geometry::SphericalPoint;
 
 #[derive(Clone, Deserialize)]
 pub struct BorderVertex {

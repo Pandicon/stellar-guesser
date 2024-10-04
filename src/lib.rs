@@ -113,6 +113,9 @@ fn create_window<T>(event_loop: &EventLoopWindowTarget<T>, state: &mut State, pa
 }
 
 fn _main(event_loop: EventLoop<Event>) {
+    if let Err(err) = dotenvy::dotenv() {
+        log::error!("Failed to initialise dotenvy: {}", err);
+    };
     let _main_server_url = &CONFIG.main_server_url; // Force the config to load at the start
     let ctx = egui::Context::default();
     let repaint_signal = RepaintSignal(std::sync::Arc::new(std::sync::Mutex::new(event_loop.create_proxy())));

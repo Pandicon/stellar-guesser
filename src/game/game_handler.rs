@@ -556,7 +556,7 @@ impl GameHandler {
             Question::RAQuestion { ra, .. } => {
                 let answer_dist: f32 = match self.answer.parse::<f32>() {
                     Ok(answer) => {
-                        self.answer_review_text_heading = format!("You were {:.1}h away!", (answer - ra/ 360.0 * 24.0).abs() );
+                        self.answer_review_text_heading = format!("You were {:.1}h away!", (answer - ra / 360.0 * 24.0).abs());
 
                         self.answer_review_text = format!("The real right ascension was {:.1}h", ra / 360.0 * 24.0);
                         answer
