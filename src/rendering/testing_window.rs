@@ -8,13 +8,13 @@ impl Application {
             ui.horizontal(|ui| {
                 ui.label("Highlight stars from constellation: ");
                 egui::ComboBox::from_id_source("Highlight stars from constellation: ")
-                    .selected_text(format!("{}", self.testing_settings.highlight_stars_in_constellation))
+                    .selected_text(self.testing_settings.highlight_stars_in_constellation.to_string())
                     .show_ui(ui, |ui: &mut egui::Ui| {
                         ui.style_mut().wrap = Some(false);
                         let mut keys = self.cellestial_sphere.constellations.keys().map(|k| k.to_lowercase()).collect::<Vec<String>>();
                         keys.sort();
                         for key in keys {
-                            ui.selectable_value(&mut self.testing_settings.highlight_stars_in_constellation, key.clone(), format!("{}", key));
+                            ui.selectable_value(&mut self.testing_settings.highlight_stars_in_constellation, key.clone(), &key);
                         }
                     });
             });

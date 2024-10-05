@@ -55,7 +55,7 @@ impl Application {
     pub fn new(ctx: &egui::Context, authors: String, version: String, storage: &mut Option<crate::storage::Storage>) -> Self {
         egui_extras::install_image_loaders(ctx);
 
-        let testing_mode = std::env::var("TESTING").unwrap_or(String::new()).to_lowercase() == String::from("true");
+        let testing_mode = std::env::var("TESTING").unwrap_or_default().to_lowercase() == *"true";
 
         let mut themes = themes::default_themes();
         let themes_files = files::load_all_files_folder(public_constants::THEMES_FOLDER);
