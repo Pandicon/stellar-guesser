@@ -21,7 +21,7 @@ impl Application {
             if prev_selected_constellation != self.testing_settings.highlight_stars_in_constellation {
                 match self.cellestial_sphere.constellations.get_mut(&self.testing_settings.highlight_stars_in_constellation) {
                     Some(constellation) => {
-                        let umi_vertices = constellation
+                        let constellation_vertices = constellation
                             .vertices
                             .iter()
                             .map(|v| {
@@ -29,7 +29,7 @@ impl Application {
                                 spherical_geometry::SphericalPoint::new(v.ra() * PI / 180.0, v.dec() * PI / 180.0)
                             })
                             .collect::<Vec<spherical_geometry::SphericalPoint>>();
-                        match spherical_geometry::Polygon::new(umi_vertices, spherical_geometry::EdgeDirection::CounterClockwise) {
+                        match spherical_geometry::Polygon::new(constellation_vertices, spherical_geometry::EdgeDirection::CounterClockwise) {
                             Ok(polygon) => {
                                 println!("{} polygon acquired: {:#?}", self.testing_settings.highlight_stars_in_constellation, polygon.vertices());
                                 for category in self.cellestial_sphere.stars.values_mut() {
