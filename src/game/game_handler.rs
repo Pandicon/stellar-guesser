@@ -332,10 +332,7 @@ impl GameHandler {
                 point2: geometry::generate_random_point(&mut rand),
             });
             let (ra, dec) = geometry::generate_random_point(&mut rand);
-            catalog.push(Question::PositionQuestion {
-                ra,
-                dec,
-            });
+            catalog.push(Question::PositionQuestion { ra, dec });
 
             let (ra, dec) = geometry::generate_random_point(&mut rand);
             if i % 2 == 0 {
@@ -853,10 +850,7 @@ impl GameHandler {
                 }
                 Question::PositionQuestion { .. } => {
                     let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-                    Question::PositionQuestion {
-                        ra,
-                        dec,
-                    }
+                    Question::PositionQuestion { ra, dec }
                 }
                 Question::DistanceBetweenQuestion { .. } => Question::DistanceBetweenQuestion {
                     point1: geometry::generate_random_point(&mut rand::thread_rng()),

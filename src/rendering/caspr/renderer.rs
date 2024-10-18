@@ -539,11 +539,15 @@ impl CellestialSphere {
                         .collect::<Vec<spherical_geometry::SphericalPoint>>();
                     match spherical_geometry::Polygon::new(constellation_vertices, spherical_geometry::EdgeDirection::CounterClockwise) {
                         Ok(polygon) => {
-                            log::info!("Created the polygon for the {} constellation (from the {} vertices)", constellation_key, constellation_vert_key);
+                            log::debug!("Created the polygon for the {} constellation (from the {} vertices)", constellation_key, constellation_vert_key);
                             constellation.polygons.push(polygon);
                         }
                         Err(_) => {
-                            log::error!("Failed to create the polygon for the {} constellation (from the {} vertices)", constellation_key, constellation_vert_key);
+                            log::error!(
+                                "Failed to create the polygon for the {} constellation (from the {} vertices)",
+                                constellation_key,
+                                constellation_vert_key
+                            );
                         }
                     }
                 }
