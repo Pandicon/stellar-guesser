@@ -35,7 +35,6 @@ pub enum Question {
     PositionQuestion {
         ra: f32,
         dec: f32,
-        possible_constellation_names: Vec<String>,
     },
     ThisPointObject {
         possible_names: Vec<String>,
@@ -333,17 +332,9 @@ impl GameHandler {
                 point2: geometry::generate_random_point(&mut rand),
             });
             let (ra, dec) = geometry::generate_random_point(&mut rand);
-            let possible_abbrevs = cellestial_sphere.determine_constellation((ra, dec));
-            let mut possible_constellation_names = Vec::new();
-            for abbrev in possible_abbrevs {
-                if let Some(constellation) = cellestial_sphere.constellations.get(&abbrev) {
-                    possible_constellation_names.extend(constellation.possible_names.iter().cloned());
-                };
-            }
             catalog.push(Question::PositionQuestion {
                 ra,
                 dec,
-                possible_constellation_names,
             });
 
             let (ra, dec) = geometry::generate_random_point(&mut rand);
@@ -483,9 +474,15 @@ impl GameHandler {
                     self.question_number += 1;
                 }
             }
-            Question::PositionQuestion { possible_constellation_names, .. } => {
-                let possible_names_edited = possible_constellation_names.iter().map(|name| name.replace(' ', "").to_lowercase()).collect::<Vec<String>>();
-                let correct = possible_names_edited.contains(&self.answer.replace(' ', "").to_lowercase());
+            Question::PositionQuestion { ra, dec, .. } => {
+                let possible_abbrevs = cellestial_sphere.determine_constellation((*ra, *dec));
+                let mut possible_constellation_names = Vec::new();
+                for abbrev in possible_abbrevs {
+                    if let Some(constellation) = cellestial_sphere.constellations.get(&abbrev) {
+                        possible_constellation_names.extend(constellation.possible_names.iter().map(|name| name.replace(' ', "").to_lowercase()));
+                    };
+                }
+                let correct = possible_constellation_names.contains(&self.answer.replace(' ', "").to_lowercase());
                 self.answer_review_text_heading = format!(
                     "{}orrect!",
                     if correct {
@@ -836,7 +833,7 @@ impl GameHandler {
         }
     }
 
-    pub fn reset_used_questions(&mut self, cellestial_sphere: &mut CellestialSphere) {
+    pub fn reset_used_questions(&mut self, _cellestial_sphere: &mut CellestialSphere) {
         self.used_questions = Vec::new();
         self.score = 0;
         self.possible_score = 0;
@@ -856,17 +853,9 @@ impl GameHandler {
                 }
                 Question::PositionQuestion { .. } => {
                     let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-                    let possible_abbrevs = cellestial_sphere.determine_constellation((ra, dec));
-                    let mut possible_constellation_names = Vec::new();
-                    for abbrev in possible_abbrevs {
-                        if let Some(constellation) = cellestial_sphere.constellations.get(&abbrev) {
-                            possible_constellation_names.extend(constellation.possible_names.iter().cloned());
-                        };
-                    }
                     Question::PositionQuestion {
                         ra,
                         dec,
-                        possible_constellation_names,
                     }
                 }
                 Question::DistanceBetweenQuestion { .. } => Question::DistanceBetweenQuestion {
