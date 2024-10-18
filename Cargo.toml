@@ -24,6 +24,7 @@ app-theme-parent = "Theme.MaterialComponents.DayNight.DarkActionBar"
 chrono = "0.4"
 csv = "1.2.2"
 directories-next = "2.0.0"
+dotenvy = "0.15.7"
 egui = "0.25"
 egui_extras = { version = "0.25", features = ["all_loaders", "image"] }
 egui-notify = "0.12.0"                                                   # It depends on egui itself, so the version of egui used by this app and by egui-notify have to match
@@ -42,8 +43,7 @@ serde_json = "1.0.128"
 tokio = { version = "1.35.0", features = ["macros", "rt-multi-thread"] }
 wgpu = "0.18"
 winit = { version = "0.29", features = ["android-native-activity"] }
-spherical_geometry = { path = "../spherical-geometry-fork" }
-dotenvy = "0.15.7"
+spherical_geometry = "0.2.0" # { path = "../spherical-geometry-fork" }
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "0.13.1"
