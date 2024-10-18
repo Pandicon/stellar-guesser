@@ -333,11 +333,13 @@ impl GameHandler {
                 point2: geometry::generate_random_point(&mut rand),
             });
             let (ra, dec) = geometry::generate_random_point(&mut rand);
-            let abbrev = cellestial_sphere.determine_constellation((ra, dec));
-            let possible_constellation_names: Vec<String> = match cellestial_sphere.constellations.get(&abbrev) {
-                None => vec![String::from("Undefined")],
-                Some(constellation) => constellation.possible_names.to_owned(),
-            };
+            let possible_abbrevs = cellestial_sphere.determine_constellation((ra, dec));
+            let mut possible_constellation_names = Vec::new();
+            for abbrev in possible_abbrevs {
+                if let Some(constellation) = cellestial_sphere.constellations.get(&abbrev) {
+                    possible_constellation_names.extend(constellation.possible_names.iter().cloned());
+                };
+            }
             catalog.push(Question::PositionQuestion {
                 ra,
                 dec,
@@ -854,11 +856,13 @@ impl GameHandler {
                 }
                 Question::PositionQuestion { .. } => {
                     let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-                    let abbrev = cellestial_sphere.determine_constellation((ra, dec));
-                    let possible_constellation_names: Vec<String> = match cellestial_sphere.constellations.get(&abbrev) {
-                        None => vec![String::from("Undefined")],
-                        Some(constellation) => constellation.possible_names.to_owned(),
-                    };
+                    let possible_abbrevs = cellestial_sphere.determine_constellation((ra, dec));
+                    let mut possible_constellation_names = Vec::new();
+                    for abbrev in possible_abbrevs {
+                        if let Some(constellation) = cellestial_sphere.constellations.get(&abbrev) {
+                            possible_constellation_names.extend(constellation.possible_names.iter().cloned());
+                        };
+                    }
                     Question::PositionQuestion {
                         ra,
                         dec,
