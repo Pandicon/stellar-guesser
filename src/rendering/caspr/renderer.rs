@@ -772,12 +772,9 @@ impl CellestialSphere {
         'constellations: for constellation in &self.constellations {
             let (abbreviation, constellation) = constellation;
             for polygon in &constellation.polygons {
-                match polygon.contains_point(&spherical_geometry::SphericalPoint::new(point.0 * PI / 180.0, point.1 * PI / 180.0)) {
-                    Ok(true) => {
-                        in_constellations.push(abbreviation.clone());
-                        continue 'constellations;
-                    }
-                    _ => {}
+                if let Ok(true) = polygon.contains_point(&spherical_geometry::SphericalPoint::new(point.0 * PI / 180.0, point.1 * PI / 180.0)) {
+                    in_constellations.push(abbreviation.clone());
+                    continue 'constellations;
                 }
             }
         }
