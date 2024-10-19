@@ -554,39 +554,6 @@ impl CellestialSphere {
             }
         }
 
-        {
-            for category in catalog.values_mut() {
-                println!("Stars in category: {:?}", category.len());
-                for star in category {
-                    let mut in_cons = Vec::new();
-                    // println!("{} {}", star.ra, star.dec);
-                    let pos = spherical_geometry::SphericalPoint::new(star.ra * PI / 180.0, star.dec * PI / 180.0);
-                    'constellations: for constellation in constellations.values() {
-                        for polygon in &constellation.polygons {
-                            match polygon.contains_point(&pos) {
-                                Ok(v) => {
-                                    // println!("{}", v);
-                                    if v {
-                                        in_cons.push(constellation.abbreviation.to_uppercase());
-                                        continue 'constellations;
-                                    }
-                                }
-                                Err(_) => {
-                                    println!("Could not determine the constellation for star at dec={} ra={}", star.dec, star.ra);
-                                }
-                            }
-                        }
-                    }
-                    let name = if let Some(n) = &star.name {
-                        n.name.clone()
-                    } else {
-                        String::new()
-                    };
-                    println!("{},{},{},{:X},{},{}", star.ra, star.dec, star.vmag, star.colour.r() as u64 * 256 * 256 + star.colour.g() as u64 * 256 + star.colour.b() as u64, name, in_cons.join(";"));
-                }
-            }
-        }
-
         let mut light_pollution_place_to_mag: HashMap<LightPollution, [f32; 2]> = HashMap::with_capacity(MAG_TO_LIGHT_POLLUTION_RAW.len());
         for &(mag_offset, mag_scale, place) in &MAG_TO_LIGHT_POLLUTION_RAW {
             light_pollution_place_to_mag.insert(place, [mag_offset, mag_scale]);
