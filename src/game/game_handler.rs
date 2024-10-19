@@ -98,6 +98,8 @@ pub struct GameHandler {
     pub groups_active_constellations: HashMap<enums::GameLearningStage, HashMap<String, bool>>,
     pub active_constellations_groups: HashMap<enums::GameLearningStage, bool>,
     pub toggle_all_constellations: bool,
+
+    pub request_input_focus: bool
 }
 
 impl GameHandler {
@@ -386,6 +388,7 @@ impl GameHandler {
             groups_active_constellations,
             active_constellations_groups,
             toggle_all_constellations: true,
+            request_input_focus: false
         }
     }
     pub fn evaluate_score(distance: f32) -> u32 {
@@ -809,6 +812,7 @@ impl GameHandler {
                 }
                 Question::NoMoreQuestions => false,
             };
+            self.request_input_focus = true;
             cellestial_sphere.game_markers.markers = markers;
             cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
         }

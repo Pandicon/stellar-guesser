@@ -23,7 +23,12 @@ impl Application {
                 } else {
                     ui.heading(self.game_handler.get_display_question());
                     if self.game_handler.should_display_input() {
-                        self.input.input_field_has_focus |= ui.text_edit_singleline(&mut self.game_handler.answer).has_focus();
+                        let text_input_response = ui.text_edit_singleline(&mut self.game_handler.answer);
+                        if self.game_handler.request_input_focus {
+                            text_input_response.request_focus();
+                            self.game_handler.request_input_focus = false;
+                        }
+                        self.input.input_field_has_focus |= text_input_response.has_focus();
                     }
                     if ui.button("Check").clicked() {
                         self.game_handler.check_answer(&mut self.cellestial_sphere, &self.theme);
