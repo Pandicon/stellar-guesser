@@ -279,9 +279,8 @@ impl GameHandler {
                     Some(id) => {
                         let name = format!("{} {}", id, starname.con);
                         possible_names.push(name.to_owned());
-                        match &starname.id {
-                            Some(id) => possible_names.push(format!("{} {}", id, starname.con)),
-                            None => (),
+                        if let Some(id) = &starname.id {
+                            possible_names.push(format!("{} {}", id, starname.con));
                         }
                         catalog.push(Question::ObjectQuestion {
                             name,
