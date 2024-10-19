@@ -45,14 +45,14 @@ impl Application {
                 [response.response.rect.left(), response.response.rect.bottom()],
             ]);
         }
-        let mut viewport_rect = ctx.input(|i| i.screen_rect());
+        let viewport_rect = ctx.input(|i| i.screen_rect());
         let central_panel_response = egui::CentralPanel::default().show(ctx, |ui| {
-            let top_panel_response = self.render_top_panel(ctx);
-            viewport_rect.min.y = top_panel_response.response.rect.max.y;
             self.cellestial_sphere.viewport_rect = viewport_rect;
 
             let painter = ui.painter();
             self.cellestial_sphere.render_sky(painter, &self.graphics_settings, &self.theme);
+
+            self.render_top_panel(ctx);
         });
         central_panel_response.response.hovered()
     }
