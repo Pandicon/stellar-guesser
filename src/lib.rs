@@ -43,6 +43,8 @@ const ICON_PATH: &str = "./ico.png";
 pub const PLATFORM: &str = "android";
 #[cfg(target_os = "windows")]
 pub const PLATFORM: &str = "windows";
+#[cfg(target_os = "linux")]
+pub const PLATFORM: &str = "linux";
 
 pub static CONFIG: once_cell::sync::Lazy<config::Config> = once_cell::sync::Lazy::new(config::get_config);
 
