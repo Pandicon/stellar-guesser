@@ -99,7 +99,7 @@ pub struct GameHandler {
     pub active_constellations_groups: HashMap<enums::GameLearningStage, bool>,
     pub toggle_all_constellations: bool,
 
-    pub request_input_focus: bool
+    pub request_input_focus: bool,
 }
 
 impl GameHandler {
@@ -388,7 +388,7 @@ impl GameHandler {
             groups_active_constellations,
             active_constellations_groups,
             toggle_all_constellations: true,
-            request_input_focus: false
+            request_input_focus: false,
         }
     }
     pub fn evaluate_score(distance: f32) -> u32 {
