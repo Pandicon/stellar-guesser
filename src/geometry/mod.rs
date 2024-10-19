@@ -1,6 +1,7 @@
 use egui::Pos2;
 use nalgebra::{Matrix3, Vector2, Vector3};
 use rand::{rngs::ThreadRng, Rng};
+use spherical_geometry::SphericalPoint;
 use std::f32::consts::PI;
 
 use crate::renderer::CellestialSphere;
@@ -183,14 +184,14 @@ pub fn intersect(a: LineSegment, b: LineSegment) -> bool {
     ccw(a.start, b.start, b.end) != ccw(a.end, b.start, b.end) && ccw(a.start, a.end, b.start) != ccw(a.start, a.end, b.end)
 }
 
-pub fn is_inside_polygon(polygon: Vec<(f32, f32)>, point: (f32, f32), meridian_constellation: bool) -> bool {
+pub fn is_inside_polygon(polygon: Vec<SphericalPoint>, point: (f32, f32), meridian_constellation: bool) -> bool {
     let (pra, pdec) = point;
     let mut crossed = 0;
     for i in 0..polygon.len() {
         let startpoint = polygon[i];
         let endpoint = polygon[(i + 1) % polygon.len()];
-        let (ira, idec) = startpoint;
-        let (fra, fdec) = endpoint;
+        let (ira, idec) = (startpoint.ra(), startpoint.dec());
+        let (fra, fdec) = (endpoint.ra(), endpoint.dec());
         #[allow(clippy::collapsible_else_if)] // I believe this is more readable
         if meridian_constellation {
             if intersect(

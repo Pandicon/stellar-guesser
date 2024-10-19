@@ -52,6 +52,15 @@ fn render_right_controls(app: &mut crate::application::Application, ui: &mut egu
     if game_question_btn.clicked() {
         app.state.windows.game_question.opened = true;
     }
+
+    if app.testing_mode {
+        let testing_btn = ui
+            .add(egui::Button::new(egui::RichText::new("Testing").text_style(egui::TextStyle::Body)))
+            .on_hover_text("Show visual tests");
+        if testing_btn.clicked() {
+            app.state.windows.testing.opened = true;
+        }
+    }
 }
 
 fn render_left_controls(app: &mut crate::application::Application, ui: &mut egui::Ui) {

@@ -4,7 +4,7 @@ use crate::rendering::themes::{self, Theme, ThemesHandler};
 use crate::{files, public_constants, server_communication, structs};
 
 use crate::renderer::CellestialSphere;
-use crate::structs::graphics_settings;
+use crate::structs::{graphics_settings, testing_settings};
 
 use self::frames_handler::FramesHandler;
 
@@ -30,6 +30,7 @@ pub struct Application {
     pub game_handler: game_handler::GameHandler,
 
     pub graphics_settings: graphics_settings::GraphicsSettings,
+    pub testing_settings: testing_settings::TestingSettings,
     pub theme: Theme,
     pub themes: ThemesHandler,
 
@@ -46,11 +47,15 @@ pub struct Application {
     pub threads_communication: threads_communication::ThreadsCommunication,
 
     pub toasts: egui_notify::Toasts,
+
+    pub testing_mode: bool,
 }
 
 impl Application {
     pub fn new(ctx: &egui::Context, authors: String, version: String, storage: &mut Option<crate::storage::Storage>) -> Self {
         egui_extras::install_image_loaders(ctx);
+
+        let testing_mode = std::env::var("TESTING").unwrap_or_default().to_lowercase() == *"true";
 
         let mut themes = themes::default_themes();
         let themes_files = files::load_all_files_folder(public_constants::THEMES_FOLDER);
@@ -119,6 +124,7 @@ impl Application {
             frames_handler: FramesHandler::default(),
 
             graphics_settings,
+            testing_settings: testing_settings::TestingSettings::default(),
             theme,
             themes,
 
@@ -135,6 +141,8 @@ impl Application {
             threads_communication: threads_communication::ThreadsCommunication::default(),
 
             toasts: egui_notify::Toasts::default().with_anchor(egui_notify::Anchor::BottomRight),
+
+            testing_mode,
         };
         server_communication::check_for_updates::check_for_updates(
             &mut app.threads_communication,

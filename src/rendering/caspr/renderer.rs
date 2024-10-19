@@ -23,7 +23,7 @@ use crate::{SKY_DATA_FILES, SKY_DATA_LISTS};
 const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague), (4.5, 0.8, LightPollution::AverageVillage)];
 
 use crate::geometry;
-use geometry::{cartesian_to_spherical, cast_onto_sphere, is_inside_polygon, project_point};
+use geometry::{cast_onto_sphere, project_point};
 
 use super::lines::{LineRenderer, SkyLine, SkyLineRaw, SkyLines};
 use super::markers::{Marker, MarkerRaw, MarkerRenderer, Markers};
@@ -37,7 +37,7 @@ use super::{
 
 use super::constellation::{BorderVertex, Constellation, ConstellationRaw};
 
-const MERIDIAN_CONSTELLATIONS: [&str; 10] = ["cep", "cas", "and", "peg", "pis", "cet", "scl", "phe", "tuc", "oct"];
+const _MERIDIAN_CONSTELLATIONS: [&str; 10] = ["cep", "cas", "and", "peg", "pis", "cet", "scl", "phe", "tuc", "oct"];
 const OBJECT_IMAGES_FOLDER: &str = crate::OBJECT_IMAGES_ADDON_FOLDER;
 
 pub struct CellestialSphere {
@@ -510,6 +510,7 @@ impl CellestialSphere {
         }
 
         let mut constellations = HashMap::new();
+        let mut constellations_vertices = HashMap::new();
         for [id, file_contents] in sky_data_files {
             let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
             if id == "constellation names" {
@@ -521,13 +522,32 @@ impl CellestialSphere {
             } else if id == "constellation vertices" {
                 for constellation_vertex in reader.deserialize() {
                     let constellation_vertex: BorderVertex = constellation_vertex?;
-                    match constellations.get_mut(&constellation_vertex.constellation.to_lowercase()) {
-                        Some(constellation) => {
-                            let position = constellation_vertex.get_position();
-                            constellation.vertices.push(position);
+                    let position = constellation_vertex.get_position();
+                    let constellation_key = constellation_vertex.constellation.to_lowercase();
+                    let entry = constellations_vertices.entry(constellation_key).or_insert(Vec::new());
+                    entry.push(position);
+                }
+            }
+        }
+        for (constellation_key, constellation) in constellations.iter_mut() {
+            for (constellation_vert_key, vertices) in constellations_vertices.iter() {
+                // This fixes the fact that Serpens is split into two polygons. Annoyingly, it makes it O(n^2) in constellations, but it is still fast enough (there are only 88 constellations)
+                if constellation_vert_key.to_lowercase().starts_with(&constellation_key.to_lowercase()) {
+                    let constellation_vertices = vertices
+                        .iter()
+                        .map(|v| spherical_geometry::SphericalPoint::new(v.ra() * PI / 180.0, v.dec() * PI / 180.0))
+                        .collect::<Vec<spherical_geometry::SphericalPoint>>();
+                    match spherical_geometry::Polygon::new(constellation_vertices, spherical_geometry::EdgeDirection::CounterClockwise) {
+                        Ok(polygon) => {
+                            log::debug!("Created the polygon for the {} constellation (from the {} vertices)", constellation_key, constellation_vert_key);
+                            constellation.polygons.push(polygon);
                         }
-                        None => {
-                            println!("FUCK");
+                        Err(_) => {
+                            log::error!(
+                                "Failed to create the polygon for the {} constellation (from the {} vertices)",
+                                constellation_key,
+                                constellation_vert_key
+                            );
                         }
                     }
                 }
@@ -743,25 +763,21 @@ impl CellestialSphere {
             [self.sky_settings.mag_offset, self.sky_settings.mag_scale]
         }
     }
-    pub fn to_equatorial_coordinates(vector: Vector3<f32>) -> (f32, f32) {
+    /*pub fn to_equatorial_coordinates(vector: Vector3<f32>) -> (f32, f32) {
         cartesian_to_spherical(vector)
-    }
-    pub fn determine_constellation(&self, point: (f32, f32)) -> String {
-        let mut in_constellation = String::from("Undefined");
-        for constellation in &self.constellations {
+    }*/
+    /// Ra and Dec are in degrees
+    pub fn determine_constellation(&self, point: (f32, f32)) -> Vec<String> {
+        let mut in_constellations = Vec::new();
+        'constellations: for constellation in &self.constellations {
             let (abbreviation, constellation) = constellation;
-            if is_inside_polygon(constellation.vertices.to_owned(), point, MERIDIAN_CONSTELLATIONS.contains(&abbreviation.as_str())) {
-                abbreviation.clone_into(&mut in_constellation);
+            for polygon in &constellation.polygons {
+                if let Ok(true) = polygon.contains_point(&spherical_geometry::SphericalPoint::new(point.0 * PI / 180.0, point.1 * PI / 180.0)) {
+                    in_constellations.push(abbreviation.clone());
+                    continue 'constellations;
+                }
             }
         }
-        if in_constellation == "Undefined" {
-            let (_ra, dec) = point;
-            if dec > 0.0 {
-                in_constellation = String::from("umi");
-            } else {
-                in_constellation = String::from("");
-            }
-        }
-        in_constellation
+        in_constellations
     }
 }

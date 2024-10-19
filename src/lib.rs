@@ -43,6 +43,8 @@ const ICON_PATH: &str = "./ico.png";
 pub const PLATFORM: &str = "android";
 #[cfg(target_os = "windows")]
 pub const PLATFORM: &str = "windows";
+#[cfg(target_os = "linux")]
+pub const PLATFORM: &str = "linux";
 
 pub static CONFIG: once_cell::sync::Lazy<config::Config> = once_cell::sync::Lazy::new(config::get_config);
 
@@ -113,6 +115,9 @@ fn create_window<T>(event_loop: &EventLoopWindowTarget<T>, state: &mut State, pa
 }
 
 fn _main(event_loop: EventLoop<Event>) {
+    if let Err(err) = dotenvy::dotenv() {
+        log::error!("Failed to initialise dotenvy: {}", err);
+    };
     let _main_server_url = &CONFIG.main_server_url; // Force the config to load at the start
     let ctx = egui::Context::default();
     let repaint_signal = RepaintSignal(std::sync::Arc::new(std::sync::Mutex::new(event_loop.create_proxy())));
