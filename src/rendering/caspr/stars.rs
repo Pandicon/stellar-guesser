@@ -20,6 +20,7 @@ pub struct Star {
     #[allow(dead_code)]
     name_str: Option<String>,
     pub name: Option<StarName>,
+    pub constellations_abbreviations: Vec<String>
 }
 
 #[derive(Clone, Deserialize)]
@@ -29,6 +30,7 @@ pub struct StarRaw {
     pub vmag: f32,
     pub colour: Option<String>,
     pub name: Option<String>,
+    pub constellations: String
 }
 
 impl Star {
@@ -45,6 +47,7 @@ impl Star {
             colour,
             name_str: raw_star.name,
             name: None,
+            constellations_abbreviations: raw_star.constellations.split(';').map(|abbrev| abbrev.to_string()).collect()
         }
     }
 }
