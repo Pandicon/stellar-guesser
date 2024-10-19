@@ -11,9 +11,8 @@ use crate::{
 };
 use rand::Rng;
 
-use crate::geometry;
-use crate::geometry::get_point_vector;
 use super::game_settings;
+use crate::geometry;
 
 #[derive(Clone)]
 pub enum Question {
@@ -743,14 +742,11 @@ impl GameHandler {
                 }
                 Question::PositionQuestion { ra, dec, .. } => {
                     markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)];
-                    let initial_vector = cellestial_sphere.project_screen_pos(egui::Pos2::new(
-                        (cellestial_sphere.viewport_rect.max[0] + cellestial_sphere.viewport_rect.min[0]) / 2.0,
-                        (cellestial_sphere.viewport_rect.max[1] + cellestial_sphere.viewport_rect.min[1]) / 2.0,
-                    )); // Middle of the screen
-                    let initial_vector = geometry::cast_onto_sphere_plane_position(&cellestial_sphere, nalgebra::Vector2::new(0.0, 0.0));
-                    let final_vector = geometry::get_point_vector(ra, dec, &nalgebra::Matrix3::<f32>::identity());
-                    cellestial_sphere.look_at_point(&final_vector);
-                    cellestial_sphere.init_renderers();
+                    if self.questions_settings.what_constellation_is_this_point_in.rotate_to_point {
+                        let final_vector = geometry::get_point_vector(ra, dec, &nalgebra::Matrix3::<f32>::identity());
+                        cellestial_sphere.look_at_point(&final_vector);
+                        cellestial_sphere.init_renderers();
+                    }
                     false
                 }
                 Question::ThisPointObject { ra, dec, is_bayer, is_starname, .. } => {
@@ -759,6 +755,11 @@ impl GameHandler {
                     } else {
                         vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)]
                     };
+                    if self.questions_settings.what_is_this_object.rotate_to_point {
+                        let final_vector = geometry::get_point_vector(ra, dec, &nalgebra::Matrix3::<f32>::identity());
+                        cellestial_sphere.look_at_point(&final_vector);
+                        cellestial_sphere.init_renderers();
+                    }
                     false
                 }
                 Question::DistanceBetweenQuestion { point1, point2 } => {
@@ -768,18 +769,42 @@ impl GameHandler {
                         GameMarker::new(GameMarkerType::Task, ra1, dec1, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
                         GameMarker::new(GameMarkerType::Task, ra2, dec2, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
                     ];
+                    if self.questions_settings.angular_separation.rotate_to_midpoint {
+                        let end_1 = geometry::get_point_vector(ra1, dec1, &nalgebra::Matrix3::<f32>::identity());
+                        let end_2 = geometry::get_point_vector(ra2, dec2, &nalgebra::Matrix3::<f32>::identity());
+                        if (end_1 + end_2).magnitude_squared() > 10e-4 {
+                            let final_vector = (end_1 + end_2).normalize();
+                            cellestial_sphere.look_at_point(&final_vector);
+                            cellestial_sphere.init_renderers();
+                        }
+                    }
                     false
                 }
                 Question::DECQuestion { ra, dec } => {
                     markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)];
+                    if self.questions_settings.guess_rad_dec.rotate_to_point {
+                        let final_vector = geometry::get_point_vector(ra, dec, &nalgebra::Matrix3::<f32>::identity());
+                        cellestial_sphere.look_at_point(&final_vector);
+                        cellestial_sphere.init_renderers();
+                    }
                     false
                 }
                 Question::RAQuestion { ra, dec } => {
                     markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)];
+                    if self.questions_settings.guess_rad_dec.rotate_to_point {
+                        let final_vector = geometry::get_point_vector(ra, dec, &nalgebra::Matrix3::<f32>::identity());
+                        cellestial_sphere.look_at_point(&final_vector);
+                        cellestial_sphere.init_renderers();
+                    }
                     false
                 }
                 Question::MagQuestion { ra, dec, .. } => {
                     markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, true, false, &theme.game_visuals.game_markers_colours)];
+                    if self.questions_settings.guess_the_magnitude.rotate_to_point {
+                        let final_vector = geometry::get_point_vector(ra, dec, &nalgebra::Matrix3::<f32>::identity());
+                        cellestial_sphere.look_at_point(&final_vector);
+                        cellestial_sphere.init_renderers();
+                    }
                     false
                 }
                 Question::NoMoreQuestions => false,

@@ -84,6 +84,8 @@ impl Application {
 
     fn render_game_settings_what_is_this_object_subwindow(&mut self, ui: &mut egui::Ui) {
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show, "Show the 'What is this object' questions");
+        ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.rotate_to_point, "Rotate to the point in question")
+            .on_hover_text("Whether or not to rotate the view so that the point in question is in the centre of the screen");
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_messiers, "Show Messier objects");
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_caldwells, "Show Caldwell objects");
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_ngcs, "Show NGC objects");
@@ -101,18 +103,29 @@ impl Application {
             &mut self.game_handler.questions_settings.what_constellation_is_this_point_in.show,
             "Show the 'Which constellation is this point in' questions",
         );
+        ui.checkbox(
+            &mut self.game_handler.questions_settings.what_constellation_is_this_point_in.rotate_to_point,
+            "Rotate to the point in question",
+        )
+        .on_hover_text("Whether or not to rotate the view so that the point in question is in the centre of the screen");
     }
 
     fn render_game_settings_angular_distance_subwindow(&mut self, ui: &mut egui::Ui) {
         ui.checkbox(&mut self.game_handler.questions_settings.angular_separation.show, "Show the 'What is the angle between..' questions");
+        ui.checkbox(&mut self.game_handler.questions_settings.angular_separation.rotate_to_midpoint, "Rotate to the midpoint")
+            .on_hover_text("Whether or not to rotate the view so that the point in the middle between the points in question is in the centre of the screen");
     }
 
     fn render_game_settings_coordinates_subwindow(&mut self, ui: &mut egui::Ui) {
         ui.checkbox(&mut self.game_handler.questions_settings.guess_rad_dec.show, "Show the 'What is the RA/DEC..' questions");
+        ui.checkbox(&mut self.game_handler.questions_settings.guess_rad_dec.rotate_to_point, "Rotate to the point in question")
+            .on_hover_text("Whether or not to rotate the view so that the point in question is in the centre of the screen");
     }
 
     fn render_game_settings_magnitude_subwindow(&mut self, ui: &mut egui::Ui) {
         ui.checkbox(&mut self.game_handler.questions_settings.guess_the_magnitude.show, "Show the 'Guess the magnitude' questions");
+        ui.checkbox(&mut self.game_handler.questions_settings.guess_the_magnitude.rotate_to_point, "Rotate to the object in question")
+            .on_hover_text("Whether or not to rotate the view so that the object in question is in the centre of the screen");
         self.input.input_field_has_focus |= ui
             .add(egui::Slider::new(&mut self.game_handler.questions_settings.guess_the_magnitude.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"))
             .has_focus();

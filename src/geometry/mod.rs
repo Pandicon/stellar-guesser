@@ -125,11 +125,11 @@ pub fn cast_onto_sphere_plane_position(cellestial_sphere: &CellestialSphere, pla
 
     cellestial_sphere.rotation.matrix().try_inverse().expect("FUCK")
         * Vector3::new(
-        2.0 * cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() * plane_coordinates[0] / scaling_factor,
-        2.0 * cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() * plane_coordinates[1] / scaling_factor,
-        -(cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() - plane_coordinates[0] * plane_coordinates[0] - plane_coordinates[1] * plane_coordinates[1]) * cellestial_sphere.get_zoom()
-            / (scaling_factor),
-    )
+            2.0 * cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() * plane_coordinates[0] / scaling_factor,
+            2.0 * cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() * plane_coordinates[1] / scaling_factor,
+            -(cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() - plane_coordinates[0] * plane_coordinates[0] - plane_coordinates[1] * plane_coordinates[1]) * cellestial_sphere.get_zoom()
+                / (scaling_factor),
+        )
 }
 
 /** Returns a (dec, ra) pair (both in radians) */
