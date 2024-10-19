@@ -780,4 +780,36 @@ impl CellestialSphere {
         }
         in_constellations
     }
+
+    pub fn rotate_between_points(&mut self, initial_pos: &Vector3<f32>, final_pos: &Vector3<f32>) -> Option<()> {
+        if initial_pos == final_pos {
+            return None;
+        }
+        if let Some(rotation_matrix) = Rotation3::rotation_between(initial_pos, final_pos) {
+            if rotation_matrix.matrix()[0].is_nan() {
+                return None;
+            }
+            self.rotation *= rotation_matrix;
+        } else {
+            return None;
+        }
+        Some(())
+    }
+
+    /// Rotates the view to look at the point. It has to be taken without rotations.
+    pub fn look_at_point(&mut self, point: &Vector3<f32>) -> Option<()> {
+        let z_axis = Vector3::new(0.0, 0.0, -1.0);
+        let y_axis = Vector3::new(0.0, 1.0, 0.0);
+        let axis = if point.cross(&z_axis).magnitude_squared() < 0.05 {
+            y_axis
+        } else {
+            z_axis
+        };
+        let rotation_matrix = Rotation3::look_at_rh(point, &axis);
+        if rotation_matrix.matrix()[0].is_nan() {
+            return None;
+        }
+        self.rotation = rotation_matrix;
+        Some(())
+    }
 }

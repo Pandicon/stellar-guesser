@@ -1,5 +1,4 @@
 use egui::epaint::Pos2;
-use nalgebra::Rotation3;
 use std::collections::HashMap;
 
 use crate::{
@@ -62,11 +61,7 @@ impl Application {
             if initial_vector != final_vector {
                 // Some rotation this frame
 
-                let rotation_matrix = Rotation3::rotation_between(&initial_vector, &final_vector).expect("FUCKIN FUCK");
-                if !rotation_matrix.matrix()[0].is_nan() {
-                    self.cellestial_sphere.rotation *= rotation_matrix
-                }
-                // if self.input.secondary_released {}
+                self.cellestial_sphere.rotate_between_points(&initial_vector, &final_vector);
                 self.cellestial_sphere.init_renderers();
             }
         }

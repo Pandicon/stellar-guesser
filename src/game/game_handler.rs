@@ -12,7 +12,7 @@ use crate::{
 use rand::Rng;
 
 use crate::geometry;
-
+use crate::geometry::get_point_vector;
 use super::game_settings;
 
 #[derive(Clone)]
@@ -743,6 +743,14 @@ impl GameHandler {
                 }
                 Question::PositionQuestion { ra, dec, .. } => {
                     markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)];
+                    let initial_vector = cellestial_sphere.project_screen_pos(egui::Pos2::new(
+                        (cellestial_sphere.viewport_rect.max[0] + cellestial_sphere.viewport_rect.min[0]) / 2.0,
+                        (cellestial_sphere.viewport_rect.max[1] + cellestial_sphere.viewport_rect.min[1]) / 2.0,
+                    )); // Middle of the screen
+                    let initial_vector = geometry::cast_onto_sphere_plane_position(&cellestial_sphere, nalgebra::Vector2::new(0.0, 0.0));
+                    let final_vector = geometry::get_point_vector(ra, dec, &nalgebra::Matrix3::<f32>::identity());
+                    cellestial_sphere.look_at_point(&final_vector);
+                    cellestial_sphere.init_renderers();
                     false
                 }
                 Question::ThisPointObject { ra, dec, is_bayer, is_starname, .. } => {

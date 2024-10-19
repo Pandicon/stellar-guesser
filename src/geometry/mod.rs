@@ -117,16 +117,21 @@ pub fn cast_onto_sphere(cellestial_sphere: &CellestialSphere, screen_position: &
 
     let plane_coordinates = Vector2::new((screen_position[0] - rect_size[0] / 2.0) * screen_ratio, (screen_position[1] - rect_size[1] / 2.0) * screen_ratio);
 
+    cast_onto_sphere_plane_position(cellestial_sphere, plane_coordinates)
+}
+
+pub fn cast_onto_sphere_plane_position(cellestial_sphere: &CellestialSphere, plane_coordinates: Vector2<f32>) -> Vector3<f32> {
     let scaling_factor = cellestial_sphere.zoom * cellestial_sphere.zoom + plane_coordinates[0] * plane_coordinates[0] + plane_coordinates[1] * plane_coordinates[1];
 
     cellestial_sphere.rotation.matrix().try_inverse().expect("FUCK")
         * Vector3::new(
-            2.0 * cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() * plane_coordinates[0] / scaling_factor,
-            2.0 * cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() * plane_coordinates[1] / scaling_factor,
-            -(cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() - plane_coordinates[0] * plane_coordinates[0] - plane_coordinates[1] * plane_coordinates[1]) * cellestial_sphere.get_zoom()
-                / (scaling_factor),
-        )
+        2.0 * cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() * plane_coordinates[0] / scaling_factor,
+        2.0 * cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() * plane_coordinates[1] / scaling_factor,
+        -(cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() - plane_coordinates[0] * plane_coordinates[0] - plane_coordinates[1] * plane_coordinates[1]) * cellestial_sphere.get_zoom()
+            / (scaling_factor),
+    )
 }
+
 /** Returns a (dec, ra) pair (both in radians) */
 pub fn cartesian_to_spherical(vector: Vector3<f32>) -> (f32, f32) {
     /*let v = vector.normalize();
