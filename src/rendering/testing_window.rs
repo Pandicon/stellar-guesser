@@ -71,7 +71,11 @@ impl Application {
                 for category in self.cellestial_sphere.stars.values_mut() {
                     println!("Stars in category: {:?}", category.len());
                     for star in category {
-                        if star.constellations_abbreviations.iter().any(|abbrev| abbrev.to_uppercase() == self.testing_settings.highlight_stars_in_constellation_precomputed.to_uppercase()) {
+                        if star
+                            .constellations_abbreviations
+                            .iter()
+                            .any(|abbrev| abbrev.to_uppercase() == self.testing_settings.highlight_stars_in_constellation_precomputed.to_uppercase())
+                        {
                             star.colour = egui::Color32::LIGHT_RED;
                         } else {
                             star.colour = egui::Color32::WHITE;
