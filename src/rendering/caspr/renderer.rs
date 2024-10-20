@@ -4,6 +4,7 @@ use crate::{
     rendering::themes::Theme,
     structs::graphics_settings::GraphicsSettings,
 };
+use angle::Angle;
 use egui::epaint::Color32;
 use nalgebra::{Rotation3, Vector3};
 use std::{collections::HashMap, error::Error, f32::consts::PI, fs};
@@ -535,7 +536,7 @@ impl CellestialSphere {
                 if constellation_vert_key.to_lowercase().starts_with(&constellation_key.to_lowercase()) {
                     let constellation_vertices = vertices
                         .iter()
-                        .map(|v| spherical_geometry::SphericalPoint::new(v.ra() * PI / 180.0, v.dec() * PI / 180.0))
+                        .map(|v| spherical_geometry::SphericalPoint::new(v.ra(), v.dec()))
                         .collect::<Vec<spherical_geometry::SphericalPoint>>();
                     match spherical_geometry::Polygon::new(constellation_vertices, spherical_geometry::EdgeDirection::CounterClockwise) {
                         Ok(polygon) => {
@@ -766,13 +767,13 @@ impl CellestialSphere {
     /*pub fn to_equatorial_coordinates(vector: Vector3<f32>) -> (f32, f32) {
         cartesian_to_spherical(vector)
     }*/
-    /// Ra and Dec are in degrees
-    pub fn determine_constellation(&self, point: (f32, f32)) -> Vec<String> {
+    /// (ra, dec), both in radians
+    pub fn determine_constellation(&self, point: (angle::Rad<f32>, angle::Rad<f32>)) -> Vec<String> {
         let mut in_constellations = Vec::new();
         'constellations: for constellation in &self.constellations {
             let (abbreviation, constellation) = constellation;
             for polygon in &constellation.polygons {
-                if let Ok(true) = polygon.contains_point(&spherical_geometry::SphericalPoint::new(point.0 * PI / 180.0, point.1 * PI / 180.0)) {
+                if let Ok(true) = polygon.contains_point(&spherical_geometry::SphericalPoint::new(point.0.value(), point.1.value())) {
                     in_constellations.push(abbreviation.clone());
                     continue 'constellations;
                 }

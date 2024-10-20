@@ -1,16 +1,17 @@
+use angle::Angle;
 use serde::Deserialize;
 use spherical_geometry::{Polygon, SphericalPoint};
 
 #[derive(Clone, Deserialize)]
 pub struct BorderVertex {
     pub constellation: String,
-    pub ra: f32,
-    pub dec: f32,
+    pub ra: angle::Deg<f32>,
+    pub dec: angle::Deg<f32>,
 }
 
 impl BorderVertex {
     pub fn get_position(&self) -> SphericalPoint {
-        SphericalPoint::new(self.ra, self.dec)
+        SphericalPoint::new(self.ra.to_rad().value(), self.dec.to_rad().value())
     }
 }
 

@@ -16,24 +16,24 @@ pub struct Markers {
 
 #[derive(Clone, Copy, Deserialize)]
 pub struct Marker {
-    pub ra: f32,
-    pub dec: f32,
+    pub ra: angle::Deg<f32>,
+    pub dec: angle::Deg<f32>,
     pub line_width: f32,
-    pub angular_radius: Option<f32>,
+    pub angular_radius: Option<angle::Deg<f32>>,
     pub pixel_radius: Option<f32>,
-    pub angular_width: Option<f32>,
+    pub angular_width: Option<angle::Deg<f32>>,
     pub pixel_width: Option<f32>,
 }
 
 #[derive(Clone, Deserialize)]
 pub struct MarkerRaw {
-    pub ra: f32,
-    pub dec: f32,
+    pub ra: angle::Deg<f32>,
+    pub dec: angle::Deg<f32>,
     pub colour: Option<String>,
     pub line_width: f32,
-    pub angular_radius: Option<f32>,
+    pub angular_radius: Option<angle::Deg<f32>>,
     pub pixel_radius: Option<f32>,
-    pub angular_width: Option<f32>,
+    pub angular_width: Option<angle::Deg<f32>>,
     pub pixel_width: Option<f32>,
 }
 
@@ -45,7 +45,7 @@ impl Marker {
         let other_vec = if let Some(angular_radius) = self.angular_radius {
             Some(get_point_vector(
                 self.ra,
-                if self.dec + angular_radius <= 90.0 {
+                if self.dec + angular_radius <= angle::Deg(90.0) {
                     self.dec + angular_radius
                 } else {
                     self.dec - angular_radius
@@ -56,7 +56,11 @@ impl Marker {
             self.angular_width.map(|angular_width| {
                 get_point_vector(
                     self.ra,
-                    if self.dec + angular_width <= 90.0 { self.dec + angular_width } else { self.dec - angular_width },
+                    if self.dec + angular_width <= angle::Deg(90.0) {
+                        self.dec + angular_width
+                    } else {
+                        self.dec - angular_width
+                    },
                     rotation_matrix,
                 )
             })
@@ -81,15 +85,15 @@ impl Marker {
     }
 
     /**
-     * ra - the right ascension
-     * dec - the declination
+     * ra - the right ascension (in degrees)
+     * dec - the declination (in degrees)
      * colour - the colour of the marker
      * line_width - the width of the line of the marker
      * half_size - the distance from the centre to the edge of the marker (radius for circular markers)
      * circular - if the marker is circular or not, if not then it is a cross
      * angular_size - if the half_size is in degrees or in pixels
      */
-    pub fn new(ra: f32, dec: f32, line_width: f32, half_size: f32, circular: bool, angular_size: bool) -> Self {
+    pub fn new(ra: angle::Deg<f32>, dec: angle::Deg<f32>, line_width: f32, half_size: f32, circular: bool, angular_size: bool) -> Self {
         #[allow(clippy::collapsible_else_if)]
         let [angular_radius, pixel_radius, angular_width, pixel_width] = if circular {
             if angular_size {
@@ -108,9 +112,9 @@ impl Marker {
             ra,
             dec,
             line_width,
-            angular_radius,
+            angular_radius: if let Some(a_r) = angular_radius { Some(angle::Deg(a_r)) } else { None },
             pixel_radius,
-            angular_width,
+            angular_width: if let Some(a_w) = angular_width { Some(angle::Deg(a_w)) } else { None },
             pixel_width,
         }
     }
@@ -121,9 +125,9 @@ pub struct MarkerRenderer {
     pub unit_vector_other_point: Option<Vector3<f32>>,
     pub colour: Color32,
     pub line_width: f32,
-    pub angular_radius: Option<f32>,
+    pub angular_radius: Option<angle::Deg<f32>>,
     pub pixel_radius: Option<f32>,
-    pub angular_width: Option<f32>,
+    pub angular_width: Option<angle::Deg<f32>>,
     pub pixel_width: Option<f32>,
     pub circle: bool,
 }

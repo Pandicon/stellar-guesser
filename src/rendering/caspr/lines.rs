@@ -17,10 +17,10 @@ pub struct SkyLines {
 }
 
 pub struct SkyLine {
-    pub ra_start: f32,
-    pub dec_start: f32,
-    pub ra_end: f32,
-    pub dec_end: f32,
+    pub ra_start: angle::Deg<f32>,
+    pub dec_start: angle::Deg<f32>,
+    pub ra_end: angle::Deg<f32>,
+    pub dec_end: angle::Deg<f32>,
     pub width: f32,
 }
 
@@ -51,10 +51,10 @@ impl SkyLine {
 
 #[derive(Clone, Deserialize)]
 pub struct SkyLineRaw {
-    pub ra_start: f32,
-    pub dec_start: f32,
-    pub ra_end: f32,
-    pub dec_end: f32,
+    pub ra_start: angle::Deg<f32>,
+    pub dec_start: angle::Deg<f32>,
+    pub ra_end: angle::Deg<f32>,
+    pub dec_end: angle::Deg<f32>,
     pub colour: Option<String>,
     pub width: f32,
 }

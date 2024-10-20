@@ -13,8 +13,8 @@ use super::{renderer::CellestialSphere, star_names::StarName};
 
 #[derive(Clone, Deserialize)]
 pub struct Star {
-    pub ra: f32,
-    pub dec: f32,
+    pub ra: angle::Deg<f32>,
+    pub dec: angle::Deg<f32>,
     pub vmag: f32,
     pub colour: Color32,
     #[allow(dead_code)]
@@ -25,8 +25,8 @@ pub struct Star {
 
 #[derive(Clone, Deserialize)]
 pub struct StarRaw {
-    pub ra: f32,
-    pub dec: f32,
+    pub ra: angle::Deg<f32>,
+    pub dec: angle::Deg<f32>,
     pub vmag: f32,
     pub colour: Option<String>,
     pub name: Option<String>,

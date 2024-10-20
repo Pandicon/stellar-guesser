@@ -1,5 +1,5 @@
 use crate::Application;
-use std::f32::consts::PI;
+use angle::Angle;
 
 impl Application {
     pub fn render_testing_window(&mut self, ctx: &egui::Context) -> Option<egui::InnerResponse<Option<()>>> {
@@ -25,10 +25,11 @@ impl Application {
                             println!("Stars in category: {:?}", category.len());
                             'stars: for star in category {
                                 // println!("{} {}", star.ra, star.dec);
-                                let pos = spherical_geometry::SphericalPoint::new(star.ra * PI / 180.0, star.dec * PI / 180.0);
+                                let pos = spherical_geometry::SphericalPoint::new(star.ra.to_rad().value(), star.dec.to_rad().value());
                                 for polygon in &constellation.polygons {
                                     match polygon.contains_point(&pos) {
                                         Ok(v) => {
+                                            println!("Determined the constellation for star at dec={} ra={}", star.dec, star.ra);
                                             // println!("{}", v);
                                             if v {
                                                 star.colour = egui::Color32::GREEN;

@@ -1,4 +1,5 @@
 use crate::{structs::state::windows::settings::GameSettingsQuestionsSubWindow, Application};
+use angle::Angle;
 
 impl Application {
     pub fn render_game_settings_questions_subwindow(&mut self, ui: &mut egui::Ui, tolerance_changed: &mut bool) {
@@ -72,11 +73,13 @@ impl Application {
         self.input.input_field_has_focus |= ui
             .add(egui::Slider::new(&mut self.game_handler.questions_settings.find_this_object.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"))
             .has_focus();
+        let mut correctness_threshold_inner = self.game_handler.questions_settings.find_this_object.correctness_threshold.value();
         let correctness_threshold_widget = ui.add(
-            egui::Slider::new(&mut self.game_handler.questions_settings.find_this_object.correctness_threshold, 0.0..=180.0)
+            egui::Slider::new(&mut correctness_threshold_inner, 0.0..=180.0)
                 .text("Correctness threshold (degrees)")
                 .logarithmic(true),
         );
+        self.game_handler.questions_settings.find_this_object.correctness_threshold = angle::Deg(correctness_threshold_inner);
         self.input.input_field_has_focus |= correctness_threshold_widget.has_focus();
         *tolerance_changed |= correctness_threshold_widget.changed();
         ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.replay_incorrect, "Replay incorrectly answered questions");

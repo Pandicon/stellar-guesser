@@ -8,7 +8,7 @@ pub struct FindThisObjectQuestionsSettings {
     pub show_bayer: bool,
     pub show_starnames: bool,
     pub magnitude_cutoff: f32,
-    pub correctness_threshold: f32,
+    pub correctness_threshold: angle::Deg<f32>,
     pub replay_incorrect: bool,
     pub show: bool,
 }
@@ -23,7 +23,7 @@ impl Default for FindThisObjectQuestionsSettings {
             show_bayer: true,
             show_starnames: true,
             magnitude_cutoff: 6.0,
-            correctness_threshold: 0.2,
+            correctness_threshold: angle::Deg(0.2),
             replay_incorrect: true,
             show: true,
         }

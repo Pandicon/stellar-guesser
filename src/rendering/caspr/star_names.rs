@@ -2,8 +2,8 @@ use serde::Deserialize;
 
 #[derive(Clone, Deserialize)]
 pub struct StarName {
-    pub ra: f32,
-    pub dec: f32,
+    pub ra: angle::Deg<f32>,
+    pub dec: angle::Deg<f32>,
     pub mag: f32,
     pub name: String,
     pub con: String,
@@ -32,8 +32,8 @@ pub struct StarNameRaw {
     hip: Option<String>,
     #[allow(dead_code)]
     hd: Option<String>,
-    ra: f32,
-    dec: f32,
+    ra: angle::Deg<f32>,
+    dec: angle::Deg<f32>,
     #[allow(dead_code)]
     date: String,
 }

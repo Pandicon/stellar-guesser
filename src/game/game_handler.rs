@@ -1,5 +1,3 @@
-use std::{collections::HashMap, f32::consts::PI};
-
 use crate::{
     enums::{self, GameStage, RendererCategory, StorageKeys},
     game::questions_settings,
@@ -9,7 +7,9 @@ use crate::{
         themes::Theme,
     },
 };
+use angle::Angle;
 use rand::Rng;
+use std::collections::HashMap;
 
 use super::game_settings;
 use crate::geometry;
@@ -18,8 +18,8 @@ use crate::geometry;
 pub enum Question {
     ObjectQuestion {
         name: String,
-        ra: f32,
-        dec: f32,
+        ra: angle::Deg<f32>,
+        dec: angle::Deg<f32>,
         is_messier: bool,
         is_caldwell: bool,
         is_ngc: bool,
@@ -32,13 +32,13 @@ pub enum Question {
         images: Vec<crate::structs::image_info::ImageInfo>,
     },
     PositionQuestion {
-        ra: f32,
-        dec: f32,
+        ra: angle::Deg<f32>,
+        dec: angle::Deg<f32>,
     },
     ThisPointObject {
         possible_names: Vec<String>,
-        ra: f32,
-        dec: f32,
+        ra: angle::Deg<f32>,
+        dec: angle::Deg<f32>,
         is_messier: bool,
         is_caldwell: bool,
         is_ngc: bool,
@@ -51,20 +51,22 @@ pub enum Question {
         images: Vec<crate::structs::image_info::ImageInfo>,
     },
     DistanceBetweenQuestion {
-        point1: (f32, f32),
-        point2: (f32, f32),
+        /// (ra, dec)
+        point1: (angle::Deg<f32>, angle::Deg<f32>),
+        /// (ra, dec)
+        point2: (angle::Deg<f32>, angle::Deg<f32>),
     },
     RAQuestion {
-        ra: f32,
-        dec: f32,
+        ra: angle::Deg<f32>,
+        dec: angle::Deg<f32>,
     },
     DECQuestion {
-        ra: f32,
-        dec: f32,
+        ra: angle::Deg<f32>,
+        dec: angle::Deg<f32>,
     },
     MagQuestion {
-        ra: f32,
-        dec: f32,
+        ra: angle::Deg<f32>,
+        dec: angle::Deg<f32>,
         mag: f32,
     },
     NoMoreQuestions,
@@ -86,7 +88,7 @@ pub struct GameHandler {
     pub answer_review_text: String,
     pub answer: String,
 
-    pub guess_marker_positions: Vec<[f32; 2]>,
+    pub guess_marker_positions: Vec<[angle::Rad<f32>; 2]>,
 
     pub game_settings: game_settings::GameSettings,
     pub questions_settings: questions_settings::QuestionsSettings,
@@ -391,12 +393,12 @@ impl GameHandler {
             request_input_focus: false,
         }
     }
-    pub fn evaluate_score(distance: f32) -> u32 {
-        if distance < 0.2 {
+    pub fn evaluate_score(distance: angle::Deg<f32>) -> u32 {
+        if distance < angle::Deg(0.2) {
             3
-        } else if distance < 0.5 {
+        } else if distance < angle::Deg(0.5) {
             2
-        } else if distance < 1.0 {
+        } else if distance < angle::Deg(1.0) {
             1
         } else {
             0
@@ -427,19 +429,19 @@ impl GameHandler {
                 let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !markers.is_empty() {
                     let answer_dec = markers[0].dec;
                     let answer_ra = markers[0].ra;
-                    let distance = geometry::angular_distance((ra * PI / 180.0, dec * PI / 180.0), (answer_ra * PI / 180.0, answer_dec * PI / 180.0)) * 180.0 / PI;
+                    let distance = geometry::angular_distance((ra.to_rad(), dec.to_rad()), (answer_ra.to_rad(), answer_dec.to_rad())).to_deg();
                     if self.game_settings.is_scored_mode {
                         self.score += GameHandler::evaluate_score(distance);
                     }
                     (
-                        answer_dec.to_string(),
-                        answer_ra.to_string(),
-                        distance.to_string(),
+                        answer_dec.value().to_string(),
+                        answer_ra.value().to_string(),
+                        distance.value().to_string(),
                         if distance < self.questions_settings.find_this_object.correctness_threshold {
                             correct = true;
                             String::from("Correct!")
                         } else {
-                            format!("You were {} degrees away from {} !", (distance * 100.0).round() / 100.0, name)
+                            format!("You were {} degrees away from {} !", (distance.value() * 100.0).round() / 100.0, name)
                         },
                     )
                 } else {
@@ -447,11 +449,11 @@ impl GameHandler {
                 };
                 self.answer_review_text_heading = answer_review_text_heading;
                 self.answer_review_text = format!(
-					"Your coordinates: [dec = {}; ra = {}]\nCorrect coordinates: [dec = {}; ra = {}]\nFully precise distance: {} degrees\nYou can see the correct place marked with a new {}.\nObject type: {}",
+					"Your coordinates: [dec = {}°; ra = {}°]\nCorrect coordinates: [dec = {}°; ra = {}°]\nFully precise distance: {}°\nYou can see the correct place marked with a new {}.\nObject type: {}",
 					answer_dec_text,
 					answer_ra_text,
-					dec,
-					ra,
+					dec.value(),
+					ra.value(),
 					distance,
 					if *is_bayer || *is_starname { "circle" } else { "cross" },
 					object_type
@@ -473,7 +475,7 @@ impl GameHandler {
                 }
             }
             Question::PositionQuestion { ra, dec, .. } => {
-                let possible_abbrevs = cellestial_sphere.determine_constellation((*ra, *dec));
+                let possible_abbrevs = cellestial_sphere.determine_constellation((ra.to_rad(), dec.to_rad()));
                 let mut possible_constellation_names = Vec::new();
                 for abbrev in possible_abbrevs {
                     if let Some(constellation) = cellestial_sphere.constellations.get(&abbrev) {
@@ -522,118 +524,110 @@ impl GameHandler {
             Question::DistanceBetweenQuestion { point1, point2 } => {
                 let (ra1, dec1) = point1;
                 let (ra2, dec2) = point2;
-                let distance = geometry::angular_distance((ra1 * PI / 180.0, dec1 * PI / 180.0), (ra2 * PI / 180.0, dec2 * PI / 180.0)) * 180.0 / PI;
-                let answer_dist: f32 = match self.answer.parse() {
+                let distance = geometry::angular_distance((ra1.to_rad(), dec1.to_rad()), (ra2.to_rad(), dec2.to_rad())).to_deg();
+                match self.answer.parse::<f32>() {
                     Ok(answer) => {
-                        self.answer_review_text_heading = format!("You were {:.1} degrees away!", distance - answer);
-                        let error_percent = 1.0 - answer / distance;
-                        self.answer_review_text = format!("The real distance was {:.1}°. Your error is equal to {:.1}% of the distance.", distance, error_percent * 100.0);
-                        answer
+                        let answer = angle::Deg(answer);
+                        self.answer_review_text_heading = format!("You were {:.1} degrees away!", (distance - answer).value());
+                        let error_percent = 1.0 - answer.value() / distance.value();
+                        self.answer_review_text = format!("The real distance was {:.1}°. Your error is equal to {:.1}% of the distance.", distance.value(), error_percent * 100.0);
+                        if self.game_settings.is_scored_mode {
+                            let error = (1.0 - answer.value() / distance.value()).abs();
+                            if error < 0.03 {
+                                self.score += 3;
+                            } else if error < 0.05 {
+                                self.score += 2;
+                            } else if error < 0.1 {
+                                self.score += 1;
+                            }
+                            self.possible_score += 3;
+                        }
                     }
                     Err(_) => {
                         self.answer_review_text_heading = "You didn't guess".to_string();
                         self.answer_review_text = format!("The real distance was {:.1}°.", distance);
-
-                        0.0
                     }
                 };
-                if self.game_settings.is_scored_mode {
-                    let error = 1.0 - (answer_dist / distance).abs();
-                    if error < 0.03 {
-                        self.score += 3;
-                    } else if error < 0.05 {
-                        self.score += 2;
-                    } else if error < 0.1 {
-                        self.score += 1;
-                    }
-                    self.possible_score += 3;
-                }
                 self.used_questions.push(self.current_question);
             }
             Question::RAQuestion { ra, .. } => {
-                let answer_dist: f32 = match self.answer.parse::<f32>() {
-                    Ok(answer) => {
-                        self.answer_review_text_heading = format!("You were {:.1}h away!", (answer - ra / 360.0 * 24.0).abs());
+                match self.answer.parse::<f32>() {
+                    Ok(answer_hours) => {
+                        let answer_deg = angle::Deg(answer_hours / 24.0 * 360.0);
+                        let error = (*ra - answer_deg).abs();
+                        self.answer_review_text_heading = format!("You were {:.1}h away!", error.value());
 
-                        self.answer_review_text = format!("The real right ascension was {:.1}h", ra / 360.0 * 24.0);
-                        answer
+                        self.answer_review_text = format!("The real right ascension was {:.1}h", ra.value() / 360.0 * 24.0);
+
+                        if self.game_settings.is_scored_mode {
+                            if error < angle::Deg(3.0) {
+                                self.score += 3;
+                            } else if error < angle::Deg(5.0) {
+                                self.score += 2;
+                            } else if error < angle::Deg(10.0) {
+                                self.score += 1;
+                            }
+                            self.possible_score += 3;
+                        }
                     }
                     Err(_) => {
                         self.answer_review_text_heading = "You didn't guess".to_string();
-                        self.answer_review_text = format!("The real right ascension was {:.1}h.", ra / 360.0 * 24.0);
-
-                        0.0
+                        self.answer_review_text = format!("The real right ascension was {:.1}h.", ra.value() / 360.0 * 24.0);
                     }
                 };
-                let error = (ra - answer_dist / 24.0 * 360.0).abs();
-
-                if self.game_settings.is_scored_mode {
-                    if error < 0.1 {
-                        self.score += 3;
-                    } else if error < 0.3 {
-                        self.score += 2;
-                    } else if error < 0.7 {
-                        self.score += 1;
-                    }
-                    self.possible_score += 3;
-                }
                 self.used_questions.push(self.current_question);
             }
             Question::DECQuestion { dec, .. } => {
-                let answer_dist: f32 = match self.answer.parse::<f32>() {
+                match self.answer.parse::<f32>() {
                     Ok(answer) => {
-                        self.answer_review_text_heading = format!("You were {:.1}° away!", (answer - dec).abs());
+                        let answer_deg = angle::Deg(answer);
+                        let error = (*dec - answer_deg).abs();
+                        self.answer_review_text_heading = format!("You were {:.1}° away!", error.value());
 
                         self.answer_review_text = format!("The declination  was {:.1}°", dec);
-                        answer
+
+                        if self.game_settings.is_scored_mode {
+                            if error < angle::Deg(3.0) {
+                                self.score += 3;
+                            } else if error < angle::Deg(5.0) {
+                                self.score += 2;
+                            } else if error < angle::Deg(10.0) {
+                                self.score += 1;
+                            }
+                            self.possible_score += 3;
+                        }
                     }
                     Err(_) => {
                         self.answer_review_text_heading = "You didn't guess".to_string();
                         self.answer_review_text = format!("The declination was {:.1}°.", dec);
-
-                        0.0
                     }
                 };
-                let error = (dec - answer_dist).abs();
-
-                if self.game_settings.is_scored_mode {
-                    if error < 3.0 {
-                        self.score += 3;
-                    } else if error < 5.0 {
-                        self.score += 2;
-                    } else if error < 10.0 {
-                        self.score += 1;
-                    }
-                    self.possible_score += 3;
-                }
+                self.used_questions.push(self.current_question);
             }
             Question::MagQuestion { mag, .. } => {
-                let answer_mag: f32 = match self.answer.parse() {
+                match self.answer.parse::<f32>() {
                     Ok(answer) => {
-                        self.answer_review_text_heading = format!("You were {:.1} mag away!", answer - mag);
+                        let error = (mag - answer).abs();
+                        self.answer_review_text_heading = format!("You were {:.1} mag away!", error);
 
                         self.answer_review_text = format!("The  magnitude  was {:.1}.", mag);
-                        answer
+
+                        if self.game_settings.is_scored_mode {
+                            if error < 0.3 {
+                                self.score += 3;
+                            } else if error < 0.7 {
+                                self.score += 2;
+                            } else if error < 1.5 {
+                                self.score += 1;
+                            }
+                            self.possible_score += 3;
+                        }
                     }
                     Err(_) => {
                         self.answer_review_text_heading = "You didn't guess".to_string();
                         self.answer_review_text = format!("The  magnitude  was {:.1}.", mag);
-
-                        0.0
                     }
                 };
-                let error = (mag - answer_mag).abs();
-
-                if self.game_settings.is_scored_mode {
-                    if error < 3.0 {
-                        self.score += 3;
-                    } else if error < 5.0 {
-                        self.score += 2;
-                    } else if error < 10.0 {
-                        self.score += 1;
-                    }
-                    self.possible_score += 3;
-                }
                 self.used_questions.push(self.current_question);
             }
             Question::NoMoreQuestions => {}
@@ -916,7 +910,7 @@ impl GameHandler {
         }
     }
 
-    fn get_question_distance_tolerance(&self) -> f32 {
+    fn get_question_distance_tolerance(&self) -> angle::Deg<f32> {
         match &self.question_catalog[self.current_question] {
             Question::NoMoreQuestions
             | Question::PositionQuestion { .. }
@@ -924,7 +918,7 @@ impl GameHandler {
             | Question::DECQuestion { .. }
             | Question::RAQuestion { .. }
             | Question::MagQuestion { .. }
-            | Question::ThisPointObject { .. } => 0.0,
+            | Question::ThisPointObject { .. } => angle::Deg(0.0),
             Question::ObjectQuestion { .. } => self.questions_settings.find_this_object.correctness_threshold,
         }
     }
@@ -942,13 +936,13 @@ impl GameHandler {
         }
     }
 
-    pub fn generate_player_markers(&self, marker_positions: &Vec<[f32; 2]>, theme: &Theme) -> Vec<GameMarker> {
+    pub fn generate_player_markers(&self, marker_positions: &Vec<[angle::Rad<f32>; 2]>, theme: &Theme) -> Vec<GameMarker> {
         let mut markers = Vec::new();
         for &[dec, ra] in marker_positions {
             markers.push(GameMarker::new(
                 GameMarkerType::Exact,
-                ra / PI * 180.0,
-                dec / PI * 180.0,
+                ra.to_deg(),
+                dec.to_deg(),
                 2.0,
                 5.0,
                 self.show_circle_marker(),
@@ -958,10 +952,10 @@ impl GameHandler {
             if self.show_tolerance_marker() {
                 markers.push(GameMarker::new(
                     GameMarkerType::Tolerance,
-                    ra / PI * 180.0,
-                    dec / PI * 180.0,
+                    ra.to_deg(),
+                    dec.to_deg(),
                     2.0,
-                    self.get_question_distance_tolerance(),
+                    self.get_question_distance_tolerance().value(),
                     true,
                     true,
                     &theme.game_visuals.game_markers_colours,
