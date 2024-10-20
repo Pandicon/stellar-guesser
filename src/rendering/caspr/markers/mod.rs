@@ -112,9 +112,9 @@ impl Marker {
             ra,
             dec,
             line_width,
-            angular_radius: if let Some(a_r) = angular_radius { Some(angle::Deg(a_r)) } else { None },
+            angular_radius: angular_radius.map(angle::Deg),
             pixel_radius,
-            angular_width: if let Some(a_w) = angular_width { Some(angle::Deg(a_w)) } else { None },
+            angular_width: angular_width.map(angle::Deg),
             pixel_width,
         }
     }
