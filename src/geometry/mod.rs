@@ -1,10 +1,10 @@
+use crate::renderer::CellestialSphere;
+use angle::Angle;
 use egui::Pos2;
 use nalgebra::{Matrix3, Vector2, Vector3};
 use rand::{rngs::ThreadRng, Rng};
 use spherical_geometry::SphericalPoint;
 use std::f32::consts::PI;
-
-use crate::renderer::CellestialSphere;
 
 pub mod intersections;
 
@@ -77,9 +77,9 @@ pub fn is_in_rect<T: PartialOrd>(point: [T; 2], rect: [[T; 2]; 2]) -> bool {
     point[0] >= upper_left[0] && point[0] <= bottom_right[0] && point[1] >= upper_left[1] && point[1] <= bottom_right[1]
 }
 
-pub fn get_point_vector(ra: f32, dec: f32, rotation_matrix: &Matrix3<f32>) -> Vector3<f32> {
-    let (ra_s, ra_c) = ((-ra as f64) * std::f64::consts::PI / 180.0).sin_cos();
-    let (de_s, de_c) = ((90.0 - dec as f64) * std::f64::consts::PI / 180.0).sin_cos();
+pub fn get_point_vector(ra: angle::Deg<f32>, dec: angle::Deg<f32>, rotation_matrix: &Matrix3<f32>) -> Vector3<f32> {
+    let (ra_s, ra_c) = (-(ra.to_rad().value() as f64)).sin_cos();
+    let (de_s, de_c) = (std::f64::consts::PI / 2.0 - (dec.to_rad().value() as f64)).sin_cos();
     rotation_matrix * Vector3::new((de_s * ra_c) as f32, (de_s * ra_s) as f32, (de_c) as f32)
 }
 
@@ -133,7 +133,7 @@ pub fn cast_onto_sphere_plane_position(cellestial_sphere: &CellestialSphere, pla
 }
 
 /** Returns a (dec, ra) pair (both in radians) */
-pub fn cartesian_to_spherical(vector: Vector3<f32>) -> (f32, f32) {
+pub fn cartesian_to_spherical(vector: Vector3<f32>) -> (angle::Rad<f32>, angle::Rad<f32>) {
     /*let v = vector.normalize();
     let x = v[0];
     let y = v[1];
@@ -147,9 +147,9 @@ pub fn cartesian_to_spherical(vector: Vector3<f32>) -> (f32, f32) {
     if ra < 0.0 {
         ra += 2.0 * PI;
     }
-    (dec, ra)
+    (angle::Rad(dec), angle::Rad(ra))
 }
-pub fn cast_onto_sphere_dec_ra(cellestial_sphere: &CellestialSphere, screen_position: &egui::Pos2) -> [f32; 2] {
+pub fn cast_onto_sphere_dec_ra(cellestial_sphere: &CellestialSphere, screen_position: &egui::Pos2) -> [angle::Rad<f32>; 2] {
     let sphere_position = cast_onto_sphere(cellestial_sphere, screen_position);
     let (dec, ra) = cartesian_to_spherical(sphere_position);
     [dec, ra]
@@ -158,7 +158,7 @@ pub fn cast_onto_sphere_dec_ra(cellestial_sphere: &CellestialSphere, screen_posi
  * initial_position: (ra, dec) both in radians
  * final_position: (ra, dec) both in radians
  */
-pub fn angular_distance(initial_position: (f32, f32), final_position: (f32, f32)) -> f32 {
+pub fn angular_distance(initial_position: (angle::Rad<f32>, angle::Rad<f32>), final_position: (angle::Rad<f32>, angle::Rad<f32>)) -> angle::Rad<f32> {
     let (i_ra, i_dec) = initial_position;
     let (f_ra, f_dec) = final_position;
 
@@ -170,17 +170,21 @@ pub fn angular_distance(initial_position: (f32, f32), final_position: (f32, f32)
     cos(a) = cos(b)cos(c) + sin(b)sin(c)cos(A)
     */
 
-    let b = PI / 2.0 - i_dec;
-    let c = PI / 2.0 - f_dec;
-    (b.cos() * c.cos() + b.sin() * c.sin() * (i_ra - f_ra).cos()).acos()
+    let b = PI / 2.0 - i_dec.value();
+    let c = PI / 2.0 - f_dec.value();
+    angle::Rad((b.cos() * c.cos() + b.sin() * c.sin() * (i_ra - f_ra).cos()).acos())
 
     // (i_dec.cos() * f_dec.cos() + i_dec.sin() * i_dec.sin() * (i_ra - f_ra).cos()).acos()
 }
-pub fn generate_random_point(rng: &mut ThreadRng) -> (f32, f32) {
+/// Returns a (ra, dec) pair, both in degrees
+pub fn generate_random_point(rng: &mut ThreadRng) -> (angle::Deg<f32>, angle::Deg<f32>) {
     // Generate a random right ascension as normal
     // Then generate a height from the dec = 0 plane and compute the declination from that (since having a uniform distribution of declinations results in higher points density at the poles)
-    // This works since it essentially generates a random point on a cyllinder and then projects it onto the sphere using an "inverse orthographic projection", which conserves areas and therefore also the fact that the points are uniformly distributed across the area.
-    (rng.gen_range(0.0..360.0), (90.0 - rng.gen_range(-1.0_f32..=1.0_f32).acos() * 180.0 / PI).clamp(-90.0, 90.0))
+    // This works since it essentially generates a random point on a cylinder and then projects it onto the sphere using an "inverse orthographic projection", which conserves areas and therefore also the fact that the points are uniformly distributed across the area.
+    (
+        angle::Deg(rng.gen_range(0.0..360.0)),
+        angle::Deg((90.0 - rng.gen_range(-1.0_f32..=1.0_f32).acos() * 180.0 / PI).clamp(-90.0, 90.0)),
+    )
 }
 pub fn ccw(a: Pos2, b: Pos2, c: Pos2) -> bool {
     (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x)
