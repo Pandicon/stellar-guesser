@@ -64,6 +64,11 @@ impl Application {
 
     fn render_game_settings_find_this_object_subwindow(&mut self, ui: &mut egui::Ui, tolerance_changed: &mut bool) {
         ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show, "Show the 'Find this object' questions");
+        ui.checkbox(
+            &mut self.game_handler.questions_settings.find_this_object.rotate_to_correct_point,
+            "Rotate to the correct point after answering",
+        )
+        .on_hover_text("Whether or not to rotate the view so that the correct point is in the centre of the screen after answering");
         ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_messiers, "Show Messier objects");
         ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_caldwells, "Show Caldwell objects");
         ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_ngcs, "Show NGC objects");

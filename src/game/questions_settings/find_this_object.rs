@@ -1,6 +1,7 @@
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct FindThisObjectQuestionsSettings {
+    pub rotate_to_correct_point: bool,
     pub show_messiers: bool,
     pub show_caldwells: bool,
     pub show_ngcs: bool,
@@ -16,6 +17,7 @@ pub struct FindThisObjectQuestionsSettings {
 impl Default for FindThisObjectQuestionsSettings {
     fn default() -> Self {
         Self {
+            rotate_to_correct_point: true,
             show_messiers: true,
             show_caldwells: true,
             show_ngcs: true,

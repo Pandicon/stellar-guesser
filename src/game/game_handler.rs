@@ -473,6 +473,11 @@ impl GameHandler {
                 } else {
                     self.question_number += 1;
                 }
+                if self.questions_settings.find_this_object.rotate_to_correct_point {
+                    let final_vector = geometry::get_point_vector(*ra, *dec, &nalgebra::Matrix3::<f32>::identity());
+                    cellestial_sphere.look_at_point(&final_vector);
+                    cellestial_sphere.init_renderers();
+                }
             }
             Question::PositionQuestion { ra, dec, .. } => {
                 let possible_abbrevs = cellestial_sphere.determine_constellation((ra.to_rad(), dec.to_rad()));
