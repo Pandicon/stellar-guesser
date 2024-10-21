@@ -59,7 +59,7 @@ enum Event {
 #[derive(Clone)]
 struct RepaintSignal(std::sync::Arc<std::sync::Mutex<winit::event_loop::EventLoopProxy<Event>>>);
 
-fn create_window<T>(event_loop: &EventLoopWindowTarget<T>, state: &mut State, painter: &mut Painter) -> winit::window::Window {
+fn create_window<T>(event_loop: &EventLoopWindowTarget<T>, state: &mut State, painter: &mut Painter) -> Option<winit::window::Window> {
     #[cfg(target_os = "windows")]
     let window_icon = {
         let icon_data = {
@@ -100,7 +100,10 @@ fn create_window<T>(event_loop: &EventLoopWindowTarget<T>, state: &mut State, pa
         .build(event_loop)
         .unwrap();
 
-    pollster::block_on(painter.set_window(state.egui_ctx().viewport_id(), Some(&window))).unwrap();
+    if let Err(err) = pollster::block_on(painter.set_window(state.egui_ctx().viewport_id(), Some(&window))) {
+        log::error!("Failed to associate new Window with Painter: {err:?}");
+        return None;
+    };
 
     // NB: calling set_window will lazily initialize render state which
     // means we will be able to query the maximum supported texture
@@ -111,7 +114,7 @@ fn create_window<T>(event_loop: &EventLoopWindowTarget<T>, state: &mut State, pa
 
     window.request_redraw();
 
-    window
+    Some(window)
 }
 
 fn _main(event_loop: EventLoop<Event>) {
