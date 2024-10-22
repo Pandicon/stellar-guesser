@@ -8,10 +8,10 @@ impl Application {
             let prev_selected_constellation = self.testing_settings.highlight_stars_in_constellation.clone();
             ui.horizontal(|ui| {
                 ui.label("Highlight stars from constellation: ");
-                egui::ComboBox::from_id_source("Highlight stars from constellation: ")
+                egui::ComboBox::from_id_salt("Highlight stars from constellation: ")
                     .selected_text(self.testing_settings.highlight_stars_in_constellation.to_string())
                     .show_ui(ui, |ui: &mut egui::Ui| {
-                        ui.style_mut().wrap = Some(false);
+                        ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
                         let mut keys = self.cellestial_sphere.constellations.keys().map(|k| k.to_lowercase()).collect::<Vec<String>>();
                         keys.sort();
                         for key in keys {
@@ -57,10 +57,10 @@ impl Application {
             let prev_selected_constellation = self.testing_settings.highlight_stars_in_constellation_precomputed.clone();
             ui.horizontal(|ui| {
                 ui.label("Highlight stars from constellation, using precomputed values: ");
-                egui::ComboBox::from_id_source("Highlight stars from constellation, using precomputed values: ")
+                egui::ComboBox::from_id_salt("Highlight stars from constellation, using precomputed values: ")
                     .selected_text(self.testing_settings.highlight_stars_in_constellation_precomputed.to_string())
                     .show_ui(ui, |ui: &mut egui::Ui| {
-                        ui.style_mut().wrap = Some(false);
+                        ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
                         let mut keys = self.cellestial_sphere.constellations.keys().map(|k| k.to_lowercase()).collect::<Vec<String>>();
                         keys.sort();
                         for key in keys {

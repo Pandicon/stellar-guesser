@@ -8,10 +8,10 @@ impl Application {
             // If adding new question types, make sure that the picker gets collapsed into a combo box on an appropriately wide/narrow screens
             if self.screen_width.narrow() {
                 ui.label("Question type: ");
-                egui::ComboBox::from_id_source("Question type: ")
+                egui::ComboBox::from_id_salt("Question type: ")
                     .selected_text(format!("{}", self.state.windows.settings.game_settings.questions_subwindow.subwindow))
                     .show_ui(ui, |ui: &mut egui::Ui| {
-                        ui.style_mut().wrap = Some(false);
+                        ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
                         self.render_question_type_picker(ui);
                     });
             } else {

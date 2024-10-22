@@ -56,10 +56,10 @@ impl Application {
     pub fn render_sky_settings_general_subwindow(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         let prev_light_pollution = self.cellestial_sphere.light_pollution_place;
         ui.label("Light pollution level: ");
-        egui::ComboBox::from_id_source("Light pollution level: ")
+        egui::ComboBox::from_id_salt("Light pollution level: ")
             .selected_text(format!("{}", self.cellestial_sphere.light_pollution_place))
             .show_ui(ui, |ui| {
-                ui.style_mut().wrap = Some(false);
+                ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
                 ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Default, format!("{}", LightPollution::Default));
                 ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Prague, format!("{}", LightPollution::Prague));
                 ui.selectable_value(
@@ -76,8 +76,8 @@ impl Application {
         let previous_theme_name = self.theme.name.clone();
         let mut selected_theme_name = self.theme.name.clone();
         ui.label("Theme: ");
-        egui::ComboBox::from_id_source("Theme: ").selected_text(&self.theme.name).show_ui(ui, |ui| {
-            ui.style_mut().wrap = Some(false);
+        egui::ComboBox::from_id_salt("Theme: ").selected_text(&self.theme.name).show_ui(ui, |ui| {
+            ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
             let mut themes = self.themes.themes_names().collect::<Vec<&String>>();
             themes.sort();
             for theme_name in themes {
