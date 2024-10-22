@@ -559,17 +559,17 @@ impl GameHandler {
                 match self.answer.parse::<f32>() {
                     Ok(answer_hours) => {
                         let answer_deg = angle::Deg(answer_hours / 24.0 * 360.0);
-                        let error = (*ra - answer_deg).abs();
-                        self.answer_review_text_heading = format!("You were {:.1}h away!", error.value());
+                        let error_deg = (*ra - answer_deg).abs();
+                        self.answer_review_text_heading = format!("You were {:.1}h away!", error_deg.value() / 360.0 * 24.0);
 
                         self.answer_review_text = format!("The real right ascension was {:.1}h", ra.value() / 360.0 * 24.0);
 
                         if self.game_settings.is_scored_mode {
-                            if error < angle::Deg(3.0) {
+                            if error_deg < angle::Deg(3.0) {
                                 self.score += 3;
-                            } else if error < angle::Deg(5.0) {
+                            } else if error_deg < angle::Deg(5.0) {
                                 self.score += 2;
-                            } else if error < angle::Deg(10.0) {
+                            } else if error_deg < angle::Deg(10.0) {
                                 self.score += 1;
                             }
                             self.possible_score += 3;
