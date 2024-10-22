@@ -1,4 +1,5 @@
 use crate::Application;
+use eframe::egui;
 
 impl Application {
     pub fn render(&mut self, ctx: &egui::Context) -> bool {
@@ -54,6 +55,6 @@ impl Application {
 
             self.render_top_panel(ctx);
         });
-        central_panel_response.response.hovered()
+        central_panel_response.response.contains_pointer()
     }
 }

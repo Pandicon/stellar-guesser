@@ -1,4 +1,5 @@
 use crate::{enums::LightPollution, Application};
+use eframe::egui;
 
 impl Application {
     pub fn render_top_panel(&mut self, ctx: &egui::Context) -> egui::InnerResponse<()> {

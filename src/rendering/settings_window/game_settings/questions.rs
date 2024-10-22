@@ -1,5 +1,6 @@
 use crate::{structs::state::windows::settings::GameSettingsQuestionsSubWindow, Application};
 use angle::Angle;
+use eframe::egui;
 
 impl Application {
     pub fn render_game_settings_questions_subwindow(&mut self, ui: &mut egui::Ui, tolerance_changed: &mut bool) {

@@ -1,3 +1,4 @@
+use eframe::egui;
 use egui::epaint::Color32;
 
 pub fn parse_colour(col: Option<String>, default_colour: Color32) -> Color32 {

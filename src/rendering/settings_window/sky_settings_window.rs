@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use eframe::egui;
 use egui::epaint::Color32;
 
 use crate::{

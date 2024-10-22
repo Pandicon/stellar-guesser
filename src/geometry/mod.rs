@@ -1,5 +1,6 @@
 use crate::renderer::CellestialSphere;
 use angle::Angle;
+use eframe::egui;
 use egui::Pos2;
 use nalgebra::{Matrix3, Vector2, Vector3};
 use rand::{rngs::ThreadRng, Rng};

@@ -1,3 +1,4 @@
+use eframe::egui;
 use egui::epaint::Pos2;
 use std::collections::HashMap;
 
@@ -54,7 +55,6 @@ impl Application {
                 self.cellestial_sphere.game_markers.markers = new_markers; // vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.game_handler.show_circle_marker(), false)];
                 self.cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
             }
-
             let initial_vector = self.cellestial_sphere.project_screen_pos(pointer_position - self.input.dragged);
             let final_vector = self.cellestial_sphere.project_screen_pos(pointer_position);
 
@@ -184,8 +184,13 @@ impl Input {
                         self.zoom = -0.2;
                     }
                 }
-                egui::Event::Scroll(egui::Vec2 { y, .. }) => {
-                    self.zoom = *y / 500.0;
+                egui::Event::MouseWheel { delta, unit, .. } => {
+                    let divider = match unit {
+                        egui::MouseWheelUnit::Point => 500.0,
+                        egui::MouseWheelUnit::Line => 25.0,
+                        egui::MouseWheelUnit::Page => 0.5,
+                    };
+                    self.zoom = delta.y / divider;
                 }
                 egui::Event::Touch {
                     device_id: _,
@@ -479,6 +484,7 @@ impl Input {
                         | egui::Key::F18
                         | egui::Key::F19
                         | egui::Key::F20 => "",
+                        _ => "",
                     };
                     // Could probably have a bit more fun with it, but having it doubled does work well enough...
                     if *key == egui::Key::Space && !self.input_field_has_focus {

@@ -1,4 +1,5 @@
 use crate::{enums::GameStage, Application};
+use eframe::egui;
 
 impl Application {
     pub fn render_question_window(&mut self, ctx: &egui::Context) -> Option<egui::InnerResponse<Option<()>>> {
