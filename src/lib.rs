@@ -95,8 +95,10 @@ pub extern "C" fn start_app() {
 pub fn main() {
     env_logger::builder().filter_level(log::LevelFilter::Warn).parse_default_env().init();
 
-    let mut options = eframe::NativeOptions::default();
-    options.viewport = eframe::egui::viewport::ViewportBuilder::default().with_maximized(true);
+    let mut options = eframe::NativeOptions {
+        viewport: eframe::egui::viewport::ViewportBuilder::default().with_maximized(true),
+        ..Default::default()
+    };
 
     #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
     {
