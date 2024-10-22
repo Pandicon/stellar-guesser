@@ -2,11 +2,9 @@
 
 #![allow(clippy::redundant_static_lifetimes)] // Comes from const_gen
 
+use eframe::egui;
 #[cfg(target_os = "android")]
 use winit::platform::android::activity::AndroidApp;
-
-const INITIAL_WIDTH: u32 = 1920;
-const INITIAL_HEIGHT: u32 = 1080;
 
 pub use application::Application;
 pub use public_constants::*;
@@ -30,7 +28,7 @@ mod tests;
 pub const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 pub const PROJECT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 const ICON_PATH: &str = "./ico.png";
 
 #[cfg(target_os = "android")]
@@ -98,6 +96,8 @@ pub fn main() {
     env_logger::builder().filter_level(log::LevelFilter::Warn).parse_default_env().init();
 
     let mut options = eframe::NativeOptions::default();
+    options.viewport = eframe::egui::viewport::ViewportBuilder::default().with_maximized(true);
+
     #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
     {
         let default_path = {
@@ -108,8 +108,24 @@ pub fn main() {
             def_path
         };
         options.persistence_path = Some(default_path);
+
+        let icon_data = {
+            match image::open(ICON_PATH) {
+                Ok(dynamic_image) => {
+                    let image = dynamic_image.into_rgba8();
+                    let (width, height) = image.dimensions();
+                    let rgba = image.into_raw();
+                    let icon_data = egui::viewport::IconData { rgba, width, height };
+                    Some(std::sync::Arc::new(icon_data))
+                }
+                Err(err) => {
+                    log::error!("Failed to open icon path: {:?}", err);
+                    None
+                }
+            }
+        };
+        options.viewport.icon = icon_data;
     }
-    options.viewport = eframe::egui::viewport::ViewportBuilder::default().with_maximized(true);
     _main(options);
 }
 
