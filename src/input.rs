@@ -408,7 +408,11 @@ impl Input {
                         egui::Key::Period => ".",
                         egui::Key::Colon => ":",
                         egui::Key::Semicolon => ";",
+                        egui::Key::Questionmark => "?",
                         egui::Key::Backtick => "`",
+                        egui::Key::Quote => "'",
+                        egui::Key::Pipe => "|",
+                        egui::Key::Slash => "/",
                         egui::Key::Backslash => "\\",
                         egui::Key::OpenBracket => "(",
                         egui::Key::CloseBracket => ")",
@@ -483,8 +487,22 @@ impl Input {
                         | egui::Key::F17
                         | egui::Key::F18
                         | egui::Key::F19
-                        | egui::Key::F20 => "",
-                        _ => "",
+                        | egui::Key::F20
+                        | egui::Key::F21
+                        | egui::Key::F22
+                        | egui::Key::F23
+                        | egui::Key::F24
+                        | egui::Key::F25
+                        | egui::Key::F26
+                        | egui::Key::F27
+                        | egui::Key::F28
+                        | egui::Key::F29
+                        | egui::Key::F30
+                        | egui::Key::F31
+                        | egui::Key::F32
+                        | egui::Key::F33
+                        | egui::Key::F34
+                        | egui::Key::F35 => "",
                     };
                     // Could probably have a bit more fun with it, but having it doubled does work well enough...
                     if *key == egui::Key::Space && !self.input_field_has_focus {
