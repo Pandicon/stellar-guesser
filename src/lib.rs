@@ -2,7 +2,6 @@
 
 #![allow(clippy::redundant_static_lifetimes)] // Comes from const_gen
 
-use eframe::egui;
 #[cfg(target_os = "android")]
 use winit::platform::android::activity::AndroidApp;
 
@@ -117,7 +116,7 @@ pub fn main() {
                     let image = dynamic_image.into_rgba8();
                     let (width, height) = image.dimensions();
                     let rgba = image.into_raw();
-                    let icon_data = egui::viewport::IconData { rgba, width, height };
+                    let icon_data = eframe::egui::viewport::IconData { rgba, width, height };
                     Some(std::sync::Arc::new(icon_data))
                 }
                 Err(err) => {
