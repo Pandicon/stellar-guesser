@@ -26,7 +26,7 @@ impl Application {
                                 if response.newer_version_exists {
                                     self.toasts
                                         .info(format!("An update to version {} is available!", response.newest_found_version))
-                                        .set_duration(Some(std::time::Duration::from_secs(15)));
+                                        .duration(Some(std::time::Duration::from_secs(15)));
                                 }
                             }
                             CheckUpdatesShowPopup::IfInfoWindowClosed => {
@@ -34,9 +34,9 @@ impl Application {
                                     if response.newer_version_exists {
                                         self.toasts
                                             .info(format!("An update to version {} is available!", response.newest_found_version))
-                                            .set_duration(Some(std::time::Duration::from_secs(15)));
+                                            .duration(Some(std::time::Duration::from_secs(15)));
                                     } else {
-                                        self.toasts.info("No updates found.").set_duration(Some(std::time::Duration::from_secs(15)));
+                                        self.toasts.info("No updates found.").duration(Some(std::time::Duration::from_secs(15)));
                                     }
                                 }
                             }
@@ -50,7 +50,7 @@ impl Application {
                     }
                     Err(err) => {
                         log::error!("Failed to fetch update information: {}", err);
-                        self.toasts.error("Failed to fetch update information").set_duration(Some(std::time::Duration::from_secs(15)));
+                        self.toasts.error("Failed to fetch update information").duration(Some(std::time::Duration::from_secs(15)));
 
                         self.threads_communication.check_updates = None;
                     }

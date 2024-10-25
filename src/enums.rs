@@ -1,3 +1,4 @@
+use eframe::egui;
 use egui::epaint::Pos2;
 use std::fmt::Display;
 

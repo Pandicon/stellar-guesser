@@ -1,4 +1,5 @@
 use crate::{enums::LightPollution, Application};
+use eframe::egui;
 
 impl Application {
     pub fn render_top_panel(&mut self, ctx: &egui::Context) -> egui::InnerResponse<()> {
@@ -73,10 +74,10 @@ fn render_left_controls(app: &mut crate::application::Application, ui: &mut egui
     let prev_light_pollution: LightPollution = app.cellestial_sphere.light_pollution_place;
     ui.horizontal(|ui| {
         ui.label("Light pollution level: ");
-        egui::ComboBox::from_id_source("Light pollution level: ")
+        egui::ComboBox::from_id_salt("Light pollution level: ")
             .selected_text(format!("{}", app.cellestial_sphere.light_pollution_place))
             .show_ui(ui, |ui: &mut egui::Ui| {
-                ui.style_mut().wrap = Some(false);
+                ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
                 ui.selectable_value(&mut app.cellestial_sphere.light_pollution_place, LightPollution::Default, format!("{}", LightPollution::Default));
                 ui.selectable_value(&mut app.cellestial_sphere.light_pollution_place, LightPollution::Prague, format!("{}", LightPollution::Prague));
                 ui.selectable_value(

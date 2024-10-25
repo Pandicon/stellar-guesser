@@ -1,4 +1,5 @@
 use chrono::{Datelike, TimeZone, Timelike};
+use eframe::egui;
 
 use crate::{Application, BUILD_DATE};
 

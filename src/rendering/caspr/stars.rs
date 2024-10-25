@@ -1,4 +1,5 @@
 use crate::{rendering::themes::Theme, structs::graphics_settings::GraphicsSettings};
+use eframe::egui;
 use egui::epaint::Color32;
 use nalgebra::{Matrix3, Vector3};
 use serde::Deserialize;

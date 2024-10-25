@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use eframe::egui;
 use egui::Color32;
 
 use crate::{enums::RendererCategory, Application};

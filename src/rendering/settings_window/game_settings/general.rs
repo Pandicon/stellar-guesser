@@ -2,6 +2,7 @@ use crate::{
     enums::{GameStage, RendererCategory},
     Application,
 };
+use eframe::egui;
 
 impl Application {
     pub fn render_game_settings_general_subwindow(&mut self, ui: &mut egui::Ui) {

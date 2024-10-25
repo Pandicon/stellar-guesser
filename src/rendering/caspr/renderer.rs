@@ -5,6 +5,7 @@ use crate::{
     structs::graphics_settings::GraphicsSettings,
 };
 use angle::Angle;
+use eframe::egui;
 use egui::epaint::Color32;
 use nalgebra::{Rotation3, Vector3};
 use std::{collections::HashMap, error::Error, f32::consts::PI, fs};

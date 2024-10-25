@@ -1,4 +1,5 @@
 use crate::{enums, Application};
+use eframe::egui;
 
 impl Application {
     pub fn render_game_settings_constellations_subwindow(&mut self, ui: &mut egui::Ui) {
@@ -20,7 +21,7 @@ impl Application {
                 egui::ComboBox::from_label("Group to be set")
                     .selected_text(format!("{}", self.state.windows.settings.game_settings.constellation_setting_learning_stage))
                     .show_ui(ui, |ui| {
-                        ui.style_mut().wrap = Some(false);
+                        ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
                         ui.selectable_value(
                             &mut self.state.windows.settings.game_settings.constellation_setting_learning_stage,
                             enums::GameLearningStage::NotStarted,
