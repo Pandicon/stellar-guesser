@@ -96,6 +96,7 @@ pub fn main() {
 
     let mut options = eframe::NativeOptions {
         viewport: eframe::egui::viewport::ViewportBuilder::default().with_maximized(true),
+        persist_window: false,
         ..Default::default()
     };
 
@@ -138,7 +139,10 @@ fn android_main(app: AndroidApp) {
 
     android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Warn));
 
-    let mut options = eframe::NativeOptions::default();
+    let mut options = eframe::NativeOptions {
+        persist_window: false,
+        ..Default::default()
+    };
     options.event_loop_builder = Some(Box::new(move |event_loop| {
         event_loop.with_android_app(app);
     }));
