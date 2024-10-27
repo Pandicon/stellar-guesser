@@ -7,7 +7,6 @@ const LINES_FOLDER: &str = "./sphere/lines";
 const MARKERS_FOLDER: &str = "./sphere/markers";
 const STARS_FOLDER: &str = "./sphere/stars";
 const STAR_NAMES_FOLDER: &str = "./sphere/named-stars";
-const CONSTELLATION_VERTICES: &str = "./data/constellation_vertices.csv";
 const CONSTELLATION_NAMES: &str = "./data/constellations.csv";
 
 fn zero_nothing(num: i64) -> String {
@@ -70,10 +69,6 @@ fn main() {
         if let Ok(file_content) = fs::read_to_string(CONSTELLATION_NAMES) {
             #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
             other_sky_data.push([String::from("constellation names"), file_content.replace("\"", "\\\"")])
-        };
-        if let Ok(file_content) = fs::read_to_string(CONSTELLATION_VERTICES) {
-            #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
-            other_sky_data.push([String::from("constellation vertices"), file_content.replace("\"", "\\\"")])
         };
 
         vec![const_declaration!(pub SKY_DATA_LISTS = sky_data), const_declaration!(pub SKY_DATA_FILES = other_sky_data)]

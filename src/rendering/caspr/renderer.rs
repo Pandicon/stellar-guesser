@@ -15,7 +15,6 @@ const LINES_FOLDER: &str = "./sphere/lines";
 const MARKERS_FOLDER: &str = "./sphere/markers";
 const STARS_FOLDER: &str = "./sphere/stars";
 const STAR_NAMES_FOLDER: &str = "./sphere/named-stars";
-const CONSTELLATION_VERTICES: &str = "./data/constellation_vertices.csv";
 const CONSTELLATION_NAMES: &str = "./data/constellations.csv";
 const ZOOM_CAP: f32 = 100.0;
 
@@ -37,7 +36,7 @@ use super::{
     markers::game_markers::GameMarkers,
 };
 
-use super::constellation::{BorderVertex, Constellation, ConstellationRaw};
+use super::constellation::{Constellation, ConstellationRaw};
 
 const _MERIDIAN_CONSTELLATIONS: [&str; 10] = ["cep", "cas", "and", "peg", "pis", "cet", "scl", "phe", "tuc", "oct"];
 const OBJECT_IMAGES_FOLDER: &str = crate::OBJECT_IMAGES_ADDON_FOLDER;
@@ -168,7 +167,7 @@ impl CellestialSphere {
                 }
                 Some(images_addon_dir)
             } else {
-                println!("Couldn't load the executable directory and therefore couldn't load the images");
+                log::error!("Couldn't load the executable directory and therefore couldn't load the images");
                 None
             }
         };
@@ -294,10 +293,6 @@ impl CellestialSphere {
             if let Ok(file_content) = fs::read_to_string(CONSTELLATION_NAMES) {
                 #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
                 other_sky_data.push([String::from("constellation names"), file_content.replace("\"", "\\\"")])
-            };
-            if let Ok(file_content) = fs::read_to_string(CONSTELLATION_VERTICES) {
-                #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
-                other_sky_data.push([String::from("constellation vertices"), file_content.replace("\"", "\\\"")])
             };
             other_sky_data
         };
@@ -512,46 +507,13 @@ impl CellestialSphere {
         }
 
         let mut constellations = HashMap::new();
-        let mut constellations_vertices = HashMap::new();
         for [id, file_contents] in sky_data_files {
             let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
             if id == "constellation names" {
                 for constellation_raw in reader.deserialize() {
                     let constellation_raw: ConstellationRaw = constellation_raw?;
-                    let (constellation, abbreviation) = Constellation::from_raw(constellation_raw);
+                    let (constellation, abbreviation) = Constellation::from_raw(constellation_raw)?;
                     constellations.insert(abbreviation.to_lowercase(), constellation);
-                }
-            } else if id == "constellation vertices" {
-                for constellation_vertex in reader.deserialize() {
-                    let constellation_vertex: BorderVertex = constellation_vertex?;
-                    let position = constellation_vertex.get_position();
-                    let constellation_key = constellation_vertex.constellation.to_lowercase();
-                    let entry = constellations_vertices.entry(constellation_key).or_insert(Vec::new());
-                    entry.push(position);
-                }
-            }
-        }
-        for (constellation_key, constellation) in constellations.iter_mut() {
-            for (constellation_vert_key, vertices) in constellations_vertices.iter() {
-                // This fixes the fact that Serpens is split into two polygons. Annoyingly, it makes it O(n^2) in constellations, but it is still fast enough (there are only 88 constellations)
-                if constellation_vert_key.to_lowercase().starts_with(&constellation_key.to_lowercase()) {
-                    let constellation_vertices = vertices
-                        .iter()
-                        .map(|v| spherical_geometry::SphericalPoint::new(v.ra(), v.dec()))
-                        .collect::<Vec<spherical_geometry::SphericalPoint>>();
-                    match spherical_geometry::Polygon::new(constellation_vertices, spherical_geometry::EdgeDirection::CounterClockwise) {
-                        Ok(polygon) => {
-                            log::debug!("Created the polygon for the {} constellation (from the {} vertices)", constellation_key, constellation_vert_key);
-                            constellation.polygons.push(polygon);
-                        }
-                        Err(_) => {
-                            log::error!(
-                                "Failed to create the polygon for the {} constellation (from the {} vertices)",
-                                constellation_key,
-                                constellation_vert_key
-                            );
-                        }
-                    }
                 }
             }
         }
