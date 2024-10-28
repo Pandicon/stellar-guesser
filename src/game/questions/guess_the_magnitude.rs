@@ -22,17 +22,22 @@ impl Default for Settings {
     }
 }
 
+#[derive(Default)]
+pub struct State {
+    answer: String,
+}
+
 pub struct Question {
     ra: angle::Deg<f32>,
     dec: angle::Deg<f32>,
     mag: f32,
 
-    answer: String,
+    state: State,
 }
 
 impl crate::game::game_handler::Question for Question {
     fn check_answer(&self, game_handler: &mut GameHandler, _cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
-        match self.answer.parse::<f32>() {
+        match self.state.answer.parse::<f32>() {
             Ok(answer) => {
                 let error = (self.mag - answer).abs();
                 game_handler.answer_review_text_heading = format!("You were {:.1} mag away!", error);
@@ -63,6 +68,12 @@ impl crate::game::game_handler::Question for Question {
     }
 
     fn reset(self) -> Self {
-        self
+        Self {
+            ra: self.ra,
+            dec: self.dec,
+            mag: self.mag,
+
+            state: State::default(),
+        }
     }
 }

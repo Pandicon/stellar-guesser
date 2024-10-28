@@ -17,22 +17,27 @@ impl Default for Settings {
     }
 }
 
+#[derive(Default)]
+pub struct State {
+    answer: String,
+}
+
 pub struct RaQuestion {
     ra: angle::Deg<f32>,
 
-    answer: String,
+    state: State,
 }
 
 impl RaQuestion {
     pub fn new_random() -> Self {
         let (ra, _dec) = geometry::generate_random_point(&mut rand::thread_rng());
-        Self { ra, answer: String::new() }
+        Self { ra, state: State::default() }
     }
 }
 
 impl crate::game::game_handler::Question for RaQuestion {
     fn check_answer(&self, game_handler: &mut GameHandler, _cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
-        match self.answer.parse::<f32>() {
+        match self.state.answer.parse::<f32>() {
             Ok(answer_hours) => {
                 let answer_deg = angle::Deg(answer_hours / 24.0 * 360.0);
                 let error_deg = (self.ra - answer_deg).abs();
@@ -71,19 +76,19 @@ impl crate::game::game_handler::Question for RaQuestion {
 pub struct DecQuestion {
     dec: angle::Deg<f32>,
 
-    answer: String,
+    state: State,
 }
 
 impl DecQuestion {
     pub fn new_random() -> Self {
         let (_ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-        Self { dec, answer: String::new() }
+        Self { dec, state: State::default() }
     }
 }
 
 impl crate::game::game_handler::Question for DecQuestion {
     fn check_answer(&self, game_handler: &mut GameHandler, _cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
-        match self.answer.parse::<f32>() {
+        match self.state.answer.parse::<f32>() {
             Ok(answer) => {
                 let answer_deg = angle::Deg(answer);
                 let error = (self.dec - answer_deg).abs();

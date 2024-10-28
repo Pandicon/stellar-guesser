@@ -17,13 +17,18 @@ impl Default for Settings {
     }
 }
 
+#[derive(Default)]
+pub struct State {
+    answer: String,
+}
+
 pub struct Question {
     /// (ra, dec)
     point1: (angle::Deg<f32>, angle::Deg<f32>),
     /// (ra, dec)
     point2: (angle::Deg<f32>, angle::Deg<f32>),
 
-    answer: String,
+    state: State,
 }
 
 impl Question {
@@ -32,7 +37,7 @@ impl Question {
             point1: geometry::generate_random_point(&mut rand::thread_rng()),
             point2: geometry::generate_random_point(&mut rand::thread_rng()),
 
-            answer: String::new(),
+            state: State::default(),
         }
     }
 }

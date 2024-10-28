@@ -37,6 +37,11 @@ impl Default for Settings {
     }
 }
 
+#[derive(Default)]
+pub struct State {
+    answer: String,
+}
+
 pub struct Question {
     possible_names: Vec<String>,
     ra: angle::Deg<f32>,
@@ -52,7 +57,7 @@ pub struct Question {
     constellation_abbreviation: String,
     images: Vec<crate::structs::image_info::ImageInfo>,
 
-    answer: String,
+    state: State,
 }
 
 impl crate::game::game_handler::Question for Question {
@@ -61,7 +66,7 @@ impl crate::game::game_handler::Question for Question {
             game_handler.answer_image = Some(self.images[rand::thread_rng().gen_range(0..self.images.len())].clone());
         }
         let possible_names_edited = self.possible_names.iter().map(|name| name.replace(' ', "").to_lowercase()).collect::<Vec<String>>();
-        let correct = possible_names_edited.contains(&self.answer.replace(' ', "").to_lowercase());
+        let correct = possible_names_edited.contains(&self.state.answer.replace(' ', "").to_lowercase());
         game_handler.answer_review_text_heading = format!(
             "{}orrect!",
             if correct {
@@ -73,7 +78,7 @@ impl crate::game::game_handler::Question for Question {
         );
         game_handler.answer_review_text = format!(
             "Your answer was: {}\nPossible answers: {}\nObject type: {}",
-            self.answer,
+            self.state.answer,
             self.possible_names.join(", "),
             self.object_type
         );
@@ -99,6 +104,22 @@ impl crate::game::game_handler::Question for Question {
     }
 
     fn reset(self) -> Self {
-        self
+        Self {
+            possible_names: self.possible_names,
+            ra: self.ra,
+            dec: self.dec,
+            is_messier: self.is_messier,
+            is_caldwell: self.is_caldwell,
+            is_ngc: self.is_ngc,
+            is_ic: self.is_ic,
+            is_bayer: self.is_bayer,
+            is_starname: self.is_starname,
+            magnitude: self.magnitude,
+            object_type: self.object_type,
+            constellation_abbreviation: self.constellation_abbreviation,
+            images: self.images,
+
+            state: State::default(),
+        }
     }
 }

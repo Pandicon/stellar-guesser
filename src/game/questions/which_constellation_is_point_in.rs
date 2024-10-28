@@ -17,17 +17,22 @@ impl Default for Settings {
     }
 }
 
+#[derive(Default)]
+pub struct State {
+    answer: String,
+}
+
 pub struct Question {
     ra: angle::Deg<f32>,
     dec: angle::Deg<f32>,
 
-    answer: String,
+    state: State,
 }
 
 impl Question {
     pub fn new_random() -> Self {
         let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-        Self { ra, dec, answer: String::new() }
+        Self { ra, dec, state: State::default() }
     }
 }
 
@@ -40,7 +45,7 @@ impl crate::game::game_handler::Question for Question {
                 possible_constellation_names.extend(constellation.possible_names.iter().map(|name| name.replace(' ', "").to_lowercase()));
             };
         }
-        let correct = possible_constellation_names.contains(&self.answer.replace(' ', "").to_lowercase());
+        let correct = possible_constellation_names.contains(&self.state.answer.replace(' ', "").to_lowercase());
         game_handler.answer_review_text_heading = format!(
             "{}orrect!",
             if correct {
@@ -51,7 +56,7 @@ impl crate::game::game_handler::Question for Question {
             }
         );
         game_handler.increment_possible_score(1);
-        game_handler.answer_review_text = format!("Your answer was: {}\nThe right answers were: {}", self.answer, possible_constellation_names.join(", "));
+        game_handler.answer_review_text = format!("Your answer was: {}\nThe right answers were: {}", self.state.answer, possible_constellation_names.join(", "));
         game_handler.use_up_current_question();
     }
 
