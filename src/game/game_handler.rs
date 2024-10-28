@@ -1,6 +1,5 @@
 use crate::{
     enums::{self, GameStage, RendererCategory, StorageKeys},
-    game::questions_settings,
     renderer::CellestialSphere,
     rendering::{
         caspr::markers::game_markers::{GameMarker, GameMarkerType},
@@ -11,11 +10,19 @@ use angle::Angle;
 use rand::Rng;
 use std::collections::HashMap;
 
-use super::game_settings;
+use super::{game_settings, questions};
 use crate::geometry;
 
+pub trait Question {
+    fn check_answer(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
+
+    fn can_choose_as_next(&self, game_handler: &mut GameHandler) -> bool;
+
+    fn reset(self) -> Self;
+}
+
 #[derive(Clone)]
-pub enum Question {
+pub enum QuestionEnum {
     ObjectQuestion {
         name: String,
         ra: angle::Deg<f32>,
@@ -74,7 +81,7 @@ pub enum Question {
 
 pub struct GameHandler {
     current_question: usize,
-    question_catalog: Vec<Question>,
+    question_catalog: Vec<QuestionEnum>,
     used_questions: Vec<usize>,
 
     pub add_marker_on_click: bool,
@@ -91,7 +98,7 @@ pub struct GameHandler {
     pub guess_marker_positions: Vec<[angle::Rad<f32>; 2]>,
 
     pub game_settings: game_settings::GameSettings,
-    pub questions_settings: questions_settings::QuestionsSettings,
+    pub questions_settings: questions::Settings,
 
     pub possible_no_of_questions: u32,
     pub score: u32,
@@ -105,6 +112,13 @@ pub struct GameHandler {
 }
 
 impl GameHandler {
+    pub fn increment_possible_score(&mut self, inc: u32) {
+        self.possible_score += inc;
+    }
+
+    pub fn use_up_current_question(&mut self) {
+        self.used_questions.push(self.current_question);
+    }
     pub fn init(cellestial_sphere: &mut CellestialSphere, storage: &mut Option<crate::storage::Storage>) -> Self {
         let mut active_constellations = HashMap::new();
         for constellation_abbreviation in cellestial_sphere.constellations.keys() {
@@ -156,8 +170,8 @@ impl GameHandler {
             }
             groups_active_constellations.insert(group, group_active_constellations);
         }
-        let mut catalog: Vec<Question> = Vec::new();
-        catalog.push(Question::NoMoreQuestions);
+        let mut catalog: Vec<QuestionEnum> = Vec::new();
+        catalog.push(QuestionEnum::NoMoreQuestions);
         for deepskies_group in cellestial_sphere.deepskies.values() {
             for deepsky in &deepskies_group.deepskies {
                 let mut possible_names = Vec::new();
@@ -167,7 +181,7 @@ impl GameHandler {
                 let is_ic = deepsky.ic.is_some();
                 let object_type = deepsky.object_type.clone().unwrap_or("Unknown".to_string());
                 if let Some(messier_name) = &deepsky.messier {
-                    catalog.push(Question::ObjectQuestion {
+                    catalog.push(QuestionEnum::ObjectQuestion {
                         name: messier_name.to_owned(),
                         ra: deepsky.ra,
                         dec: deepsky.dec,
@@ -186,7 +200,7 @@ impl GameHandler {
                 }
                 if let Some(caldwell_number) = &deepsky.caldwell {
                     let caldwell_name: String = format!("C {}", caldwell_number);
-                    catalog.push(Question::ObjectQuestion {
+                    catalog.push(QuestionEnum::ObjectQuestion {
                         name: caldwell_name.to_owned(),
                         ra: deepsky.ra,
                         dec: deepsky.dec,
@@ -205,7 +219,7 @@ impl GameHandler {
                 }
                 if let Some(ngc_number) = &deepsky.ngc {
                     let ngc_name = format!("NGC {}", ngc_number);
-                    catalog.push(Question::ObjectQuestion {
+                    catalog.push(QuestionEnum::ObjectQuestion {
                         name: ngc_name.to_owned(),
                         ra: deepsky.ra,
                         dec: deepsky.dec,
@@ -224,7 +238,7 @@ impl GameHandler {
                 }
                 if let Some(ic_number) = &deepsky.ic {
                     let ic_name = format!("IC {}", ic_number);
-                    catalog.push(Question::ObjectQuestion {
+                    catalog.push(QuestionEnum::ObjectQuestion {
                         name: ic_name.to_owned(),
                         ra: deepsky.ra,
                         dec: deepsky.dec,
@@ -242,7 +256,7 @@ impl GameHandler {
                     possible_names.push(ic_name.to_owned());
                 }
                 if !possible_names.is_empty() {
-                    catalog.push(Question::ThisPointObject {
+                    catalog.push(QuestionEnum::ThisPointObject {
                         possible_names,
                         ra: deepsky.ra,
                         dec: deepsky.dec,
@@ -263,7 +277,7 @@ impl GameHandler {
         for file in cellestial_sphere.star_names.values() {
             for starname in file {
                 let mut possible_names: Vec<String> = vec![starname.name.to_owned()];
-                catalog.push(Question::ObjectQuestion {
+                catalog.push(QuestionEnum::ObjectQuestion {
                     ra: starname.ra,
                     dec: starname.dec,
                     is_messier: false,
@@ -285,7 +299,7 @@ impl GameHandler {
                         if let Some(id) = &starname.id {
                             possible_names.push(format!("{} {}", id, starname.con));
                         }
-                        catalog.push(Question::ObjectQuestion {
+                        catalog.push(QuestionEnum::ObjectQuestion {
                             name,
                             ra: starname.ra,
                             dec: starname.dec,
@@ -300,7 +314,7 @@ impl GameHandler {
                             constellation_abbreviation: starname.con.to_owned(),
                             images: Vec::new(),
                         });
-                        catalog.push(Question::MagQuestion {
+                        catalog.push(QuestionEnum::MagQuestion {
                             ra: starname.ra,
                             dec: starname.dec,
                             mag: starname.mag,
@@ -309,7 +323,7 @@ impl GameHandler {
                     }
                     None => false,
                 };
-                catalog.push(Question::ThisPointObject {
+                catalog.push(QuestionEnum::ThisPointObject {
                     possible_names,
                     ra: starname.ra,
                     dec: starname.dec,
@@ -329,18 +343,18 @@ impl GameHandler {
 
         let mut rand = rand::thread_rng();
         for i in 1..catalog.len() {
-            catalog.push(Question::DistanceBetweenQuestion {
+            catalog.push(QuestionEnum::DistanceBetweenQuestion {
                 point1: geometry::generate_random_point(&mut rand),
                 point2: geometry::generate_random_point(&mut rand),
             });
             let (ra, dec) = geometry::generate_random_point(&mut rand);
-            catalog.push(Question::PositionQuestion { ra, dec });
+            catalog.push(QuestionEnum::PositionQuestion { ra, dec });
 
             let (ra, dec) = geometry::generate_random_point(&mut rand);
             if i % 2 == 0 {
-                catalog.push(Question::DECQuestion { ra, dec });
+                catalog.push(QuestionEnum::DECQuestion { ra, dec });
             } else {
-                catalog.push(Question::RAQuestion { ra, dec });
+                catalog.push(QuestionEnum::RAQuestion { ra, dec });
             }
         }
 
@@ -348,7 +362,7 @@ impl GameHandler {
         // *entry = Vec::new();
         // cellestial_sphere.init_single_renderer("markers", "game");
 
-        let mut questions_settings = questions_settings::QuestionsSettings::default();
+        let mut questions_settings = questions::Settings::default();
         if let Some(storage) = storage {
             if let Some(question_settings_str) = storage.get_string(StorageKeys::GameQuestionSettings.as_ref()) {
                 match serde_json::from_str(&question_settings_str) {
@@ -411,7 +425,7 @@ impl GameHandler {
         self.answer_image = None;
         let markers = &mut cellestial_sphere.game_markers.markers;
         match &self.question_catalog[self.current_question] {
-            Question::ObjectQuestion {
+            QuestionEnum::ObjectQuestion {
                 name,
                 ra,
                 dec,
@@ -479,7 +493,7 @@ impl GameHandler {
                     cellestial_sphere.init_renderers();
                 }
             }
-            Question::PositionQuestion { ra, dec, .. } => {
+            QuestionEnum::PositionQuestion { ra, dec, .. } => {
                 let possible_abbrevs = cellestial_sphere.determine_constellation((ra.to_rad(), dec.to_rad()));
                 let mut possible_constellation_names = Vec::new();
                 for abbrev in possible_abbrevs {
@@ -501,7 +515,7 @@ impl GameHandler {
                 self.answer_review_text = format!("Your answer was: {}\nThe right answers were: {}", self.answer, possible_constellation_names.join(", "));
                 self.used_questions.push(self.current_question);
             }
-            Question::ThisPointObject {
+            QuestionEnum::ThisPointObject {
                 possible_names, object_type, images, ..
             } => {
                 if !images.is_empty() {
@@ -526,7 +540,7 @@ impl GameHandler {
                     self.question_number += 1;
                 }
             }
-            Question::DistanceBetweenQuestion { point1, point2 } => {
+            QuestionEnum::DistanceBetweenQuestion { point1, point2 } => {
                 let (ra1, dec1) = point1;
                 let (ra2, dec2) = point2;
                 let distance = geometry::angular_distance((ra1.to_rad(), dec1.to_rad()), (ra2.to_rad(), dec2.to_rad())).to_deg();
@@ -555,7 +569,7 @@ impl GameHandler {
                 };
                 self.used_questions.push(self.current_question);
             }
-            Question::RAQuestion { ra, .. } => {
+            QuestionEnum::RAQuestion { ra, .. } => {
                 match self.answer.parse::<f32>() {
                     Ok(answer_hours) => {
                         let answer_deg = angle::Deg(answer_hours / 24.0 * 360.0);
@@ -582,7 +596,7 @@ impl GameHandler {
                 };
                 self.used_questions.push(self.current_question);
             }
-            Question::DECQuestion { dec, .. } => {
+            QuestionEnum::DECQuestion { dec, .. } => {
                 match self.answer.parse::<f32>() {
                     Ok(answer) => {
                         let answer_deg = angle::Deg(answer);
@@ -609,7 +623,7 @@ impl GameHandler {
                 };
                 self.used_questions.push(self.current_question);
             }
-            Question::MagQuestion { mag, .. } => {
+            QuestionEnum::MagQuestion { mag, .. } => {
                 match self.answer.parse::<f32>() {
                     Ok(answer) => {
                         let error = (mag - answer).abs();
@@ -635,7 +649,7 @@ impl GameHandler {
                 };
                 self.used_questions.push(self.current_question);
             }
-            Question::NoMoreQuestions => {}
+            QuestionEnum::NoMoreQuestions => {}
         }
         cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
     }
@@ -646,7 +660,7 @@ impl GameHandler {
         for question in 0..self.question_catalog.len() {
             if !self.used_questions.contains(&question) {
                 match &self.question_catalog[question] {
-                    Question::ObjectQuestion {
+                    QuestionEnum::ObjectQuestion {
                         is_messier,
                         is_caldwell,
                         is_ngc,
@@ -671,12 +685,12 @@ impl GameHandler {
                             possible_questions.push(question);
                         }
                     }
-                    Question::PositionQuestion { .. } => {
+                    QuestionEnum::PositionQuestion { .. } => {
                         if self.questions_settings.what_constellation_is_this_point_in.show {
                             possible_questions.push(question);
                         }
                     }
-                    Question::ThisPointObject {
+                    QuestionEnum::ThisPointObject {
                         is_messier,
                         is_caldwell,
                         is_ngc,
@@ -701,27 +715,27 @@ impl GameHandler {
                             possible_questions.push(question);
                         }
                     }
-                    Question::DistanceBetweenQuestion { point1: _point1, point2: _point2 } => {
+                    QuestionEnum::DistanceBetweenQuestion { point1: _point1, point2: _point2 } => {
                         if self.questions_settings.angular_separation.show {
                             possible_questions.push(question);
                         }
                     }
-                    Question::DECQuestion { .. } => {
+                    QuestionEnum::DECQuestion { .. } => {
                         if self.questions_settings.guess_rad_dec.show {
                             possible_questions.push(question);
                         }
                     }
-                    Question::RAQuestion { .. } => {
+                    QuestionEnum::RAQuestion { .. } => {
                         if self.questions_settings.guess_rad_dec.show {
                             possible_questions.push(question);
                         }
                     }
-                    Question::MagQuestion { mag, .. } => {
+                    QuestionEnum::MagQuestion { mag, .. } => {
                         if self.questions_settings.guess_the_magnitude.show && *mag < self.questions_settings.guess_the_magnitude.magnitude_cutoff {
                             possible_questions.push(question)
                         }
                     }
-                    Question::NoMoreQuestions => {}
+                    QuestionEnum::NoMoreQuestions => {}
                 }
             }
         }
@@ -738,11 +752,11 @@ impl GameHandler {
 
             let mut markers = Vec::new();
             self.add_marker_on_click = match self.question_catalog[self.current_question] {
-                Question::ObjectQuestion { .. } => {
+                QuestionEnum::ObjectQuestion { .. } => {
                     markers = Vec::new();
                     true
                 }
-                Question::PositionQuestion { ra, dec, .. } => {
+                QuestionEnum::PositionQuestion { ra, dec, .. } => {
                     markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)];
                     if self.questions_settings.what_constellation_is_this_point_in.rotate_to_point {
                         let final_vector = geometry::get_point_vector(ra, dec, &nalgebra::Matrix3::<f32>::identity());
@@ -751,7 +765,7 @@ impl GameHandler {
                     }
                     false
                 }
-                Question::ThisPointObject { ra, dec, is_bayer, is_starname, .. } => {
+                QuestionEnum::ThisPointObject { ra, dec, is_bayer, is_starname, .. } => {
                     markers = if is_bayer || is_starname {
                         vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, true, false, &theme.game_visuals.game_markers_colours)]
                     } else {
@@ -764,7 +778,7 @@ impl GameHandler {
                     }
                     false
                 }
-                Question::DistanceBetweenQuestion { point1, point2 } => {
+                QuestionEnum::DistanceBetweenQuestion { point1, point2 } => {
                     let (ra1, dec1) = point1;
                     let (ra2, dec2) = point2;
                     markers = vec![
@@ -782,7 +796,7 @@ impl GameHandler {
                     }
                     false
                 }
-                Question::DECQuestion { ra, dec } => {
+                QuestionEnum::DECQuestion { ra, dec } => {
                     markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)];
                     if self.questions_settings.guess_rad_dec.rotate_to_point {
                         let final_vector = geometry::get_point_vector(ra, dec, &nalgebra::Matrix3::<f32>::identity());
@@ -791,7 +805,7 @@ impl GameHandler {
                     }
                     false
                 }
-                Question::RAQuestion { ra, dec } => {
+                QuestionEnum::RAQuestion { ra, dec } => {
                     markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours)];
                     if self.questions_settings.guess_rad_dec.rotate_to_point {
                         let final_vector = geometry::get_point_vector(ra, dec, &nalgebra::Matrix3::<f32>::identity());
@@ -800,7 +814,7 @@ impl GameHandler {
                     }
                     false
                 }
-                Question::MagQuestion { ra, dec, .. } => {
+                QuestionEnum::MagQuestion { ra, dec, .. } => {
                     markers = vec![GameMarker::new(GameMarkerType::Task, ra, dec, 2.0, 5.0, true, false, &theme.game_visuals.game_markers_colours)];
                     if self.questions_settings.guess_the_magnitude.rotate_to_point {
                         let final_vector = geometry::get_point_vector(ra, dec, &nalgebra::Matrix3::<f32>::identity());
@@ -809,7 +823,7 @@ impl GameHandler {
                     }
                     false
                 }
-                Question::NoMoreQuestions => false,
+                QuestionEnum::NoMoreQuestions => false,
             };
             self.request_input_focus = true;
             cellestial_sphere.game_markers.markers = markers;
@@ -819,11 +833,11 @@ impl GameHandler {
     }
     pub fn get_display_question(&self) -> String {
         match &self.question_catalog[self.current_question] {
-            Question::ObjectQuestion { name, .. } => format!("Find {}.", name),
-            Question::PositionQuestion { .. } => String::from("What constellation does this point lie in?"),
-            Question::ThisPointObject { .. } => String::from("What is this object?"),
-            Question::DistanceBetweenQuestion { .. } => String::from("What is the angular distance between these markers? "),
-            Question::NoMoreQuestions => {
+            QuestionEnum::ObjectQuestion { name, .. } => format!("Find {}.", name),
+            QuestionEnum::PositionQuestion { .. } => String::from("What constellation does this point lie in?"),
+            QuestionEnum::ThisPointObject { .. } => String::from("What is this object?"),
+            QuestionEnum::DistanceBetweenQuestion { .. } => String::from("What is the angular distance between these markers? "),
+            QuestionEnum::NoMoreQuestions => {
                 if self.game_settings.is_scored_mode {
                     let percentage = (self.score as f32) / (self.possible_score as f32) * 100.0;
                     format!(
@@ -831,37 +845,37 @@ impl GameHandler {
                         self.score, self.possible_score, percentage
                     )
                 } else {
-                    String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return the questions you already went through by clicking 'Reset and next question'.")
+                    String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return to the questions you already went through by clicking 'Reset and next question'.")
                 }
             }
-            Question::DECQuestion { .. } => String::from("What is the declination of this point?"),
-            Question::RAQuestion { .. } => String::from("What is the right ascension of this point?"),
-            Question::MagQuestion { .. } => String::from("What is the magnitude of this star? "),
+            QuestionEnum::DECQuestion { .. } => String::from("What is the declination of this point?"),
+            QuestionEnum::RAQuestion { .. } => String::from("What is the right ascension of this point?"),
+            QuestionEnum::MagQuestion { .. } => String::from("What is the magnitude of this star? "),
         }
     }
 
     pub fn should_display_input(&self) -> bool {
         match &self.question_catalog[self.current_question] {
-            Question::ObjectQuestion { .. } | Question::NoMoreQuestions => false,
-            Question::PositionQuestion { .. }
-            | Question::ThisPointObject { .. }
-            | Question::DistanceBetweenQuestion { .. }
-            | Question::DECQuestion { .. }
-            | Question::RAQuestion { .. }
-            | Question::MagQuestion { .. } => true,
+            QuestionEnum::ObjectQuestion { .. } | QuestionEnum::NoMoreQuestions => false,
+            QuestionEnum::PositionQuestion { .. }
+            | QuestionEnum::ThisPointObject { .. }
+            | QuestionEnum::DistanceBetweenQuestion { .. }
+            | QuestionEnum::DECQuestion { .. }
+            | QuestionEnum::RAQuestion { .. }
+            | QuestionEnum::MagQuestion { .. } => true,
         }
     }
 
     pub fn no_more_questions(&self) -> bool {
         match &self.question_catalog[self.current_question] {
-            Question::NoMoreQuestions => true,
-            Question::ObjectQuestion { .. }
-            | Question::PositionQuestion { .. }
-            | Question::ThisPointObject { .. }
-            | Question::DistanceBetweenQuestion { .. }
-            | Question::DECQuestion { .. }
-            | Question::RAQuestion { .. }
-            | Question::MagQuestion { .. } => false,
+            QuestionEnum::NoMoreQuestions => true,
+            QuestionEnum::ObjectQuestion { .. }
+            | QuestionEnum::PositionQuestion { .. }
+            | QuestionEnum::ThisPointObject { .. }
+            | QuestionEnum::DistanceBetweenQuestion { .. }
+            | QuestionEnum::DECQuestion { .. }
+            | QuestionEnum::RAQuestion { .. }
+            | QuestionEnum::MagQuestion { .. } => false,
         }
     }
 
@@ -874,20 +888,20 @@ impl GameHandler {
         self.question_catalog = old_catalog
             .into_iter()
             .map(|question| match question {
-                Question::NoMoreQuestions | Question::ObjectQuestion { .. } | Question::ThisPointObject { .. } | Question::MagQuestion { .. } => question,
-                Question::DECQuestion { .. } => {
+                QuestionEnum::NoMoreQuestions | QuestionEnum::ObjectQuestion { .. } | QuestionEnum::ThisPointObject { .. } | QuestionEnum::MagQuestion { .. } => question,
+                QuestionEnum::DECQuestion { .. } => {
                     let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-                    Question::DECQuestion { ra, dec }
+                    QuestionEnum::DECQuestion { ra, dec }
                 }
-                Question::RAQuestion { .. } => {
+                QuestionEnum::RAQuestion { .. } => {
                     let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-                    Question::RAQuestion { ra, dec }
+                    QuestionEnum::RAQuestion { ra, dec }
                 }
-                Question::PositionQuestion { .. } => {
+                QuestionEnum::PositionQuestion { .. } => {
                     let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-                    Question::PositionQuestion { ra, dec }
+                    QuestionEnum::PositionQuestion { ra, dec }
                 }
-                Question::DistanceBetweenQuestion { .. } => Question::DistanceBetweenQuestion {
+                QuestionEnum::DistanceBetweenQuestion { .. } => QuestionEnum::DistanceBetweenQuestion {
                     point1: geometry::generate_random_point(&mut rand::thread_rng()),
                     point2: geometry::generate_random_point(&mut rand::thread_rng()),
                 },
@@ -896,48 +910,52 @@ impl GameHandler {
     }
     pub fn show_circle_marker(&self) -> bool {
         match &self.question_catalog[self.current_question] {
-            Question::NoMoreQuestions | Question::PositionQuestion { .. } | Question::DistanceBetweenQuestion { .. } | Question::DECQuestion { .. } | Question::RAQuestion { .. } => false,
-            Question::ObjectQuestion { is_bayer, is_starname, .. } | Question::ThisPointObject { is_bayer, is_starname, .. } => *is_bayer || *is_starname,
-            Question::MagQuestion { .. } => true,
+            QuestionEnum::NoMoreQuestions
+            | QuestionEnum::PositionQuestion { .. }
+            | QuestionEnum::DistanceBetweenQuestion { .. }
+            | QuestionEnum::DECQuestion { .. }
+            | QuestionEnum::RAQuestion { .. } => false,
+            QuestionEnum::ObjectQuestion { is_bayer, is_starname, .. } | QuestionEnum::ThisPointObject { is_bayer, is_starname, .. } => *is_bayer || *is_starname,
+            QuestionEnum::MagQuestion { .. } => true,
         }
     }
 
     pub fn show_tolerance_marker(&self) -> bool {
         match &self.question_catalog[self.current_question] {
-            Question::NoMoreQuestions
-            | Question::PositionQuestion { .. }
-            | Question::DistanceBetweenQuestion { .. }
-            | Question::DECQuestion { .. }
-            | Question::RAQuestion { .. }
-            | Question::MagQuestion { .. }
-            | Question::ThisPointObject { .. } => false,
-            Question::ObjectQuestion { .. } => true,
+            QuestionEnum::NoMoreQuestions
+            | QuestionEnum::PositionQuestion { .. }
+            | QuestionEnum::DistanceBetweenQuestion { .. }
+            | QuestionEnum::DECQuestion { .. }
+            | QuestionEnum::RAQuestion { .. }
+            | QuestionEnum::MagQuestion { .. }
+            | QuestionEnum::ThisPointObject { .. } => false,
+            QuestionEnum::ObjectQuestion { .. } => true,
         }
     }
 
     fn get_question_distance_tolerance(&self) -> angle::Deg<f32> {
         match &self.question_catalog[self.current_question] {
-            Question::NoMoreQuestions
-            | Question::PositionQuestion { .. }
-            | Question::DistanceBetweenQuestion { .. }
-            | Question::DECQuestion { .. }
-            | Question::RAQuestion { .. }
-            | Question::MagQuestion { .. }
-            | Question::ThisPointObject { .. } => angle::Deg(0.0),
-            Question::ObjectQuestion { .. } => self.questions_settings.find_this_object.correctness_threshold,
+            QuestionEnum::NoMoreQuestions
+            | QuestionEnum::PositionQuestion { .. }
+            | QuestionEnum::DistanceBetweenQuestion { .. }
+            | QuestionEnum::DECQuestion { .. }
+            | QuestionEnum::RAQuestion { .. }
+            | QuestionEnum::MagQuestion { .. }
+            | QuestionEnum::ThisPointObject { .. } => angle::Deg(0.0),
+            QuestionEnum::ObjectQuestion { .. } => self.questions_settings.find_this_object.correctness_threshold,
         }
     }
 
     pub fn allow_multiple_player_marker(&self) -> bool {
         match &self.question_catalog[self.current_question] {
-            Question::NoMoreQuestions
-            | Question::PositionQuestion { .. }
-            | Question::DistanceBetweenQuestion { .. }
-            | Question::DECQuestion { .. }
-            | Question::RAQuestion { .. }
-            | Question::MagQuestion { .. }
-            | Question::ThisPointObject { .. }
-            | Question::ObjectQuestion { .. } => false,
+            QuestionEnum::NoMoreQuestions
+            | QuestionEnum::PositionQuestion { .. }
+            | QuestionEnum::DistanceBetweenQuestion { .. }
+            | QuestionEnum::DECQuestion { .. }
+            | QuestionEnum::RAQuestion { .. }
+            | QuestionEnum::MagQuestion { .. }
+            | QuestionEnum::ThisPointObject { .. }
+            | QuestionEnum::ObjectQuestion { .. } => false,
         }
     }
 
