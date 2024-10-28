@@ -30,6 +30,7 @@ impl Application {
                                 self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
                             }
                             GameStage::NotStartedYet => unimplemented!(),
+                            GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
                         }
                     }
                 }

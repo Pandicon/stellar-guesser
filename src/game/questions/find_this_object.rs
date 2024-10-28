@@ -1,9 +1,10 @@
+use crate::game::game_handler;
 use crate::game::game_handler::GameHandler;
 use crate::geometry;
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
-use angle::Angle;
+use angle::{Angle, Deg};
 use rand::Rng;
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -40,20 +41,21 @@ impl Default for Settings {
     }
 }
 
+#[derive(Clone)]
 pub struct Question {
-    name: String,
-    ra: angle::Deg<f32>,
-    dec: angle::Deg<f32>,
-    is_messier: bool,
-    is_caldwell: bool,
-    is_ngc: bool,
-    is_ic: bool,
-    is_bayer: bool,
-    is_starname: bool,
-    magnitude: Option<f32>,
-    object_type: String,
-    constellation_abbreviation: String,
-    images: Vec<crate::structs::image_info::ImageInfo>,
+    pub name: String,
+    pub ra: angle::Deg<f32>,
+    pub dec: angle::Deg<f32>,
+    pub is_messier: bool,
+    pub is_caldwell: bool,
+    pub is_ngc: bool,
+    pub is_ic: bool,
+    pub is_bayer: bool,
+    pub is_starname: bool,
+    pub magnitude: Option<f32>,
+    pub object_type: String,
+    pub constellation_abbreviation: String,
+    pub images: Vec<crate::structs::image_info::ImageInfo>,
 }
 
 impl crate::game::game_handler::Question for Question {
@@ -131,7 +133,43 @@ impl crate::game::game_handler::Question for Question {
             && *game_handler.active_constellations.entry(self.constellation_abbreviation.to_lowercase()).or_insert(true)
     }
 
-    fn reset(self) -> Self {
-        self
+    fn reset(self) -> Box<dyn game_handler::Question> {
+        Box::new(self)
+    }
+
+    fn show_tolerance_marker(&self) -> bool {
+        true
+    }
+
+    fn show_circle_marker(&self) -> bool {
+        self.is_bayer || self.is_starname
+    }
+
+    fn get_question_distance_tolerance(&self, game_handler: &GameHandler) -> Deg<f32> {
+        game_handler.questions_settings.find_this_object.correctness_threshold
+    }
+
+    fn allow_multiple_player_markers(&self) -> bool {
+        false
+    }
+
+    fn add_marker_on_click(&self) -> bool {
+        true
+    }
+
+    fn should_display_input(&self) -> bool {
+        false
+    }
+
+    fn start_question(&self, _game_handler: &mut GameHandler, cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
+        cellestial_sphere.game_markers.markers = Vec::new();
+    }
+
+    fn get_display_question(&self) -> String {
+        format!("Find {}.", self.name)
+    }
+
+    fn clone_box(&self) -> Box<dyn game_handler::Question> {
+        Box::new(self.clone())
     }
 }

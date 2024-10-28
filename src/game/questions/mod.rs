@@ -1,9 +1,9 @@
-mod angular_separation;
-mod find_this_object;
-mod guess_ra_dec;
-mod guess_the_magnitude;
-mod which_constellation_is_point_in;
-mod which_object_is_here;
+pub mod angular_separation;
+pub mod find_this_object;
+pub mod guess_ra_dec;
+pub mod guess_the_magnitude;
+pub mod which_constellation_is_point_in;
+pub mod which_object_is_here;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]

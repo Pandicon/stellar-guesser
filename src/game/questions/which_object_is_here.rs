@@ -1,6 +1,10 @@
+use crate::game::game_handler;
 use crate::game::game_handler::GameHandler;
+use crate::geometry;
 use crate::renderer::CellestialSphere;
+use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
+use angle::Deg;
 use rand::Rng;
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -37,27 +41,28 @@ impl Default for Settings {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct State {
     answer: String,
 }
 
+#[derive(Clone)]
 pub struct Question {
-    possible_names: Vec<String>,
-    ra: angle::Deg<f32>,
-    dec: angle::Deg<f32>,
-    is_messier: bool,
-    is_caldwell: bool,
-    is_ngc: bool,
-    is_ic: bool,
-    is_bayer: bool,
-    is_starname: bool,
-    magnitude: Option<f32>,
-    object_type: String,
-    constellation_abbreviation: String,
-    images: Vec<crate::structs::image_info::ImageInfo>,
+    pub possible_names: Vec<String>,
+    pub ra: angle::Deg<f32>,
+    pub dec: angle::Deg<f32>,
+    pub is_messier: bool,
+    pub is_caldwell: bool,
+    pub is_ngc: bool,
+    pub is_ic: bool,
+    pub is_bayer: bool,
+    pub is_starname: bool,
+    pub magnitude: Option<f32>,
+    pub object_type: String,
+    pub constellation_abbreviation: String,
+    pub images: Vec<crate::structs::image_info::ImageInfo>,
 
-    state: State,
+    pub state: State,
 }
 
 impl crate::game::game_handler::Question for Question {
@@ -103,8 +108,8 @@ impl crate::game::game_handler::Question for Question {
             && *game_handler.active_constellations.entry(self.constellation_abbreviation.to_lowercase()).or_insert(true)
     }
 
-    fn reset(self) -> Self {
-        Self {
+    fn reset(self) -> Box<dyn game_handler::Question> {
+        Box::new(Self {
             possible_names: self.possible_names,
             ra: self.ra,
             dec: self.dec,
@@ -120,6 +125,69 @@ impl crate::game::game_handler::Question for Question {
             images: self.images,
 
             state: State::default(),
+        })
+    }
+
+    fn show_tolerance_marker(&self) -> bool {
+        false
+    }
+
+    fn show_circle_marker(&self) -> bool {
+        self.is_bayer || self.is_starname
+    }
+
+    fn get_question_distance_tolerance(&self, _game_handler: &GameHandler) -> Deg<f32> {
+        angle::Deg(0.0)
+    }
+
+    fn allow_multiple_player_markers(&self) -> bool {
+        false
+    }
+
+    fn add_marker_on_click(&self) -> bool {
+        false
+    }
+
+    fn should_display_input(&self) -> bool {
+        true
+    }
+
+    fn start_question(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+        cellestial_sphere.game_markers.markers = if self.is_bayer || self.is_starname {
+            vec![GameMarker::new(
+                GameMarkerType::Task,
+                self.ra,
+                self.dec,
+                2.0,
+                5.0,
+                true,
+                false,
+                &theme.game_visuals.game_markers_colours,
+            )]
+        } else {
+            vec![GameMarker::new(
+                GameMarkerType::Task,
+                self.ra,
+                self.dec,
+                2.0,
+                5.0,
+                false,
+                false,
+                &theme.game_visuals.game_markers_colours,
+            )]
+        };
+        if game_handler.questions_settings.what_is_this_object.rotate_to_point {
+            let final_vector = geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
+            cellestial_sphere.look_at_point(&final_vector);
+            cellestial_sphere.init_renderers();
         }
+    }
+
+    fn get_display_question(&self) -> String {
+        String::from("What is this object?")
+    }
+
+    fn clone_box(&self) -> Box<dyn game_handler::Question> {
+        Box::new(self.clone())
     }
 }

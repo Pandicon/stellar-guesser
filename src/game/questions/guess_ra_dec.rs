@@ -1,8 +1,10 @@
+use crate::game::game_handler;
 use crate::game::game_handler::GameHandler;
 use crate::geometry;
 use crate::renderer::CellestialSphere;
+use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
-use angle::Angle;
+use angle::{Angle, Deg};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -17,21 +19,23 @@ impl Default for Settings {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct State {
     answer: String,
 }
 
+#[derive(Clone)]
 pub struct RaQuestion {
-    ra: angle::Deg<f32>,
+    pub dec: angle::Deg<f32>,
+    pub ra: angle::Deg<f32>,
 
-    state: State,
+    pub state: State,
 }
 
 impl RaQuestion {
     pub fn new_random() -> Self {
-        let (ra, _dec) = geometry::generate_random_point(&mut rand::thread_rng());
-        Self { ra, state: State::default() }
+        let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
+        Self { dec, ra, state: State::default() }
     }
 }
 
@@ -68,21 +72,73 @@ impl crate::game::game_handler::Question for RaQuestion {
         game_handler.questions_settings.guess_rad_dec.show
     }
 
-    fn reset(self) -> Self {
-        Self::new_random()
+    fn reset(self) -> Box<dyn game_handler::Question> {
+        Box::new(Self::new_random())
+    }
+
+    fn show_tolerance_marker(&self) -> bool {
+        false
+    }
+
+    fn show_circle_marker(&self) -> bool {
+        false
+    }
+
+    fn get_question_distance_tolerance(&self, _game_handler: &GameHandler) -> Deg<f32> {
+        angle::Deg(0.0)
+    }
+
+    fn allow_multiple_player_markers(&self) -> bool {
+        false
+    }
+
+    fn add_marker_on_click(&self) -> bool {
+        false
+    }
+
+    fn should_display_input(&self) -> bool {
+        true
+    }
+
+    fn start_question(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+        cellestial_sphere.game_markers.markers = vec![GameMarker::new(
+            GameMarkerType::Task,
+            self.ra,
+            self.dec,
+            2.0,
+            5.0,
+            false,
+            false,
+            &theme.game_visuals.game_markers_colours,
+        )];
+        if game_handler.questions_settings.guess_rad_dec.rotate_to_point {
+            let final_vector = geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
+            cellestial_sphere.look_at_point(&final_vector);
+            cellestial_sphere.init_renderers();
+        }
+    }
+
+    fn get_display_question(&self) -> String {
+        String::from("What is the right ascension of this point?")
+    }
+
+    fn clone_box(&self) -> Box<dyn game_handler::Question> {
+        Box::new(self.clone())
     }
 }
 
+#[derive(Clone)]
 pub struct DecQuestion {
-    dec: angle::Deg<f32>,
+    pub dec: angle::Deg<f32>,
+    pub ra: angle::Deg<f32>,
 
-    state: State,
+    pub state: State,
 }
 
 impl DecQuestion {
     pub fn new_random() -> Self {
-        let (_ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
-        Self { dec, state: State::default() }
+        let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
+        Self { dec, ra, state: State::default() }
     }
 }
 
@@ -119,7 +175,57 @@ impl crate::game::game_handler::Question for DecQuestion {
         game_handler.questions_settings.guess_rad_dec.show
     }
 
-    fn reset(self) -> Self {
-        Self::new_random()
+    fn reset(self) -> Box<dyn game_handler::Question> {
+        Box::new(Self::new_random())
+    }
+
+    fn show_tolerance_marker(&self) -> bool {
+        false
+    }
+
+    fn show_circle_marker(&self) -> bool {
+        false
+    }
+
+    fn get_question_distance_tolerance(&self, _game_handler: &GameHandler) -> Deg<f32> {
+        angle::Deg(0.0)
+    }
+
+    fn allow_multiple_player_markers(&self) -> bool {
+        false
+    }
+
+    fn add_marker_on_click(&self) -> bool {
+        false
+    }
+
+    fn should_display_input(&self) -> bool {
+        true
+    }
+
+    fn start_question(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+        cellestial_sphere.game_markers.markers = vec![GameMarker::new(
+            GameMarkerType::Task,
+            self.ra,
+            self.dec,
+            2.0,
+            5.0,
+            false,
+            false,
+            &theme.game_visuals.game_markers_colours,
+        )];
+        if game_handler.questions_settings.guess_rad_dec.rotate_to_point {
+            let final_vector = geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
+            cellestial_sphere.look_at_point(&final_vector);
+            cellestial_sphere.init_renderers();
+        }
+    }
+
+    fn get_display_question(&self) -> String {
+        String::from("What is the declination of this point?")
+    }
+
+    fn clone_box(&self) -> Box<dyn game_handler::Question> {
+        Box::new(self.clone())
     }
 }
