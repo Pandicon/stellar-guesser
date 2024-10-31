@@ -1,10 +1,13 @@
+use crate::enums::GameStage;
 use crate::game::game_handler;
-use crate::game::game_handler::GameHandler;
+use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::geometry;
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
 use angle::{Angle, Deg};
+use eframe::egui;
+use std::collections::HashMap;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -22,6 +25,9 @@ impl Default for Settings {
 #[derive(Clone, Default)]
 pub struct State {
     answer: String,
+
+    answer_review_text_heading: String,
+    answer_review_text: String,
 }
 
 #[derive(Clone)]
@@ -37,37 +43,102 @@ impl Question {
         let (ra, dec) = geometry::generate_random_point(&mut rand::thread_rng());
         Self { ra, dec, state: State::default() }
     }
-}
 
-impl crate::game::game_handler::Question for Question {
-    fn check_answer(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
-        let possible_abbrevs = cellestial_sphere.determine_constellation((self.ra.to_rad(), self.dec.to_rad()));
+    fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+            ui.heading(self.get_display_question());
+            if self.should_display_input() {
+                let text_input_response = ui.text_edit_singleline(&mut self.state.answer);
+                if *data.request_input_focus {
+                    text_input_response.request_focus();
+                    *data.request_input_focus = false;
+                }
+                *data.input_field_has_focus |= text_input_response.has_focus();
+            }
+            if ui.button("Check").clicked() {
+                self.check_answer(QuestionCheckingData {
+                    cellestial_sphere: data.cellestial_sphere,
+                    theme: data.theme,
+                    game_stage: data.game_stage,
+                    score: data.score,
+                    possible_score: data.possible_score,
+                    is_scored_mode: data.is_scored_mode,
+                    current_question: data.current_question,
+                    used_questions: data.used_questions,
+                    add_marker_on_click: data.add_marker_on_click,
+                    questions_settings: data.questions_settings,
+                    question_number: data.question_number,
+                });
+            }
+        })
+    }
+
+    fn render_answer_review_window(&self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+            if !self.state.answer_review_text_heading.is_empty() {
+                ui.heading(&self.state.answer_review_text_heading);
+            }
+            ui.label(&self.state.answer_review_text);
+            if ui.button("Next").clicked() {
+                *data.start_next_question = true;
+            }
+            ui.label(data.question_number_text);
+        })
+    }
+
+    fn check_answer(&mut self, data: QuestionCheckingData) {
+        let possible_abbrevs = data.cellestial_sphere.determine_constellation((self.ra.to_rad(), self.dec.to_rad()));
         let mut possible_constellation_names = Vec::new();
         for abbrev in possible_abbrevs {
-            if let Some(constellation) = cellestial_sphere.constellations.get(&abbrev) {
+            if let Some(constellation) = data.cellestial_sphere.constellations.get(&abbrev) {
                 possible_constellation_names.extend(constellation.possible_names.iter().map(|name| name.replace(' ', "").to_lowercase()));
             };
         }
         let correct = possible_constellation_names.contains(&self.state.answer.replace(' ', "").to_lowercase());
-        game_handler.answer_review_text_heading = format!(
+        self.state.answer_review_text_heading = format!(
             "{}orrect!",
             if correct {
-                game_handler.score += 1;
+                *data.score += 1;
                 "C"
             } else {
                 "Inc"
             }
         );
-        game_handler.increment_possible_score(1);
-        game_handler.answer_review_text = format!("Your answer was: {}\nThe right answers were: {}", self.state.answer, possible_constellation_names.join(", "));
-        game_handler.use_up_current_question();
+        *data.possible_score += 1;
+        self.state.answer_review_text = format!("Your answer was: {}\nThe right answers were: {}", self.state.answer, possible_constellation_names.join(", "));
+        data.used_questions.push(data.current_question);
+        *data.game_stage = GameStage::Checked;
+    }
+}
+
+impl crate::game::game_handler::QuestionTrait for Question {
+    fn render_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+        if *data.game_stage == GameStage::Guessing {
+            self.render_question_window(data)
+        } else if *data.game_stage == GameStage::Checked {
+            self.render_answer_review_window(data)
+        } else {
+            None
+        }
     }
 
-    fn can_choose_as_next(&self, game_handler: &mut GameHandler) -> bool {
-        game_handler.questions_settings.what_constellation_is_this_point_in.show
+    fn generic_to_next_part(&mut self, data: QuestionCheckingData) {
+        match data.game_stage {
+            GameStage::Guessing => {
+                if !self.should_display_input() {
+                    self.check_answer(data);
+                }
+            }
+            GameStage::Checked => {}
+            GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
+        }
     }
 
-    fn reset(self) -> Box<dyn game_handler::Question> {
+    fn can_choose_as_next(&self, questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
+        questions_settings.what_constellation_is_this_point_in.show
+    }
+
+    fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self::new_random())
     }
 
@@ -95,7 +166,7 @@ impl crate::game::game_handler::Question for Question {
         true
     }
 
-    fn start_question(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&self, game_handler: &GameHandler, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
         cellestial_sphere.game_markers.markers = vec![GameMarker::new(
             GameMarkerType::Task,
             self.ra,
@@ -117,7 +188,7 @@ impl crate::game::game_handler::Question for Question {
         String::from("What constellation does this point lie in?")
     }
 
-    fn clone_box(&self) -> Box<dyn game_handler::Question> {
+    fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(self.clone())
     }
 }

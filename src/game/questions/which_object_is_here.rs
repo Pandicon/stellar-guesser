@@ -1,11 +1,14 @@
+use crate::enums::GameStage;
 use crate::game::game_handler;
-use crate::game::game_handler::GameHandler;
+use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::geometry;
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
 use angle::Deg;
+use eframe::egui;
 use rand::Rng;
+use std::collections::HashMap;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -44,6 +47,10 @@ impl Default for Settings {
 #[derive(Clone, Default)]
 pub struct State {
     answer: String,
+    answer_image: Option<crate::structs::image_info::ImageInfo>,
+
+    answer_review_text_heading: String,
+    answer_review_text: String,
 }
 
 #[derive(Clone)]
@@ -65,50 +72,123 @@ pub struct Question {
     pub state: State,
 }
 
-impl crate::game::game_handler::Question for Question {
-    fn check_answer(&self, game_handler: &mut GameHandler, _cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
+impl Question {
+    fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+            ui.heading(self.get_display_question());
+            if self.should_display_input() {
+                let text_input_response = ui.text_edit_singleline(&mut self.state.answer);
+                if *data.request_input_focus {
+                    text_input_response.request_focus();
+                    *data.request_input_focus = false;
+                }
+                *data.input_field_has_focus |= text_input_response.has_focus();
+            }
+            if ui.button("Check").clicked() {
+                self.check_answer(QuestionCheckingData {
+                    cellestial_sphere: data.cellestial_sphere,
+                    theme: data.theme,
+                    game_stage: data.game_stage,
+                    score: data.score,
+                    possible_score: data.possible_score,
+                    is_scored_mode: data.is_scored_mode,
+                    current_question: data.current_question,
+                    used_questions: data.used_questions,
+                    add_marker_on_click: data.add_marker_on_click,
+                    questions_settings: data.questions_settings,
+                    question_number: data.question_number,
+                });
+            }
+        })
+    }
+
+    fn render_answer_review_window(&self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+            if !self.state.answer_review_text_heading.is_empty() {
+                ui.heading(&self.state.answer_review_text_heading);
+            }
+            ui.label(&self.state.answer_review_text);
+            if let Some(image) = &self.state.answer_image {
+                ui.add(egui::Image::new(&image.path).max_width(600.0));
+                if let Some(image_source) = &image.source {
+                    ui.hyperlink_to("Image source", image_source);
+                }
+            }
+            if ui.button("Next").clicked() {
+                *data.start_next_question = true;
+            }
+            ui.label(data.question_number_text);
+        })
+    }
+
+    fn check_answer(&mut self, data: QuestionCheckingData) {
         if !self.images.is_empty() {
-            game_handler.answer_image = Some(self.images[rand::thread_rng().gen_range(0..self.images.len())].clone());
+            self.state.answer_image = Some(self.images[rand::thread_rng().gen_range(0..self.images.len())].clone());
         }
         let possible_names_edited = self.possible_names.iter().map(|name| name.replace(' ', "").to_lowercase()).collect::<Vec<String>>();
         let correct = possible_names_edited.contains(&self.state.answer.replace(' ', "").to_lowercase());
-        game_handler.answer_review_text_heading = format!(
+        self.state.answer_review_text_heading = format!(
             "{}orrect!",
             if correct {
-                game_handler.score += 1;
+                *data.score += 1;
                 "C"
             } else {
                 "Inc"
             }
         );
-        game_handler.answer_review_text = format!(
+        self.state.answer_review_text = format!(
             "Your answer was: {}\nPossible answers: {}\nObject type: {}",
             self.state.answer,
             self.possible_names.join(", "),
             self.object_type
         );
-        game_handler.increment_possible_score(1);
-        if !game_handler.questions_settings.what_is_this_object.replay_incorrect || correct {
-            game_handler.use_up_current_question();
+        *data.possible_score += 1;
+        if !data.questions_settings.what_is_this_object.replay_incorrect || correct {
+            data.used_questions.push(data.current_question);
         } else {
-            game_handler.question_number += 1;
+            *data.question_number += 1;
+        }
+        *data.game_stage = GameStage::Checked;
+    }
+}
+
+impl crate::game::game_handler::QuestionTrait for Question {
+    fn render_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+        if *data.game_stage == GameStage::Guessing {
+            self.render_question_window(data)
+        } else if *data.game_stage == GameStage::Checked {
+            self.render_answer_review_window(data)
+        } else {
+            None
         }
     }
 
-    fn can_choose_as_next(&self, game_handler: &mut GameHandler) -> bool {
-        let mag = (self.magnitude).unwrap_or(-1.0);
-        game_handler.questions_settings.what_is_this_object.show
-            && ((game_handler.questions_settings.what_is_this_object.show_messiers && self.is_messier)
-                || (game_handler.questions_settings.what_is_this_object.show_caldwells && self.is_caldwell)
-                || (game_handler.questions_settings.what_is_this_object.show_ngcs && self.is_ngc)
-                || (game_handler.questions_settings.what_is_this_object.show_ics && self.is_ic)
-                || (game_handler.questions_settings.what_is_this_object.show_bayer && self.is_bayer)
-                || (game_handler.questions_settings.what_is_this_object.show_starnames && self.is_starname))
-            && ((!self.is_bayer && !self.is_starname) || mag < game_handler.questions_settings.what_is_this_object.magnitude_cutoff)
-            && *game_handler.active_constellations.entry(self.constellation_abbreviation.to_lowercase()).or_insert(true)
+    fn generic_to_next_part(&mut self, data: QuestionCheckingData) {
+        match data.game_stage {
+            GameStage::Guessing => {
+                if !self.should_display_input() {
+                    self.check_answer(data);
+                }
+            }
+            GameStage::Checked => {}
+            GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
+        }
     }
 
-    fn reset(self) -> Box<dyn game_handler::Question> {
+    fn can_choose_as_next(&self, questions_settings: &super::Settings, active_constellations: &mut HashMap<String, bool>) -> bool {
+        let mag = (self.magnitude).unwrap_or(-1.0);
+        questions_settings.what_is_this_object.show
+            && ((questions_settings.what_is_this_object.show_messiers && self.is_messier)
+                || (questions_settings.what_is_this_object.show_caldwells && self.is_caldwell)
+                || (questions_settings.what_is_this_object.show_ngcs && self.is_ngc)
+                || (questions_settings.what_is_this_object.show_ics && self.is_ic)
+                || (questions_settings.what_is_this_object.show_bayer && self.is_bayer)
+                || (questions_settings.what_is_this_object.show_starnames && self.is_starname))
+            && ((!self.is_bayer && !self.is_starname) || mag < questions_settings.what_is_this_object.magnitude_cutoff)
+            && *active_constellations.entry(self.constellation_abbreviation.to_lowercase()).or_insert(true)
+    }
+
+    fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self {
             possible_names: self.possible_names,
             ra: self.ra,
@@ -152,7 +232,7 @@ impl crate::game::game_handler::Question for Question {
         true
     }
 
-    fn start_question(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&self, game_handler: &GameHandler, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
         cellestial_sphere.game_markers.markers = if self.is_bayer || self.is_starname {
             vec![GameMarker::new(
                 GameMarkerType::Task,
@@ -187,7 +267,7 @@ impl crate::game::game_handler::Question for Question {
         String::from("What is this object?")
     }
 
-    fn clone_box(&self) -> Box<dyn game_handler::Question> {
+    fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(self.clone())
     }
 }

@@ -1,3 +1,5 @@
+use super::{game_settings, questions};
+use crate::geometry;
 use crate::{
     enums::{self, GameStage, RendererCategory, StorageKeys},
     renderer::CellestialSphere,
@@ -7,18 +9,55 @@ use crate::{
     },
 };
 use angle::Angle;
+use eframe::egui;
 use rand::Rng;
 use std::collections::HashMap;
 
-use super::{game_settings, questions};
-use crate::geometry;
+pub struct QuestionWindowData<'a> {
+    pub cellestial_sphere: &'a mut CellestialSphere,
+    pub theme: &'a Theme,
+    pub game_question_opened: &'a mut bool,
+    pub request_input_focus: &'a mut bool,
+    pub input_field_has_focus: &'a mut bool,
+    pub add_marker_on_click: &'a mut bool,
+    pub question_number_text: &'a String,
+    pub game_stage: &'a mut GameStage,
+    pub ctx: &'a eframe::egui::Context,
+    pub start_next_question: &'a mut bool,
+    pub score: &'a mut u32,
+    pub possible_score: &'a mut u32,
+    pub is_scored_mode: bool,
+    pub current_question: usize,
+    pub used_questions: &'a mut Vec<usize>,
+    pub questions_settings: &'a questions::Settings,
+    pub question_number: &'a mut usize,
+}
 
-pub trait Question {
-    fn check_answer(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
+pub struct QuestionCheckingData<'a> {
+    pub cellestial_sphere: &'a mut CellestialSphere,
+    pub theme: &'a Theme,
+    pub game_stage: &'a mut GameStage,
+    pub score: &'a mut u32,
+    pub possible_score: &'a mut u32,
+    pub is_scored_mode: bool,
+    pub current_question: usize,
+    pub used_questions: &'a mut Vec<usize>,
+    pub add_marker_on_click: &'a mut bool,
+    pub questions_settings: &'a questions::Settings,
+    pub question_number: &'a mut usize,
+}
 
-    fn can_choose_as_next(&self, game_handler: &mut GameHandler) -> bool;
+pub trait QuestionTrait {
+    fn render_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>>;
 
-    fn reset(self) -> Box<dyn Question>;
+    /// This function should handle cases where a generic action switches the question to the next part
+    fn generic_to_next_part(&mut self, data: QuestionCheckingData);
+
+    // fn check_answer(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
+
+    fn can_choose_as_next(&self, questions_settings: &questions::Settings, active_constellations: &mut HashMap<String, bool>) -> bool;
+
+    fn reset(self: Box<Self>) -> Box<dyn QuestionTrait>;
 
     fn show_tolerance_marker(&self) -> bool;
 
@@ -32,15 +71,15 @@ pub trait Question {
 
     fn should_display_input(&self) -> bool;
 
-    fn start_question(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
+    fn start_question(&self, game_handler: &GameHandler, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
 
     fn get_display_question(&self) -> String;
 
-    fn clone_box(&self) -> Box<dyn Question>;
+    fn clone_box(&self) -> Box<dyn QuestionTrait>;
 }
 
-impl Clone for Box<dyn Question> {
-    fn clone(&self) -> Box<dyn Question> {
+impl Clone for Box<dyn QuestionTrait> {
+    fn clone(&self) -> Box<dyn QuestionTrait> {
         self.clone_box()
     }
 }
@@ -104,9 +143,9 @@ pub enum QuestionEnum {
 }
 
 pub struct GameHandler {
-    current_question: usize,
-    question_catalog: Vec<Box<dyn Question>>,
-    used_questions: Vec<usize>,
+    pub current_question: usize,
+    pub question_catalog: Vec<Box<dyn QuestionTrait>>,
+    pub used_questions: Vec<usize>,
 
     pub add_marker_on_click: bool,
     pub stage: enums::GameStage,
@@ -126,7 +165,7 @@ pub struct GameHandler {
 
     pub possible_no_of_questions: u32,
     pub score: u32,
-    possible_score: u32,
+    pub possible_score: u32,
     pub active_constellations: HashMap<String, bool>,
     pub groups_active_constellations: HashMap<enums::GameLearningStage, HashMap<String, bool>>,
     pub active_constellations_groups: HashMap<enums::GameLearningStage, bool>,
@@ -142,6 +181,14 @@ impl GameHandler {
 
     pub fn use_up_current_question(&mut self) {
         self.used_questions.push(self.current_question);
+    }
+
+    pub fn generic_to_next_part(&mut self, data: QuestionCheckingData) {
+        self.question_catalog[self.current_question].generic_to_next_part(data)
+    }
+
+    pub fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+        self.question_catalog[self.question_number].render_window(data)
     }
     pub fn init(cellestial_sphere: &mut CellestialSphere, storage: &mut Option<crate::storage::Storage>) -> Self {
         let mut active_constellations = HashMap::new();
@@ -194,7 +241,7 @@ impl GameHandler {
             }
             groups_active_constellations.insert(group, group_active_constellations);
         }
-        let mut catalog: Vec<Box<dyn Question>> = Vec::new();
+        let mut catalog: Vec<Box<dyn QuestionTrait>> = Vec::new();
         // catalog.push(QuestionEnum::NoMoreQuestions);
         for deepskies_group in cellestial_sphere.deepskies.values() {
             for deepsky in &deepskies_group.deepskies {
@@ -219,6 +266,8 @@ impl GameHandler {
                         object_type: object_type.clone(),
                         constellation_abbreviation: deepsky.constellation.to_owned(),
                         images: deepsky.images.clone(),
+
+                        state: Default::default(),
                     }));
                     possible_names.push(messier_name.to_owned());
                 }
@@ -238,6 +287,8 @@ impl GameHandler {
                         object_type: object_type.clone(),
                         constellation_abbreviation: deepsky.constellation.to_owned(),
                         images: deepsky.images.clone(),
+
+                        state: Default::default(),
                     }));
                     possible_names.push(caldwell_name.to_owned());
                 }
@@ -257,6 +308,8 @@ impl GameHandler {
                         object_type: object_type.clone(),
                         constellation_abbreviation: deepsky.constellation.to_owned(),
                         images: deepsky.images.clone(),
+
+                        state: Default::default(),
                     }));
                     possible_names.push(ngc_name.to_owned());
                 }
@@ -276,6 +329,8 @@ impl GameHandler {
                         object_type: object_type.clone(),
                         constellation_abbreviation: deepsky.constellation.to_owned(),
                         images: deepsky.images.clone(),
+
+                        state: Default::default(),
                     }));
                     possible_names.push(ic_name.to_owned());
                 }
@@ -317,6 +372,8 @@ impl GameHandler {
                     object_type: String::from("Star"),
                     constellation_abbreviation: starname.con.to_owned(),
                     images: Vec::new(),
+
+                    state: Default::default(),
                 }));
                 let is_bayer: bool = match &starname.id_greek {
                     Some(id) => {
@@ -339,6 +396,8 @@ impl GameHandler {
                             object_type: String::from("Star"),
                             constellation_abbreviation: starname.con.to_owned(),
                             images: Vec::new(),
+
+                            state: Default::default(),
                         }));
                         catalog.push(Box::new(questions::guess_the_magnitude::Question {
                             ra: starname.ra,
@@ -451,20 +510,12 @@ impl GameHandler {
         }
     }
 
-    pub fn check_answer(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme) {
-        self.stage = GameStage::Checked;
-        self.add_marker_on_click = false;
-        self.answer_image = None;
-        self.question_catalog[self.current_question].check_answer(&mut self, cellestial_sphere, theme);
-        cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
-    }
-
     pub fn next_question(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme) {
         self.answer = String::new();
         let mut possible_questions: Vec<usize> = Vec::new();
         for question in 0..self.question_catalog.len() {
             if !self.used_questions.contains(&question) {
-                if self.question_catalog[question].can_choose_as_next(&mut self) {
+                if self.question_catalog[question].can_choose_as_next(&self.questions_settings, &mut self.active_constellations) {
                     possible_questions.push(question);
                 }
             }
@@ -483,7 +534,7 @@ impl GameHandler {
             );
 
             self.add_marker_on_click = self.question_catalog[self.current_question].add_marker_on_click();
-            self.question_catalog[self.current_question].start_question(&mut self, cellestial_sphere, theme);
+            self.question_catalog[self.current_question].start_question(&self, cellestial_sphere, theme);
             self.request_input_focus = true;
             cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
             self.stage = GameStage::Guessing;
@@ -519,8 +570,11 @@ impl GameHandler {
         self.score = 0;
         self.possible_score = 0;
         self.question_number = 0;
-        let old_catalog = self.question_catalog.to_vec();
-        self.question_catalog = old_catalog.into_iter().map(|question| Box::new(question.reset())).collect();
+        self.question_catalog = self
+            .question_catalog
+            .drain(..)
+            .map(|question: Box<dyn QuestionTrait>| question.reset())
+            .collect::<Vec<Box<dyn QuestionTrait>>>();
     }
     pub fn show_circle_marker(&self) -> bool {
         self.question_catalog[self.current_question].show_circle_marker()
@@ -565,5 +619,9 @@ impl GameHandler {
             }
         }
         markers
+    }
+
+    pub fn get_possible_score(&self) -> u32 {
+        self.possible_score
     }
 }

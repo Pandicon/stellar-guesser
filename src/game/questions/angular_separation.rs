@@ -1,9 +1,12 @@
-use crate::game::game_handler::{self, GameHandler};
+use crate::enums::GameStage;
+use crate::game::game_handler::{self, GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::geometry;
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
 use angle::{Angle, Deg};
+use eframe::egui;
+use std::collections::HashMap;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -21,6 +24,9 @@ impl Default for Settings {
 #[derive(Clone, Default)]
 pub struct State {
     answer: String,
+
+    answer_review_text_heading: String,
+    answer_review_text: String,
 }
 
 #[derive(Clone)]
@@ -42,44 +48,109 @@ impl Question {
             state: State::default(),
         }
     }
-}
 
-impl crate::game::game_handler::Question for Question {
-    fn check_answer(&self, game_handler: &mut GameHandler, _cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
+    fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+            ui.heading(self.get_display_question());
+            if self.should_display_input() {
+                let text_input_response = ui.text_edit_singleline(&mut self.state.answer);
+                if *data.request_input_focus {
+                    text_input_response.request_focus();
+                    *data.request_input_focus = false;
+                }
+                *data.input_field_has_focus |= text_input_response.has_focus();
+            }
+            if ui.button("Check").clicked() {
+                self.check_answer(QuestionCheckingData {
+                    cellestial_sphere: data.cellestial_sphere,
+                    theme: data.theme,
+                    game_stage: data.game_stage,
+                    score: data.score,
+                    possible_score: data.possible_score,
+                    is_scored_mode: data.is_scored_mode,
+                    current_question: data.current_question,
+                    used_questions: data.used_questions,
+                    add_marker_on_click: data.add_marker_on_click,
+                    questions_settings: data.questions_settings,
+                    question_number: data.question_number,
+                });
+            }
+        })
+    }
+
+    fn render_answer_review_window(&self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+            if !self.state.answer_review_text_heading.is_empty() {
+                ui.heading(&self.state.answer_review_text_heading);
+            }
+            ui.label(&self.state.answer_review_text);
+            if ui.button("Next").clicked() {
+                *data.start_next_question = true;
+            }
+            ui.label(data.question_number_text);
+        })
+    }
+
+    fn check_answer(&mut self, data: QuestionCheckingData) {
         let (ra1, dec1) = self.point1;
         let (ra2, dec2) = self.point2;
         let distance = geometry::angular_distance((ra1.to_rad(), dec1.to_rad()), (ra2.to_rad(), dec2.to_rad())).to_deg();
         match self.state.answer.parse::<f32>() {
             Ok(answer) => {
                 let answer = angle::Deg(answer);
-                game_handler.answer_review_text_heading = format!("You were {:.1} degrees away!", (distance - answer).value());
+                self.state.answer_review_text_heading = format!("You were {:.1} degrees away!", (distance - answer).value());
                 let error_percent = 1.0 - answer.value() / distance.value();
-                game_handler.answer_review_text = format!("The real distance was {:.1}°. Your error is equal to {:.1}% of the distance.", distance.value(), error_percent * 100.0);
-                if game_handler.game_settings.is_scored_mode {
+                self.state.answer_review_text = format!("The real distance was {:.1}°. Your error is equal to {:.1}% of the distance.", distance.value(), error_percent * 100.0);
+                if data.is_scored_mode {
                     let error = (1.0 - answer.value() / distance.value()).abs();
                     if error < 0.03 {
-                        game_handler.score += 3;
+                        *data.score += 3;
                     } else if error < 0.05 {
-                        game_handler.score += 2;
+                        *data.score += 2;
                     } else if error < 0.1 {
-                        game_handler.score += 1;
+                        *data.score += 1;
                     }
-                    game_handler.increment_possible_score(3);
+                    *data.possible_score += 3;
                 }
             }
             Err(_) => {
-                game_handler.answer_review_text_heading = "You didn't guess".to_string();
-                game_handler.answer_review_text = format!("The real distance was {:.1}°.", distance);
+                self.state.answer_review_text_heading = "You didn't guess".to_string();
+                self.state.answer_review_text = format!("The real distance was {:.1}°.", distance);
             }
         };
-        game_handler.use_up_current_question();
+        data.used_questions.push(data.current_question);
+        *data.game_stage = GameStage::Checked;
+    }
+}
+
+impl crate::game::game_handler::QuestionTrait for Question {
+    fn render_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+        if *data.game_stage == GameStage::Guessing {
+            self.render_question_window(data)
+        } else if *data.game_stage == GameStage::Checked {
+            self.render_answer_review_window(data)
+        } else {
+            None
+        }
     }
 
-    fn can_choose_as_next(&self, game_handler: &mut GameHandler) -> bool {
-        game_handler.questions_settings.angular_separation.show
+    fn generic_to_next_part(&mut self, data: QuestionCheckingData) {
+        match data.game_stage {
+            GameStage::Guessing => {
+                if !self.should_display_input() {
+                    self.check_answer(data);
+                }
+            }
+            GameStage::Checked => {}
+            GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
+        }
     }
 
-    fn reset(self) -> Box<dyn game_handler::Question> {
+    fn can_choose_as_next(&self, questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
+        questions_settings.angular_separation.show
+    }
+
+    fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self::new_random())
     }
 
@@ -107,7 +178,7 @@ impl crate::game::game_handler::Question for Question {
         true
     }
 
-    fn start_question(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&self, game_handler: &GameHandler, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
         let (ra1, dec1) = self.point1;
         let (ra2, dec2) = self.point2;
         cellestial_sphere.game_markers.markers = vec![
@@ -129,7 +200,7 @@ impl crate::game::game_handler::Question for Question {
         String::from("What is the angular distance between these markers?")
     }
 
-    fn clone_box(&self) -> Box<dyn game_handler::Question> {
+    fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(self.clone())
     }
 }

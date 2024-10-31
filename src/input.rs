@@ -2,12 +2,12 @@ use eframe::egui;
 use egui::epaint::Pos2;
 use std::collections::HashMap;
 
+use crate::game::game_handler::QuestionCheckingData;
+use crate::geometry;
 use crate::{
     enums::{self, GameStage, PointerPosition, RendererCategory},
     Application,
 };
-
-use crate::geometry;
 const KEY_COMBINATIONS: [&str; 6] = ["alt+shift+g", "alt+shift+i", "alt+shift+o", "alt+shift+s", "mouse-middle", "space"];
 
 impl Application {
@@ -21,13 +21,22 @@ impl Application {
                 enums::Inputs::Space | enums::Inputs::MouseMiddle => {
                     if !self.game_handler.no_more_questions() {
                         match self.game_handler.stage {
-                            GameStage::Guessing => {
+                            GameStage::Guessing | GameStage::Checked => {
                                 if !self.game_handler.should_display_input() {
-                                    self.game_handler.check_answer(&mut self.cellestial_sphere, &self.theme);
+                                    self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(QuestionCheckingData {
+                                        cellestial_sphere: &mut self.cellestial_sphere,
+                                        theme: &self.theme,
+                                        game_stage: &mut self.game_handler.stage,
+                                        score: &mut self.game_handler.score,
+                                        possible_score: &mut self.game_handler.possible_score,
+                                        is_scored_mode: self.game_handler.game_settings.is_scored_mode,
+                                        current_question: self.game_handler.current_question,
+                                        used_questions: &mut self.game_handler.used_questions,
+                                        add_marker_on_click: &mut self.game_handler.add_marker_on_click,
+                                        questions_settings: &self.game_handler.questions_settings,
+                                        question_number: &mut self.game_handler.question_number,
+                                    });
                                 }
-                            }
-                            GameStage::Checked => {
-                                self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
                             }
                             GameStage::NotStartedYet => unimplemented!(),
                             GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
