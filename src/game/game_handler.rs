@@ -72,7 +72,7 @@ pub trait QuestionTrait {
 
     fn should_display_input(&self) -> bool;
 
-    fn start_question(&self, game_handler: &GameHandler, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
+    fn start_question(&mut self, questions_settings: &questions::Settings, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
 
     fn get_display_question(&self) -> String;
 
@@ -535,7 +535,7 @@ impl GameHandler {
             );
 
             self.add_marker_on_click = self.question_catalog[self.current_question].add_marker_on_click();
-            self.question_catalog[self.current_question].start_question(self, cellestial_sphere, theme);
+            self.question_catalog[self.current_question].start_question(&self.questions_settings, cellestial_sphere, theme);
             self.request_input_focus = true;
             cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
             self.stage = GameStage::Guessing;

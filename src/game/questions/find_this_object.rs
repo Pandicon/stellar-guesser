@@ -1,6 +1,6 @@
 use crate::enums::{GameStage, RendererCategory};
-use crate::game::game_handler;
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
+use crate::game::{game_handler, questions};
 use crate::geometry;
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
@@ -259,7 +259,8 @@ impl crate::game::game_handler::QuestionTrait for Question {
         false
     }
 
-    fn start_question(&self, _game_handler: &GameHandler, cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
+    fn start_question(&mut self, _questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
+        self.state = Default::default();
         cellestial_sphere.game_markers.markers = Vec::new();
     }
 

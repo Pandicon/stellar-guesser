@@ -1,5 +1,6 @@
 use crate::enums::GameStage;
 use crate::game::game_handler::{self, GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
+use crate::game::questions;
 use crate::geometry;
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
@@ -182,14 +183,15 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&self, game_handler: &GameHandler, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+        self.state = Default::default();
         let (ra1, dec1) = self.point1;
         let (ra2, dec2) = self.point2;
         cellestial_sphere.game_markers.markers = vec![
             GameMarker::new(GameMarkerType::Task, ra1, dec1, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
             GameMarker::new(GameMarkerType::Task, ra2, dec2, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
         ];
-        if game_handler.questions_settings.angular_separation.rotate_to_midpoint {
+        if questions_settings.angular_separation.rotate_to_midpoint {
             let end_1 = geometry::get_point_vector(ra1, dec1, &nalgebra::Matrix3::<f32>::identity());
             let end_2 = geometry::get_point_vector(ra2, dec2, &nalgebra::Matrix3::<f32>::identity());
             if (end_1 + end_2).magnitude_squared() > 10e-4 {
