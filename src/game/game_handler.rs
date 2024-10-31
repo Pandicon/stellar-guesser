@@ -517,10 +517,8 @@ impl GameHandler {
         self.answer = String::new();
         let mut possible_questions: Vec<usize> = Vec::new();
         for question in 0..self.question_catalog.len() {
-            if !self.used_questions.contains(&question) {
-                if self.question_catalog[question].can_choose_as_next(&self.questions_settings, &mut self.active_constellations) {
-                    possible_questions.push(question);
-                }
+            if !self.used_questions.contains(&question) && self.question_catalog[question].can_choose_as_next(&self.questions_settings, &mut self.active_constellations) {
+                possible_questions.push(question);
             }
         }
 
@@ -537,7 +535,7 @@ impl GameHandler {
             );
 
             self.add_marker_on_click = self.question_catalog[self.current_question].add_marker_on_click();
-            self.question_catalog[self.current_question].start_question(&self, cellestial_sphere, theme);
+            self.question_catalog[self.current_question].start_question(self, cellestial_sphere, theme);
             self.request_input_focus = true;
             cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
             self.stage = GameStage::Guessing;
@@ -562,10 +560,7 @@ impl GameHandler {
     }
 
     pub fn no_more_questions(&self) -> bool {
-        match self.stage {
-            GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => true,
-            _ => false,
-        }
+        matches!(self.stage, GameStage::NoMoreQuestions | GameStage::ScoredModeFinished)
     }
 
     pub fn reset_used_questions(&mut self, _cellestial_sphere: &mut CellestialSphere) {
@@ -588,7 +583,7 @@ impl GameHandler {
     }
 
     fn get_question_distance_tolerance(&self) -> angle::Deg<f32> {
-        self.question_catalog[self.current_question].get_question_distance_tolerance(&self)
+        self.question_catalog[self.current_question].get_question_distance_tolerance(self)
     }
 
     pub fn allow_multiple_player_marker(&self) -> bool {
