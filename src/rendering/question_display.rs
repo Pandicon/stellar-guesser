@@ -44,7 +44,6 @@ impl Application {
                 ui.label(&self.game_handler.question_number_text);
             }),
             GameStage::Guessing | GameStage::Checked => {
-                let mut start_next_question = false;
                 let data = QuestionWindowData {
                     cellestial_sphere: &mut self.cellestial_sphere,
                     theme: &self.theme,
@@ -55,7 +54,7 @@ impl Application {
                     question_number_text: &self.game_handler.question_number_text,
                     game_stage: &mut self.game_handler.stage,
                     ctx,
-                    start_next_question: &mut start_next_question,
+                    start_next_question: &mut self.game_handler.switch_to_next_question,
                     score: &mut self.game_handler.score,
                     possible_score: &mut self.game_handler.possible_score,
                     is_scored_mode: self.game_handler.game_settings.is_scored_mode,
@@ -64,11 +63,7 @@ impl Application {
                     questions_settings: &self.game_handler.questions_settings,
                     question_number: &mut self.game_handler.question_number
                 };
-                let response = self.game_handler.question_catalog[self.game_handler.current_question].render_window(data);
-                if start_next_question {
-                    self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
-                }
-                response
+                self.game_handler.question_catalog[self.game_handler.current_question].render_window(data)
             }
         }
     }

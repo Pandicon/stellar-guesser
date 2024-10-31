@@ -251,6 +251,10 @@ impl eframe::App for Application {
         self.toasts.show(ctx);
         self.frames_handler.handle();
         self.frames_handler.last_frame = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
+        if self.game_handler.switch_to_next_question {
+            self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
+            self.game_handler.switch_to_next_question = false;
+        }
 
         // Save application state
         if self.storage.is_some() {

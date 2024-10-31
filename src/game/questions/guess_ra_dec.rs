@@ -67,8 +67,10 @@ impl RaQuestion {
                     add_marker_on_click: data.add_marker_on_click,
                     questions_settings: data.questions_settings,
                     question_number: data.question_number,
+                    start_next_question: data.start_next_question,
                 });
             }
+            ui.label(data.question_number_text);
         })
     }
 
@@ -132,7 +134,9 @@ impl crate::game::game_handler::QuestionTrait for RaQuestion {
                     self.check_answer(data);
                 }
             }
-            GameStage::Checked => {}
+            GameStage::Checked => {
+                *data.start_next_question = true;
+            }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
     }
@@ -233,8 +237,10 @@ impl DecQuestion {
                     add_marker_on_click: data.add_marker_on_click,
                     questions_settings: data.questions_settings,
                     question_number: data.question_number,
+                    start_next_question: data.start_next_question,
                 });
             }
+            ui.label(data.question_number_text);
         })
     }
 
@@ -298,7 +304,9 @@ impl crate::game::game_handler::QuestionTrait for DecQuestion {
                     self.check_answer(data);
                 }
             }
-            GameStage::Checked => {}
+            GameStage::Checked => {
+                *data.start_next_question = true;
+            }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
     }

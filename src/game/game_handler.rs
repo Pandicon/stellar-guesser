@@ -45,6 +45,7 @@ pub struct QuestionCheckingData<'a> {
     pub add_marker_on_click: &'a mut bool,
     pub questions_settings: &'a questions::Settings,
     pub question_number: &'a mut usize,
+    pub start_next_question: &'a mut bool,
 }
 
 pub trait QuestionTrait {
@@ -172,6 +173,7 @@ pub struct GameHandler {
     pub toggle_all_constellations: bool,
 
     pub request_input_focus: bool,
+    pub switch_to_next_question: bool,
 }
 
 impl GameHandler {
@@ -496,6 +498,7 @@ impl GameHandler {
             active_constellations_groups,
             toggle_all_constellations: true,
             request_input_focus: false,
+            switch_to_next_question: false,
         }
     }
     pub fn evaluate_score(distance: angle::Deg<f32>) -> u32 {

@@ -22,7 +22,7 @@ impl Application {
                     if !self.game_handler.no_more_questions() {
                         match self.game_handler.stage {
                             GameStage::Guessing | GameStage::Checked => {
-                                if !self.game_handler.should_display_input() {
+                                if (self.game_handler.stage == GameStage::Guessing && !self.game_handler.should_display_input()) || self.game_handler.stage == GameStage::Checked {
                                     self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(QuestionCheckingData {
                                         cellestial_sphere: &mut self.cellestial_sphere,
                                         theme: &self.theme,
@@ -35,6 +35,7 @@ impl Application {
                                         add_marker_on_click: &mut self.game_handler.add_marker_on_click,
                                         questions_settings: &self.game_handler.questions_settings,
                                         question_number: &mut self.game_handler.question_number,
+                                        start_next_question: &mut self.game_handler.switch_to_next_question,
                                     });
                                 }
                             }

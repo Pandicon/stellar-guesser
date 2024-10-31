@@ -88,8 +88,10 @@ impl Question {
                     add_marker_on_click: data.add_marker_on_click,
                     questions_settings: data.questions_settings,
                     question_number: data.question_number,
+                    start_next_question: data.start_next_question,
                 });
             }
+            ui.label(data.question_number_text);
         })
     }
 
@@ -191,11 +193,11 @@ impl crate::game::game_handler::QuestionTrait for Question {
     fn generic_to_next_part(&mut self, data: QuestionCheckingData) {
         match data.game_stage {
             GameStage::Guessing => {
-                if !self.should_display_input() {
-                    self.check_answer(data);
-                }
+                self.check_answer(data);
             }
-            GameStage::Checked => {}
+            GameStage::Checked => {
+                *data.start_next_question = true;
+            }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
     }
