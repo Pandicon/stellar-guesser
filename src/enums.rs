@@ -73,6 +73,8 @@ pub enum GameStage {
     Guessing,
     Checked,
     NotStartedYet,
+    NoMoreQuestions,
+    ScoredModeFinished,
 }
 
 pub enum StorageKeys {
