@@ -51,7 +51,7 @@ impl Application {
             self.cellestial_sphere.viewport_rect = viewport_rect;
 
             let painter = ui.painter();
-            self.cellestial_sphere.render_sky(painter, &self.graphics_settings, &self.theme);
+            self.cellestial_sphere.render_sky(painter);
 
             self.render_top_panel(ctx);
         });

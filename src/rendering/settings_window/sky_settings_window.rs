@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 
 use eframe::egui;
-use egui::epaint::Color32;
 
 use crate::{
     enums::{LightPollution, RendererCategory},
@@ -138,15 +137,32 @@ impl Application {
     }
 
     pub fn render_sky_settings_stars_subwindow(&mut self, ui: &mut egui::Ui) {
-        ui.checkbox(&mut self.graphics_settings.use_default_star_colour, "Use default star colour");
-        self.theme.game_visuals.use_default_star_colour = self.graphics_settings.use_default_star_colour;
-        let mut default_star_colour = self.theme.game_visuals.default_star_colour.to_srgba_unmultiplied().map(|n| (n as f32) / 255.0);
-        ui.horizontal(|ui| {
-            ui.color_edit_button_rgba_unmultiplied(&mut default_star_colour);
-            ui.label("Default star colour");
-        });
-        let default_star_colour = default_star_colour.map(|n| (n * 255.0) as u8);
-        self.theme.game_visuals.default_star_colour = Color32::from_rgba_unmultiplied(default_star_colour[0], default_star_colour[1], default_star_colour[2], default_star_colour[3]);
+        let override_rule_changed = ui.checkbox(&mut self.graphics_settings.use_overriden_star_colour, "Override the default star colour").changed();
+        self.theme.game_visuals.use_overriden_star_colour = self.graphics_settings.use_overriden_star_colour;
+        let override_colour_changed = ui
+            .horizontal(|ui| {
+                let changed = ui.color_edit_button_srgba(&mut self.theme.game_visuals.override_star_colour).changed();
+                ui.label("Override star colour");
+                changed
+            })
+            .inner;
+
+        if override_rule_changed || (override_colour_changed && self.graphics_settings.use_overriden_star_colour) {
+            let colour = if self.graphics_settings.use_overriden_star_colour {
+                Some(self.theme.game_visuals.override_star_colour)
+            } else {
+                None
+            };
+            for star_set in self.cellestial_sphere.stars.values_mut() {
+                for star in star_set {
+                    star.override_colour = colour;
+                }
+            }
+            let keys = self.cellestial_sphere.stars.keys().cloned().collect::<Vec<String>>();
+            for star_set_name in keys {
+                self.cellestial_sphere.init_single_renderer(RendererCategory::Stars, &star_set_name);
+            }
+        }
 
         let prev_mag_offset = self.cellestial_sphere.sky_settings.mag_offset;
         let prev_mag_scale = self.cellestial_sphere.sky_settings.mag_scale;

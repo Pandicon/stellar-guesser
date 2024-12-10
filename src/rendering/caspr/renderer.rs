@@ -2,7 +2,6 @@ use crate::{
     enums::{LightPollution, RendererCategory, StorageKeys},
     geometry::{intersections, LineSegment, Rectangle},
     rendering::themes::Theme,
-    structs::graphics_settings::GraphicsSettings,
 };
 use angle::Angle;
 use eframe::egui;
@@ -129,7 +128,7 @@ impl CellestialSphere {
     }
 
     //Renders the entire sphere view
-    pub fn render_sky(&self, painter: &egui::Painter, graphics_settings: &GraphicsSettings, theme: &Theme) {
+    pub fn render_sky(&self, painter: &egui::Painter) {
         //some stuff lol
         for line_renderers in self.line_renderers.values() {
             for line_renderer in line_renderers {
@@ -138,7 +137,7 @@ impl CellestialSphere {
         }
         for star_renderers in self.star_renderers.values() {
             for star_renderer in star_renderers {
-                star_renderer.render(self, painter, graphics_settings, theme);
+                star_renderer.render(self, painter);
             }
         }
         for marker_renderers in self.marker_renderers.values() {
@@ -331,11 +330,16 @@ impl CellestialSphere {
 
         for (id, data) in sky_data_lists {
             if id == "stars" {
+                let override_star_colour = if theme.game_visuals.use_overriden_star_colour {
+                    Some(theme.game_visuals.override_star_colour)
+                } else {
+                    None
+                };
                 for [file_name, file_contents] in &data {
                     let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
                     for star_raw in reader.deserialize() {
                         let star_raw: StarRaw = star_raw?;
-                        let star = Star::from_raw(star_raw, star_color);
+                        let star = Star::from_raw(star_raw, star_color, override_star_colour);
                         let entry = catalog.entry(file_name.clone()).or_default();
                         entry.push(star);
                         if !sky_settings.stars_categories_active.contains_key(file_name) {

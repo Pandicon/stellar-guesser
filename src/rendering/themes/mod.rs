@@ -18,8 +18,8 @@ impl Theme {
             name: "Dark".into(),
             game_visuals: Visuals {
                 default_colour: Color32::WHITE,
-                default_star_colour: Color32::WHITE,
-                use_default_star_colour: false,
+                override_star_colour: Color32::WHITE,
+                use_overriden_star_colour: false,
                 lines_colours: HashMap::from(
                     [
                         ("celestial-lines-of-latitude.csv", [217, 98, 13, 255]),
@@ -85,8 +85,8 @@ impl ThemesHandler {
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 pub struct Visuals {
     pub default_colour: Color32,
-    pub default_star_colour: Color32,
-    pub use_default_star_colour: bool,
+    pub override_star_colour: Color32,
+    pub use_overriden_star_colour: bool,
     #[serde(default)]
     pub lines_colours: HashMap<String, Color32>,
     #[serde(default)]
@@ -126,8 +126,8 @@ pub fn default_themes() -> ThemesHandler {
             name: "Light".into(),
             game_visuals: Visuals {
                 default_colour: Color32::BLACK,
-                default_star_colour: Color32::BLACK,
-                use_default_star_colour: true,
+                override_star_colour: Color32::BLACK,
+                use_overriden_star_colour: true,
                 lines_colours: HashMap::from(
                     [
                         ("celestial-lines-of-latitude.csv", [217, 98, 13, 255]),
@@ -174,8 +174,8 @@ pub fn default_themes() -> ThemesHandler {
             name: "Printing".into(),
             game_visuals: Visuals {
                 default_colour: Color32::BLACK,
-                default_star_colour: Color32::BLACK,
-                use_default_star_colour: true,
+                override_star_colour: Color32::BLACK,
+                use_overriden_star_colour: true,
                 lines_colours: HashMap::from(
                     [
                         ("celestial-lines-of-latitude.csv", [217, 98, 13, 255]),

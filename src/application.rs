@@ -98,7 +98,7 @@ impl Application {
                             }
                         }
                         // IMPORTANT: Due to this setting, the theme has to be loaded before the graphics settings, else they will always be overwritten by the theme default
-                        graphics_settings.use_default_star_colour = theme.game_visuals.use_default_star_colour;
+                        graphics_settings.use_overriden_star_colour = theme.game_visuals.use_overriden_star_colour;
                     }
                     Err(err) => log::error!("Failed to deserialize the theme: {err}"),
                 }

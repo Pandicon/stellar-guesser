@@ -33,15 +33,15 @@ impl Application {
                                             println!("Determined the constellation for star at dec={} ra={}", star.dec, star.ra);
                                             // println!("{}", v);
                                             if v {
-                                                star.colour = egui::Color32::GREEN;
+                                                star.override_colour = Some(egui::Color32::GREEN);
                                                 continue 'stars;
                                             } else {
-                                                star.colour = egui::Color32::WHITE;
+                                                star.override_colour = None;
                                             }
                                         }
                                         Err(_) => {
                                             println!("Could not determine the constellation for star at dec={} ra={}", star.dec, star.ra);
-                                            star.colour = egui::Color32::RED;
+                                            star.override_colour = Some(egui::Color32::RED);
                                         }
                                     }
                                 }
@@ -78,9 +78,9 @@ impl Application {
                             .iter()
                             .any(|abbrev| abbrev.to_uppercase() == self.testing_settings.highlight_stars_in_constellation_precomputed.to_uppercase())
                         {
-                            star.colour = egui::Color32::LIGHT_RED;
+                            star.override_colour = Some(egui::Color32::LIGHT_RED);
                         } else {
-                            star.colour = egui::Color32::WHITE;
+                            star.override_colour = None;
                         }
                     }
                 }

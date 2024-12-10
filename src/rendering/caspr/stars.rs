@@ -1,4 +1,3 @@
-use crate::{rendering::themes::Theme, structs::graphics_settings::GraphicsSettings};
 use eframe::egui;
 use egui::epaint::Color32;
 use nalgebra::{Matrix3, Vector3};
@@ -17,7 +16,8 @@ pub struct Star {
     pub ra: angle::Deg<f32>,
     pub dec: angle::Deg<f32>,
     pub vmag: f32,
-    pub colour: Color32,
+    pub default_colour: Color32,
+    pub override_colour: Option<Color32>,
     #[allow(dead_code)]
     name_str: Option<String>,
     pub name: Option<StarName>,
@@ -36,16 +36,18 @@ pub struct StarRaw {
 
 impl Star {
     pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>) -> StarRenderer {
-        StarRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), self.vmag, self.colour)
+        let colour = if let Some(col) = self.override_colour { col } else { self.default_colour };
+        StarRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), self.vmag, colour)
     }
 
-    pub fn from_raw(raw_star: StarRaw, default_colour: Color32) -> Self {
+    pub fn from_raw(raw_star: StarRaw, default_colour: Color32, override_colour: Option<Color32>) -> Self {
         let colour = parse_colour(raw_star.colour, default_colour);
         Self {
             ra: raw_star.ra,
             dec: raw_star.dec,
             vmag: raw_star.vmag,
-            colour,
+            default_colour: colour,
+            override_colour,
             name_str: raw_star.name,
             name: None,
             constellations_abbreviations: raw_star.constellations.split(';').map(|abbrev| abbrev.to_string()).collect(),
@@ -68,16 +70,7 @@ impl StarRenderer {
         }
     }
 
-    pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter, graphics_settings: &GraphicsSettings, theme: &Theme) {
-        cellestial_sphere.render_circle(
-            &self.unit_vector,
-            cellestial_sphere.mag_to_radius(self.vmag),
-            if graphics_settings.use_default_star_colour {
-                theme.game_visuals.default_star_colour
-            } else {
-                self.colour
-            },
-            painter,
-        );
+    pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter) {
+        cellestial_sphere.render_circle(&self.unit_vector, cellestial_sphere.mag_to_radius(self.vmag), self.colour, painter);
     }
 }
