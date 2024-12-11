@@ -338,6 +338,10 @@ impl CellestialSphere {
                 for [file_name, file_contents] in &data {
                     let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
                     for star_raw in reader.deserialize() {
+                        if let Err(err) = star_raw {
+                            log::error!("Error when deserializing star: {err}");
+                            continue;
+                        }
                         let star_raw: StarRaw = star_raw?;
                         let star = Star::from_raw(star_raw, star_color, override_star_colour);
                         let entry = catalog.entry(file_name.clone()).or_default();
