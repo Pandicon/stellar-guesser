@@ -83,11 +83,12 @@ impl Star {
                     return TEMPERATURE_TO_COLOUR[0].1;
                 }
                 let mul = (temperature - TEMPERATURE_TO_COLOUR[i - 1].0) / (TEMPERATURE_TO_COLOUR[i].0 - TEMPERATURE_TO_COLOUR[i - 1].0);
-                let dr = (TEMPERATURE_TO_COLOUR[i].1.r() - TEMPERATURE_TO_COLOUR[i - 1].1.r()) as f32;
+                debug_assert!(0.0 <= mul && mul <= 1.0, "The colour multiplier has to be between 0 and 1");
+                let dr = TEMPERATURE_TO_COLOUR[i].1.r() as f32 - TEMPERATURE_TO_COLOUR[i - 1].1.r() as f32;
                 let r = TEMPERATURE_TO_COLOUR[i - 1].1.r() + (dr * mul) as u8;
-                let dg = (TEMPERATURE_TO_COLOUR[i].1.g() - TEMPERATURE_TO_COLOUR[i - 1].1.g()) as f32;
+                let dg = TEMPERATURE_TO_COLOUR[i].1.g() as f32 - TEMPERATURE_TO_COLOUR[i - 1].1.g() as f32;
                 let g = TEMPERATURE_TO_COLOUR[i - 1].1.g() + (dg * mul) as u8;
-                let db = (TEMPERATURE_TO_COLOUR[i].1.b() - TEMPERATURE_TO_COLOUR[i - 1].1.b()) as f32;
+                let db = TEMPERATURE_TO_COLOUR[i].1.b() as f32 - TEMPERATURE_TO_COLOUR[i - 1].1.b() as f32;
                 let b = TEMPERATURE_TO_COLOUR[i - 1].1.b() + (db * mul) as u8;
                 Color32::from_rgb(r, g, b)
             }
