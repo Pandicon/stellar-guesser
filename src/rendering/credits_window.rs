@@ -8,6 +8,7 @@ impl Application {
             ui.label("This window contains credits for the different resources used by the application.");
             egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
                 for credits in &*crate::CREDITS {
+                    ui.separator();
                     ui.heading(&credits.name);
 
                     ui.horizontal(|ui| {
