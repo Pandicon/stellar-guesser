@@ -11,6 +11,7 @@ pub use rendering::caspr::renderer;
 
 pub mod application;
 pub mod config;
+pub mod credits;
 pub mod enums;
 pub mod files;
 pub mod game;
@@ -38,6 +39,7 @@ pub const PLATFORM: &str = "windows";
 pub const PLATFORM: &str = "linux";
 
 pub static CONFIG: once_cell::sync::Lazy<config::Config> = once_cell::sync::Lazy::new(config::get_config);
+pub static CREDITS: once_cell::sync::Lazy<Vec<credits::Credits>> = once_cell::sync::Lazy::new(credits::get_credits);
 
 include!(concat!(env!("OUT_DIR"), "/const_gen.rs"));
 

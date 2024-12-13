@@ -35,6 +35,12 @@ fn render_right_controls(app: &mut crate::application::Application, ui: &mut egu
     if app_info_btn.clicked() {
         app.state.windows.app_info.opened = true;
     }
+    let credits_btn = ui
+        .add(egui::Button::new(egui::RichText::new("Credits").text_style(egui::TextStyle::Body)))
+        .on_hover_text("Show the credits for the resources used by this application");
+    if credits_btn.clicked() {
+        app.state.windows.credits.opened = true;
+    }
     let stats_btn: egui::Response = ui
         .add(egui::Button::new(egui::RichText::new("Statistics").text_style(egui::TextStyle::Body)))
         .on_hover_text("Show your statistics");

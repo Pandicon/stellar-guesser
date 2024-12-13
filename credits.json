@@ -1,0 +1,20 @@
+[
+	{
+		"name": "Inter font",
+		"description": "The Inter font (specifically the Medium variant) is used as the primary font of this app.",
+		"source_link": "https://rsms.me/inter/",
+		"copyright_notice": "Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)",
+		"license": "SIL Open Font License",
+		"license_link": "https://github.com/rsms/inter/blob/master/LICENSE.txt",
+		"license_file": "sil_ofl.txt"
+	},
+	{
+		"name": "egui and eframe",
+		"description": "The UI of this app is built using mostly egui with eframe.",
+		"source_link": "https://github.com/emilk/egui",
+		"copyright_notice": "Copyright (c) 2018-2021 Emil Ernerfeldt <emil.ernerfeldt@gmail.com>",
+		"license": "MIT",
+		"license_link": "https://github.com/emilk/egui/blob/master/LICENSE-MIT",
+		"license_file": "mit.txt"
+	}
+]
