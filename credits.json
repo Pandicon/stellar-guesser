@@ -16,5 +16,14 @@
 		"license": "MIT",
 		"license_link": "https://github.com/emilk/egui/blob/master/LICENSE-MIT",
 		"license_file": "mit.txt"
+	},
+	{
+		"name": "nalgebra",
+		"description": "A linear algebra library.",
+		"source_link": "https://github.com/dimforge/nalgebra",
+		"copyright_notice": "Copyright 2020 Sébastien Crozet",
+		"license": "Apache 2.0",
+		"license_link": "https://github.com/dimforge/nalgebra/blob/main/LICENSE",
+		"license_file": "apache-2-0.txt"
 	}
 ]
