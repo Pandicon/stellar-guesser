@@ -192,7 +192,7 @@ impl GameHandler {
     pub fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
         self.question_catalog[self.question_number].render_window(data)
     }
-    pub fn init(cellestial_sphere: &mut CellestialSphere, storage: &mut Option<crate::storage::Storage>) -> Self {
+    pub fn init(cellestial_sphere: &mut CellestialSphere, storage: Option<&dyn eframe::Storage>) -> Self {
         let mut active_constellations = HashMap::new();
         for constellation_abbreviation in cellestial_sphere.constellations.keys() {
             active_constellations.insert(constellation_abbreviation.to_owned(), true);

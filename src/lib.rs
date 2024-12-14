@@ -21,7 +21,6 @@ pub mod input;
 mod public_constants;
 pub mod rendering;
 pub mod server_communication;
-pub mod storage;
 pub mod structs;
 mod tests;
 
@@ -56,17 +55,8 @@ fn _main(options: eframe::NativeOptions) {
     } else {
         authors_split.join(" and ")
     };
-    #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos", target_os = "android"))]
-    let storage = Some(storage::Storage::new());
-    #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos", target_os = "android")))]
-    let storage = None; // Maybe implement iOS and other platforms storage?
 
-    eframe::run_native(
-        PROJECT_NAME,
-        options,
-        Box::new(|cc| Ok(Box::new(application::Application::new(cc, authors, VERSION.to_string(), storage)))),
-    )
-    .unwrap();
+    eframe::run_native(PROJECT_NAME, options, Box::new(|cc| Ok(Box::new(application::Application::new(cc, authors, VERSION.to_string()))))).unwrap();
 }
 
 #[cfg(any(target_os = "ios", target_os = "android"))]
@@ -148,6 +138,11 @@ fn android_main(app: AndroidApp) {
     options.event_loop_builder = Some(Box::new(move |event_loop| {
         event_loop.with_android_app(app);
     }));
+    // Android paths:
+    // - <package_name> is the package name, for example
+    // - /data/data/<packagename>/files/<path> (for example /data/data/<packagename>/files/id.txt) is a sandboxed piece of storage that no other app can access (and also the user can not access it without a rooted device)
+    // - /storage/emulated/0/Android/data/<packagename>/files/<path> (for example /storage/emulated/0/Android/data/<packagename>/files/id.txt) is a storage accessible by the user, but only from a computer as of newer Android versions
+    // - /storage/emulated/0/Documents/<path> (for example /storage/emulated/0/Documents/id.txt) is a completely public piece of storage in the Documents directory
     let default_path = format!("/storage/emulated/0/Android/data/{ANDROID_PACKAGE_NAME}/files/save.ron");
     options.persistence_path = Some(default_path.into());
 
