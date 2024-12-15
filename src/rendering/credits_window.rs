@@ -6,9 +6,9 @@ impl Application {
     pub fn render_credits_window(&mut self, ctx: &egui::Context) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Credits").open(&mut self.state.windows.credits.opened).show(ctx, |ui| {
             ui.label("This window contains credits for the different resources used by the application.");
+            ui.separator();
             egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
-                for credits in &*crate::CREDITS {
-                    ui.separator();
+                for (i, credits) in crate::CREDITS.iter().enumerate() {
                     ui.heading(&credits.name);
 
                     ui.horizontal(|ui| {
@@ -44,6 +44,10 @@ impl Application {
                         egui::CollapsingHeader::new("License text").id_salt(&credits.name).show(ui, |ui| {
                             ui.label(license_text);
                         });
+                    }
+
+                    if i != crate::CREDITS.len() - 1 {
+                        ui.separator();
                     }
                 }
             });
