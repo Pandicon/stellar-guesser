@@ -45,6 +45,15 @@
 		"license_file": "apache-2-0.txt"
 	},
 	{
+		"name": "angle",
+		"description": "A library for handling angles in a safer manner, making use of type checking to prevent usage of x° as x rad.",
+		"source_link": "https://github.com/arturoc/angle-rs",
+		"copyright_notice": "Copyright 2024 - Arturo Castro Prieto",
+		"license": "MIT",
+		"license_link": "https://github.com/arturoc/angle-rs/blob/da4be3b56ed9ad33e8315e98b7bd524aa451ee55/LICENSE.txt",
+		"license_file": "mit.txt"
+	},
+	{
 		"name": "chrono",
 		"description": "A library for handling dates and time",
 		"source_link": "https://github.com/chronotope/chrono",
@@ -223,14 +232,5 @@
 		"license": "Apache 2.0",
 		"license_link": "https://github.com/rust-windowing/winit/blob/4d5e68c6e23d9633051ed9c1382eb8bd978751f1/LICENSE",
 		"license_file": "apache-2-0.txt"
-	},
-	{
-		"name": "",
-		"description": "",
-		"source_link": "",
-		"copyright_notice": "",
-		"license": "",
-		"license_link": "",
-		"license_file": ""
 	}
 ]
