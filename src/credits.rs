@@ -1,4 +1,4 @@
-static LICENSES_DIR: include_dir::Dir = include_dir::include_dir!("$CARGO_MANIFEST_DIR\\licenses_generic");
+static LICENSES_DIR: include_dir::Dir = include_dir::include_dir!("$CARGO_MANIFEST_DIR/licenses_generic");
 
 #[derive(serde::Deserialize)]
 pub struct CreditsRaw {
