@@ -1,0 +1,260 @@
+[
+	{
+		"name": "Inter font",
+		"description": "The Inter font (specifically the Medium variant) is used as the primary font of this app",
+		"source_link": "https://rsms.me/inter/",
+		"copyright_notice": "Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)",
+		"license": "SIL Open Font License",
+		"license_link": "https://github.com/rsms/inter/blob/353b61b9f4430d5f420d56605a6e7993e0941470/LICENSE.txt",
+		"license_file": "sil_ofl.txt"
+	},
+	{
+		"name": "Hipparcos stars catalogue",
+		"description": "The Hipparcos catalogue was used to get a list of sufficiently many stars and information about them",
+		"source_link": "https://vizier.cds.unistra.fr/viz-bin/VizieR-3?-source=I/239/hip_main",
+		"copyright_notice": "Unknown (trying to resolve)",
+		"license": "Unknown (trying to resolve)",
+		"license_file": "unknown.txt"
+	},
+	{
+		"name": "Simbad data",
+		"description": "In addition to the Hipparcos catalogue, data from Simbad were used to get the name (Vega, ...), Bayer designation (alf Lyr, ...), and Flamsteed designation (3 Lyr, ...) for each of the stars",
+		"source_link": "https://simbad.cds.unistra.fr/simbad/",
+		"copyright_notice": "Unknown (trying to resolve)",
+		"license": "Unknown (trying to resolve)",
+		"license_file": "unknown.txt"
+	},
+	{
+		"name": "Temperature to colour conversion table",
+		"description": "The table is used to choose a colour for a star based on its temperature (which is in turn calculated from its B-V index using the Ballesteros' formula)",
+		"source_link": "http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color_D58.html",
+		"copyright_notice": "Unknown (trying to resolve)",
+		"license": "Unknown (trying to resolve)",
+		"license_file": "unknown.txt"
+	},
+	{
+		"name": "spherical_geometry",
+		"description": "A spherical geometry library developed for this project",
+		"source_link": "https://github.com/stellarguesser/spherical-geometry",
+		"copyright_notice": "Copyright (c) 2024 stellarguesser",
+		"license": "MIT",
+		"license_link": "https://github.com/stellarguesser/spherical-geometry/blob/c656828168d91f105e665ea5adf257e180ea6a55/LICENSE",
+		"license_file": "mit.txt"
+	},
+	{
+		"name": "eframe and egui_extras",
+		"description": "The UI of this app is built using mostly egui (extended by the functionality in the egui_extras library) with eframe",
+		"source_link": "https://github.com/emilk/egui",
+		"copyright_notice": "Copyright [yyyy] [name of copyright owner] (From the MIT license: Copyright (c) 2018-2021 Emil Ernerfeldt <emil.ernerfeldt@gmail.com>)",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/emilk/egui/blob/9aae14cdf4e50907805303c60cc96b6b2fff788e/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "egui-notify",
+		"description": "A library for in-app 'notification' pop-ups",
+		"source_link": "https://github.com/ItsEthra/egui-notify/",
+		"copyright_notice": "Copyright (c) 2022-2023 ItsEthra",
+		"license": "MIT",
+		"license_link": "https://github.com/ItsEthra/egui-notify/blob/8633808809e8707e5b31573a3ccfd6b22f0aa160/LICENSE",
+		"license_file": "mit.txt"
+	},
+	{
+		"name": "nalgebra",
+		"description": "A linear algebra library",
+		"source_link": "https://github.com/dimforge/nalgebra",
+		"copyright_notice": "Copyright 2020 Sébastien Crozet",
+		"license": "Apache 2.0",
+		"license_link": "https://github.com/dimforge/nalgebra/blob/a3c261051ba7c8201ef8c49640ae24c1f53360f7/LICENSE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "angle",
+		"description": "A library for handling angles in a safer manner, making use of type checking to prevent usage of x° as x rad",
+		"source_link": "https://github.com/arturoc/angle-rs",
+		"copyright_notice": "Copyright 2024 - Arturo Castro Prieto",
+		"license": "MIT",
+		"license_link": "https://github.com/arturoc/angle-rs/blob/da4be3b56ed9ad33e8315e98b7bd524aa451ee55/LICENSE.txt",
+		"license_file": "mit.txt"
+	},
+	{
+		"name": "chrono",
+		"description": "A library for handling dates and time",
+		"source_link": "https://github.com/chronotope/chrono",
+		"copyright_notice": "Copyright (c) 2014--2017, Kang Seonghoon and contributors.",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/chronotope/chrono/blob/8b863490d88ba098038392c8aa930012ffd0c439/LICENSE.txt",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "csv",
+		"description": "A library for parsing CSV data",
+		"source_link": "https://github.com/BurntSushi/rust-csv",
+		"copyright_notice": "Copyright (c) 2015 Andrew Gallant",
+		"license": "MIT (or Unlicense)",
+		"license_link": "https://github.com/BurntSushi/rust-csv/blob/00b80bdb5425fe0fcf8b6ad3ae4fb4e41497d911/LICENSE-MIT",
+		"license_file": "mit.txt"
+	},
+	{
+		"name": "directories-next",
+		"description": "A library providing locations to store data at for different platforms",
+		"source_link": "https://github.com/xdg-rs/dirs/tree/master/directories",
+		"copyright_notice": "Not found (From the MIT license: Copyright (c) 2018 directories-rs contributors)",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/xdg-rs/dirs/blob/af4aa39daba0ac68e222962a5aca17360158b7cc/directories/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "dotenvy",
+		"description": "A library for loading environment variables",
+		"source_link": "https://github.com/allan2/dotenvy",
+		"copyright_notice": "Copyright (c) 2014 Santiago Lapresta and contributors",
+		"license": "MIT",
+		"license_link": "https://github.com/allan2/dotenvy/blob/e2da110668572cf2d67178f192eb1fc285224040/LICENSE",
+		"license_file": "mit.txt"
+	},
+	{
+		"name": "image",
+		"description": "A library for handling images",
+		"source_link": "https://github.com/image-rs/image",
+		"copyright_notice": "Not found",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/image-rs/image/blob/5414013e5aeffd9b15ed05619a71930ec9b794cc/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "include_dir",
+		"description": "A library for embedding folders of files into executables.",
+		"source_link": "https://github.com/Michael-F-Bryan/include_dir",
+		"copyright_notice": "Copyright (c) 2017 Michael Bryan",
+		"license": "MIT",
+		"license_link": "https://github.com/Michael-F-Bryan/include_dir/blob/d742c6fffce99ee89da91b934e7ce6fb2a82680c/LICENSE",
+		"license_file": "mit.txt"
+	},
+	{
+		"name": "jni",
+		"description": "A library for communicating with the Java Interface from Rust (used for the Android builds)",
+		"source_link": "https://github.com/jni-rs/jni-rs",
+		"copyright_notice": "Copyright [yyyy] [name of copyright owner] (From the MIT license: Copyright (c) 2016 Prevoty, Inc. and jni-rs contributors)",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/jni-rs/jni-rs/blob/9278710b5d8a580f24d4b06c02ff7fb86b0821a9/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "ndk-context",
+		"description": "A library for accessing the Android API",
+		"source_link": "https://github.com/rust-mobile/ndk",
+		"copyright_notice": "Copyright [yyyy] [name of copyright owner] (Not fonud in the MIT license)",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/rust-mobile/ndk/blob/e4a0b943c537f142e2bfeda46075dfefea1a8890/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "log",
+		"description": "A generic library for logging things into the console",
+		"source_link": "https://github.com/rust-lang/log",
+		"copyright_notice": "Copyright [yyyy] [name of copyright owner] (From the MIT license: Copyright (c) 2014 The Rust Project Developers)",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/rust-lang/log/blob/134d252f0599d19070fd02f93600d48254e6f91f/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "android_logger",
+		"description": "A library for logging things into the console on Android",
+		"source_link": "https://github.com/rust-mobile/android_logger-rs",
+		"copyright_notice": "Copyright 2016 The android_logger Developers",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/rust-mobile/android_logger-rs/blob/d51b7ffdacf20fb09fd36a6b309b50240ef50728/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "env_logger",
+		"description": "A library for logging things into the console outside of Android",
+		"source_link": "https://github.com/rust-cli/env_logger",
+		"copyright_notice": "Copyright {yyyy} {name of copyright owner} (From the MIT license: Copyright (c) Individual contributors)",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/rust-cli/env_logger/blob/cc97bf76e37f72993553187434e7fcbeb62c8478/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "once_cell",
+		"description": "A library for storing global constant data evaluated at runtime",
+		"source_link": "https://github.com/matklad/once_cell",
+		"copyright_notice": "Copyright [yyyy] [name of copyright owner] (Not found in the MIT license)",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/matklad/once_cell/blob/4fbd4a53509ca59c8e09efc2ab0a22f21de70f7e/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "pollster",
+		"description": "A library for synchronously waiting for asynchronous tasks",
+		"source_link": "https://github.com/zesterer/pollster",
+		"copyright_notice": "Copyright [yyyy] [name of copyright owner] (From the MIT license: Copyright (c) 2020-2021 Joshua Barretto)",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/zesterer/pollster/blob/2864daf5febd81eb33f66cb32b66ca78a9e21db7/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "rand",
+		"description": "A library for generating random numbers",
+		"source_link": "https://github.com/rust-random/rand",
+		"copyright_notice": "Copyrights in the Rand project are retained by their contributors. No copyright assignment is required to contribute to the Rand project. For full authorship information, see the version control history.",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/rust-random/rand/blob/9f05e22afb6031d32f36cd927592e7e49b668d64/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "reqwest",
+		"description": "A library for making HTTP(S) (web) requests",
+		"source_link": "https://github.com/seanmonstar/reqwest",
+		"copyright_notice": "Copyright 2016 Sean McArthur",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/seanmonstar/reqwest/blob/8a2174f8a4259691b5ca0a16778427127f61373a/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "rfd",
+		"description": "A library that brings out the file dialogue (used for desktop builds)",
+		"source_link": "https://github.com/PolyMeilex/rfd",
+		"copyright_notice": "Copyright (c) 2022 Bartłomiej Maryńczak",
+		"license": "MIT",
+		"license_link": "https://github.com/PolyMeilex/rfd/blob/81e0dd3aa381120c59ef73ed26547924a678de43/LICENSE",
+		"license_file": "mit.txt"
+	},
+	{
+		"name": "serde_json",
+		"description": "Library for parsing JSON data",
+		"source_link": "https://github.com/serde-rs/json",
+		"copyright_notice": "Not found",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/serde-rs/json/blob/4aa05b9143ea7ca9c690e874f4c0f4f43cae9716/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "serde",
+		"description": "Library for making parsing data easier",
+		"source_link": "https://github.com/serde-rs/serde/",
+		"copyright_notice": "Not found",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/serde-rs/serde/blob/ad8dd4148b5fabf0d643d4de604a0616f2796506/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
+		"name": "tokio",
+		"description": "A library for asynchronous tasks",
+		"source_link": "https://github.com/tokio-rs/tokio",
+		"copyright_notice": "Copyright (c) Tokio Contributors",
+		"license": "MIT",
+		"license_link": "https://github.com/tokio-rs/tokio/blob/aa7e0cef725814251b5c24b52b4d0eb042405e58/LICENSE",
+		"license_file": "mit.txt"
+	},
+	{
+		"name": "winit",
+		"description": "A library to create windows, used for the Android app.",
+		"source_link": "https://github.com/rust-windowing/winit",
+		"copyright_notice": "Not found",
+		"license": "Apache 2.0",
+		"license_link": "https://github.com/rust-windowing/winit/blob/4d5e68c6e23d9633051ed9c1382eb8bd978751f1/LICENSE",
+		"license_file": "apache-2-0.txt"
+	}
+]

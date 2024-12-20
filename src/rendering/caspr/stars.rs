@@ -69,6 +69,7 @@ impl Star {
     }
 
     pub fn temperature_to_colour(temperature: f32) -> Color32 {
+        #[allow(clippy::const_is_empty)]
         if TEMPERATURE_TO_COLOUR.is_empty() {
             return Color32::WHITE;
         }

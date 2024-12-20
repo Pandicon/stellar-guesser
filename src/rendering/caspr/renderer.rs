@@ -152,7 +152,7 @@ impl CellestialSphere {
         }
     }
 
-    pub fn load(storage: &mut Option<crate::storage::Storage>, theme: &mut Theme) -> Result<Self, Box<dyn Error>> {
+    pub fn load(storage: Option<&dyn eframe::Storage>, theme: &mut Theme) -> Result<Self, Box<dyn Error>> {
         #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
         let images_addon_dir_opt = {
             if let Ok(executable_dir) = std::env::current_exe() {
