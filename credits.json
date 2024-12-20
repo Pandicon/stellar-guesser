@@ -1,7 +1,7 @@
 [
 	{
 		"name": "Inter font",
-		"description": "The Inter font (specifically the Medium variant) is used as the primary font of this app.",
+		"description": "The Inter font (specifically the Medium variant) is used as the primary font of this app",
 		"source_link": "https://rsms.me/inter/",
 		"copyright_notice": "Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)",
 		"license": "SIL Open Font License",
@@ -9,8 +9,29 @@
 		"license_file": "sil_ofl.txt"
 	},
 	{
+		"name": "Hipparcos stars catalogue",
+		"description": "The Hipparcos catalogue was used to get a list of sufficiently many stars and information about them",
+		"source_link": "https://vizier.cds.unistra.fr/viz-bin/VizieR-3?-source=I/239/hip_main",
+		"copyright_notice": "Unknown (trying to resolve)",
+		"license": "Unknown (trying to resolve)"
+	},
+	{
+		"name": "Simbad data",
+		"description": "In addition to the Hipparcos catalogue, data from Simbad were used to get the name (Vega, ...), Bayer designation (alf Lyr, ...), and Flamsteed designation (3 Lyr, ...) for each of the stars",
+		"source_link": "https://simbad.cds.unistra.fr/simbad/",
+		"copyright_notice": "Unknown (trying to resolve)",
+		"license": "Unknown (trying to resolve)"
+	},
+	{
+		"name": "Temperature to colour conversion table",
+		"description": "The table is used to choose a colour for a star based on its temperature (which is in turn calculated from its B-V index using the Ballesteros' formula)",
+		"source_link": "http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color_D58.html",
+		"copyright_notice": "Unknown (trying to resolve)",
+		"license": "Unknown (trying to resolve)"
+	},
+	{
 		"name": "spherical_geometry",
-		"description": "A spherical geometry library developed for this project.",
+		"description": "A spherical geometry library developed for this project",
 		"source_link": "https://github.com/stellarguesser/spherical-geometry",
 		"copyright_notice": "Copyright (c) 2024 stellarguesser",
 		"license": "MIT",
@@ -19,7 +40,7 @@
 	},
 	{
 		"name": "eframe and egui_extras",
-		"description": "The UI of this app is built using mostly egui (extended by the functionality in the egui_extras library) with eframe.",
+		"description": "The UI of this app is built using mostly egui (extended by the functionality in the egui_extras library) with eframe",
 		"source_link": "https://github.com/emilk/egui",
 		"copyright_notice": "Copyright [yyyy] [name of copyright owner] (From the MIT license: Copyright (c) 2018-2021 Emil Ernerfeldt <emil.ernerfeldt@gmail.com>)",
 		"license": "Apache 2.0 (or MIT)",
@@ -37,7 +58,7 @@
 	},
 	{
 		"name": "nalgebra",
-		"description": "A linear algebra library.",
+		"description": "A linear algebra library",
 		"source_link": "https://github.com/dimforge/nalgebra",
 		"copyright_notice": "Copyright 2020 Sébastien Crozet",
 		"license": "Apache 2.0",
@@ -46,7 +67,7 @@
 	},
 	{
 		"name": "angle",
-		"description": "A library for handling angles in a safer manner, making use of type checking to prevent usage of x° as x rad.",
+		"description": "A library for handling angles in a safer manner, making use of type checking to prevent usage of x° as x rad",
 		"source_link": "https://github.com/arturoc/angle-rs",
 		"copyright_notice": "Copyright 2024 - Arturo Castro Prieto",
 		"license": "MIT",
