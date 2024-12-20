@@ -13,21 +13,24 @@
 		"description": "The Hipparcos catalogue was used to get a list of sufficiently many stars and information about them",
 		"source_link": "https://vizier.cds.unistra.fr/viz-bin/VizieR-3?-source=I/239/hip_main",
 		"copyright_notice": "Unknown (trying to resolve)",
-		"license": "Unknown (trying to resolve)"
+		"license": "Unknown (trying to resolve)",
+		"license_file": "unknown.txt"
 	},
 	{
 		"name": "Simbad data",
 		"description": "In addition to the Hipparcos catalogue, data from Simbad were used to get the name (Vega, ...), Bayer designation (alf Lyr, ...), and Flamsteed designation (3 Lyr, ...) for each of the stars",
 		"source_link": "https://simbad.cds.unistra.fr/simbad/",
 		"copyright_notice": "Unknown (trying to resolve)",
-		"license": "Unknown (trying to resolve)"
+		"license": "Unknown (trying to resolve)",
+		"license_file": "unknown.txt"
 	},
 	{
 		"name": "Temperature to colour conversion table",
 		"description": "The table is used to choose a colour for a star based on its temperature (which is in turn calculated from its B-V index using the Ballesteros' formula)",
 		"source_link": "http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color_D58.html",
 		"copyright_notice": "Unknown (trying to resolve)",
-		"license": "Unknown (trying to resolve)"
+		"license": "Unknown (trying to resolve)",
+		"license_file": "unknown.txt"
 	},
 	{
 		"name": "spherical_geometry",
