@@ -1,4 +1,4 @@
-@echo off
+
 for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do set "dt=%%a"
 set "Year=%dt:~0,4%" & set "Mon=%dt:~4,2%" & set "Day=%dt:~6,2%"
 set "Hour=%dt:~8,2%" & set "Min=%dt:~10,2%" & set "Sec=%dt:~12,2%"
@@ -10,6 +10,8 @@ set "out_folder=.\builds\android\release\%fullstamp%"
 set "original_dir=%CD%"
 mkdir %out_folder%
 
+cd ./crates/stellar_guesser
+set CARGO_TARGET_DIR=../../../target
 cargo android apk build --release
 copy .\gen\android\app\build\outputs\apk\universal\release\app-universal-release-unsigned.apk %out_folder%
 cd %out_folder%

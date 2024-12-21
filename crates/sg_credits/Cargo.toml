@@ -1,0 +1,7 @@
+[package]
+authors = ["Pandicon <70060103+Pandicon@users.noreply.github.com>"]
+name = "sg_credits"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]

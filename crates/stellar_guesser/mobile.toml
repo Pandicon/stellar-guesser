@@ -1,0 +1,5 @@
+[app]
+name = "stellar-guesser"
+stylized-name = "Stellar Guesser"
+domain = "users.noreply.github.com"
+template-pack = "egui"
