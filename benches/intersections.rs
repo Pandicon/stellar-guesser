@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use stellar_guesser::geometry::{intersections::segment_segment, LineSegment};
+use sg_geometry::{intersections::segment_segment, LineSegment};
 
 const SECONDS_TO_BENCHMARK: u64 = 10;
 

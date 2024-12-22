@@ -20,7 +20,6 @@ mod public_constants;
 pub mod rendering;
 pub mod server_communication;
 pub mod structs;
-mod tests;
 
 pub const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 pub const PROJECT_NAME: &str = env!("CARGO_PKG_NAME");

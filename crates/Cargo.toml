@@ -1,5 +1,7 @@
 [workspace]
 members = ["*"]
+exclude = ["target"]
+resolver = "2"
 
 [workspace.dependencies]
 angle = "0.5.0"
