@@ -11,11 +11,21 @@ jobs:
               with:
                   toolchain: stable
                   components: 'clippy, rustfmt'
-            - name: Run tests
-              # working-directory: .
+            - name: Run tests (main app)
+              working-directory: app
               run: cargo test --all-features
-            - name: Run clippy
-              # working-directory: .
+            - name: Run clippy (main app)
+              working-directory: app
               run: cargo clippy --all-targets --all-features -- -D warnings
-            - name: Check formatting
+            - name: Check formatting (main app)
+              working-directory: app
+              run: cargo fmt --all -- --check
+            - name: Run tests (crates)
+              working-directory: crates
+              run: cargo test --all-features
+            - name: Run clippy (crates)
+              working-directory: crates
+              run: cargo clippy --all-targets --all-features -- -D warnings
+            - name: Check formatting (crates)
+              working-directory: crates
               run: cargo fmt --all -- --check
