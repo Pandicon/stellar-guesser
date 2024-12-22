@@ -3,8 +3,7 @@ use egui::epaint::Color32;
 use nalgebra::{Matrix3, Vector3};
 use serde::Deserialize;
 
-use crate::{geometry, graphics::parse_colour_option};
-use geometry::get_point_vector;
+use crate::graphics::parse_colour_option;
 
 use super::renderer::CellestialSphere;
 
@@ -48,7 +47,7 @@ pub struct DeepskyRaw {
 
 impl Deepsky {
     pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, colour: Color32) -> DeepskyRenderer {
-        DeepskyRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), colour)
+        DeepskyRenderer::new(sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix), colour)
     }
 
     pub fn from_raw(raw_deepsky: DeepskyRaw, images_data: Vec<crate::structs::image_info::ImageInfo>) -> (Self, Option<Color32>) {

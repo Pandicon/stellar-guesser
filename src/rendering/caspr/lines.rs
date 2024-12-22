@@ -3,9 +3,6 @@ use egui::epaint::Color32;
 use nalgebra::{Matrix3, Vector3};
 use serde::Deserialize;
 
-use crate::geometry;
-use geometry::get_point_vector;
-
 use crate::graphics;
 use graphics::parse_colour_option;
 
@@ -28,8 +25,8 @@ pub struct SkyLine {
 impl SkyLine {
     pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, colour: Color32) -> LineRenderer {
         LineRenderer::new(
-            get_point_vector(self.ra_start, self.dec_start, rotation_matrix),
-            get_point_vector(self.ra_end, self.dec_end, rotation_matrix),
+            sg_geometry::get_point_vector(self.ra_start, self.dec_start, rotation_matrix),
+            sg_geometry::get_point_vector(self.ra_end, self.dec_end, rotation_matrix),
             colour,
             self.width,
         )

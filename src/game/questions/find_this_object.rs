@@ -1,7 +1,6 @@
 use crate::enums::{GameStage, RendererCategory};
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::game::{game_handler, questions};
-use crate::geometry;
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
@@ -124,7 +123,7 @@ impl Question {
         let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !markers.is_empty() {
             let answer_dec = markers[0].dec;
             let answer_ra = markers[0].ra;
-            let distance = geometry::angular_distance((self.ra.to_rad(), self.dec.to_rad()), (answer_ra.to_rad(), answer_dec.to_rad())).to_deg();
+            let distance = sg_geometry::angular_distance((self.ra.to_rad(), self.dec.to_rad()), (answer_ra.to_rad(), answer_dec.to_rad())).to_deg();
             if data.is_scored_mode {
                 *data.score += GameHandler::evaluate_score(distance);
             }
@@ -169,7 +168,7 @@ impl Question {
             *data.question_number += 1;
         }
         if data.questions_settings.find_this_object.rotate_to_correct_point {
-            let final_vector = geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
+            let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             data.cellestial_sphere.look_at_point(&final_vector);
             data.cellestial_sphere.init_renderers();
         } else {

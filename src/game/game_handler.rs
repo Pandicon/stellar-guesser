@@ -1,5 +1,4 @@
 use super::{game_settings, questions};
-use crate::geometry;
 use crate::{
     enums::{self, GameStage, RendererCategory, StorageKeys},
     renderer::CellestialSphere,
@@ -435,15 +434,15 @@ impl GameHandler {
         let mut rand = rand::thread_rng();
         for i in 1..catalog.len() {
             catalog.push(Box::new(questions::angular_separation::Question {
-                point1: geometry::generate_random_point(&mut rand),
-                point2: geometry::generate_random_point(&mut rand),
+                point1: sg_geometry::generate_random_point(&mut rand),
+                point2: sg_geometry::generate_random_point(&mut rand),
 
                 state: Default::default(),
             }));
-            let (ra, dec) = geometry::generate_random_point(&mut rand);
+            let (ra, dec) = sg_geometry::generate_random_point(&mut rand);
             catalog.push(Box::new(questions::which_constellation_is_point_in::Question { ra, dec, state: Default::default() }));
 
-            let (ra, dec) = geometry::generate_random_point(&mut rand);
+            let (ra, dec) = sg_geometry::generate_random_point(&mut rand);
             if i % 2 == 0 {
                 catalog.push(Box::new(questions::guess_ra_dec::DecQuestion { ra, dec, state: Default::default() }));
             } else {

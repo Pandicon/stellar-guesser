@@ -1,4 +1,8 @@
-static LICENSES_DIR: include_dir::Dir = include_dir::include_dir!("$CARGO_MANIFEST_DIR/licenses_generic");
+pub mod ui;
+
+pub static CREDITS: once_cell::sync::Lazy<Vec<Credits>> = once_cell::sync::Lazy::new(get_credits);
+
+static LICENSES_DIR: include_dir::Dir = include_dir::include_dir!("$CARGO_MANIFEST_DIR/../../licenses_generic");
 
 #[derive(serde::Deserialize)]
 pub struct CreditsRaw {
@@ -68,7 +72,7 @@ impl Credits {
 }
 
 pub fn get_credits() -> Vec<Credits> {
-    let data = include_str!("../credits.json");
+    let data = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../credits.json"));
     let res_raw: Vec<CreditsRaw> = serde_json::from_str(data).expect("Unable to parse the credits file.");
     log::info!("Successfully loaded the credits file");
     res_raw

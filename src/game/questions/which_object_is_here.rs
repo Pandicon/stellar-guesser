@@ -1,7 +1,6 @@
 use crate::enums::GameStage;
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::game::{game_handler, questions};
-use crate::geometry;
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
@@ -262,7 +261,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             )]
         };
         if questions_settings.what_is_this_object.rotate_to_point {
-            let final_vector = geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
+            let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             cellestial_sphere.look_at_point(&final_vector);
             cellestial_sphere.init_renderers();
         }

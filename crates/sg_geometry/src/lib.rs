@@ -1,6 +1,4 @@
-use crate::renderer::CellestialSphere;
 use angle::Angle;
-use eframe::egui;
 use egui::Pos2;
 use nalgebra::{Matrix3, Vector2, Vector3};
 use rand::{rngs::ThreadRng, Rng};
@@ -108,28 +106,24 @@ pub fn project_point(vector: &Vector3<f32>, zoom: f32, viewport_rect: egui::Rect
 }
 
 //something is broken over here and I have no idea what it is...
-pub fn cast_onto_sphere(cellestial_sphere: &CellestialSphere, screen_position: &egui::Pos2) -> Vector3<f32> {
-    let rect_size = Vector2::new(
-        cellestial_sphere.viewport_rect.max[0] - cellestial_sphere.viewport_rect.min[0],
-        cellestial_sphere.viewport_rect.max[1] - cellestial_sphere.viewport_rect.min[1],
-    );
+pub fn cast_onto_sphere(viewport_rect: &egui::Rect, screen_position: &egui::Pos2, rotation: nalgebra::Rotation3<f32>, zoom: f32) -> Vector3<f32> {
+    let rect_size = Vector2::new(viewport_rect.max[0] - viewport_rect.min[0], viewport_rect.max[1] - viewport_rect.min[1]);
 
     let screen_ratio = 2.0 / (rect_size[0] * rect_size[0] + rect_size[1] * rect_size[1]).sqrt();
 
     let plane_coordinates = Vector2::new((screen_position[0] - rect_size[0] / 2.0) * screen_ratio, (screen_position[1] - rect_size[1] / 2.0) * screen_ratio);
 
-    cast_onto_sphere_plane_position(cellestial_sphere, plane_coordinates)
+    cast_onto_sphere_plane_position(rotation, zoom, plane_coordinates)
 }
 
-pub fn cast_onto_sphere_plane_position(cellestial_sphere: &CellestialSphere, plane_coordinates: Vector2<f32>) -> Vector3<f32> {
-    let scaling_factor = cellestial_sphere.zoom * cellestial_sphere.zoom + plane_coordinates[0] * plane_coordinates[0] + plane_coordinates[1] * plane_coordinates[1];
+pub fn cast_onto_sphere_plane_position(rotation: nalgebra::Rotation3<f32>, zoom: f32, plane_coordinates: Vector2<f32>) -> Vector3<f32> {
+    let scaling_factor = zoom * zoom + plane_coordinates[0] * plane_coordinates[0] + plane_coordinates[1] * plane_coordinates[1];
 
-    cellestial_sphere.rotation.matrix().try_inverse().expect("FUCK")
+    rotation.matrix().try_inverse().expect("FUCK")
         * Vector3::new(
-            2.0 * cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() * plane_coordinates[0] / scaling_factor,
-            2.0 * cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() * plane_coordinates[1] / scaling_factor,
-            -(cellestial_sphere.get_zoom() * cellestial_sphere.get_zoom() - plane_coordinates[0] * plane_coordinates[0] - plane_coordinates[1] * plane_coordinates[1]) * cellestial_sphere.get_zoom()
-                / (scaling_factor),
+            2.0 * zoom * zoom * plane_coordinates[0] / scaling_factor,
+            2.0 * zoom * zoom * plane_coordinates[1] / scaling_factor,
+            -(zoom * zoom - plane_coordinates[0] * plane_coordinates[0] - plane_coordinates[1] * plane_coordinates[1]) * zoom / (scaling_factor),
         )
 }
 
@@ -150,8 +144,8 @@ pub fn cartesian_to_spherical(vector: Vector3<f32>) -> (angle::Rad<f32>, angle::
     }
     (angle::Rad(dec), angle::Rad(ra))
 }
-pub fn cast_onto_sphere_dec_ra(cellestial_sphere: &CellestialSphere, screen_position: &egui::Pos2) -> [angle::Rad<f32>; 2] {
-    let sphere_position = cast_onto_sphere(cellestial_sphere, screen_position);
+pub fn cast_onto_sphere_dec_ra(viewport_rect: &egui::Rect, screen_position: &egui::Pos2, rotation: nalgebra::Rotation3<f32>, zoom: f32) -> [angle::Rad<f32>; 2] {
+    let sphere_position = cast_onto_sphere(viewport_rect, screen_position, rotation, zoom);
     let (dec, ra) = cartesian_to_spherical(sphere_position);
     [dec, ra]
 }
@@ -217,4 +211,53 @@ pub fn is_inside_polygon(polygon: Vec<SphericalPoint>, point: (f32, f32), meridi
         }
     }
     crossed % 2 == 1
+}
+
+#[cfg(test)]
+mod tests {
+    use angle::Angle;
+
+    #[test]
+    fn angular_distance() {
+        let max_delta = angle::Deg(0.01);
+        let tests = vec![((angle::Deg(15.7), angle::Deg(96.3)), (angle::Deg(73.2), angle::Deg(93.9)), angle::Deg(57.52))];
+        for ((dec_1, ra_1), (dec_2, ra_2), expected_res) in tests {
+            let dec_1 = dec_1.to_rad();
+            let ra_1 = ra_1.to_rad();
+            let dec_2 = dec_2.to_rad();
+            let ra_2 = ra_2.to_rad();
+            let res = super::angular_distance((ra_1, dec_1), (ra_2, dec_2));
+            let res = res.to_deg();
+            if (res - expected_res).abs() > max_delta {
+                dbg!(res, expected_res);
+            }
+            assert!((res - expected_res).abs() <= max_delta);
+        }
+    }
+
+    #[test]
+    fn vec_to_dec_ra() {
+        let max_delta = angle::Deg(0.002);
+        for dec in -900..=900 {
+            let dec = angle::Deg((dec as f32) / 10.0);
+            for ra in 0..=3600 {
+                let ra = angle::Deg((ra as f32) / 10.0);
+                let v = super::get_point_vector(ra, dec, &nalgebra::Matrix3::identity());
+                let (dec_2, ra_2) = super::cartesian_to_spherical(v);
+                let dec_2 = dec_2.to_deg();
+                let ra_2 = ra_2.to_deg();
+                let dec_diff = (dec - dec_2).abs();
+                let ra_diff = angle::Deg(((ra.value() % 360.0) - (ra_2.value() % 360.0)).abs());
+                if (ra_diff > max_delta && dec.abs() != angle::Deg(90.0)) || dec_diff > max_delta {
+                    dbg!(v);
+                    dbg!(ra, ra_2);
+                    dbg!(dec, dec_2);
+                }
+                assert!(dec_diff <= max_delta);
+                if dec.abs() != angle::Deg(90.0) {
+                    assert!(ra_diff <= max_delta);
+                }
+            }
+        }
+    }
 }

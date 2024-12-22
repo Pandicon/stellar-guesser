@@ -1,12 +1,12 @@
 use crate::{
     enums::{LightPollution, RendererCategory, StorageKeys},
-    geometry::{intersections, LineSegment, Rectangle},
     rendering::themes::Theme,
 };
 use angle::Angle;
 use eframe::egui;
 use egui::epaint::Color32;
 use nalgebra::{Rotation3, Vector3};
+use sg_geometry::{intersections, LineSegment, Rectangle};
 use std::{collections::HashMap, error::Error, f32::consts::PI, fs};
 
 const DEEPSKIES_FOLDER: &str = "./sphere/deepsky";
@@ -22,8 +22,7 @@ use crate::{SKY_DATA_FILES, SKY_DATA_LISTS};
 
 const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague), (4.5, 0.8, LightPollution::AverageVillage)];
 
-use crate::geometry;
-use geometry::{cast_onto_sphere, project_point};
+// use geometry::{cast_onto_sphere, project_point};
 
 use super::lines::{LineRenderer, SkyLine, SkyLineRaw, SkyLines};
 use super::markers::{Marker, MarkerRaw, MarkerRenderer, Markers};
@@ -69,7 +68,7 @@ pub struct CellestialSphere {
 impl CellestialSphere {
     //Renders a circle based on its current normal (does NOT account for the rotation of the sphere)
     pub fn render_circle(&self, normal: &Vector3<f32>, radius: f32, color: egui::epaint::Color32, painter: &egui::Painter) {
-        let (projected_point, is_within_bounds) = project_point(normal, self.zoom, self.viewport_rect);
+        let (projected_point, is_within_bounds) = sg_geometry::project_point(normal, self.zoom, self.viewport_rect);
 
         if is_within_bounds {
             painter.circle_filled(projected_point, radius, color);
@@ -77,8 +76,8 @@ impl CellestialSphere {
     }
 
     pub fn render_line(&self, start: &Vector3<f32>, end: &Vector3<f32>, colour: Color32, width: f32, painter: &egui::Painter) {
-        let (start_point, is_start_within_bounds) = project_point(start, self.zoom, self.viewport_rect);
-        let (end_point, is_end_within_bounds) = project_point(end, self.zoom, self.viewport_rect);
+        let (start_point, is_start_within_bounds) = sg_geometry::project_point(start, self.zoom, self.viewport_rect);
+        let (end_point, is_end_within_bounds) = sg_geometry::project_point(end, self.zoom, self.viewport_rect);
 
         let screen_rect = Rectangle::from(self.viewport_rect);
 
@@ -100,12 +99,12 @@ impl CellestialSphere {
 
     #[allow(clippy::too_many_arguments)]
     pub fn render_marker(&self, centre_vector: &Vector3<f32>, other_vector: &Option<Vector3<f32>>, circle: bool, pixel_size: Option<f32>, colour: Color32, width: f32, painter: &egui::Painter) {
-        let (centre_point, is_centre_within_bounds) = project_point(centre_vector, self.zoom, self.viewport_rect);
+        let (centre_point, is_centre_within_bounds) = sg_geometry::project_point(centre_vector, self.zoom, self.viewport_rect);
         if !is_centre_within_bounds {
             return;
         }
         let size = if let Some(other_point_vec) = other_vector {
-            let (other_point, _) = project_point(other_point_vec, self.zoom, self.viewport_rect);
+            let (other_point, _) = sg_geometry::project_point(other_point_vec, self.zoom, self.viewport_rect);
             let vec_to = other_point - centre_point;
             vec_to.length()
         } else if let Some(pixel_size) = pixel_size {
@@ -716,7 +715,7 @@ impl CellestialSphere {
     }
 
     pub fn project_screen_pos(&self, screen_pos: egui::Pos2) -> Vector3<f32> {
-        cast_onto_sphere(self, &screen_pos)
+        sg_geometry::cast_onto_sphere(&self.viewport_rect, &screen_pos, self.rotation, self.get_zoom())
     }
 
     pub fn mag_settings_to_light_pollution_place(mag_offset: f32, mag_scale: f32, light_pollution_place_to_mag: &HashMap<LightPollution, [f32; 2]>) -> LightPollution {

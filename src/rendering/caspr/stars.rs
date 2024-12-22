@@ -3,9 +3,6 @@ use egui::epaint::Color32;
 use nalgebra::{Matrix3, Vector3};
 use serde::Deserialize;
 
-use crate::geometry;
-use geometry::get_point_vector;
-
 use crate::graphics;
 use graphics::parse_colour;
 
@@ -38,7 +35,7 @@ pub struct StarRaw {
 impl Star {
     pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>) -> StarRenderer {
         let colour = if let Some(col) = self.override_colour { col } else { self.default_colour };
-        StarRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), self.vmag, colour)
+        StarRenderer::new(sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix), self.vmag, colour)
     }
 
     pub fn from_raw(raw_star: StarRaw, default_colour: Color32, override_colour: Option<Color32>) -> Self {

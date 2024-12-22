@@ -3,7 +3,6 @@ use egui::epaint::Pos2;
 use std::collections::HashMap;
 
 use crate::game::game_handler::QuestionCheckingData;
-use crate::geometry;
 use crate::{
     enums::{self, GameStage, PointerPosition, RendererCategory},
     Application,
@@ -56,7 +55,12 @@ impl Application {
             if self.game_handler.add_marker_on_click && self.input.primary_released && !self.input.primary_dragging_last_frame {
                 /*let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
                 let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);*/
-                let marker_pos = geometry::cast_onto_sphere_dec_ra(&self.cellestial_sphere, &pointer_position);
+                let marker_pos = sg_geometry::cast_onto_sphere_dec_ra(
+                    &self.cellestial_sphere.viewport_rect,
+                    &pointer_position,
+                    self.cellestial_sphere.rotation,
+                    self.cellestial_sphere.get_zoom(),
+                );
                 if self.game_handler.allow_multiple_player_marker() {
                     self.game_handler.guess_marker_positions.push(marker_pos);
                 } else {

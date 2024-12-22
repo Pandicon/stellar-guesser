@@ -2,7 +2,7 @@ use eframe::egui;
 use egui::Color32;
 use nalgebra::Matrix3;
 
-use crate::{geometry::get_point_vector, rendering::themes::GameMarkersColours};
+use crate::rendering::themes::GameMarkersColours;
 
 use super::{Marker, MarkerRenderer};
 
@@ -78,7 +78,7 @@ impl GameMarker {
             return None;
         }
         let other_vec = if let Some(angular_radius) = self.angular_radius {
-            Some(get_point_vector(
+            Some(sg_geometry::get_point_vector(
                 self.ra,
                 if self.dec + angular_radius <= angle::Deg(90.0) {
                     self.dec + angular_radius
@@ -89,7 +89,7 @@ impl GameMarker {
             ))
         } else {
             self.angular_width.map(|angular_width| {
-                get_point_vector(
+                sg_geometry::get_point_vector(
                     self.ra,
                     if self.dec + angular_width <= angle::Deg(90.0) {
                         self.dec + angular_width
@@ -101,7 +101,7 @@ impl GameMarker {
             })
         };
         Some(MarkerRenderer::new(
-            get_point_vector(self.ra, self.dec, rotation_matrix),
+            sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix),
             other_vec,
             &self.to_general_marker(),
             self.colour,

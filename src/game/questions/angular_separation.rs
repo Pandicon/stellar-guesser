@@ -1,7 +1,6 @@
 use crate::enums::GameStage;
 use crate::game::game_handler::{self, GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::game::questions;
-use crate::geometry;
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
@@ -43,8 +42,8 @@ pub struct Question {
 impl Question {
     pub fn new_random() -> Self {
         Self {
-            point1: geometry::generate_random_point(&mut rand::thread_rng()),
-            point2: geometry::generate_random_point(&mut rand::thread_rng()),
+            point1: sg_geometry::generate_random_point(&mut rand::thread_rng()),
+            point2: sg_geometry::generate_random_point(&mut rand::thread_rng()),
 
             state: State::default(),
         }
@@ -97,7 +96,7 @@ impl Question {
     fn check_answer(&mut self, data: QuestionCheckingData) {
         let (ra1, dec1) = self.point1;
         let (ra2, dec2) = self.point2;
-        let distance = geometry::angular_distance((ra1.to_rad(), dec1.to_rad()), (ra2.to_rad(), dec2.to_rad())).to_deg();
+        let distance = sg_geometry::angular_distance((ra1.to_rad(), dec1.to_rad()), (ra2.to_rad(), dec2.to_rad())).to_deg();
         match self.state.answer.parse::<f32>() {
             Ok(answer) => {
                 let answer = angle::Deg(answer);
@@ -192,8 +191,8 @@ impl crate::game::game_handler::QuestionTrait for Question {
             GameMarker::new(GameMarkerType::Task, ra2, dec2, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
         ];
         if questions_settings.angular_separation.rotate_to_midpoint {
-            let end_1 = geometry::get_point_vector(ra1, dec1, &nalgebra::Matrix3::<f32>::identity());
-            let end_2 = geometry::get_point_vector(ra2, dec2, &nalgebra::Matrix3::<f32>::identity());
+            let end_1 = sg_geometry::get_point_vector(ra1, dec1, &nalgebra::Matrix3::<f32>::identity());
+            let end_2 = sg_geometry::get_point_vector(ra2, dec2, &nalgebra::Matrix3::<f32>::identity());
             if (end_1 + end_2).magnitude_squared() > 10e-4 {
                 let final_vector = (end_1 + end_2).normalize();
                 cellestial_sphere.look_at_point(&final_vector);
