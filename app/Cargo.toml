@@ -50,8 +50,8 @@ tokio = { version = "1.35.0", features = ["macros", "rt-multi-thread"] }
 winit = "0.30"
 spherical_geometry = "0.2.0" # { path = "../spherical-geometry-fork" }
 
-sg_credits = { path = "./crates/sg_credits" }
-sg_geometry = { path = "./crates/sg_geometry" }
+sg_credits = { path = "../crates/sg_credits" }
+sg_geometry = { path = "../crates/sg_geometry" }
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "0.13.1"
