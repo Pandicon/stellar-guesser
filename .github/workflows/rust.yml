@@ -1,31 +1,157 @@
 name: Rust CI
 
-on: pull_request
+on:
+  push:
+    branches:
+      - test-actions
 
 jobs:
-    test-and-clippy:
+    build-app:
         runs-on: ubuntu-latest
+        outputs:
+            cache-hit: ${{ steps.cache.outputs.cache-hit }}
         steps:
             - uses: actions/checkout@v4
             - uses: dtolnay/rust-toolchain@stable
               with:
                   toolchain: stable
                   components: 'clippy, rustfmt'
-            - name: Run tests (main app)
+            - name: Cache cargo builds (app)
+              id: cache
+              uses: actions/cache@v3
+              with:
+                  path: |
+                    ~/.cargo/registry
+                    ~/.cargo/git
+                    app/target
+                  key: ${{ runner.os }}-cargo-app-${{ hashFiles('app/Cargo.lock') }}
+                  restore-keys: |
+                    ${{ runner.os }}-cargo-app-
+            - name: Build app
+              working-directory: app
+              run: cargo build --all-features
+
+    build-crates:
+        runs-on: ubuntu-latest
+        outputs:
+            cache-hit: ${{ steps.cache.outputs.cache-hit }}
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+                  components: 'clippy, rustfmt'
+            - name: Cache cargo builds (crates)
+              id: cache
+              uses: actions/cache@v3
+              with:
+                  path: |
+                    ~/.cargo/registry
+                    ~/.cargo/git
+                    crates/target
+                  key: ${{ runner.os }}-cargo-crates-${{ hashFiles('crates/**/Cargo.lock') }}
+                  restore-keys: |
+                    ${{ runner.os }}-cargo-crates-
+            - name: Build crates
+              working-directory: crates
+              run: cargo build --all-features
+
+    test-app:
+        needs: build-app
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v3
+              with:
+                  path: |
+                    ~/.cargo/registry
+                    ~/.cargo/git
+                    app/target
+                  key: ${{ runner.os }}-cargo-app-${{ hashFiles('app/Cargo.lock') }}
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+            - name: Run tests (app)
               working-directory: app
               run: cargo test --all-features
-            - name: Run clippy (main app)
-              working-directory: app
-              run: cargo clippy --all-targets --all-features -- -D warnings
-            - name: Check formatting (main app)
-              working-directory: app
-              run: cargo fmt --all -- --check
+
+    test-crates:
+        needs: build-crates
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v3
+              with:
+                  path: |
+                    ~/.cargo/registry
+                    ~/.cargo/git
+                    crates/target
+                  key: ${{ runner.os }}-cargo-crates-${{ hashFiles('crates/**/Cargo.lock') }}
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
             - name: Run tests (crates)
               working-directory: crates
               run: cargo test --all-features
-            - name: Run clippy (crates)
+
+    clippy-app:
+        needs: build-app
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v3
+              with:
+                  path: |
+                    ~/.cargo/registry
+                    ~/.cargo/git
+                    app/target
+                  key: ${{ runner.os }}-cargo-app-${{ hashFiles('app/Cargo.lock') }}
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+            - name: Run Clippy (app)
+              working-directory: app
+              run: cargo clippy --all-targets --all-features -- -D warnings
+
+    clippy-crates:
+        needs: build-crates
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v3
+              with:
+                  path: |
+                    ~/.cargo/registry
+                    ~/.cargo/git
+                    crates/target
+                  key: ${{ runner.os }}-cargo-crates-${{ hashFiles('crates/**/Cargo.lock') }}
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+            - name: Run Clippy (crates)
               working-directory: crates
               run: cargo clippy --all-targets --all-features -- -D warnings
+
+    fmt-app:
+        needs: build-app
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+            - name: Check formatting (app)
+              working-directory: app
+              run: cargo fmt --all -- --check
+
+    fmt-crates:
+        needs: build-crates
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
             - name: Check formatting (crates)
               working-directory: crates
               run: cargo fmt --all -- --check
