@@ -94,8 +94,7 @@ fn render_left_controls(app: &mut crate::application::Application, ui: &mut egui
             });
     });
     if prev_light_pollution != app.cellestial_sphere.light_pollution_place {
-        let [mag_offset, mag_scale] = app.cellestial_sphere.light_pollution_place_to_mag_settings(&app.cellestial_sphere.light_pollution_place);
-        app.cellestial_sphere.sky_settings.mag_offset = mag_offset;
-        app.cellestial_sphere.sky_settings.mag_scale = mag_scale;
+        let settings = app.cellestial_sphere.light_pollution_place_to_mag_settings(&app.cellestial_sphere.light_pollution_place);
+        app.cellestial_sphere.sky_settings.mag_to_radius_settings[app.cellestial_sphere.sky_settings.mag_to_radius_id] = settings;
     }
 }

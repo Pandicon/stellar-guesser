@@ -1,3 +1,4 @@
+use angle::Angle;
 use eframe::egui;
 use egui::epaint::Color32;
 use nalgebra::{Matrix3, Vector3};
@@ -33,9 +34,9 @@ pub struct StarRaw {
 }
 
 impl Star {
-    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>) -> StarRenderer {
+    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, magnitude_to_radius_function: MagnitudeToRadius, fov: angle::Deg<f32>) -> StarRenderer {
         let colour = if let Some(col) = self.override_colour { col } else { self.default_colour };
-        StarRenderer::new(sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix), self.vmag, colour)
+        StarRenderer::new(sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix), self.vmag, colour, magnitude_to_radius_function, fov)
     }
 
     pub fn from_raw(raw_star: StarRaw, default_colour: Color32, override_colour: Option<Color32>) -> Self {
@@ -96,21 +97,65 @@ impl Star {
 
 pub struct StarRenderer {
     pub unit_vector: Vector3<f32>,
-    pub vmag: f32,
+    pub radius: f32,
     pub colour: Color32,
 }
 
 impl StarRenderer {
-    pub fn new(vector: Vector3<f32>, magnitude: f32, colour: Color32) -> Self {
+    pub fn new(vector: Vector3<f32>, magnitude: f32, colour: Color32, magnitude_to_radius_function: MagnitudeToRadius, fov: angle::Deg<f32>) -> Self {
         Self {
             unit_vector: vector,
-            vmag: magnitude,
+            radius: Self::magnitude_to_radius(magnitude_to_radius_function, magnitude, fov),
             colour,
         }
     }
 
     pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter) {
-        cellestial_sphere.render_circle(&self.unit_vector, cellestial_sphere.mag_to_radius(self.vmag), self.colour, painter);
+        if self.radius >= crate::MINIMUM_CIRCLE_RADIUS_TO_RENDER {
+            cellestial_sphere.render_circle(&self.unit_vector, self.radius, self.colour, painter);
+        }
+    }
+
+    pub fn magnitude_to_radius(function_choice: MagnitudeToRadius, magnitude: f32, fov: angle::Deg<f32>) -> f32 {
+        match function_choice {
+            MagnitudeToRadius::Linear { mag_scale, mag_offset } => mag_scale * (mag_offset - magnitude),
+            MagnitudeToRadius::Exponential { r_0, n, o } => r_0 * (180.0 * n / fov.value()).ln() * 10.0_f32.powf(-o * magnitude),
+        }
+    }
+}
+
+pub const MAGNITUDE_TO_RADIUS_OPTIONS: usize = 2;
+
+#[derive(serde::Deserialize, serde::Serialize, Copy, Clone, PartialEq)]
+pub enum MagnitudeToRadius {
+    /// r = mag_scale * (mag_offset - magnitude)
+    Linear {
+        /// A size multiplier
+        mag_scale: f32,
+        /// Highest visible magnitude
+        mag_offset: f32,
+    },
+    /// r = r_0 * ln(180*n/fov) * 10^(-o*magnitude)
+    Exponential {
+        /// A size multiplier
+        r_0: f32,
+        /// How much does the size change (proportionally) when changing the FOV
+        n: f32,
+        /// How much does the size change (proportionally) when changing the magnitude
+        o: f32,
+    },
+}
+
+impl MagnitudeToRadius {
+    pub fn defaults() -> [Self; MAGNITUDE_TO_RADIUS_OPTIONS] {
+        [Self::Linear { mag_scale: 0.5, mag_offset: 6.0 }, Self::Exponential { r_0: 3.2, n: 3.0, o: 0.15 }]
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Linear { .. } => "Linear",
+            Self::Exponential { .. } => "Exponential",
+        }
     }
 }
 

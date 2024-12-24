@@ -21,6 +21,8 @@ pub mod rendering;
 pub mod server_communication;
 pub mod structs;
 
+pub const MINIMUM_CIRCLE_RADIUS_TO_RENDER: f32 = 0.5;
+
 pub const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 pub const PROJECT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

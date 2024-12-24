@@ -45,13 +45,14 @@ impl Application {
                 }
             }
         }
-        self.cellestial_sphere.zoom(self.input.zoom);
+        let reinitialise_stars = self.cellestial_sphere.zoom(self.input.zoom);
 
         let pointer_position: Pos2 = match self.input.pointer_position {
             PointerPosition::OnScreen(position) => position,
             PointerPosition::OffScreen => return,
         };
-        if cursor_within_central_panel {
+        let all_reinitialised = if cursor_within_central_panel {
+            let mut all_reinitialised = false;
             if self.game_handler.add_marker_on_click && self.input.primary_released && !self.input.primary_dragging_last_frame {
                 /*let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
                 let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);*/
@@ -78,7 +79,14 @@ impl Application {
 
                 self.cellestial_sphere.rotate_between_points(&initial_vector, &final_vector);
                 self.cellestial_sphere.init_renderers();
+                all_reinitialised = true;
             }
+            all_reinitialised
+        } else {
+            false
+        };
+        if !all_reinitialised && reinitialise_stars {
+            self.cellestial_sphere.reinit_renderer_category(RendererCategory::Stars);
         }
     }
 }

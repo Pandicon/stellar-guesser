@@ -1,3 +1,4 @@
+use crate::rendering::caspr::stars;
 use std::collections::HashMap;
 
 const SEPARATOR: &str = "|";
@@ -8,8 +9,8 @@ pub struct SkySettings {
     pub deepskies_categories_active: HashMap<String, bool>,
     pub markers_categories_active: HashMap<String, bool>,
     pub star_names_categories_active: HashMap<String, bool>,
-    pub mag_scale: f32,
-    pub mag_offset: f32,
+    pub mag_to_radius_id: usize,
+    pub mag_to_radius_settings: [stars::MagnitudeToRadius; 2],
     pub deepsky_render_mag_decrease: f32,
 }
 
@@ -21,8 +22,8 @@ impl SkySettings {
             deepskies_categories_active: string_to_partial_hash_map(&sky_settings.deepsky_files_to_not_render),
             markers_categories_active: string_to_partial_hash_map(&sky_settings.markers_files_to_not_render),
             star_names_categories_active: string_to_partial_hash_map(&sky_settings.star_names_files_to_not_use),
-            mag_scale: sky_settings.mag_scale,
-            mag_offset: sky_settings.mag_offset,
+            mag_to_radius_id: sky_settings.mag_to_radius_id,
+            mag_to_radius_settings: sky_settings.mag_to_radius_settings,
             deepsky_render_mag_decrease: sky_settings.deepsky_render_mag_decrease,
         }
     }
@@ -36,8 +37,8 @@ pub struct SkySettingsRaw {
     pub deepsky_files_to_not_render: String,
     pub markers_files_to_not_render: String,
     pub star_names_files_to_not_use: String,
-    pub mag_scale: f32,
-    pub mag_offset: f32,
+    pub mag_to_radius_id: usize,
+    pub mag_to_radius_settings: [stars::MagnitudeToRadius; 2],
     pub deepsky_render_mag_decrease: f32,
 }
 
@@ -49,8 +50,8 @@ impl Default for SkySettingsRaw {
             deepsky_files_to_not_render: String::new(),
             markers_files_to_not_render: String::new(),
             star_names_files_to_not_use: String::new(),
-            mag_scale: 0.3,
-            mag_offset: 6.0,
+            mag_to_radius_id: 0,
+            mag_to_radius_settings: stars::MagnitudeToRadius::defaults(),
             deepsky_render_mag_decrease: 0.0,
         }
     }
@@ -64,8 +65,8 @@ impl SkySettingsRaw {
             deepsky_files_to_not_render: hash_map_to_string(&sky_settings.deepskies_categories_active),
             markers_files_to_not_render: hash_map_to_string(&sky_settings.markers_categories_active),
             star_names_files_to_not_use: hash_map_to_string(&sky_settings.star_names_categories_active),
-            mag_scale: sky_settings.mag_scale,
-            mag_offset: sky_settings.mag_offset,
+            mag_to_radius_id: sky_settings.mag_to_radius_id,
+            mag_to_radius_settings: sky_settings.mag_to_radius_settings,
             deepsky_render_mag_decrease: sky_settings.deepsky_render_mag_decrease,
         }
     }
