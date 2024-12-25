@@ -21,7 +21,7 @@ const ZOOM_CAP: f32 = 100.0;
 use crate::{SKY_DATA_FILES, SKY_DATA_LISTS};
 
 const MAG_TO_LIGHT_POLLUTION_RAW: [(LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]); 3] = [
-    (LightPollution::Default, [Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.3, mag_offset: 6.0 }), None]),
+    (LightPollution::Default, [Some(stars::MagnitudeToRadius::defaults()[0]), Some(stars::MagnitudeToRadius::defaults()[1])]),
     (LightPollution::Prague, [Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.5, mag_offset: 3.0 }), None]),
     (LightPollution::AverageVillage, [Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.8, mag_offset: 4.5 }), None]),
 ];
