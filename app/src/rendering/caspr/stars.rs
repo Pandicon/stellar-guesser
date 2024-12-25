@@ -147,7 +147,7 @@ pub enum MagnitudeToRadius {
 }
 
 impl MagnitudeToRadius {
-    pub fn defaults() -> [Self; MAGNITUDE_TO_RADIUS_OPTIONS] {
+    pub const fn defaults() -> [Self; MAGNITUDE_TO_RADIUS_OPTIONS] {
         [Self::Linear { mag_scale: 0.5, mag_offset: 6.0 }, Self::Exponential { r_0: 3.2, n: 3.0, o: 0.15 }]
     }
 
