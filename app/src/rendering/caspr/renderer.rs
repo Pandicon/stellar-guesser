@@ -32,14 +32,14 @@ const MAG_TO_LIGHT_POLLUTION_RAW: [(LightPollution, [Option<stars::MagnitudeToRa
     (
         LightPollution::Prague,
         [
-            Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.5, mag_offset: 3.0 }),
+            Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.75, mag_offset: 3.75 }),
             Some(stars::MagnitudeToRadius::Exponential { r_0: 1.6, n: 3.5, o: 0.21 }),
         ],
     ),
     (
         LightPollution::AverageVillage,
         [
-            Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.8, mag_offset: 4.5 }),
+            Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.7, mag_offset: 5.7 }),
             Some(stars::MagnitudeToRadius::Exponential { r_0: 2.6, n: 3.0, o: 0.17 }),
         ],
     ),
