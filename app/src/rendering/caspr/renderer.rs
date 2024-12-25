@@ -560,7 +560,7 @@ impl CellestialSphere {
         let light_pollution_place = CellestialSphere::mag_settings_to_light_pollution_place(sky_settings.mag_to_radius_settings[sky_settings.mag_to_radius_id], &light_pollution_place_to_mag);
 
         let viewport_rect = egui::Rect::from_two_pos(egui::pos2(0.0, 0.0), egui::pos2(0.0, 0.0));
-        let zoom = 1.0;
+        let zoom = 3.0_f32.sqrt();
         let fov = Self::zoom_to_fov(zoom);
         Ok(Self {
             sky_settings,
