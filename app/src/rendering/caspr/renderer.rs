@@ -20,10 +20,29 @@ const ZOOM_CAP: f32 = 100.0;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 use crate::{SKY_DATA_FILES, SKY_DATA_LISTS};
 
-const MAG_TO_LIGHT_POLLUTION_RAW: [(LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]); 3] = [
+const MAG_TO_LIGHT_POLLUTION_RAW: [(LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]); 4] = [
     (LightPollution::Default, [Some(stars::MagnitudeToRadius::defaults()[0]), Some(stars::MagnitudeToRadius::defaults()[1])]),
-    (LightPollution::Prague, [Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.5, mag_offset: 3.0 }), None]),
-    (LightPollution::AverageVillage, [Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.8, mag_offset: 4.5 }), None]),
+    (
+        LightPollution::PragueDark,
+        [
+            Some(stars::MagnitudeToRadius::Linear { mag_scale: 1.0, mag_offset: 4.3 }),
+            Some(stars::MagnitudeToRadius::Exponential { r_0: 2.3, n: 3.5, o: 0.21 }),
+        ],
+    ),
+    (
+        LightPollution::Prague,
+        [
+            Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.5, mag_offset: 3.0 }),
+            Some(stars::MagnitudeToRadius::Exponential { r_0: 1.6, n: 3.5, o: 0.21 }),
+        ],
+    ),
+    (
+        LightPollution::AverageVillage,
+        [
+            Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.8, mag_offset: 4.5 }),
+            Some(stars::MagnitudeToRadius::Exponential { r_0: 2.6, n: 3.0, o: 0.17 }),
+        ],
+    ),
 ];
 
 // use geometry::{cast_onto_sphere, project_point};
