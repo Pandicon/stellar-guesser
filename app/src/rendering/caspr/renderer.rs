@@ -33,7 +33,7 @@ const MAG_TO_LIGHT_POLLUTION_RAW: [(LightPollution, [Option<stars::MagnitudeToRa
         LightPollution::Prague,
         [
             Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.75, mag_offset: 3.75 }),
-            Some(stars::MagnitudeToRadius::Exponential { r_0: 1.6, n: 3.5, o: 0.21 }),
+            Some(stars::MagnitudeToRadius::Exponential { r_0: 1.4, n: 3.5, o: 0.21 }),
         ],
     ),
     (
