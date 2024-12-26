@@ -20,7 +20,7 @@ const ZOOM_CAP: f32 = 100.0;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 use crate::{SKY_DATA_FILES, SKY_DATA_LISTS};
 
-const MAG_TO_LIGHT_POLLUTION_RAW: [(LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]); 4] = [
+pub const MAG_TO_LIGHT_POLLUTION_RAW: [(LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]); 4] = [
     (LightPollution::Default, [Some(stars::MagnitudeToRadius::defaults()[0]), Some(stars::MagnitudeToRadius::defaults()[1])]),
     (
         LightPollution::PragueDark,

@@ -50,7 +50,7 @@ impl Default for SkySettingsRaw {
             deepsky_files_to_not_render: String::new(),
             markers_files_to_not_render: String::new(),
             star_names_files_to_not_use: String::new(),
-            mag_to_radius_id: 0,
+            mag_to_radius_id: 1.max(crate::rendering::caspr::stars::MAGNITUDE_TO_RADIUS_OPTIONS),
             mag_to_radius_settings: stars::MagnitudeToRadius::defaults(),
             deepsky_render_mag_decrease: 0.0,
         }
