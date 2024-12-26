@@ -832,11 +832,9 @@ impl CellestialSphere {
         light_pollution_place_to_mag: &HashMap<LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]>,
     ) -> LightPollution {
         for (&place, &settings) in light_pollution_place_to_mag {
-            for setting in settings {
-                if let Some(setting) = setting {
-                    if setting == radius_settings {
-                        return place;
-                    }
+            for setting in settings.into_iter().flatten() {
+                if setting == radius_settings {
+                    return place;
                 }
             }
         }

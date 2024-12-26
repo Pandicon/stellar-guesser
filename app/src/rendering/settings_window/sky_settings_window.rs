@@ -168,10 +168,7 @@ impl Application {
         ui.horizontal(|ui| {
             ui.label("Magnitude to radius function: ");
             egui::ComboBox::from_id_salt("Magnitude to radius function: ")
-                .selected_text(format!(
-                    "{}",
-                    self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id].name()
-                ))
+                .selected_text(self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id].name())
                 .show_ui(ui, |ui: &mut egui::Ui| {
                     ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
                     for i in 0..self.cellestial_sphere.sky_settings.mag_to_radius_settings.len() {
