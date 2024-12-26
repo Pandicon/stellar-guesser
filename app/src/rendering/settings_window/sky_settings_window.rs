@@ -184,6 +184,11 @@ impl Application {
                 });
         });
         if prev_mag_to_rad_fn_id != self.cellestial_sphere.sky_settings.mag_to_radius_id {
+            let place = CellestialSphere::mag_settings_to_light_pollution_place(
+                self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id],
+                &self.cellestial_sphere.light_pollution_place_to_mag,
+            );
+            self.cellestial_sphere.light_pollution_place = place;
             reinit_stars = true;
         }
 
