@@ -1,0 +1,161 @@
+use eframe::egui;
+use egui::epaint::Color32;
+use nalgebra::{Matrix3, Vector3};
+use serde::Deserialize;
+
+use crate::graphics::parse_colour_option;
+
+use crate::renderer::CellestialSphere;
+
+pub mod game_markers;
+pub struct Markers {
+    pub colour: Color32,
+    pub active: bool,
+    pub markers: Vec<Marker>,
+}
+
+#[derive(Clone, Copy, Deserialize)]
+pub struct Marker {
+    pub ra: angle::Deg<f32>,
+    pub dec: angle::Deg<f32>,
+    pub line_width: f32,
+    pub angular_radius: Option<angle::Deg<f32>>,
+    pub pixel_radius: Option<f32>,
+    pub angular_width: Option<angle::Deg<f32>>,
+    pub pixel_width: Option<f32>,
+}
+
+#[derive(Clone, Deserialize)]
+pub struct MarkerRaw {
+    pub ra: angle::Deg<f32>,
+    pub dec: angle::Deg<f32>,
+    pub colour: Option<String>,
+    pub line_width: f32,
+    pub angular_radius: Option<angle::Deg<f32>>,
+    pub pixel_radius: Option<f32>,
+    pub angular_width: Option<angle::Deg<f32>>,
+    pub pixel_width: Option<f32>,
+}
+
+impl Marker {
+    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, colour: Color32) -> Option<MarkerRenderer> {
+        if self.angular_radius.is_none() && self.pixel_radius.is_none() && self.angular_width.is_none() && self.pixel_width.is_none() {
+            return None;
+        }
+        let other_vec = if let Some(angular_radius) = self.angular_radius {
+            Some(sg_geometry::get_point_vector(
+                self.ra,
+                if self.dec + angular_radius <= angle::Deg(90.0) {
+                    self.dec + angular_radius
+                } else {
+                    self.dec - angular_radius
+                },
+                rotation_matrix,
+            ))
+        } else {
+            self.angular_width.map(|angular_width| {
+                sg_geometry::get_point_vector(
+                    self.ra,
+                    if self.dec + angular_width <= angle::Deg(90.0) {
+                        self.dec + angular_width
+                    } else {
+                        self.dec - angular_width
+                    },
+                    rotation_matrix,
+                )
+            })
+        };
+        Some(MarkerRenderer::new(sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix), other_vec, self, colour))
+    }
+
+    pub fn from_raw(raw_marker: MarkerRaw) -> (Self, Option<Color32>) {
+        let colour = parse_colour_option(raw_marker.colour);
+        (
+            Self {
+                ra: raw_marker.ra,
+                dec: raw_marker.dec,
+                line_width: raw_marker.line_width,
+                angular_radius: raw_marker.angular_radius,
+                pixel_radius: raw_marker.pixel_radius,
+                angular_width: raw_marker.angular_width,
+                pixel_width: raw_marker.pixel_width,
+            },
+            colour,
+        )
+    }
+
+    /**
+     * ra - the right ascension (in degrees)
+     * dec - the declination (in degrees)
+     * colour - the colour of the marker
+     * line_width - the width of the line of the marker
+     * half_size - the distance from the centre to the edge of the marker (radius for circular markers)
+     * circular - if the marker is circular or not, if not then it is a cross
+     * angular_size - if the half_size is in degrees or in pixels
+     */
+    pub fn new(ra: angle::Deg<f32>, dec: angle::Deg<f32>, line_width: f32, half_size: f32, circular: bool, angular_size: bool) -> Self {
+        #[allow(clippy::collapsible_else_if)]
+        let [angular_radius, pixel_radius, angular_width, pixel_width] = if circular {
+            if angular_size {
+                [Some(half_size), None, None, None]
+            } else {
+                [None, Some(half_size), None, None]
+            }
+        } else {
+            if angular_size {
+                [None, None, Some(half_size), None]
+            } else {
+                [None, None, None, Some(half_size)]
+            }
+        };
+        Self {
+            ra,
+            dec,
+            line_width,
+            angular_radius: angular_radius.map(angle::Deg),
+            pixel_radius,
+            angular_width: angular_width.map(angle::Deg),
+            pixel_width,
+        }
+    }
+}
+
+pub struct MarkerRenderer {
+    pub unit_vector: Vector3<f32>,
+    pub unit_vector_other_point: Option<Vector3<f32>>,
+    pub colour: Color32,
+    pub line_width: f32,
+    pub angular_radius: Option<angle::Deg<f32>>,
+    pub pixel_radius: Option<f32>,
+    pub angular_width: Option<angle::Deg<f32>>,
+    pub pixel_width: Option<f32>,
+    pub circle: bool,
+}
+
+impl MarkerRenderer {
+    pub fn new(vector: Vector3<f32>, vector_other_point: Option<Vector3<f32>>, marker: &Marker, colour: Color32) -> Self {
+        Self {
+            unit_vector: vector,
+            unit_vector_other_point: vector_other_point,
+            colour,
+            line_width: marker.line_width,
+            angular_radius: marker.angular_radius,
+            pixel_radius: marker.pixel_radius,
+            angular_width: marker.angular_width,
+            pixel_width: marker.pixel_width,
+            circle: marker.angular_radius.is_some() || marker.pixel_radius.is_some(),
+        }
+    }
+
+    pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter) {
+        cellestial_sphere.render_marker(
+            &self.unit_vector,
+            &self.unit_vector_other_point,
+            self.circle,
+            if self.circle { self.pixel_radius } else { self.pixel_width },
+            self.colour,
+            self.line_width,
+            painter,
+        )
+    }
+}

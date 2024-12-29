@@ -1,0 +1,11 @@
+[workspace]
+members = ["*"]
+exclude = ["target"]
+resolver = "2"
+
+[workspace.dependencies]
+angle = "0.5.0"
+egui = "0.29"
+nalgebra = "0.32.2"
+rand = "0.8.5"
+spherical_geometry = "0.2.0"
