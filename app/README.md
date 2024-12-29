@@ -20,5 +20,12 @@ Also in `./gen/android/app/src/main/`, see the `AndroidManifest.xml` file and ad
 ## Testing
 Apart from the usual way of testing the app by using it, one can also enable some additional testing UI by setting the `TESTING` environmental variable to `true`. This can be done for example by having a `.env` file next to the binary and have a `TESTING=true` line in it. This additional UI lets us test things by hand, for example one can highlight stars inside a given constellation etc. - this would be very difficult to make a unit test for and it is probably safer to test it visually first.
 
+## Debugging
+### Android
+When debugging the Android app, look for the following strings in logs:
+ - `RustStdoutStderr`
+ - `stellar_guesser` (the logs emitted by the app through `log`)
+ - `panic`
+
 ## Credits
 The native events handling and window creation was generated from the [agdk-egui example](https://github.com/rust-mobile/rust-android-examples).
