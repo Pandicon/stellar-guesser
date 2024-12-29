@@ -22,7 +22,7 @@ impl SkySettings {
             deepskies_categories_active: string_to_partial_hash_map(&sky_settings.deepsky_files_to_not_render),
             markers_categories_active: string_to_partial_hash_map(&sky_settings.markers_files_to_not_render),
             star_names_categories_active: string_to_partial_hash_map(&sky_settings.star_names_files_to_not_use),
-            mag_to_radius_id: sky_settings.mag_to_radius_id,
+            mag_to_radius_id: sky_settings.mag_to_radius_id.min(crate::rendering::caspr::stars::MAGNITUDE_TO_RADIUS_OPTIONS - 1),
             mag_to_radius_settings: sky_settings.mag_to_radius_settings,
             deepsky_render_mag_decrease: sky_settings.deepsky_render_mag_decrease,
         }
@@ -50,7 +50,7 @@ impl Default for SkySettingsRaw {
             deepsky_files_to_not_render: String::new(),
             markers_files_to_not_render: String::new(),
             star_names_files_to_not_use: String::new(),
-            mag_to_radius_id: 1.max(crate::rendering::caspr::stars::MAGNITUDE_TO_RADIUS_OPTIONS),
+            mag_to_radius_id: 1.min(crate::rendering::caspr::stars::MAGNITUDE_TO_RADIUS_OPTIONS - 1),
             mag_to_radius_settings: stars::MagnitudeToRadius::defaults(),
             deepsky_render_mag_decrease: 0.0,
         }
