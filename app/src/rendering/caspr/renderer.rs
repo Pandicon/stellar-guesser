@@ -20,11 +20,33 @@ const ZOOM_CAP: f32 = 100.0;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 use crate::{SKY_DATA_FILES, SKY_DATA_LISTS};
 
-const MAG_TO_LIGHT_POLLUTION_RAW: [(f32, f32, LightPollution); 3] = [(6.0, 0.3, LightPollution::Default), (3.0, 0.5, LightPollution::Prague), (4.5, 0.8, LightPollution::AverageVillage)];
+pub const MAG_TO_LIGHT_POLLUTION_RAW: [(LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]); 4] = [
+    (LightPollution::Default, [Some(stars::MagnitudeToRadius::defaults()[0]), Some(stars::MagnitudeToRadius::defaults()[1])]),
+    (
+        LightPollution::PragueDark,
+        [
+            Some(stars::MagnitudeToRadius::Linear { mag_scale: 1.0, mag_offset: 4.3 }),
+            Some(stars::MagnitudeToRadius::Exponential { r_0: 2.3, n: 3.5, o: 0.21 }),
+        ],
+    ),
+    (
+        LightPollution::Prague,
+        [
+            Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.75, mag_offset: 3.75 }),
+            Some(stars::MagnitudeToRadius::Exponential { r_0: 1.4, n: 3.5, o: 0.21 }),
+        ],
+    ),
+    (
+        LightPollution::AverageVillage,
+        [
+            Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.7, mag_offset: 5.7 }),
+            Some(stars::MagnitudeToRadius::Exponential { r_0: 2.6, n: 3.0, o: 0.17 }),
+        ],
+    ),
+];
 
 // use geometry::{cast_onto_sphere, project_point};
 
-use super::lines::{LineRenderer, SkyLine, SkyLineRaw, SkyLines};
 use super::markers::{Marker, MarkerRaw, MarkerRenderer, Markers};
 use super::sky_settings;
 use super::star_names::{StarName, StarNameRaw};
@@ -32,6 +54,10 @@ use super::stars::{Star, StarRaw, StarRenderer};
 use super::{
     deepsky::{Deepskies, Deepsky, DeepskyRaw, DeepskyRenderer},
     markers::game_markers::GameMarkers,
+};
+use super::{
+    lines::{LineRenderer, SkyLine, SkyLineRaw, SkyLines},
+    stars,
 };
 
 use super::constellation::{Constellation, ConstellationRaw};
@@ -58,7 +84,7 @@ pub struct CellestialSphere {
     marker_renderers: HashMap<String, Vec<MarkerRenderer>>,
 
     pub light_pollution_place: LightPollution,
-    pub light_pollution_place_to_mag: HashMap<LightPollution, [f32; 2]>,
+    pub light_pollution_place_to_mag: HashMap<LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]>,
 
     pub viewport_rect: egui::Rect,
 
@@ -525,15 +551,16 @@ impl CellestialSphere {
             }
         }
 
-        let mut light_pollution_place_to_mag: HashMap<LightPollution, [f32; 2]> = HashMap::with_capacity(MAG_TO_LIGHT_POLLUTION_RAW.len());
-        for &(mag_offset, mag_scale, place) in &MAG_TO_LIGHT_POLLUTION_RAW {
-            light_pollution_place_to_mag.insert(place, [mag_offset, mag_scale]);
+        let mut light_pollution_place_to_mag: HashMap<LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]> =
+            HashMap::with_capacity(MAG_TO_LIGHT_POLLUTION_RAW.len());
+        for &(place, settings) in &MAG_TO_LIGHT_POLLUTION_RAW {
+            light_pollution_place_to_mag.insert(place, settings);
         }
 
-        let light_pollution_place = CellestialSphere::mag_settings_to_light_pollution_place(sky_settings.mag_offset, sky_settings.mag_scale, &light_pollution_place_to_mag);
+        let light_pollution_place = CellestialSphere::mag_settings_to_light_pollution_place(sky_settings.mag_to_radius_settings[sky_settings.mag_to_radius_id], &light_pollution_place_to_mag);
 
         let viewport_rect = egui::Rect::from_two_pos(egui::pos2(0.0, 0.0), egui::pos2(0.0, 0.0));
-        let zoom = 1.0;
+        let zoom = 3.0_f32.sqrt();
         let fov = Self::zoom_to_fov(zoom);
         Ok(Self {
             sky_settings,
@@ -562,14 +589,20 @@ impl CellestialSphere {
     }
 
     // TODO: Make this always for example halve the FOV
-    pub fn zoom(&mut self, velocity: f32) {
+    /// Returns if star renderers should be reinitialised
+    pub fn zoom(&mut self, velocity: f32) -> bool {
+        if velocity == 0.0 {
+            return false;
+        }
         let future_zoom = self.zoom + velocity * self.zoom;
         //A check is needed since negative zoom breaks everything
         if ZOOM_CAP > future_zoom && future_zoom > 0.0 {
             self.zoom = future_zoom;
             self.fov = Self::zoom_to_fov(self.zoom);
             self.camera_z = Self::fov_to_camera_z(self.fov);
+            return true;
         }
+        false
     }
 
     pub fn get_zoom(&self) -> f32 {
@@ -585,9 +618,8 @@ impl CellestialSphere {
     }
 
     pub fn init(&mut self) {
-        let [mag_offset, mag_scale] = self.light_pollution_place_to_mag_settings(&self.light_pollution_place);
-        self.sky_settings.mag_offset = mag_offset;
-        self.sky_settings.mag_scale = mag_scale;
+        let settings = self.light_pollution_place_to_mag_settings(&self.light_pollution_place);
+        self.sky_settings.mag_to_radius_settings[self.sky_settings.mag_to_radius_id] = settings;
         self.init_renderers();
     }
 
@@ -650,12 +682,89 @@ impl CellestialSphere {
         }
     }
 
+    pub fn reinit_renderer_category(&mut self, category: RendererCategory) {
+        match category {
+            RendererCategory::Stars => {
+                self.star_renderers = HashMap::new();
+                let mut active_star_groups = Vec::new();
+                for name in self.stars.keys() {
+                    let active = self.sky_settings.stars_categories_active.entry(name.to_owned()).or_insert(true);
+                    if !*active {
+                        continue;
+                    }
+                    active_star_groups.push(name.to_owned());
+                }
+                for name in active_star_groups {
+                    self.init_single_renderer(RendererCategory::Stars, &name);
+                }
+            }
+            RendererCategory::Lines => {
+                self.line_renderers = HashMap::new();
+                let mut active_line_groups = Vec::new();
+                for (name, lines) in &self.lines {
+                    if !lines.active {
+                        continue;
+                    }
+                    active_line_groups.push(name.to_owned());
+                }
+                for name in active_line_groups {
+                    self.init_single_renderer(RendererCategory::Lines, &name);
+                }
+            }
+            RendererCategory::Deepskies => {
+                self.deepsky_renderers = HashMap::new();
+                let mut active_deepsky_groups = Vec::new();
+                for name in self.deepskies.keys() {
+                    let active = self.sky_settings.deepskies_categories_active.entry(name.to_owned()).or_insert(true);
+                    if !*active {
+                        continue;
+                    }
+                    active_deepsky_groups.push(name.to_owned());
+                }
+                for name in active_deepsky_groups {
+                    self.init_single_renderer(RendererCategory::Deepskies, &name);
+                }
+            }
+            RendererCategory::Markers => {
+                self.marker_renderers = HashMap::new();
+                let mut active_markers_groups = Vec::new();
+                for (name, markers) in &self.markers {
+                    if !markers.active {
+                        continue;
+                    }
+                    active_markers_groups.push(name.to_owned());
+                }
+                for name in active_markers_groups {
+                    self.init_single_renderer(RendererCategory::Markers, &name);
+                }
+                if self.game_markers.active {
+                    self.init_single_renderer(RendererCategory::Markers, "game");
+                }
+
+                if self.game_markers.active {
+                    self.init_single_renderer(RendererCategory::Markers, "game");
+                }
+            }
+        }
+    }
+
     pub fn init_single_renderer(&mut self, category: RendererCategory, name: &str) {
         match category {
             RendererCategory::Stars => {
                 if let Some(stars) = self.stars.get(name) {
-                    self.star_renderers
-                        .insert(name.to_string(), stars.iter().map(|star| star.get_renderer(self.rotation.matrix())).collect());
+                    self.star_renderers.insert(
+                        name.to_string(),
+                        stars
+                            .iter()
+                            .map(|star| {
+                                star.get_renderer(
+                                    self.rotation.matrix(),
+                                    self.sky_settings.mag_to_radius_settings[self.sky_settings.mag_to_radius_id],
+                                    angle::Deg(self.fov),
+                                )
+                            })
+                            .collect(),
+                    );
                 }
             }
             RendererCategory::Lines => {
@@ -705,34 +814,40 @@ impl CellestialSphere {
         }
     }
 
-    pub fn mag_to_radius(&self, vmag: f32) -> f32 {
+    /*pub fn mag_to_radius(&self, vmag: f32) -> f32 {
         let mag = self.sky_settings.mag_scale * (self.sky_settings.mag_offset - vmag) + 0.5;
         if mag < 0.35 {
             0.0
         } else {
             mag
         }
-    }
+    }*/
 
     pub fn project_screen_pos(&self, screen_pos: egui::Pos2) -> Vector3<f32> {
         sg_geometry::cast_onto_sphere(&self.viewport_rect, &screen_pos, self.rotation, self.get_zoom())
     }
 
-    pub fn mag_settings_to_light_pollution_place(mag_offset: f32, mag_scale: f32, light_pollution_place_to_mag: &HashMap<LightPollution, [f32; 2]>) -> LightPollution {
-        for (&place, &[mag_off, mag_sca]) in light_pollution_place_to_mag {
-            if mag_off == mag_offset && mag_sca == mag_scale {
-                return place;
+    pub fn mag_settings_to_light_pollution_place(
+        radius_settings: stars::MagnitudeToRadius,
+        light_pollution_place_to_mag: &HashMap<LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]>,
+    ) -> LightPollution {
+        for (&place, &settings) in light_pollution_place_to_mag {
+            for setting in settings.into_iter().flatten() {
+                if setting == radius_settings {
+                    return place;
+                }
             }
         }
         LightPollution::NoSpecific
     }
 
-    pub fn light_pollution_place_to_mag_settings(&self, place: &LightPollution) -> [f32; 2] {
+    pub fn light_pollution_place_to_mag_settings(&self, place: &LightPollution) -> stars::MagnitudeToRadius {
         if let Some(settings) = self.light_pollution_place_to_mag.get(place) {
-            *settings
-        } else {
-            [self.sky_settings.mag_offset, self.sky_settings.mag_scale]
+            if let Some(setting) = settings[self.sky_settings.mag_to_radius_id] {
+                return setting;
+            }
         }
+        self.sky_settings.mag_to_radius_settings[self.sky_settings.mag_to_radius_id]
     }
     /*pub fn to_equatorial_coordinates(vector: Vector3<f32>) -> (f32, f32) {
         cartesian_to_spherical(vector)

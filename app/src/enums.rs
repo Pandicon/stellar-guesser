@@ -20,6 +20,7 @@ pub enum LightPollution {
     Default,
     NoSpecific,
     Prague,
+    PragueDark,
     AverageVillage,
 }
 
@@ -29,8 +30,25 @@ impl Display for LightPollution {
             Self::Default => write!(f, "Default"),
             Self::NoSpecific => write!(f, "No specific"),
             Self::Prague => write!(f, "Prague"),
+            Self::PragueDark => write!(f, "Prague (dark place)"),
             Self::AverageVillage => write!(f, "Village"),
         }
+    }
+}
+
+impl LightPollution {
+    pub fn explanation(&self) -> &'static str {
+        match *self {
+            Self::Default => "The default settings",
+            Self::NoSpecific => "No specific settings, set by the user",
+            Self::Prague => "Looking from a normal place in Prague",
+            Self::PragueDark => "Looking from a reasonably dark (compared to the rest) place in Prague",
+            Self::AverageVillage => "Looking from an average village",
+        }
+    }
+
+    pub const fn variants() -> [Self; 5] {
+        [Self::NoSpecific, Self::Default, Self::Prague, Self::PragueDark, Self::AverageVillage]
     }
 }
 

@@ -6,7 +6,7 @@ use crate::{
     enums::{LightPollution, RendererCategory},
     files, public_constants,
     renderer::CellestialSphere,
-    rendering::caspr::markers::game_markers::GameMarker,
+    rendering::caspr::{markers::game_markers::GameMarker, stars},
     structs::state::windows::settings::SkySettingsSubWindow,
     Application,
 };
@@ -68,9 +68,8 @@ impl Application {
                 );
             });
         if prev_light_pollution != self.cellestial_sphere.light_pollution_place {
-            let [mag_offset, mag_scale] = self.cellestial_sphere.light_pollution_place_to_mag_settings(&self.cellestial_sphere.light_pollution_place);
-            self.cellestial_sphere.sky_settings.mag_offset = mag_offset;
-            self.cellestial_sphere.sky_settings.mag_scale = mag_scale;
+            let settings = self.cellestial_sphere.light_pollution_place_to_mag_settings(&self.cellestial_sphere.light_pollution_place);
+            self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id] = settings;
         }
         let previous_theme_name = self.theme.name.clone();
         let mut selected_theme_name = self.theme.name.clone();
@@ -164,23 +163,81 @@ impl Application {
             }
         }
 
-        let prev_mag_offset = self.cellestial_sphere.sky_settings.mag_offset;
-        let prev_mag_scale = self.cellestial_sphere.sky_settings.mag_scale;
-        ui.horizontal_wrapped(|ui| ui.label("The following two values affect the size of the stars via the following formula: radius = mag_scale * (mag_offset - magnitude)"));
+        let mut reinit_stars = false;
+        let prev_mag_to_rad_fn_id = self.cellestial_sphere.sky_settings.mag_to_radius_id;
         ui.horizontal(|ui| {
-            self.input.input_field_has_focus |= ui.add(egui::DragValue::new(&mut self.cellestial_sphere.sky_settings.mag_offset).speed(0.1)).has_focus();
-            ui.label("Magnitude offset (mag_offset)");
+            ui.label("Magnitude to radius function: ");
+            egui::ComboBox::from_id_salt("Magnitude to radius function: ")
+                .selected_text(self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id].name())
+                .show_ui(ui, |ui: &mut egui::Ui| {
+                    ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                    for i in 0..self.cellestial_sphere.sky_settings.mag_to_radius_settings.len() {
+                        ui.selectable_value(
+                            &mut self.cellestial_sphere.sky_settings.mag_to_radius_id,
+                            i,
+                            self.cellestial_sphere.sky_settings.mag_to_radius_settings[i].name(),
+                        );
+                    }
+                });
         });
-        ui.horizontal(|ui| {
-            self.input.input_field_has_focus |= ui.add(egui::DragValue::new(&mut self.cellestial_sphere.sky_settings.mag_scale).speed(0.1)).has_focus();
-            ui.label("Magnitude scale (mag_scale)");
-        });
-        if prev_mag_offset != self.cellestial_sphere.sky_settings.mag_offset || prev_mag_scale != self.cellestial_sphere.sky_settings.mag_scale {
-            self.cellestial_sphere.light_pollution_place = CellestialSphere::mag_settings_to_light_pollution_place(
-                self.cellestial_sphere.sky_settings.mag_offset,
-                self.cellestial_sphere.sky_settings.mag_scale,
+        if prev_mag_to_rad_fn_id != self.cellestial_sphere.sky_settings.mag_to_radius_id {
+            let place = CellestialSphere::mag_settings_to_light_pollution_place(
+                self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id],
                 &self.cellestial_sphere.light_pollution_place_to_mag,
             );
+            self.cellestial_sphere.light_pollution_place = place;
+            reinit_stars = true;
+        }
+
+        match &mut self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id] {
+            stars::MagnitudeToRadius::Linear { mag_scale, mag_offset } => {
+                let prev_mag_offset = *mag_offset;
+                let prev_mag_scale = *mag_scale;
+                ui.horizontal_wrapped(|ui| ui.label("The following two values affect the size of the stars via the following formula: radius = mag_scale * (mag_offset - magnitude)"));
+                ui.horizontal(|ui| {
+                    self.input.input_field_has_focus |= ui.add(egui::DragValue::new(mag_offset).speed(0.03)).has_focus();
+                    ui.label("Magnitude offset (mag_offset)");
+                });
+                ui.horizontal(|ui| {
+                    self.input.input_field_has_focus |= ui.add(egui::DragValue::new(mag_scale).speed(0.01)).has_focus();
+                    ui.label("Magnitude scale (mag_scale)");
+                });
+                if prev_mag_offset != *mag_offset || prev_mag_scale != *mag_scale {
+                    self.cellestial_sphere.light_pollution_place = CellestialSphere::mag_settings_to_light_pollution_place(
+                        self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id],
+                        &self.cellestial_sphere.light_pollution_place_to_mag,
+                    );
+                    reinit_stars = true;
+                }
+            }
+            stars::MagnitudeToRadius::Exponential { r_0, n, o } => {
+                let prev_r0 = *r_0;
+                let prev_n = *n;
+                let prev_o = *o;
+                ui.horizontal_wrapped(|ui| ui.label("The following three values affect the size of the stars via the following formula: radius = r_0 * ln(180°*n/fov) * 10^(-o*magnitude)"));
+                ui.horizontal(|ui| {
+                    self.input.input_field_has_focus |= ui.add(egui::DragValue::new(r_0).speed(0.03)).has_focus();
+                    ui.label("r_0 (a size multiplier)");
+                });
+                ui.horizontal(|ui| {
+                    self.input.input_field_has_focus |= ui.add(egui::DragValue::new(n).speed(0.01)).has_focus();
+                    ui.label("n (how much does the size change (proportionally) when changing the FOV; higher values of n cause smaller changes)");
+                });
+                if *n < 2.0 {
+                    *n = 2.0;
+                }
+                ui.horizontal(|ui| {
+                    self.input.input_field_has_focus |= ui.add(egui::DragValue::new(o).speed(0.001)).has_focus();
+                    ui.label("o (how much does the size change (proportionally) when changing the magnitude");
+                });
+                if prev_r0 != *r_0 || prev_n != *n || prev_o != *o {
+                    self.cellestial_sphere.light_pollution_place = CellestialSphere::mag_settings_to_light_pollution_place(
+                        self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id],
+                        &self.cellestial_sphere.light_pollution_place_to_mag,
+                    );
+                    reinit_stars = true;
+                }
+            }
         }
 
         let mut newly_active_star_groups = Vec::new();
@@ -200,6 +257,9 @@ impl Application {
         }
         for name in &newly_inactive_star_groups {
             self.cellestial_sphere.deinit_single_renderer(RendererCategory::Stars, name);
+        }
+        if reinit_stars {
+            self.cellestial_sphere.reinit_renderer_category(RendererCategory::Stars);
         }
     }
 

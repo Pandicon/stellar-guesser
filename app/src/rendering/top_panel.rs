@@ -79,23 +79,21 @@ fn render_left_controls(app: &mut crate::application::Application, ui: &mut egui
     ));
     let prev_light_pollution: LightPollution = app.cellestial_sphere.light_pollution_place;
     ui.horizontal(|ui| {
-        ui.label("Light pollution level: ");
+        ui.label("Light pollution level: ")
+            .on_hover_text("These settings are made to reflect how the sky looks in different locations for a person with an average eyesight.");
         egui::ComboBox::from_id_salt("Light pollution level: ")
             .selected_text(format!("{}", app.cellestial_sphere.light_pollution_place))
             .show_ui(ui, |ui: &mut egui::Ui| {
                 ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                ui.selectable_value(&mut app.cellestial_sphere.light_pollution_place, LightPollution::Default, format!("{}", LightPollution::Default));
-                ui.selectable_value(&mut app.cellestial_sphere.light_pollution_place, LightPollution::Prague, format!("{}", LightPollution::Prague));
-                ui.selectable_value(
-                    &mut app.cellestial_sphere.light_pollution_place,
-                    LightPollution::AverageVillage,
-                    format!("{}", LightPollution::AverageVillage),
-                )
+                for val in LightPollution::variants() {
+                    ui.selectable_value(&mut app.cellestial_sphere.light_pollution_place, val, format!("{}", val))
+                        .on_hover_text(LightPollution::explanation(&val));
+                }
             });
     });
     if prev_light_pollution != app.cellestial_sphere.light_pollution_place {
-        let [mag_offset, mag_scale] = app.cellestial_sphere.light_pollution_place_to_mag_settings(&app.cellestial_sphere.light_pollution_place);
-        app.cellestial_sphere.sky_settings.mag_offset = mag_offset;
-        app.cellestial_sphere.sky_settings.mag_scale = mag_scale;
+        let settings = app.cellestial_sphere.light_pollution_place_to_mag_settings(&app.cellestial_sphere.light_pollution_place);
+        app.cellestial_sphere.sky_settings.mag_to_radius_settings[app.cellestial_sphere.sky_settings.mag_to_radius_id] = settings;
+        app.cellestial_sphere.reinit_renderer_category(crate::enums::RendererCategory::Stars);
     }
 }
