@@ -1,7 +1,7 @@
 use angle::Angle;
 use eframe::egui;
 use egui::epaint::Color32;
-use nalgebra::{Matrix3, Vector3};
+use nalgebra::Matrix3;
 use serde::Deserialize;
 
 use crate::graphics;
@@ -36,9 +36,15 @@ pub struct StarRaw {
 impl Star {
     pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, magnitude_to_radius_function: MagnitudeToRadius, fov: angle::Deg<f32>, zoom: f32, viewport_rect: egui::Rect) -> StarRenderer {
         let colour = if let Some(col) = self.override_colour { col } else { self.default_colour };
-        let vec = sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix);
-        let (projected_point, is_within_bounds) = sg_geometry::project_point(&vec, zoom, viewport_rect);
-        StarRenderer::new(vec, self.vmag, colour, magnitude_to_radius_function, fov, projected_point, is_within_bounds)
+        let radius = StarRenderer::magnitude_to_radius(magnitude_to_radius_function, self.vmag, fov);
+        let (projected_point, is_within_bounds) = if StarRenderer::radius_enough_to_render(radius) {
+            let vec = sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix);
+            sg_geometry::project_point(&vec, zoom, viewport_rect)
+        } else {
+            // It will not be rendered anyway, so why bother calculating the values
+            (egui::pos2(0.0, 0.0), false)
+        };
+        StarRenderer::new(radius, colour, projected_point, is_within_bounds)
     }
 
     pub fn from_raw(raw_star: StarRaw, default_colour: Color32, override_colour: Option<Color32>) -> Self {
@@ -98,7 +104,6 @@ impl Star {
 }
 
 pub struct StarRenderer {
-    pub unit_vector: Vector3<f32>,
     pub screen_pos: egui::Pos2,
     pub is_on_screen: bool,
     pub radius: f32,
@@ -106,18 +111,17 @@ pub struct StarRenderer {
 }
 
 impl StarRenderer {
-    pub fn new(vector: Vector3<f32>, magnitude: f32, colour: Color32, magnitude_to_radius_function: MagnitudeToRadius, fov: angle::Deg<f32>, screen_pos: egui::Pos2, is_on_screen: bool) -> Self {
+    pub fn new(radius: f32, colour: Color32, screen_pos: egui::Pos2, is_on_screen: bool) -> Self {
         Self {
-            unit_vector: vector,
             screen_pos,
             is_on_screen,
-            radius: Self::magnitude_to_radius(magnitude_to_radius_function, magnitude, fov),
+            radius,
             colour,
         }
     }
 
     pub fn render(&self, painter: &egui::Painter) {
-        if self.radius >= crate::MINIMUM_CIRCLE_RADIUS_TO_RENDER && self.is_on_screen {
+        if Self::radius_enough_to_render(self.radius) && self.is_on_screen {
             painter.circle_filled(self.screen_pos, self.radius, self.colour);
         }
     }
@@ -127,6 +131,10 @@ impl StarRenderer {
             MagnitudeToRadius::Linear { mag_scale, mag_offset } => mag_scale * (mag_offset - magnitude),
             MagnitudeToRadius::Exponential { r_0, n, o } => r_0 * (180.0 * n / fov.value()).ln() * 10.0_f32.powf(-o * magnitude),
         }
+    }
+
+    pub fn radius_enough_to_render(radius: f32) -> bool {
+        radius >= crate::MINIMUM_CIRCLE_RADIUS_TO_RENDER
     }
 }
 
