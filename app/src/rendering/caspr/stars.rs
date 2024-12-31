@@ -7,7 +7,7 @@ use serde::Deserialize;
 use crate::graphics;
 use graphics::parse_colour;
 
-use super::{renderer::CellestialSphere, star_names::StarName};
+use super::star_names::StarName;
 
 #[derive(Clone, Deserialize)]
 pub struct Star {
@@ -116,9 +116,9 @@ impl StarRenderer {
         }
     }
 
-    pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter) {
-        if self.radius >= crate::MINIMUM_CIRCLE_RADIUS_TO_RENDER {
-            cellestial_sphere.render_circle(&self.unit_vector, self.radius, self.colour, painter);
+    pub fn render(&self, painter: &egui::Painter) {
+        if self.radius >= crate::MINIMUM_CIRCLE_RADIUS_TO_RENDER && self.is_on_screen {
+            painter.circle_filled(self.screen_pos, self.radius, self.colour);
         }
     }
 

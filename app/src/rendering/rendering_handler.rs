@@ -53,6 +53,11 @@ impl Application {
             ]);
         }
         let viewport_rect = ctx.input(|i| i.screen_rect());
+        if viewport_rect != self.cellestial_sphere.viewport_rect {
+            log::debug!("Viewport rect changed: {:?} -> {:?}", self.cellestial_sphere.viewport_rect, viewport_rect);
+            self.cellestial_sphere.viewport_rect = viewport_rect;
+            self.cellestial_sphere.init_renderers();
+        }
         let central_panel_response = egui::CentralPanel::default().show(ctx, |ui| {
             self.cellestial_sphere.viewport_rect = viewport_rect;
 

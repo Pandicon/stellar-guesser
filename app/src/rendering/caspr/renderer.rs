@@ -162,7 +162,7 @@ impl CellestialSphere {
         }
         for star_renderers in self.star_renderers.values() {
             for star_renderer in star_renderers {
-                star_renderer.render(self, painter);
+                star_renderer.render(painter);
             }
         }
         for marker_renderers in self.marker_renderers.values() {
@@ -761,6 +761,8 @@ impl CellestialSphere {
                                     self.rotation.matrix(),
                                     self.sky_settings.mag_to_radius_settings[self.sky_settings.mag_to_radius_id],
                                     angle::Deg(self.fov),
+                                    self.zoom,
+                                    self.viewport_rect,
                                 )
                             })
                             .collect(),
