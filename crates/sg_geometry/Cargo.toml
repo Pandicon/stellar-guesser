@@ -1,0 +1,11 @@
+[package]
+name = "sg_geometry"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+angle = { workspace = true }
+egui = { workspace = true }
+nalgebra = { workspace = true }
+rand = { workspace = true }
+spherical_geometry = { workspace = true }

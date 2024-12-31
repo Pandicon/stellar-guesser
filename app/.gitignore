@@ -1,0 +1,7 @@
+addons/object-images/
+
+# cargo-mobile2
+.cargo/
+/gen/android
+
+/builds

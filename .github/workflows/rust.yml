@@ -3,19 +3,104 @@ name: Rust CI
 on: pull_request
 
 jobs:
-    test-and-clippy:
+    test-app:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      app/target
+                  key: ${{ runner.os }}-cargo-app-test-${{ hashFiles('app/Cargo.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-cargo-app-test-
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+            - name: Run tests (app)
+              working-directory: app
+              run: cargo test --all-features
+
+    test-crates:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      crates/target
+                  key: ${{ runner.os }}-cargo-crates-test-${{ hashFiles('crates/**/Cargo.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-cargo-crates-test-
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+            - name: Run tests (crates)
+              working-directory: crates
+              run: cargo test --all-features
+
+    clippy-app:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      app/target
+                  key: ${{ runner.os }}-cargo-app-clippy-${{ hashFiles('app/Cargo.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-cargo-app-clippy-
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+            - name: Run Clippy (app)
+              working-directory: app
+              run: cargo clippy --all-targets --all-features -- -D warnings
+
+    clippy-crates:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      crates/target
+                  key: ${{ runner.os }}-cargo-crates-clippy-${{ hashFiles('crates/**/Cargo.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-cargo-crates-clippy-
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+            - name: Run Clippy (crates)
+              working-directory: crates
+              run: cargo clippy --all-targets --all-features -- -D warnings
+
+    fmt-app:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
             - uses: dtolnay/rust-toolchain@stable
               with:
                   toolchain: stable
-                  components: 'clippy, rustfmt'
-            - name: Run tests
-              # working-directory: .
-              run: cargo test --all-features
-            - name: Run clippy
-              # working-directory: .
-              run: cargo clippy --all-targets --all-features -- -D warnings
-            - name: Check formatting
+            - name: Check formatting (app)
+              working-directory: app
+              run: cargo fmt --all -- --check
+
+    fmt-crates:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+            - name: Check formatting (crates)
+              working-directory: crates
               run: cargo fmt --all -- --check
