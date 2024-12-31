@@ -36,9 +36,11 @@ pub struct StarRaw {
 }
 
 impl Star {
-    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>) -> StarRenderer {
+    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, magnitude_to_radius_function: MagnitudeToRadius, fov: angle::Deg<f32>, zoom: f32, viewport_rect: egui::Rect) -> StarRenderer {
         let colour = if let Some(col) = self.override_colour { col } else { self.default_colour };
-        StarRenderer::new(get_point_vector(self.ra, self.dec, rotation_matrix), self.vmag, colour)
+        let vec = sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix);
+        let (projected_point, is_within_bounds) = sg_geometry::project_point(&vec, zoom, viewport_rect);
+        StarRenderer::new(vec, self.vmag, colour, magnitude_to_radius_function, fov, projected_point, is_within_bounds)
     }
 
     pub fn from_raw(raw_star: StarRaw, default_colour: Color32, override_colour: Option<Color32>) -> Self {
@@ -99,15 +101,19 @@ impl Star {
 
 pub struct StarRenderer {
     pub unit_vector: Vector3<f32>,
-    pub vmag: f32,
+    pub screen_pos: egui::Pos2,
+    pub is_on_screen: bool,
+    pub radius: f32,
     pub colour: Color32,
 }
 
 impl StarRenderer {
-    pub fn new(vector: Vector3<f32>, magnitude: f32, colour: Color32) -> Self {
+    pub fn new(vector: Vector3<f32>, magnitude: f32, colour: Color32, magnitude_to_radius_function: MagnitudeToRadius, fov: angle::Deg<f32>, screen_pos: egui::Pos2, is_on_screen: bool) -> Self {
         Self {
             unit_vector: vector,
-            vmag: magnitude,
+            screen_pos,
+            is_on_screen,
+            radius: Self::magnitude_to_radius(magnitude_to_radius_function, magnitude, fov),
             colour,
         }
     }
