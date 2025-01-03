@@ -58,6 +58,7 @@ pub fn render_constellations_settings_subwindow(
         .collect::<Vec<(String, String)>>();
     constellations.sort_by(|a, b| a.1.cmp(&b.1));
     ui.separator();
+    ui.label("You can toggle all constellations using the buttons below.");
     ui.horizontal(|ui| {
         if ui.button("Select all").clicked() {
             for toggle in settings.active_constellations.values_mut() {
@@ -67,6 +68,28 @@ pub fn render_constellations_settings_subwindow(
         if ui.button("Unselect all").clicked() {
             for toggle in settings.active_constellations.values_mut() {
                 *toggle = false;
+            }
+        }
+    });
+    ui.label(format!(
+        "You can toggle specific constellations using the input below. Input all constellation abbreviations to toggle separated by '{}'.",
+        crate::CONSTELLATIONS_SEPARATOR
+    ));
+    ui.horizontal(|ui| {
+        ui.label("Constellations to toggle");
+        ui.text_edit_singleline(&mut state.toggle_constellations);
+        let (mut toggled, mut new_state) = if ui.button("Select").clicked() { (true, true) } else { (false, false) };
+        if ui.button("Unselect").clicked() {
+            toggled = true;
+            new_state = false;
+        }
+        if toggled {
+            for constellation_raw in state.toggle_constellations.split(crate::CONSTELLATIONS_SEPARATOR) {
+                if let Some(constellation) = settings.active_constellations.keys().find(|con| con.to_lowercase() == constellation_raw.to_lowercase()) {
+                    settings.active_constellations.insert(constellation.to_owned(), new_state);
+                } else {
+                    log::debug!("Invalid constellation entered: {}", constellation_raw);
+                }
             }
         }
     });
