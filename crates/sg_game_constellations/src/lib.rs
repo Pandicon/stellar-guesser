@@ -104,7 +104,6 @@ pub struct GameConstellationsState {
 
     pub new_name: String,
     pub toggle_constellations: String,
-    pub should_activate: bool,
 }
 
 impl Default for GameConstellationsState {
@@ -114,7 +113,6 @@ impl Default for GameConstellationsState {
 
             new_name: String::from("Custom"),
             toggle_constellations: String::new(),
-            should_activate: true,
         }
     }
 }
