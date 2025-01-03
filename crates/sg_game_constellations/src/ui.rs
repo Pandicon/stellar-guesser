@@ -11,7 +11,7 @@ pub fn render_constellations_settings_subwindow(
         eframe::egui::ComboBox::from_label("Select group").selected_text(&state.active_group).show_ui(ui, |ui| {
             ui.style_mut().wrap_mode = Some(eframe::egui::TextWrapMode::Extend);
             let mut groups = settings.constellation_groups.keys().cloned().collect::<Vec<String>>();
-            groups.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+            groups.sort_by_key(|a| a.to_lowercase());
             for group_name in groups {
                 ui.selectable_value(&mut state.active_group, group_name.clone(), &group_name);
             }
@@ -50,13 +50,6 @@ pub fn render_constellations_settings_subwindow(
         }
     });
 
-    let mut constellations = settings
-        .active_constellations
-        .keys()
-        .cloned()
-        .filter_map(|abbrev| if let Some(name) = abbrev_to_name.get(&abbrev) { Some((abbrev, name.clone())) } else { None })
-        .collect::<Vec<(String, String)>>();
-    constellations.sort_by(|a, b| a.1.cmp(&b.1));
     ui.separator();
     ui.label("You can toggle all constellations using the buttons below.");
     ui.horizontal(|ui| {
@@ -99,10 +92,17 @@ pub fn render_constellations_settings_subwindow(
             .iter()
             .filter_map(|(abbrev, t)| if *t { Some(abbrev.to_owned()) } else { None })
             .collect::<Vec<String>>();
-        active.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+        active.sort_by_key(|a| a.to_lowercase());
         ui.label(format!("Currently active constellations: {}", active.join(&crate::CONSTELLATIONS_SEPARATOR.to_string())));
     });
     ui.separator();
+    let mut constellations = settings
+        .active_constellations
+        .keys()
+        .cloned()
+        .filter_map(|abbrev| abbrev_to_name.get(&abbrev).map(|name| (abbrev, name.clone())))
+        .collect::<Vec<(String, String)>>();
+    constellations.sort_by(|a, b| a.1.cmp(&b.1));
     eframe::egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
         for (abbrev, name) in constellations {
             let text = format!("{name} ({abbrev})");
