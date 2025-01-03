@@ -7,20 +7,33 @@ pub fn render_constellations_settings_subwindow(
     abbrev_to_name: HashMap<String, String>,
 ) {
     let prev_active_group = state.active_group.clone();
-    eframe::egui::ComboBox::from_label("Select group").selected_text(&state.active_group).show_ui(ui, |ui| {
-        ui.style_mut().wrap_mode = Some(eframe::egui::TextWrapMode::Extend);
-        let mut groups = settings.constellation_groups.keys().cloned().collect::<Vec<String>>();
-        groups.sort();
-        for group_name in groups {
-            ui.selectable_value(&mut state.active_group, group_name.clone(), &group_name);
+    ui.horizontal(|ui| {
+        eframe::egui::ComboBox::from_label("Select group").selected_text(&state.active_group).show_ui(ui, |ui| {
+            ui.style_mut().wrap_mode = Some(eframe::egui::TextWrapMode::Extend);
+            let mut groups = settings.constellation_groups.keys().cloned().collect::<Vec<String>>();
+            groups.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+            for group_name in groups {
+                ui.selectable_value(&mut state.active_group, group_name.clone(), &group_name);
+            }
+        });
+        let removed_group = ui
+            .add_enabled_ui(settings.constellation_groups.keys().len() != 0, |ui| {
+                if ui.button("Remove group").clicked() {
+                    settings.constellation_groups.remove(&state.active_group);
+                    state.active_group = String::new();
+                    true
+                } else {
+                    false
+                }
+            })
+            .inner;
+        if !removed_group && state.active_group != prev_active_group {
+            for (cons, toggle) in settings.constellation_groups.get(&state.active_group).unwrap() {
+                settings.active_constellations.insert(cons.to_owned(), *toggle);
+            }
+            state.new_name = state.active_group.clone();
         }
     });
-    if state.active_group != prev_active_group {
-        for (cons, toggle) in settings.constellation_groups.get(&state.active_group).unwrap() {
-            settings.active_constellations.insert(cons.to_owned(), *toggle);
-        }
-        state.new_name = state.active_group.clone();
-    }
     ui.label(format!("Here you can customise the selected constellation group. You may rename it which will allow you to create a new group out of it.\nThe name may not contain any of the following characters: '{}', '{}'", crate::CONSTELLATIONS_SEPARATOR, crate::GROUPS_SEPARATOR));
     ui.horizontal(|ui| {
         ui.label("Group name");

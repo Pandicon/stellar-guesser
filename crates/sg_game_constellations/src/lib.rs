@@ -38,30 +38,32 @@ impl GameConstellations {
             }
 
             if let Some(groups_str) = storage.get_string(GROUPS_STORAGE_KEY) {
-                let groups = groups_str.split(GROUPS_SEPARATOR).collect::<Vec<&str>>();
-                for group_raw in &groups {
-                    let mut group_spl = group_raw.split(CONSTELLATIONS_SEPARATOR);
-                    let group_name = group_spl.next();
-                    if group_name.is_none() {
-                        log::warn!("An empty constellatin group was found");
-                        continue;
-                    }
-                    let group_name = group_name.unwrap();
-
-                    let mut active = HashMap::new();
-                    for constellation in constellations {
-                        active.insert(constellation.to_owned(), false);
-                    }
-                    for constellation_raw in group_spl {
-                        let constellation = if let Some(constellation) = constellations.iter().find(|s| s.to_lowercase() == constellation_raw.to_lowercase()) {
-                            constellation.to_string()
-                        } else {
-                            log::warn!("Unknown constellation: {}", constellation_raw);
+                if !groups_str.is_empty() {
+                    let groups = groups_str.split(GROUPS_SEPARATOR).collect::<Vec<&str>>();
+                    for group_raw in &groups {
+                        let mut group_spl = group_raw.split(CONSTELLATIONS_SEPARATOR);
+                        let group_name = group_spl.next();
+                        if group_name.is_none() {
+                            log::warn!("An empty constellatin group was found");
                             continue;
-                        };
-                        active.insert(constellation, true);
+                        }
+                        let group_name = group_name.unwrap();
+
+                        let mut active = HashMap::new();
+                        for constellation in constellations {
+                            active.insert(constellation.to_owned(), false);
+                        }
+                        for constellation_raw in group_spl {
+                            let constellation = if let Some(constellation) = constellations.iter().find(|s| s.to_lowercase() == constellation_raw.to_lowercase()) {
+                                constellation.to_string()
+                            } else {
+                                log::warn!("Unknown constellation: {}", constellation_raw);
+                                continue;
+                            };
+                            active.insert(constellation, true);
+                        }
+                        constellation_groups.insert(group_name.to_string(), active);
                     }
-                    constellation_groups.insert(group_name.to_string(), active);
                 }
             }
         } else {
