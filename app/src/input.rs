@@ -18,6 +18,9 @@ impl Application {
                 enums::Inputs::AltShiftO => self.state.windows.settings.opened = !self.state.windows.settings.opened,
                 enums::Inputs::AltShiftS => self.state.windows.stats.opened = !self.state.windows.stats.opened,
                 enums::Inputs::Space | enums::Inputs::MouseMiddle => {
+                    if matches!(*input_to_handle, enums::Inputs::Space) && ctx.wants_keyboard_input() {
+                        continue;
+                    }
                     if !self.game_handler.no_more_questions() {
                         match self.game_handler.stage {
                             GameStage::Guessing | GameStage::Checked => {
