@@ -57,9 +57,25 @@ pub fn render_constellations_settings_subwindow(
         .filter_map(|abbrev| if let Some(name) = abbrev_to_name.get(&abbrev) { Some((abbrev, name.clone())) } else { None })
         .collect::<Vec<(String, String)>>();
     constellations.sort_by(|a, b| a.1.cmp(&b.1));
-    for (abbrev, name) in constellations {
-        let text = format!("{name} ({abbrev})");
-        let entry = settings.active_constellations.entry(abbrev.clone()).or_insert(true);
-        ui.checkbox(entry, text).changed();
-    }
+    ui.separator();
+    ui.horizontal(|ui| {
+        if ui.button("Select all").clicked() {
+            for toggle in settings.active_constellations.values_mut() {
+                *toggle = true;
+            }
+        }
+        if ui.button("Unselect all").clicked() {
+            for toggle in settings.active_constellations.values_mut() {
+                *toggle = false;
+            }
+        }
+    });
+    ui.separator();
+    eframe::egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
+        for (abbrev, name) in constellations {
+            let text = format!("{name} ({abbrev})");
+            let entry = settings.active_constellations.entry(abbrev.clone()).or_insert(true);
+            ui.checkbox(entry, text).changed();
+        }
+    });
 }
