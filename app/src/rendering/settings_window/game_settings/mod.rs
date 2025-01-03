@@ -1,7 +1,6 @@
 use crate::{enums::RendererCategory, structs::state::windows::settings::GameSettingsSubWindow, Application};
 use eframe::egui;
 
-pub mod constellations;
 pub mod general;
 pub mod questions;
 

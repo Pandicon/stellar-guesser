@@ -52,40 +52,6 @@ impl LightPollution {
     }
 }
 
-#[derive(Clone, Copy, Eq, Hash, PartialEq)]
-pub enum GameLearningStage {
-    None,
-    NotStarted,
-    Learning,
-    Reviewing,
-    Learned,
-}
-
-impl Display for GameLearningStage {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
-            Self::None => write!(f, "None"),
-            Self::NotStarted => write!(f, "Not started"),
-            Self::Learning => write!(f, "Learning"),
-            Self::Reviewing => write!(f, "Reviewing"),
-            Self::Learned => write!(f, "Learned"),
-        }
-    }
-}
-
-impl GameLearningStage {
-    pub fn from_string(string: &str) -> Self {
-        match string {
-            "Learned" => Self::Learned,
-            "Learning" => Self::Learning,
-            "None" => Self::None,
-            "Not started" => Self::NotStarted,
-            "Reviewing" => Self::Reviewing,
-            _ => Self::None,
-        }
-    }
-}
-
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum GameStage {
     Guessing,

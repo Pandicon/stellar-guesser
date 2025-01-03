@@ -166,11 +166,7 @@ pub struct GameHandler {
     pub possible_no_of_questions: u32,
     pub score: u32,
     pub possible_score: u32,
-    pub active_constellations: HashMap<String, bool>,
-    pub groups_active_constellations: HashMap<enums::GameLearningStage, HashMap<String, bool>>,
-    pub active_constellations_groups: HashMap<enums::GameLearningStage, bool>,
     pub constellation_groups_settings: sg_game_constellations::GameConstellations,
-    pub toggle_all_constellations: bool,
 
     pub request_input_focus: bool,
     pub switch_to_next_question: bool,
@@ -204,44 +200,6 @@ impl GameHandler {
                     active_constellations.insert(inactive_constellation.to_string(), false);
                 }
             }
-        }
-        let mut active_constellations_groups = HashMap::new();
-        for group in [
-            enums::GameLearningStage::NotStarted,
-            enums::GameLearningStage::Learning,
-            enums::GameLearningStage::Reviewing,
-            enums::GameLearningStage::Learned,
-        ] {
-            active_constellations_groups.insert(group, true);
-        }
-        if let Some(storage) = storage {
-            if let Some(inactive_constellations_groups) = storage.get_string(StorageKeys::GameInactiveConstellationGroups.as_ref()) {
-                let inactive_groups = inactive_constellations_groups.split('|');
-                for inactive_group in inactive_groups {
-                    active_constellations_groups.insert(enums::GameLearningStage::from_string(inactive_group), false);
-                }
-            }
-        }
-        let mut groups_active_constellations = HashMap::new();
-        for group in [
-            enums::GameLearningStage::NotStarted,
-            enums::GameLearningStage::Learning,
-            enums::GameLearningStage::Reviewing,
-            enums::GameLearningStage::Learned,
-        ] {
-            let mut group_active_constellations = HashMap::new();
-            for constellation_abbreviation in cellestial_sphere.constellations.keys() {
-                group_active_constellations.insert(constellation_abbreviation.to_owned(), false);
-            }
-            if let Some(storage) = storage {
-                if let Some(active_constellations) = storage.get_string(&format!("{}_{}", StorageKeys::GameGroupActiveConstellellations, group)) {
-                    let active_constellations = active_constellations.split('|');
-                    for active_constellation in active_constellations {
-                        group_active_constellations.insert(active_constellation.to_string(), true);
-                    }
-                }
-            }
-            groups_active_constellations.insert(group, group_active_constellations);
         }
         let mut catalog: Vec<Box<dyn QuestionTrait>> = Vec::new();
         // catalog.push(QuestionEnum::NoMoreQuestions);
@@ -495,11 +453,7 @@ impl GameHandler {
             game_settings,
             score: 0,
             possible_score: 0,
-            active_constellations,
-            groups_active_constellations,
-            active_constellations_groups,
             constellation_groups_settings,
-            toggle_all_constellations: true,
             request_input_focus: false,
             switch_to_next_question: false,
         }
@@ -520,7 +474,7 @@ impl GameHandler {
         self.answer = String::new();
         let mut possible_questions: Vec<usize> = Vec::new();
         for question in 0..self.question_catalog.len() {
-            if !self.used_questions.contains(&question) && self.question_catalog[question].can_choose_as_next(&self.questions_settings, &mut self.active_constellations) {
+            if !self.used_questions.contains(&question) && self.question_catalog[question].can_choose_as_next(&self.questions_settings, &mut self.constellation_groups_settings.active_constellations) {
                 possible_questions.push(question);
             }
         }

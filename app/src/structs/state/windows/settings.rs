@@ -1,7 +1,5 @@
 use std::fmt::Display;
 
-use crate::enums;
-
 pub struct SettingsWindowState {
     pub opened: bool,
     pub subwindow: SettingsSubWindow,
@@ -21,7 +19,6 @@ impl Default for SettingsWindowState {
 }
 
 pub struct GameSettingsWindowState {
-    pub constellation_setting_learning_stage: enums::GameLearningStage,
     pub subwindow: GameSettingsSubWindow,
     pub questions_subwindow: GameSettingsQuestionsSubWindowState,
 }
@@ -29,7 +26,6 @@ pub struct GameSettingsWindowState {
 impl Default for GameSettingsWindowState {
     fn default() -> Self {
         Self {
-            constellation_setting_learning_stage: enums::GameLearningStage::None,
             subwindow: GameSettingsSubWindow::General,
             questions_subwindow: GameSettingsQuestionsSubWindowState::default(),
         }
