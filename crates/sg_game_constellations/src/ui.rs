@@ -93,6 +93,15 @@ pub fn render_constellations_settings_subwindow(
             }
         }
     });
+    eframe::egui::CollapsingHeader::new("Advanced").default_open(false).show(ui, |ui| {
+        let mut active = settings
+            .active_constellations
+            .iter()
+            .filter_map(|(abbrev, t)| if *t { Some(abbrev.to_owned()) } else { None })
+            .collect::<Vec<String>>();
+        active.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+        ui.label(format!("Currently active constellations: {}", active.join(&crate::CONSTELLATIONS_SEPARATOR.to_string())));
+    });
     ui.separator();
     eframe::egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
         for (abbrev, name) in constellations {
