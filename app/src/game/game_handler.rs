@@ -169,6 +169,7 @@ pub struct GameHandler {
     pub active_constellations: HashMap<String, bool>,
     pub groups_active_constellations: HashMap<enums::GameLearningStage, HashMap<String, bool>>,
     pub active_constellations_groups: HashMap<enums::GameLearningStage, bool>,
+    pub constellation_groups_settings: sg_game_constellations::GameConstellations,
     pub toggle_all_constellations: bool,
 
     pub request_input_focus: bool,
@@ -473,6 +474,8 @@ impl GameHandler {
                 }
             }
         }
+        let constellation_groups_settings =
+            sg_game_constellations::GameConstellations::load_from_storage(storage, &cellestial_sphere.constellations.values().map(|con| con.abbreviation.clone()).collect::<Vec<String>>());
 
         Self {
             current_question: 0,
@@ -495,6 +498,7 @@ impl GameHandler {
             active_constellations,
             groups_active_constellations,
             active_constellations_groups,
+            constellation_groups_settings,
             toggle_all_constellations: true,
             request_input_focus: false,
             switch_to_next_question: false,

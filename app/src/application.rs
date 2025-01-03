@@ -256,5 +256,7 @@ impl eframe::App for Application {
             Ok(string) => storage.set_string(StorageKeys::GraphicsSettings.as_ref(), string),
             Err(err) => log::error!("Failed to serialize graphics settings: {:?}", err),
         }
+
+        self.game_handler.constellation_groups_settings.save_to_storage(storage);
     }
 }

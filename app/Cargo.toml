@@ -51,6 +51,7 @@ winit = "0.30"
 spherical_geometry = "0.2.0" # { path = "../spherical-geometry-fork" }
 
 sg_credits = { path = "../crates/sg_credits" }
+sg_game_constellations = { path = "../crates/sg_game_constellations" }
 sg_geometry = { path = "../crates/sg_geometry" }
 
 [target.'cfg(target_os = "android")'.dependencies]

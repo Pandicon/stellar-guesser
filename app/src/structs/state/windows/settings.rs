@@ -50,6 +50,8 @@ impl Default for GameSettingsQuestionsSubWindowState {
 
 pub struct SkySettingsWindowState {
     pub subwindow: SkySettingsSubWindow,
+
+    pub groups_subwindow_state: sg_game_constellations::GameConstellationsState,
 }
 
 #[allow(clippy::derivable_impls)]
@@ -57,6 +59,7 @@ impl Default for SkySettingsWindowState {
     fn default() -> Self {
         Self {
             subwindow: SkySettingsSubWindow::General,
+            groups_subwindow_state: sg_game_constellations::GameConstellationsState::default(),
         }
     }
 }
