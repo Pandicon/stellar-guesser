@@ -1,6 +1,6 @@
 use eframe::egui;
 
-use crate::enums::{self, ScreenWidth};
+use crate::enums::ScreenWidth;
 use crate::rendering::caspr::sky_settings;
 use crate::rendering::themes::{self, Theme, ThemesHandler};
 use crate::{files, public_constants, server_communication, structs};
@@ -163,8 +163,6 @@ impl eframe::App for Application {
         #[cfg(any(target_os = "ios", target_os = "android"))]
         // Push the input text restored from key presses to events as a Text event so that input fields take it in by themselves
         ctx.input_mut(|i| i.events.push(egui::Event::Text(self.input.text_from_keys.clone())));
-        self.input.input_field_had_focus_last_frame = self.input.input_field_has_focus;
-        self.input.input_field_has_focus = false;
         self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
         self.frame_timestamp = chrono::Utc::now().timestamp();
         self.screen_width = ScreenWidth::from_width(ctx.screen_rect().size().x);
@@ -178,17 +176,17 @@ impl eframe::App for Application {
             self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
             self.game_handler.switch_to_next_question = false;
         }
-
+        let input_field_has_focus = ctx.wants_keyboard_input();
         // Toggle software keyboard
         #[cfg(target_os = "android")]
-        if self.input.input_field_has_focus && !self.input.input_field_had_focus_last_frame {
+        if input_field_has_focus && !self.input.input_field_had_focus_last_frame {
             // There was no focus on any text input field last frame, but there is this frame -> show the keyboard
             crate::show_soft_input(true);
-        } else if !self.input.input_field_has_focus && self.input.input_field_had_focus_last_frame {
+        } else if !input_field_has_focus && self.input.input_field_had_focus_last_frame {
             // There was focus on some text input field last frame, but there is not this frame -> hide the keyboard
             crate::show_soft_input(false);
         }
-
+        self.input.input_field_had_focus_last_frame = input_field_has_focus;
         ctx.request_repaint();
     }
 
@@ -198,39 +196,6 @@ impl eframe::App for Application {
             StorageKeys::TimeSpent.as_ref(),
             (self.state.time_spent_start + (self.frame_timestamp - self.state.start_timestamp)).to_string(),
         );
-
-        let mut inactive_constellations = Vec::new();
-        for (abbreviation, value) in &self.game_handler.active_constellations {
-            if !*value {
-                inactive_constellations.push(abbreviation.as_str());
-            }
-        }
-        storage.set_string(StorageKeys::GameInactiveConstellations.as_ref(), inactive_constellations.join("|"));
-
-        for group in [
-            enums::GameLearningStage::NotStarted,
-            enums::GameLearningStage::Learning,
-            enums::GameLearningStage::Reviewing,
-            enums::GameLearningStage::Learned,
-        ] {
-            if let Some(active_constellations_group) = self.game_handler.groups_active_constellations.get(&group) {
-                let mut group_active_constellations = Vec::new();
-                for (abbreviation, value) in active_constellations_group {
-                    if *value {
-                        group_active_constellations.push(abbreviation.as_str());
-                    }
-                }
-                storage.set_string(&format!("{}_{}", StorageKeys::GameInactiveConstellationGroups, group), group_active_constellations.join("|"));
-            }
-        }
-
-        let mut inactive_constellations_groups = Vec::new();
-        for (group, value) in &self.game_handler.active_constellations_groups {
-            if !value {
-                inactive_constellations_groups.push(group.to_string());
-            }
-        }
-        storage.set_string(StorageKeys::GameInactiveConstellationGroups.as_ref(), inactive_constellations_groups.join("|"));
 
         match serde_json::to_string(&self.game_handler.questions_settings) {
             Ok(string) => storage.set_string(StorageKeys::GameQuestionSettings.as_ref(), string),
@@ -256,5 +221,7 @@ impl eframe::App for Application {
             Ok(string) => storage.set_string(StorageKeys::GraphicsSettings.as_ref(), string),
             Err(err) => log::error!("Failed to serialize graphics settings: {:?}", err),
         }
+
+        self.game_handler.constellation_groups_settings.save_to_storage(storage);
     }
 }

@@ -211,7 +211,15 @@ impl crate::game::game_handler::QuestionTrait for Question {
                 || (questions_settings.find_this_object.show_bayer && self.is_bayer)
                 || (questions_settings.find_this_object.show_starnames && self.is_starname))
             && ((!self.is_bayer && !self.is_starname) || mag < questions_settings.find_this_object.magnitude_cutoff)
-            && *active_constellations.entry(self.constellation_abbreviation.to_lowercase()).or_insert(true)
+            && *active_constellations
+                .entry(
+                    active_constellations
+                        .keys()
+                        .find(|con| con.to_lowercase() == self.constellation_abbreviation.to_lowercase())
+                        .cloned()
+                        .unwrap_or(self.constellation_abbreviation.clone()),
+                )
+                .or_insert(true)
     }
 
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
