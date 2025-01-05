@@ -94,7 +94,7 @@ impl Application {
         ui.label("Export the current settings into a theme");
         ui.horizontal(|ui| {
             ui.label("Theme name: ");
-            self.input.input_field_has_focus |= ui.text_edit_singleline(&mut self.theme.name).has_focus();
+            ui.text_edit_singleline(&mut self.theme.name);
         });
         if ui.button("Export").clicked() {
             if let Some(path) = files::get_dir_opt(public_constants::THEMES_FOLDER) {
@@ -195,11 +195,11 @@ impl Application {
                 let prev_mag_scale = *mag_scale;
                 ui.horizontal_wrapped(|ui| ui.label("The following two values affect the size of the stars via the following formula: radius = mag_scale * (mag_offset - magnitude)"));
                 ui.horizontal(|ui| {
-                    self.input.input_field_has_focus |= ui.add(egui::DragValue::new(mag_offset).speed(0.03)).has_focus();
+                    ui.add(egui::DragValue::new(mag_offset).speed(0.03));
                     ui.label("Magnitude offset (mag_offset)");
                 });
                 ui.horizontal(|ui| {
-                    self.input.input_field_has_focus |= ui.add(egui::DragValue::new(mag_scale).speed(0.01)).has_focus();
+                    ui.add(egui::DragValue::new(mag_scale).speed(0.01));
                     ui.label("Magnitude scale (mag_scale)");
                 });
                 if prev_mag_offset != *mag_offset || prev_mag_scale != *mag_scale {
@@ -216,18 +216,18 @@ impl Application {
                 let prev_o = *o;
                 ui.horizontal_wrapped(|ui| ui.label("The following three values affect the size of the stars via the following formula: radius = r_0 * ln(180°*n/fov) * 10^(-o*magnitude)"));
                 ui.horizontal(|ui| {
-                    self.input.input_field_has_focus |= ui.add(egui::DragValue::new(r_0).speed(0.03)).has_focus();
+                    ui.add(egui::DragValue::new(r_0).speed(0.03));
                     ui.label("r_0 (a size multiplier)");
                 });
                 ui.horizontal(|ui| {
-                    self.input.input_field_has_focus |= ui.add(egui::DragValue::new(n).speed(0.01)).has_focus();
+                    ui.add(egui::DragValue::new(n).speed(0.01));
                     ui.label("n (how much does the size change (proportionally) when changing the FOV; higher values of n cause smaller changes)");
                 });
                 if *n < 2.0 {
                     *n = 2.0;
                 }
                 ui.horizontal(|ui| {
-                    self.input.input_field_has_focus |= ui.add(egui::DragValue::new(o).speed(0.001)).has_focus();
+                    ui.add(egui::DragValue::new(o).speed(0.001));
                     ui.label("o (how much does the size change (proportionally) when changing the magnitude");
                 });
                 if prev_r0 != *r_0 || prev_n != *n || prev_o != *o {
@@ -265,9 +265,7 @@ impl Application {
 
     pub fn render_sky_settings_deepsky_subwindow(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            self.input.input_field_has_focus |= ui
-                .add(egui::DragValue::new(&mut self.cellestial_sphere.sky_settings.deepsky_render_mag_decrease).speed(0.1))
-                .has_focus();
+            ui.add(egui::DragValue::new(&mut self.cellestial_sphere.sky_settings.deepsky_render_mag_decrease).speed(0.1));
             ui.label("Magnitude decrease")
                 .on_hover_text("By how much should the magnitude of the deepsky objects be decreased for rendering - this way the objects can be made to be seen even without zooming in");
         });

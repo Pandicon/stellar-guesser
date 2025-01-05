@@ -17,7 +17,6 @@ pub struct QuestionWindowData<'a> {
     pub theme: &'a Theme,
     pub game_question_opened: &'a mut bool,
     pub request_input_focus: &'a mut bool,
-    pub input_field_has_focus: &'a mut bool,
     pub add_marker_on_click: &'a mut bool,
     pub question_number_text: &'a String,
     pub game_stage: &'a mut GameStage,

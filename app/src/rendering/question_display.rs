@@ -49,7 +49,6 @@ impl Application {
                     theme: &self.theme,
                     game_question_opened: &mut self.state.windows.game_question.opened,
                     request_input_focus: &mut self.game_handler.request_input_focus,
-                    input_field_has_focus: &mut self.input.input_field_has_focus,
                     add_marker_on_click: &mut self.game_handler.add_marker_on_click,
                     question_number_text: &self.game_handler.question_number_text,
                     game_stage: &mut self.game_handler.stage,

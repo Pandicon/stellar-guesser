@@ -51,7 +51,6 @@ impl RaQuestion {
                     text_input_response.request_focus();
                     *data.request_input_focus = false;
                 }
-                *data.input_field_has_focus |= text_input_response.has_focus();
             }
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {
@@ -222,7 +221,6 @@ impl DecQuestion {
                     text_input_response.request_focus();
                     *data.request_input_focus = false;
                 }
-                *data.input_field_has_focus |= text_input_response.has_focus();
             }
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {

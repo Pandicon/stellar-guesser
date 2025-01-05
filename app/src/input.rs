@@ -110,7 +110,6 @@ pub struct Input {
     currently_held: HashMap<&'static str, bool>,
 
     pub text_from_keys: String,
-    pub input_field_has_focus: bool,
     pub input_field_had_focus_last_frame: bool,
 }
 
@@ -136,7 +135,6 @@ impl Default for Input {
             primary_dragging_last_frame: false,
 
             text_from_keys: String::new(),
-            input_field_has_focus: false,
             input_field_had_focus_last_frame: false,
         }
     }
@@ -531,7 +529,7 @@ impl Input {
                         | egui::Key::F35 => "",
                     };
                     // Could probably have a bit more fun with it, but having it doubled does work well enough...
-                    if *key == egui::Key::Space && !self.input_field_has_focus {
+                    if *key == egui::Key::Space && !ctx.wants_keyboard_input() {
                         // If you are typing, then you don't want this to fire
                         if let Some(pressed) = self.currently_held.get("space") {
                             if !pressed {

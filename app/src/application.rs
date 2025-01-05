@@ -163,8 +163,6 @@ impl eframe::App for Application {
         #[cfg(any(target_os = "ios", target_os = "android"))]
         // Push the input text restored from key presses to events as a Text event so that input fields take it in by themselves
         ctx.input_mut(|i| i.events.push(egui::Event::Text(self.input.text_from_keys.clone())));
-        self.input.input_field_had_focus_last_frame = self.input.input_field_has_focus;
-        self.input.input_field_has_focus = false;
         self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
         self.frame_timestamp = chrono::Utc::now().timestamp();
         self.screen_width = ScreenWidth::from_width(ctx.screen_rect().size().x);
@@ -178,17 +176,17 @@ impl eframe::App for Application {
             self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
             self.game_handler.switch_to_next_question = false;
         }
-
+        let input_field_has_focus = ctx.wants_keyboard_input();
         // Toggle software keyboard
         #[cfg(target_os = "android")]
-        if self.input.input_field_has_focus && !self.input.input_field_had_focus_last_frame {
+        if input_field_has_focus && !self.input.input_field_had_focus_last_frame {
             // There was no focus on any text input field last frame, but there is this frame -> show the keyboard
             crate::show_soft_input(true);
-        } else if !self.input.input_field_has_focus && self.input.input_field_had_focus_last_frame {
+        } else if !input_field_has_focus && self.input.input_field_had_focus_last_frame {
             // There was focus on some text input field last frame, but there is not this frame -> hide the keyboard
             crate::show_soft_input(false);
         }
-
+        self.input.input_field_had_focus_last_frame = input_field_has_focus;
         ctx.request_repaint();
     }
 

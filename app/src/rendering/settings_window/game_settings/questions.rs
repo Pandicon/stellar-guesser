@@ -76,9 +76,7 @@ impl Application {
         ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_ics, "Show IC objects");
         ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_bayer, "Show Bayer designations");
         ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_starnames, "Show star names");
-        self.input.input_field_has_focus |= ui
-            .add(egui::Slider::new(&mut self.game_handler.questions_settings.find_this_object.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"))
-            .has_focus();
+        ui.add(egui::Slider::new(&mut self.game_handler.questions_settings.find_this_object.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"));
         let mut correctness_threshold_inner = self.game_handler.questions_settings.find_this_object.correctness_threshold.value();
         let correctness_threshold_widget = ui.add(
             egui::Slider::new(&mut correctness_threshold_inner, 0.0..=180.0)
@@ -86,7 +84,6 @@ impl Application {
                 .logarithmic(true),
         );
         self.game_handler.questions_settings.find_this_object.correctness_threshold = angle::Deg(correctness_threshold_inner);
-        self.input.input_field_has_focus |= correctness_threshold_widget.has_focus();
         *tolerance_changed |= correctness_threshold_widget.changed();
         ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.replay_incorrect, "Replay incorrectly answered questions");
     }
@@ -101,9 +98,7 @@ impl Application {
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_ics, "Show IC objects");
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_bayer, "Show Bayer designations");
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_starnames, "Show star names");
-        self.input.input_field_has_focus |= ui
-            .add(egui::Slider::new(&mut self.game_handler.questions_settings.what_is_this_object.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"))
-            .has_focus();
+        ui.add(egui::Slider::new(&mut self.game_handler.questions_settings.what_is_this_object.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"));
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.replay_incorrect, "Replay incorrectly answered questions");
     }
 
@@ -135,9 +130,7 @@ impl Application {
         ui.checkbox(&mut self.game_handler.questions_settings.guess_the_magnitude.show, "Show the 'Guess the magnitude' questions");
         ui.checkbox(&mut self.game_handler.questions_settings.guess_the_magnitude.rotate_to_point, "Rotate to the object in question")
             .on_hover_text("Whether or not to rotate the view so that the object in question is in the centre of the screen");
-        self.input.input_field_has_focus |= ui
-            .add(egui::Slider::new(&mut self.game_handler.questions_settings.guess_the_magnitude.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"))
-            .has_focus();
+        ui.add(egui::Slider::new(&mut self.game_handler.questions_settings.guess_the_magnitude.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"));
         ui.checkbox(&mut self.game_handler.questions_settings.guess_the_magnitude.replay_incorrect, "Replay incorrectly answered questions");
     }
 }
