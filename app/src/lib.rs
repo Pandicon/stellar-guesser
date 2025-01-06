@@ -36,6 +36,11 @@ pub const PLATFORM: &str = "windows";
 #[cfg(target_os = "linux")]
 pub const PLATFORM: &str = "linux";
 
+#[cfg(target_os = "android")]
+pub const MOBILE: bool = true;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
+pub const MOBILE: bool = false;
+
 pub static CONFIG: once_cell::sync::Lazy<config::Config> = once_cell::sync::Lazy::new(config::get_config);
 pub static CREDITS: once_cell::sync::Lazy<Vec<sg_credits::Credits>> = once_cell::sync::Lazy::new(sg_credits::get_credits);
 

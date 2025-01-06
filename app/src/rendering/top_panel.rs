@@ -2,29 +2,33 @@ use crate::{enums::LightPollution, Application};
 use eframe::egui;
 
 impl Application {
-    pub fn render_top_panel(&mut self, ctx: &egui::Context) -> egui::InnerResponse<()> {
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            egui::menu::bar(ui, |ui| {
-                ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                    ui.label(format!("FOV: {:.3}°", self.cellestial_sphere.fov));
-                    if !self.screen_width.very_narrow() {
-                        render_left_controls(self, ui);
-                    }
-                });
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if self.screen_width.narrow() {
-                        ui.menu_button("Settings & Controls", |ui| {
-                            if self.screen_width.very_narrow() {
-                                render_left_controls(self, ui);
-                            }
+    pub fn render_top_panel(&mut self, ctx: &egui::Context) -> bool {
+        egui::TopBottomPanel::top("top_panel")
+            .show(ctx, |ui| {
+                egui::menu::bar(ui, |ui| {
+                    ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                        ui.label(format!("FOV: {:.3}°", self.cellestial_sphere.fov));
+                        if !self.screen_width.very_narrow() {
+                            render_left_controls(self, ui);
+                        }
+                    });
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if self.screen_width.narrow() {
+                            ui.menu_button("Settings & Controls", |ui| {
+                                if self.screen_width.very_narrow() {
+                                    render_left_controls(self, ui);
+                                }
+                                render_right_controls(self, ui);
+                            });
+                        } else {
                             render_right_controls(self, ui);
-                        });
-                    } else {
-                        render_right_controls(self, ui);
-                    }
+                        }
+                    });
                 });
-            });
-        })
+            })
+            .response
+            .interact(egui::Sense::click_and_drag())
+            .hovered()
     }
 }
 

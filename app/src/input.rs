@@ -48,7 +48,7 @@ impl Application {
                 }
             }
         }
-        let reinitialise_stars = self.cellestial_sphere.zoom(self.input.zoom);
+        let reinitialise_stars = if cursor_within_central_panel { self.cellestial_sphere.zoom(self.input.zoom) } else { false };
 
         let pointer_position: Pos2 = match self.input.pointer_position {
             PointerPosition::OnScreen(position) => position,
