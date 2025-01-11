@@ -27,7 +27,7 @@ impl Application {
                 });
             })
             .response
-            .interact(egui::Sense::click_and_drag())
+            //.interact(egui::Sense::click_and_drag()) // Inner widgets become unclickable...
             .hovered()
     }
 }

@@ -71,7 +71,7 @@ impl Application {
         let mut fonts = egui::FontDefinitions::default();
         fonts
             .font_data
-            .insert("inter_medium".to_owned(), egui::FontData::from_static(include_bytes!("../assets/fonts/inter/Inter-Medium.otf"))); // .ttf and .otf supported
+            .insert("inter_medium".to_owned(), std::sync::Arc::new(egui::FontData::from_static(include_bytes!("../assets/fonts/inter/Inter-Medium.otf")))); // .ttf and .otf supported
 
         // Put the Inter Medium font first (highest priority):
         fonts.families.get_mut(&egui::FontFamily::Proportional).unwrap().insert(0, "inter_medium".to_owned());

@@ -139,9 +139,10 @@ fn android_main(app: AndroidApp) {
         persist_window: false,
         ..Default::default()
     };
-    options.event_loop_builder = Some(Box::new(move |event_loop| {
+	options.android_app = Some(app);
+    /*options.event_loop_builder = Some(Box::new(move |event_loop| {
         event_loop.with_android_app(app);
-    }));
+    }));*/
     // Android paths:
     // - <package_name> is the package name, for example
     // - /data/data/<packagename>/files/<path> (for example /data/data/<packagename>/files/id.txt) is a sandboxed piece of storage that no other app can access (and also the user can not access it without a rooted device)
