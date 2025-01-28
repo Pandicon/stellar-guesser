@@ -54,18 +54,16 @@ impl Application {
 
     pub fn render_sky_settings_general_subwindow(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         let prev_light_pollution = self.cellestial_sphere.light_pollution_place;
-        ui.label("Light pollution level: ");
+        ui.label("Light pollution level: ")
+            .on_hover_text("These settings are made to reflect how the sky looks in different locations for a person with an average eyesight.");
         egui::ComboBox::from_id_salt("Light pollution level: ")
             .selected_text(format!("{}", self.cellestial_sphere.light_pollution_place))
             .show_ui(ui, |ui| {
                 ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Default, format!("{}", LightPollution::Default));
-                ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, LightPollution::Prague, format!("{}", LightPollution::Prague));
-                ui.selectable_value(
-                    &mut self.cellestial_sphere.light_pollution_place,
-                    LightPollution::AverageVillage,
-                    format!("{}", LightPollution::AverageVillage),
-                );
+                for val in LightPollution::variants() {
+                    ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, val, format!("{}", val))
+                        .on_hover_text(LightPollution::explanation(&val));
+                }
             });
         if prev_light_pollution != self.cellestial_sphere.light_pollution_place {
             let settings = self.cellestial_sphere.light_pollution_place_to_mag_settings(&self.cellestial_sphere.light_pollution_place);

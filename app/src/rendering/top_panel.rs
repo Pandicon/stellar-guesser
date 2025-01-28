@@ -87,7 +87,7 @@ fn render_left_controls(app: &mut crate::application::Application, ui: &mut egui
             .on_hover_text("These settings are made to reflect how the sky looks in different locations for a person with an average eyesight.");
         egui::ComboBox::from_id_salt("Light pollution level: ")
             .selected_text(format!("{}", app.cellestial_sphere.light_pollution_place))
-            .show_ui(ui, |ui: &mut egui::Ui| {
+            .show_ui(ui, |ui| {
                 ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
                 for val in LightPollution::variants() {
                     ui.selectable_value(&mut app.cellestial_sphere.light_pollution_place, val, format!("{}", val))
