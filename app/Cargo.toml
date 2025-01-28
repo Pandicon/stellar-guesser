@@ -26,14 +26,14 @@ chrono = "0.4"
 csv = "1.2.2"
 directories-next = "2.0.0"
 dotenvy = "0.15.7"
-eframe = { version = "0.29", default-features = false, features = [
+eframe = { version = "0.30", default-features = false, features = [
 	"wgpu",
 	"default_fonts",
 	"persistence",
 	"android-native-activity",
 ] }
-egui_extras = { version = "0.29", features = ["all_loaders", "image"] }
-egui-notify = "0.17.0" # It depends on egui itself, so the version of egui used by this app and by egui-notify have to match
+egui_extras = { version = "0.30", features = ["all_loaders", "image"] }
+egui-notify = "0.18.0" # It depends on egui itself, so the version of egui used by this app and by egui-notify have to match
 image = { version = "0.24", features = ["jpeg", "png", "webp"] }
 log = "0.4.14"
 nalgebra = "0.32.2"

@@ -58,18 +58,17 @@ impl Application {
             self.cellestial_sphere.viewport_rect = viewport_rect;
             self.cellestial_sphere.init_renderers();
         }
-        let central_panel_response = egui::CentralPanel::default().show(ctx, |ui| {
-            self.cellestial_sphere.viewport_rect = viewport_rect;
+        let central_panel_response = egui::CentralPanel::default()
+            .show(ctx, |ui| {
+                self.cellestial_sphere.viewport_rect = viewport_rect;
 
-            let painter = ui.painter();
-            self.cellestial_sphere.render_sky(painter);
-
-            let top_panel_hovered = self.render_top_panel(ctx);
-            log::debug!("Top panel hovered: {top_panel_hovered}");
-            top_panel_hovered
-        });
-        let top_panel_hovered = central_panel_response.inner;
-        let central_panel_response = central_panel_response.response.interact(egui::Sense::click_and_drag());
+                let painter = ui.painter();
+                self.cellestial_sphere.render_sky(painter);
+            })
+            .response
+            .interact(egui::Sense::click_and_drag());
+        let top_panel_hovered = self.render_top_panel(ctx);
+        log::debug!("Top panel hovered: {top_panel_hovered}");
         // The central panel is hovered and the top panel is not
         central_panel_response.contains_pointer() && !top_panel_hovered
     }
