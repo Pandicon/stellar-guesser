@@ -139,7 +139,7 @@ fn android_main(app: AndroidApp) {
         persist_window: false,
         ..Default::default()
     };
-	options.android_app = Some(app);
+    options.android_app = Some(app);
     /*options.event_loop_builder = Some(Box::new(move |event_loop| {
         event_loop.with_android_app(app);
     }));*/

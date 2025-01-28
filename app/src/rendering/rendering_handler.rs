@@ -58,12 +58,15 @@ impl Application {
             self.cellestial_sphere.viewport_rect = viewport_rect;
             self.cellestial_sphere.init_renderers();
         }
-        let central_panel_response = egui::CentralPanel::default().show(ctx, |ui| {
-            self.cellestial_sphere.viewport_rect = viewport_rect;
+        let central_panel_response = egui::CentralPanel::default()
+            .show(ctx, |ui| {
+                self.cellestial_sphere.viewport_rect = viewport_rect;
 
-            let painter = ui.painter();
-            self.cellestial_sphere.render_sky(painter);
-        }).response.interact(egui::Sense::click_and_drag());
+                let painter = ui.painter();
+                self.cellestial_sphere.render_sky(painter);
+            })
+            .response
+            .interact(egui::Sense::click_and_drag());
         let top_panel_hovered = self.render_top_panel(ctx);
         log::debug!("Top panel hovered: {top_panel_hovered}");
         // The central panel is hovered and the top panel is not
