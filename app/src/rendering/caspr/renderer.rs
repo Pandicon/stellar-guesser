@@ -418,6 +418,7 @@ impl CellestialSphere {
                     let mut deepskies_vec = Vec::new();
                     for deepsky_raw in reader.deserialize() {
                         let deepsky_raw: DeepskyRaw = deepsky_raw?;
+                        println!("{:?} {:?}", deepsky_raw.messier, deepsky_raw.caldwell);
                         let deepsky_images_raw = objects_images
                             .iter()
                             .filter(|image_data| {
@@ -426,25 +427,25 @@ impl CellestialSphere {
                                 if let Some(ngc_num) = &deepsky_raw.ngc {
                                     if designation.starts_with("ngc") {
                                         let number = designation.chars().filter(|c| c.is_ascii_digit()).collect::<String>();
-                                        res |= &number == ngc_num;
+                                        res |= number == ngc_num.to_string();
                                     }
                                 }
                                 if let Some(ic_num) = &deepsky_raw.ic {
                                     if designation.starts_with("ic") {
                                         let number = designation.chars().filter(|c| c.is_ascii_digit()).collect::<String>();
-                                        res |= &number == ic_num;
+                                        res |= number == ic_num.to_string();
                                     }
                                 }
                                 if let Some(c_num) = &deepsky_raw.caldwell {
                                     if designation.starts_with('c') {
                                         let number = designation.chars().filter(|c| c.is_ascii_digit()).collect::<String>();
-                                        res |= &number == c_num;
+                                        res |= number == c_num.to_string();
                                     }
                                 }
                                 if let Some(m_num) = &deepsky_raw.messier {
                                     if designation.starts_with('m') {
                                         let number = designation.chars().filter(|c| c.is_ascii_digit()).collect::<String>();
-                                        res |= &number == m_num;
+                                        res |= number == m_num.to_string();
                                     }
                                 }
                                 res

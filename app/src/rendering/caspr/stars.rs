@@ -11,6 +11,7 @@ use super::star_names::StarName;
 
 #[derive(Clone, Deserialize)]
 pub struct Star {
+    pub object_id: u64,
     pub ra: angle::Deg<f32>,
     pub dec: angle::Deg<f32>,
     pub vmag: f32,
@@ -24,6 +25,7 @@ pub struct Star {
 
 #[derive(Clone, Deserialize)]
 pub struct StarRaw {
+    pub object_id: u64,
     pub ra: angle::Deg<f32>,
     pub dec: angle::Deg<f32>,
     pub vmag: f32,
@@ -59,6 +61,7 @@ impl Star {
             parse_colour(raw_star.colour, default_colour)
         };
         Self {
+            object_id: raw_star.object_id,
             ra: raw_star.ra,
             dec: raw_star.dec,
             vmag: raw_star.vmag,

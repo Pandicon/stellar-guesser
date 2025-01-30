@@ -210,7 +210,8 @@ impl GameHandler {
                 let is_ngc = deepsky.ngc.is_some();
                 let is_ic = deepsky.ic.is_some();
                 let object_type = deepsky.object_type.clone().unwrap_or("Unknown".to_string());
-                if let Some(messier_name) = &deepsky.messier {
+                if let Some(messier_number) = &deepsky.messier {
+                    let messier_name: String = format!("M{}", messier_number);
                     catalog.push(Box::new(questions::find_this_object::Question {
                         name: messier_name.to_owned(),
                         ra: deepsky.ra,
@@ -228,7 +229,7 @@ impl GameHandler {
 
                         state: Default::default(),
                     }));
-                    possible_names.push(messier_name.to_owned());
+                    possible_names.push(messier_name);
                 }
                 if let Some(caldwell_number) = &deepsky.caldwell {
                     let caldwell_name: String = format!("C {}", caldwell_number);
