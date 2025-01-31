@@ -53,7 +53,7 @@ impl Deepsky {
     }
 
     pub fn from_raw(raw_deepsky: DeepskyRaw, images_data: Vec<crate::structs::image_info::ImageInfo>) -> (Self, Option<Color32>) {
-        let names = raw_deepsky.names.map(|raw_names| raw_names.split(';').map(|s| s.to_owned()).collect());
+        let names = raw_deepsky.names.map(|raw_names| raw_names.split(';').map(|s| s.to_owned()).filter(|s| !s.is_empty()).collect());
         let colour = parse_colour_option(raw_deepsky.colour);
         (
             Self {

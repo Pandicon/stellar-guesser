@@ -187,9 +187,11 @@ struct Parser<'a> {
     pos: usize,
 }
 
-const VALID_CATALOGUES: [&str; 6] = ["MESSIER", "CALDWELL", "NGC", "HD", "HIP", "PROPER_NAME"];
+const VALID_CATALOGUES: [&str; 8] = ["BAYER", "FLAMSTEED", "MESSIER", "CALDWELL", "NGC", "HD", "HIP", "PROPER_NAME"];
 #[derive(Debug)]
 pub enum Catalogue {
+    Bayer,
+    Flamsteed,
     Messier,
     Caldwell,
     Ngc,
@@ -202,6 +204,8 @@ impl Catalogue {
     pub fn from_string(catalogue: &str) -> Result<Self, String> {
         let val = catalogue.to_uppercase();
         let catalogue = match val.as_str() {
+            "BAYER" => Self::Bayer,
+            "FLAMSTEED" => Self::Flamsteed,
             "MESSIER" => Self::Messier,
             "CALDWELL" => Self::Caldwell,
             "NGC" => Self::Ngc,

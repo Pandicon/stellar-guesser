@@ -31,7 +31,7 @@ pub struct StarRaw {
     pub vmag: f32,
     pub colour: Option<String>,
     pub name: Option<String>,
-    pub bv: Option<String>,
+    pub bv: Option<f32>,
     pub constellations: String,
 }
 
@@ -51,12 +51,8 @@ impl Star {
 
     pub fn from_raw(raw_star: StarRaw, default_colour: Color32, override_colour: Option<Color32>) -> Self {
         let colour = if let Some(bv) = raw_star.bv {
-            if let Ok(bv) = bv.parse() {
-                let temperature = Star::bv_to_temperature(bv);
-                Star::temperature_to_colour(temperature)
-            } else {
-                parse_colour(raw_star.colour, default_colour)
-            }
+            let temperature = Star::bv_to_temperature(bv);
+            Star::temperature_to_colour(temperature)
         } else {
             parse_colour(raw_star.colour, default_colour)
         };
