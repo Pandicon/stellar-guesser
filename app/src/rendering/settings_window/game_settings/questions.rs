@@ -1,32 +1,136 @@
-use crate::{structs::state::windows::settings::GameSettingsQuestionsSubWindow, Application};
+use crate::{structs::state::windows::settings::GameSettingsQuestionsSubWindow, structs::state::windows::settings::GameSettingsType, Application};
 use angle::Angle;
 use eframe::egui;
 
 impl Application {
     pub fn render_game_settings_questions_subwindow(&mut self, ui: &mut egui::Ui, tolerance_changed: &mut bool) {
         ui.horizontal(|ui| {
-            // If adding new question types, make sure that the picker gets collapsed into a combo box on an appropriately wide/narrow screens
-            if self.screen_width.narrow() {
-                ui.label("Question type: ");
-                egui::ComboBox::from_id_salt("Question type: ")
-                    .selected_text(format!("{}", self.state.windows.settings.game_settings.questions_subwindow.subwindow))
-                    .show_ui(ui, |ui: &mut egui::Ui| {
-                        ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                        self.render_question_type_picker(ui);
-                    });
-            } else {
-                self.render_question_type_picker(ui);
-            }
+            ui.selectable_value(&mut self.state.windows.settings.game_settings.settings_type, GameSettingsType::Basic, GameSettingsType::Basic.as_ref());
+            ui.selectable_value(
+                &mut self.state.windows.settings.game_settings.settings_type,
+                GameSettingsType::Advanced,
+                GameSettingsType::Advanced.as_ref(),
+            );
         });
         ui.separator();
-        match self.state.windows.settings.game_settings.questions_subwindow.subwindow {
-            GameSettingsQuestionsSubWindow::FindThisObject => self.render_game_settings_find_this_object_subwindow(ui, tolerance_changed),
-            GameSettingsQuestionsSubWindow::WhatIsThisObject => self.render_game_settings_what_is_this_object_subwindow(ui),
-            GameSettingsQuestionsSubWindow::WhichConstellationIsThisPointIn => self.render_game_settings_guess_the_constellation_subwindow(ui),
-            GameSettingsQuestionsSubWindow::GuessTheAngularDistance => self.render_game_settings_angular_distance_subwindow(ui),
-            GameSettingsQuestionsSubWindow::GuessTheCoordinates => self.render_game_settings_coordinates_subwindow(ui),
-            GameSettingsQuestionsSubWindow::GuessTheMagnitude => self.render_game_settings_magnitude_subwindow(ui),
+
+        match self.state.windows.settings.game_settings.settings_type {
+            GameSettingsType::Basic => {
+                ui.horizontal(|ui| {
+                    // If adding new question types, make sure that the picker gets collapsed into a combo box on an appropriately wide/narrow screens
+                    if self.screen_width.narrow() {
+                        ui.label("Question type: ");
+                        egui::ComboBox::from_id_salt("Question type: ")
+                            .selected_text(format!("{}", self.state.windows.settings.game_settings.questions_subwindow.subwindow))
+                            .show_ui(ui, |ui: &mut egui::Ui| {
+                                ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                                self.render_question_type_picker(ui);
+                            });
+                    } else {
+                        self.render_question_type_picker(ui);
+                    }
+                });
+                ui.separator();
+                match self.state.windows.settings.game_settings.questions_subwindow.subwindow {
+                    GameSettingsQuestionsSubWindow::FindThisObject => self.render_game_settings_find_this_object_subwindow(ui, tolerance_changed),
+                    GameSettingsQuestionsSubWindow::WhatIsThisObject => self.render_game_settings_what_is_this_object_subwindow(ui),
+                    GameSettingsQuestionsSubWindow::WhichConstellationIsThisPointIn => self.render_game_settings_guess_the_constellation_subwindow(ui),
+                    GameSettingsQuestionsSubWindow::GuessTheAngularDistance => self.render_game_settings_angular_distance_subwindow(ui),
+                    GameSettingsQuestionsSubWindow::GuessTheCoordinates => self.render_game_settings_coordinates_subwindow(ui),
+                    GameSettingsQuestionsSubWindow::GuessTheMagnitude => self.render_game_settings_magnitude_subwindow(ui),
+                }
+
+                self.state.windows.settings.game_settings.generated_query = self.generate_query_from_basic();
+
+                ui.separator();
+                ui.label("Generated query:");
+                ui.label(egui::RichText::new(&self.state.windows.settings.game_settings.generated_query).code());
+            }
+            GameSettingsType::Advanced => {
+                ui.label("Advanced settings will go here");
+            }
         }
+    }
+
+    fn generate_query_from_basic(&self) -> String {
+        let mut query = String::new();
+        if self.game_handler.questions_settings.find_this_object.show {
+            let mut args = vec![self.game_handler.questions_settings.find_this_object.correctness_threshold.to_deg().as_value().to_string()];
+            if self.game_handler.questions_settings.find_this_object.rotate_to_correct_point {
+                args.push(String::from("ROTATE"));
+            }
+            if self.game_handler.questions_settings.find_this_object.replay_incorrect {
+                args.push(String::from("REPLAY"));
+            }
+            let mut settings_catalogues = Vec::new();
+            if self.game_handler.questions_settings.find_this_object.show_messiers {
+                settings_catalogues.push("CATALOGUE(MESSIER)");
+            }
+            if self.game_handler.questions_settings.find_this_object.show_caldwells {
+                settings_catalogues.push("CATALOGUE(CALDWELL)");
+            }
+            if self.game_handler.questions_settings.find_this_object.show_ngcs {
+                settings_catalogues.push("CATALOGUE(NGC)");
+            }
+            if self.game_handler.questions_settings.find_this_object.show_ics {
+                settings_catalogues.push("CATALOGUE(IC)");
+            }
+            if self.game_handler.questions_settings.find_this_object.show_bayer {
+                settings_catalogues.push("CATALOGUE(BAYER)");
+            }
+            if self.game_handler.questions_settings.find_this_object.show_starnames {
+                settings_catalogues.push("AND(TYPE(STAR), CATALOGUE(PROPER_NAME))");
+            }
+            if !settings_catalogues.is_empty() {
+                let settings = format!(
+                    "OR(AND(TYPE(STAR), MAG_BELOW({}), OR({})), AND(NOT(TYPE(STAR)), OR({})))",
+                    self.game_handler.questions_settings.find_this_object.correctness_threshold.value(),
+                    settings_catalogues.join(", "),
+                    settings_catalogues.join(", ")
+                );
+                query = format!("FIND_THIS_OBJECT({}): {}", args.join(", "), settings);
+            };
+        }
+
+        if self.game_handler.questions_settings.what_constellation_is_this_point_in.show {
+            query = format!(
+                "{query}\nWHAT_CONSTELLATION_IS_THIS_POINT_IN({})",
+                if self.game_handler.questions_settings.what_constellation_is_this_point_in.rotate_to_point {
+                    "ROTATE"
+                } else {
+                    ""
+                }
+            );
+        }
+        if self.game_handler.questions_settings.angular_separation.show {
+            query = format!(
+                "{query}\nANGULAR_SEPARATION({})",
+                if self.game_handler.questions_settings.angular_separation.rotate_to_midpoint {
+                    "ROTATE"
+                } else {
+                    ""
+                }
+            );
+        }
+        if self.game_handler.questions_settings.guess_rad_dec.show {
+            query = format!("{query}\nDEC({})", if self.game_handler.questions_settings.guess_rad_dec.rotate_to_point { "ROTATE" } else { "" });
+            query = format!("{query}\nRA({})", if self.game_handler.questions_settings.guess_rad_dec.rotate_to_point { "ROTATE" } else { "" });
+        }
+        if self.game_handler.questions_settings.guess_the_magnitude.show {
+            let mut args = Vec::new();
+            if self.game_handler.questions_settings.guess_the_magnitude.rotate_to_point {
+                args.push("ROTATE")
+            };
+            if self.game_handler.questions_settings.guess_the_magnitude.replay_incorrect {
+                args.push("REPLAY");
+            }
+            query = format!(
+                "{query}\nGUESS_THE_MAGNITUDE({}): AND(TYPE(STAR), MAG_BELOW({}))",
+                args.join(", "),
+                self.game_handler.questions_settings.guess_the_magnitude.magnitude_cutoff
+            );
+        }
+        query
     }
 
     // If adding new question types, make sure that the picker gets collapsed into a combo box on an appropriately wide/narrow screens

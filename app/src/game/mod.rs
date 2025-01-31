@@ -3,21 +3,46 @@ pub mod game_settings;
 pub mod questions;
 pub mod questions_filter;
 
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
 #[serde(tag = "object_category", content = "object_type")]
 pub enum ObjectType {
     Star(StarType),
     Deepsky(DeepskyType),
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
+impl ObjectType {
+    pub fn from_string(string: &str) -> Result<Self, String> {
+        match string.to_uppercase().as_str() {
+            "STAR" => Ok(Self::Star(StarType::Any)),
+            "STAR(SINGLE)" => Ok(Self::Star(StarType::Single)),
+            "STAR(DOUBLE)" => Ok(Self::Star(StarType::Double)),
+            "STAR(MULTIPLE)" => Ok(Self::Star(StarType::Multiple)),
+            "STAR(UNKNOWN)" => Ok(Self::Star(StarType::Unknown)),
+
+            "DEEPSKY" => Ok(Self::Deepsky(DeepskyType::Any)),
+            "DEEPSKY(NEBULA)" => Ok(Self::Deepsky(DeepskyType::Nebula)),
+            "DEEPSKY(PLANETARY_NEBULA)" => Ok(Self::Deepsky(DeepskyType::PlanetaryNebula)),
+            "DEEPSKY(OPEN_CLUSTER)" => Ok(Self::Deepsky(DeepskyType::OpenCluster)),
+            "DEEPSKY(GLOBULAR_CLUSTER)" => Ok(Self::Deepsky(DeepskyType::GlobularCluster)),
+            "DEEPSKY(GALAXY)" => Ok(Self::Deepsky(DeepskyType::Galaxy)),
+            "DEEPSKY(UNKNOWN)" => Ok(Self::Deepsky(DeepskyType::Unknown)),
+
+			_ => Err(format!("Unknown object type '{string}'. Allowed types are: STAR, STAR(SINGLE), STAR(DOUBLE), STAR(MULTIPLE), STAR(UNKNOWN), DEEPSKY, DEEPSKY(NEBULA), DEEPSKY(PLANETARY_NEBULA), DEEPSKY(OPEN_CLUSTER), DEEPSKY(GLOBULAR_CLUSTER), DEEPSKY(GALAXY), DEEPSKY(UNKNOWN)"))
+        }
+    }
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub enum StarType {
     Single,
     Double,
     Multiple,
+
+    Unknown,
+    Any,
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub enum DeepskyType {
     Nebula,
     PlanetaryNebula,
@@ -26,6 +51,7 @@ pub enum DeepskyType {
     Galaxy,
 
     Unknown,
+    Any,
 }
 
 impl DeepskyType {
@@ -36,7 +62,7 @@ impl DeepskyType {
             &Self::OpenCluster => Some(String::from("Open cluster")),
             &Self::GlobularCluster => Some(String::from("Globular cluster")),
             &Self::Galaxy => Some(String::from("Galaxy")),
-            &Self::Unknown => None,
+            &Self::Unknown | &Self::Any => None,
         }
     }
 }

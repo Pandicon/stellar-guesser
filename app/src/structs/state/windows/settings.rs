@@ -18,16 +18,37 @@ impl Default for SettingsWindowState {
     }
 }
 
+#[derive(PartialEq)]
+pub enum GameSettingsType {
+    Basic,
+    Advanced,
+}
+
+impl AsRef<str> for GameSettingsType {
+    fn as_ref(&self) -> &str {
+        match *self {
+            Self::Basic => "Basic",
+            Self::Advanced => "Advanced",
+        }
+    }
+}
+
 pub struct GameSettingsWindowState {
+    pub settings_type: GameSettingsType,
     pub subwindow: GameSettingsSubWindow,
     pub questions_subwindow: GameSettingsQuestionsSubWindowState,
+    pub generated_query: String,
+    pub query: String,
 }
 
 impl Default for GameSettingsWindowState {
     fn default() -> Self {
         Self {
+            settings_type: GameSettingsType::Basic,
             subwindow: GameSettingsSubWindow::General,
             questions_subwindow: GameSettingsQuestionsSubWindowState::default(),
+            generated_query: String::new(),
+            query: String::new(),
         }
     }
 }
