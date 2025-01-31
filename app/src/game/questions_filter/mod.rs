@@ -29,5 +29,42 @@ pub fn check(expression: &parser::Keyword, object: &QuestionObject) -> bool {
             &parser::Catalogue::Hip => object.hipparcos_number.is_some(),
             &parser::Catalogue::ProperName => !object.proper_names.is_empty(),
         }),
+        parser::Keyword::Type(object_types) => object_types.iter().any(|object_type| match object_type {
+            &crate::game::ObjectType::Star(crate::game::StarType::Any) => matches!(object.object_type, crate::game::ObjectType::Star(_)),
+            &crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Any) => matches!(object.object_type, crate::game::ObjectType::Deepsky(_)),
+
+            &crate::game::ObjectType::Star(crate::game::StarType::Single) => matches!(object.object_type, crate::game::ObjectType::Star(crate::game::StarType::Single)),
+            &crate::game::ObjectType::Star(crate::game::StarType::Double) => matches!(object.object_type, crate::game::ObjectType::Star(crate::game::StarType::Double)),
+            &crate::game::ObjectType::Star(crate::game::StarType::Multiple) => matches!(object.object_type, crate::game::ObjectType::Star(crate::game::StarType::Multiple)),
+            &crate::game::ObjectType::Star(crate::game::StarType::Unknown) => matches!(object.object_type, crate::game::ObjectType::Star(crate::game::StarType::Unknown)),
+
+            &crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Nebula) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Nebula)),
+            &crate::game::ObjectType::Deepsky(crate::game::DeepskyType::PlanetaryNebula) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::PlanetaryNebula)),
+            &crate::game::ObjectType::Deepsky(crate::game::DeepskyType::OpenCluster) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::OpenCluster)),
+            &crate::game::ObjectType::Deepsky(crate::game::DeepskyType::GlobularCluster) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::GlobularCluster)),
+            &crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Galaxy) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Galaxy)),
+            &crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Unknown) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Unknown)),
+        }),
+        &parser::Keyword::Mag(min, max) => {
+            if let Some(mag) = object.mag {
+                (min..=max).contains(&mag)
+            } else {
+                false
+            }
+        }
+        &parser::Keyword::MagAbove(val) => {
+            if let Some(mag) = object.mag {
+                val < mag
+            } else {
+                false
+            }
+        }
+        &parser::Keyword::MagBelow(val) => {
+            if let Some(mag) = object.mag {
+                val > mag
+            } else {
+                false
+            }
+        }
     }
 }

@@ -10,6 +10,10 @@ enum KeywordRaw {
     Ra,
     Constellation,
     Catalogue,
+    Type,
+    MagBelow,
+    MagAbove,
+    Mag,
 }
 
 #[derive(Debug)]
@@ -22,6 +26,10 @@ pub enum Keyword {
     Ra(f32, f32),
     Constellation(Vec<String>),
     Catalogue(Vec<Catalogue>),
+    Type(Vec<crate::game::ObjectType>),
+    MagBelow(f32),
+    MagAbove(f32),
+    Mag(f32, f32),
 }
 
 impl Keyword {
@@ -95,7 +103,7 @@ impl Keyword {
                 let mut new_args = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'DEC' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'RA_DEG' can only take values, not other keywords (position {})", ident_pos)),
                         Node::Value(value) => new_args.push(value),
                     }
                 }
@@ -120,7 +128,7 @@ impl Keyword {
                 let mut new_args = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'DEC' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'RA' can only take values, not other keywords (position {})", ident_pos)),
                         Node::Value(value) => new_args.push(value),
                     }
                 }
@@ -170,6 +178,83 @@ impl Keyword {
                     return Err(format!("Keyword 'CATALOGUE' at position {} expects at least 1 argument, found 0", ident_pos));
                 }
                 Self::Catalogue(new_args)
+            }
+            KeywordRaw::Type => {
+                let mut new_args = Vec::new();
+                for arg in args {
+                    match arg {
+                        Node::Keyword(_) => return Err(format!("Keyword 'TYPE' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Value(value) => {
+                            let object_type = crate::game::ObjectType::from_string(&value)?;
+                            new_args.push(object_type);
+                        }
+                    }
+                }
+                if new_args.is_empty() {
+                    return Err(format!("Keyword 'TYPE' at position {} expects at least 1 argument, found 0", ident_pos));
+                }
+                Self::Type(new_args)
+            }
+            KeywordRaw::MagBelow => {
+                let mut new_args = Vec::new();
+                for arg in args {
+                    match arg {
+                        Node::Keyword(_) => return Err(format!("Keyword 'MAG_BELOW' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Value(value) => new_args.push(value),
+                    }
+                }
+                if new_args.len() != 1 {
+                    return Err(format!("Keyword 'MAG_BELOW' at position {} expects exactly 1 argument, found {}", ident_pos, new_args.len()));
+                }
+                let val = new_args[0].clone();
+                let val = match val.parse() {
+                    Ok(val) => val,
+                    Err(err) => return Err(format!("Keyword 'MAG_BELOW' at position {} expects a numbers as argument, found '{}' ('{}')", ident_pos, val, err)),
+                };
+                Self::MagBelow(val)
+            }
+            KeywordRaw::MagAbove => {
+                let mut new_args = Vec::new();
+                for arg in args {
+                    match arg {
+                        Node::Keyword(_) => return Err(format!("Keyword 'MAG_ABOVE' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Value(value) => new_args.push(value),
+                    }
+                }
+                if new_args.len() != 1 {
+                    return Err(format!("Keyword 'MAG_ABOVE' at position {} expects exactly 1 argument, found {}", ident_pos, new_args.len()));
+                }
+                let val = new_args[0].clone();
+                let val = match val.parse() {
+                    Ok(val) => val,
+                    Err(err) => return Err(format!("Keyword 'MAG_ABOVE' at position {} expects a numbers as argument, found '{}' ('{}')", ident_pos, val, err)),
+                };
+                Self::MagAbove(val)
+            }
+            KeywordRaw::Mag => {
+                let mut new_args = Vec::new();
+                for arg in args {
+                    match arg {
+                        Node::Keyword(_) => return Err(format!("Keyword 'MAG' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Value(value) => new_args.push(value),
+                    }
+                }
+                if new_args.len() != 2 {
+                    return Err(format!("Keyword 'MAG' at position {} expects exactly 2 arguments, found {}", ident_pos, new_args.len()));
+                }
+                let (min, max) = (new_args[0].clone(), new_args[1].clone());
+                let mut min = match min.parse() {
+                    Ok(min) => min,
+                    Err(err) => return Err(format!("Keyword 'MAG' at position {} expects numbers as arguments, found '{}' ('{}')", ident_pos, min, err)),
+                };
+                let mut max = match max.parse() {
+                    Ok(max) => max,
+                    Err(err) => return Err(format!("Keyword 'MAG' at position {} expects numbers as arguments, found '{}' ('{}')", ident_pos, max, err)),
+                };
+                if min > max {
+                    std::mem::swap(&mut min, &mut max);
+                }
+                Self::Mag(min, max)
             }
         };
         Ok(keyword)
@@ -244,6 +329,10 @@ impl<'a> Parser<'a> {
                     "RA" => KeywordRaw::Ra,
                     "CONSTELLATION" => KeywordRaw::Constellation,
                     "CATALOGUE" => KeywordRaw::Catalogue,
+                    "TYPE" => KeywordRaw::Type,
+                    "MAG_BELOW" => KeywordRaw::MagBelow,
+                    "MAG_ABOVE" => KeywordRaw::MagAbove,
+                    "MAG" => KeywordRaw::Mag,
                     _ => return Err(format!("Unknown keyword '{}' at position {}", ident, ident_pos)),
                 };
                 self.chars.next(); // Consume '('
