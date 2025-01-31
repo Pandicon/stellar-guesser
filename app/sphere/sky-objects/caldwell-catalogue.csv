@@ -1,110 +1,110 @@
 object_id,object_category,object_type,dec,ra,proper_names,bayer_designation,flamsteed_designation,hipparcos_number,hd_number,messier_number,caldwell_number,ngc_number,ic_number,constellations_abbreviations,mag,bv,distance,colour,object_type2
-0,Deepsky,OpenCluster,85.33333333,11.1,,,,,,,1,188,,Cep,8.1,,4800,6BFFBFFF,Open Cluster
-0,Deepsky,PlanetaryNebula,72.53333333,3.25,Bow Tie Nebula,,,,,,2,40,,Cep,11.6,,3500,6BFFBFFF,Planetary Nebula
-0,Deepsky,Galaxy,69.46666667,184.175,,,,,,,3,4236,,Dra,9.7,,7000000,6BFFBFFF,Barred Spiral Galaxy
-0,Deepsky,Nebula,68.2,315.45,Iris Nebula,,,,,,4,7023,,Cep,6.8,,1400,6BFFBFFF,Blushing Nebula
-0,Deepsky,Galaxy,68.1,56.7,,,,,,,5,,342,Cam,9.2,,13000000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,66.63333333,269.65,Cat's Eye Nebula,,,,,,6,6543,,Dra,8.8,,3000,6BFFBFFF,Planetary Nebula
-0,Deepsky,Galaxy,65.6,114.225,,,,,,,7,2403,,Cam,8.9,,14000000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,63.3,22.375,,,,,,,8,559,,Cas,9.5,,3700,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,62.61666667,344.2,Cave Nebula,,,,,,9,,,Cep,7.7,,2800,6BFFBFFF,Blushing Nebula
-0,Deepsky,Galaxy,61.25,26.5,,,,,,,10,663,,Cas,7.1,,7200,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,61.2,350.175,Bubble nebula,,,,,,11,7635,,Cas,7,,7100,6BFFBFFF,Blushing Nebula
-0,Deepsky,Galaxy,60.15,308.7,,,,,,,12,6946,,Cyg,9.7,,18000000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,58.33333333,19.775,Dragonfly Cluster;E.T. Cluster;Owl Cluster;Kachina Doll Cluster;Phi Cassiopeiae Cluster,,,,,,13,457,,Cas,6.4,,7922,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,57.13333333,35,"Double Cluster, h & chi Persei",,,,,,14,869,,Per,4.3,,7300,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,50.51666667,296.2,Blinking Planetary,,,,,,15,6826,,Cyg,9.8,,2200,6BFFBFFF,Planetary Nebula
-0,Deepsky,Galaxy,49.88333333,333.825,,,,,,,16,7243,,Lac,6.4,,2500,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,48.5,8.3,,,,,,,17,147,,Cas,9.3,,2300000,6BFFBFFF,Elliptical Galaxy
-0,Deepsky,Galaxy,48.33333333,9.75,,,,,,,18,185,,Cas,9.2,,2300000,6BFFBFFF,Elliptical Galaxy
-0,Deepsky,Galaxy,47.26666667,328.375,Cocoon Nebula,,,,,,19,,5146,Cyg,10,,3300,6BFFBFFF,Blushing Nebula
-0,Deepsky,Galaxy,44.33333333,314.7,North America Nebula,,,,,,20,7000,,Cyg,6,,1800,6BFFBFFF,Blushing Nebula
-0,Deepsky,Galaxy,44.1,187.05,,,,,,,21,4449,,CVn,9.4,,10000000,6BFFBFFF,Irregular Galaxy
-0,Deepsky,Galaxy,42.55,351.475,Blue Snowball,,,,,,22,7662,,And,9.2,,3200,6BFFBFFF,Planetary Nebula
-0,Deepsky,Galaxy,42.35,35.65,,,,,,,23,891,,And,9.9,,31000000,6BFFBFFF,Barred Spiral Galaxy
-0,Deepsky,Galaxy,41.51666667,49.95,Perseus A,,,,,,24,1275,,Per,11.6,,230000000,6BFFBFFF,Seyfert Galaxy
-0,Deepsky,Galaxy,38.88333333,114.525,,,,,,,25,2419,,Lyn,10.4,,275000,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,37.81666667,184.375,,,,,,,26,4244,,CVn,10.6,,10000000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,38.35,303,Crescent Nebula,,,,,,27,6888,,Cyg,7.5,,4700,6BFFBFFF,Blushing Nebula
-0,Deepsky,Galaxy,37.68333333,29.45,,,,,,,28,752,,And,5.7,,1200,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,37.05,197.725,,,,,,,29,5005,,CVn,9.8,,69000000,6BFFBFFF,Barred Spiral Galaxy
-0,Deepsky,Galaxy,34.41666667,339.275,,,,,,,30,7331,,Peg,9.5,,47000000,6BFFBFFF,Barred Spiral Galaxy
-0,Deepsky,Galaxy,34.26666667,79.05,Flaming Star Nebula,,,,,,31,,405,Aur,6,,1600,6BFFBFFF,Blushing Nebula
-0,Deepsky,Galaxy,32.53333333,190.525,Whale Galaxy,,,,,,32,4631,,CVn,9.3,,22000000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,31.71666667,314.1,East Veil Nebula,,,,,,33,6992,,Cyg,7.9,,2500,6BFFBFFF,Supernova Nebula
-0,Deepsky,Galaxy,30.71666667,311.425,West Veil Nebula,,,,,,34,6960,,Cyg,8.1,,2500,6BFFBFFF,Supernova Nebula
-0,Deepsky,Galaxy,27.98333333,195.025,,,,,,,35,4889,,Com,11.4,,300000000,6BFFBFFF,Elliptical Galaxy
-0,Deepsky,Galaxy,27.96666667,189,,,,,,,36,4559,,Com,9.8,,32000000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,26.48333333,303,,,,,,,37,6885,,Vul,5.7,,1950,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,25.98333333,189.075,Needle Galaxy,,,,,,38,4565,,Com,9.6,,32000000,6BFFBFFF,Barred Spiral Galaxy
-0,Deepsky,Galaxy,20.91666667,112.3,Eskimo Nebula;Clown Nebula,,,,,,39,2392,,Gem,9.9,,4000,6BFFBFFF,Planetary Nebula
-0,Deepsky,Galaxy,18.35,170.025,,,,,,,40,3626,,Leo,10.9,,86000000,6BFFBFFF,Barred Spiral Galaxy
-0,Deepsky,Galaxy,16,66.75,Hyades,,,,,,41,,,Tau,1,,151,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,16.18333333,315.375,,,,,,,42,7006,,Del,10.6,,135000,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,16.15,0.825,,,,,,,43,7814,,Peg,10.5,,49000000,6BFFBFFF,Barred Spiral Galaxy
-0,Deepsky,Galaxy,12.31666667,346.225,,,,,,,44,7479,,Peg,11,,106000000,6BFFBFFF,Barred Spiral Galaxy
-0,Deepsky,Galaxy,8.88333333,204.375,,,,,,,45,5248,,Boo,10.2,,74000000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,8.73333333,99.8,Hubble's Variable Nebula,,,,,,46,2261,,Mon,10,,2500,6BFFBFFF,Blushing Nebula
-0,Deepsky,Galaxy,7.4,308.55,,,,,,,47,6934,,Del,8.9,,57000,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,7.03333333,137.575,,,,,,,48,2775,,Cnc,10.3,,55000000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,5.05,98.075,Rosette Nebula,,,,,,49,2237,,Mon,9,,4900,6BFFBFFF,Blushing Nebula
-0,Deepsky,Galaxy,4.86666667,98.1,,,,,,,50,2244,,Mon,4.8,,4900,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,2.11666667,16.2,,,,,,,51,,1613,Cet,9,,2300000,6BFFBFFF,Irregular Galaxy
-0,Deepsky,Galaxy,-5.8,192.15,,,,,,,52,4697,,Vir,9.3,,76000000,6BFFBFFF,Elliptical Galaxy
-0,Deepsky,Galaxy,-7.71666667,151.3,Spindle Galaxy,,,,,,53,3115,,Sex,9.1,,22000000,6BFFBFFF,Elliptical Galaxy
-0,Deepsky,Galaxy,-10.78333333,120.05,,,,,,,54,2506,,Mon,7.6,,10000,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-11.36666667,316.05,Saturn Nebula,,,,,,55,7009,,Aqr,8.3,,1400,6BFFBFFF,Planetary Nebula
-0,Deepsky,Galaxy,-11.88333333,11.75,,,,,,,56,246,,Cet,8,,1600,6BFFBFFF,Planetary Nebula
-0,Deepsky,Galaxy,-14.8,296.225,Barnard's Galaxy,,,,,,57,6822,,Sgr,9.3,,2300000,6BFFBFFF,Irregular Galaxy
-0,Deepsky,Galaxy,-15.61666667,109.45,,,,,,,58,2360,,CMa,7.2,,3700,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-18.63333333,156.2,Ghost of Jupiter,,,,,,59,3242,,Hya,8.6,,1400,6BFFBFFF,Planetary Nebula
-0,Deepsky,Galaxy,-18.86666667,180.475,Antennae Galaxies,,,,,,60,4038,,Crv,11.3,,83000000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,-18.88333333,180.475,Antennae Galaxies,,,,,,61,4039,,Crv,13,,83000000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,-20.76666667,11.775,,,,,,,62,247,,Cet,8.9,,6800000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,-20.8,337.4,Helix Nebula,,,,,,63,7293,,Aqr,6.5,,522,6BFFBFFF,Planetary Nebula
-0,Deepsky,Galaxy,-24.95,109.7,,,,,,,64,2362,,CMa,4.1,,5100,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-25.28333333,11.9,Sculptor Galaxy,,,,,,65,253,,Scl,7.1,,9800000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,-26.53333333,219.9,,,,,,,66,5694,,Hya,10.2,,113000,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-30.28333333,41.575,,,,,,,67,1097,,For,9.2,,47000000,6BFFBFFF,Barred Spiral Galaxy
-0,Deepsky,Galaxy,-36.95,285.475,,,,,,,68,6729,,CrA,9.7,,424,6BFFBFFF,Blushing Nebula
-0,Deepsky,Galaxy,-37.1,258.425,Bug Nebula,,,,,,69,6302,,Sco,12.8,,5200,6BFFBFFF,Planetary Nebula
-0,Deepsky,Galaxy,-37.68333333,13.725,,,,,,,70,300,,Scl,8.1,,3900000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,-38.55,118.075,,,,,,,71,2477,,Pup,5.8,,3700,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-39.18333333,3.725,,,,,,,72,55,,Scl,8.2,,4200000,6BFFBFFF,Barred Spiral Galaxy
-0,Deepsky,Galaxy,-40.05,78.525,,,,,,,73,1851,,Col,7.3,,39400,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-40.43333333,151.925,Eight Burst Nebula,,,,,,74,3132,,Vel,8.2,,2000,6BFFBFFF,Planetary Nebula
-0,Deepsky,Galaxy,-40.66666667,246.4,,,,,,,75,6124,,Sco,5.8,,1500,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-41.8,253.5,,,,,,,76,6231,,Sco,2.6,,6000,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-43.01666667,201.375,Centaurus A,,,,,,77,5128,,Cen,7,,16000000,6BFFBFFF,Lenticular Galaxy
-0,Deepsky,Galaxy,-43.7,272,,,,,,,78,6541,,CrA,6.6,,22300,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-46.41666667,154.4,,,,,,,79,3201,,Vel,6.7,,17000,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-47.48333333,201.7,Omega Centauri,,,,,,80,5139,,Cen,3.6,,17300,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-48.41666667,261.375,,,,,,,81,6352,,Ara,8.1,,18600,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-48.76666667,250.325,,,,,,,82,6193,,Ara,5.2,,4300,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-49.46666667,196.35,,,,,,,83,4945,,Cen,9.5,,17000000,6BFFBFFF,Spiral Galaxy
-0,Deepsky,Galaxy,-51.36666667,206.6,,,,,,,84,5286,,Cen,7.6,,36000,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-53.06666667,130.05,Omicron Vel Cluster,,,,,,85,,2391,Vel,2.5,,500,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-53.66666667,265.175,,,,,,,86,6397,,Ara,5.6,,7500,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-55.21666667,48.075,,,,,,,87,1261,,Hor,8.4,,55500,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-55.6,226.425,,,,,,,88,5823,,Cir,7.9,,3400,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-57.9,244.725,S Norma Cluster,,,,,,89,6087,,Nor,5.4,,3300,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-58.31666667,140.35,,,,,,,90,2867,,Car,9.7,,5500,6BFFBFFF,Planetary Nebula
-0,Deepsky,Galaxy,-58.66666667,166.6,,,,,,,91,3532,,Car,3,,1600,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-59.86666667,160.95,Eta Carinae Nebula,,,,,,92,3372,,Car,6.2,,7500,6BFFBFFF,Blushing Nebula
-0,Deepsky,Galaxy,-59.98333333,287.725,,,,,,,93,6752,,Pav,5.4,,13000,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-60.33333333,193.4,Jewel Box,,,,,,94,4755,,Cru,4.2,,4900,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-60.5,240.925,,,,,,,95,6025,,TrA,5.1,,2500,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-60.86666667,119.575,,,,,,,96,2516,,Car,3.8,,1300,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-61.61666667,174.025,,,,,,,97,3766,,Cen,5.3,,5800,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-62.96666667,190.575,,,,,,,98,4609,,Cru,6.9,,4200,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-63,193.25,Coalsack Nebula,,,,,,99,,,Cru,,,610,6BFFBFFF,Dark Nebula
-0,Deepsky,Galaxy,-63.03333333,174.15,Lambda Centauri Nebula,,,,,,100,,2944,Cen,4.5,,6000,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-63.85,287.45,,,,,,,101,6744,,Pav,9,,34000000,6BFFBFFF,Barred Spiral Galaxy
-0,Deepsky,Galaxy,-64.4,160.8,Theta Car Cluster,,,,,,102,,2602,Car,1.9,,492,6BFFBFFF,Open Cluster
-0,Deepsky,Galaxy,-69.1,84.675,Tarantula Nebula,,,,,,103,2070,,Dor,1,,170000,6BFFBFFF,Blushing Nebula
-0,Deepsky,Galaxy,-70.85,15.8,,,,,,,104,362,,Tuc,6.6,,27700,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-70.88333333,194.9,,,,,,,105,4833,,Mus,7.3,,19600,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-72.08333333,6.025,47 Tucanae,,,,,,106,104,,Tuc,4,,14700,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-72.2,246.45,,,,,,,107,6101,,Aps,9.3,,49900,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-72.66666667,186.45,,,,,,,108,4372,,Mus,7.8,,18900,6BFFBFFF,Globular Cluster
-0,Deepsky,Galaxy,-80.86666667,152.375,,,,,,,109,3195,,Cha,11.6,,5400,6BFFBFFF,Planetary Nebula
+111,Deepsky,OpenCluster,85.33333333,11.1,,,,,,,1,188,,Cep,8.1,,4800,6BFFBFFF,Open Cluster
+112,Deepsky,PlanetaryNebula,72.53333333,3.25,Bow Tie Nebula,,,,,,2,40,,Cep,11.6,,3500,6BFFBFFF,Planetary Nebula
+113,Deepsky,Galaxy,69.46666667,184.175,,,,,,,3,4236,,Dra,9.7,,7000000,6BFFBFFF,Barred Spiral Galaxy
+114,Deepsky,Nebula,68.2,315.45,Iris Nebula,,,,,,4,7023,,Cep,6.8,,1400,6BFFBFFF,Blushing Nebula
+115,Deepsky,Galaxy,68.1,56.7,,,,,,,5,,342,Cam,9.2,,13000000,6BFFBFFF,Spiral Galaxy
+116,Deepsky,Galaxy,66.63333333,269.65,Cat's Eye Nebula,,,,,,6,6543,,Dra,8.8,,3000,6BFFBFFF,Planetary Nebula
+117,Deepsky,Galaxy,65.6,114.225,,,,,,,7,2403,,Cam,8.9,,14000000,6BFFBFFF,Spiral Galaxy
+118,Deepsky,Galaxy,63.3,22.375,,,,,,,8,559,,Cas,9.5,,3700,6BFFBFFF,Open Cluster
+119,Deepsky,Galaxy,62.61666667,344.2,Cave Nebula,,,,,,9,,,Cep,7.7,,2800,6BFFBFFF,Blushing Nebula
+120,Deepsky,Galaxy,61.25,26.5,,,,,,,10,663,,Cas,7.1,,7200,6BFFBFFF,Open Cluster
+121,Deepsky,Galaxy,61.2,350.175,Bubble nebula,,,,,,11,7635,,Cas,7,,7100,6BFFBFFF,Blushing Nebula
+122,Deepsky,Galaxy,60.15,308.7,,,,,,,12,6946,,Cyg,9.7,,18000000,6BFFBFFF,Spiral Galaxy
+123,Deepsky,Galaxy,58.33333333,19.775,Dragonfly Cluster;E.T. Cluster;Owl Cluster;Kachina Doll Cluster;Phi Cassiopeiae Cluster,,,,,,13,457,,Cas,6.4,,7922,6BFFBFFF,Open Cluster
+124,Deepsky,Galaxy,57.13333333,35,"Double Cluster, h & chi Persei",,,,,,14,869,,Per,4.3,,7300,6BFFBFFF,Open Cluster
+125,Deepsky,Galaxy,50.51666667,296.2,Blinking Planetary,,,,,,15,6826,,Cyg,9.8,,2200,6BFFBFFF,Planetary Nebula
+126,Deepsky,Galaxy,49.88333333,333.825,,,,,,,16,7243,,Lac,6.4,,2500,6BFFBFFF,Open Cluster
+127,Deepsky,Galaxy,48.5,8.3,,,,,,,17,147,,Cas,9.3,,2300000,6BFFBFFF,Elliptical Galaxy
+128,Deepsky,Galaxy,48.33333333,9.75,,,,,,,18,185,,Cas,9.2,,2300000,6BFFBFFF,Elliptical Galaxy
+129,Deepsky,Galaxy,47.26666667,328.375,Cocoon Nebula,,,,,,19,,5146,Cyg,10,,3300,6BFFBFFF,Blushing Nebula
+130,Deepsky,Galaxy,44.33333333,314.7,North America Nebula,,,,,,20,7000,,Cyg,6,,1800,6BFFBFFF,Blushing Nebula
+131,Deepsky,Galaxy,44.1,187.05,,,,,,,21,4449,,CVn,9.4,,10000000,6BFFBFFF,Irregular Galaxy
+132,Deepsky,Galaxy,42.55,351.475,Blue Snowball,,,,,,22,7662,,And,9.2,,3200,6BFFBFFF,Planetary Nebula
+133,Deepsky,Galaxy,42.35,35.65,,,,,,,23,891,,And,9.9,,31000000,6BFFBFFF,Barred Spiral Galaxy
+134,Deepsky,Galaxy,41.51666667,49.95,Perseus A,,,,,,24,1275,,Per,11.6,,230000000,6BFFBFFF,Seyfert Galaxy
+135,Deepsky,Galaxy,38.88333333,114.525,,,,,,,25,2419,,Lyn,10.4,,275000,6BFFBFFF,Globular Cluster
+136,Deepsky,Galaxy,37.81666667,184.375,,,,,,,26,4244,,CVn,10.6,,10000000,6BFFBFFF,Spiral Galaxy
+137,Deepsky,Galaxy,38.35,303,Crescent Nebula,,,,,,27,6888,,Cyg,7.5,,4700,6BFFBFFF,Blushing Nebula
+138,Deepsky,Galaxy,37.68333333,29.45,,,,,,,28,752,,And,5.7,,1200,6BFFBFFF,Open Cluster
+139,Deepsky,Galaxy,37.05,197.725,,,,,,,29,5005,,CVn,9.8,,69000000,6BFFBFFF,Barred Spiral Galaxy
+140,Deepsky,Galaxy,34.41666667,339.275,,,,,,,30,7331,,Peg,9.5,,47000000,6BFFBFFF,Barred Spiral Galaxy
+141,Deepsky,Galaxy,34.26666667,79.05,Flaming Star Nebula,,,,,,31,,405,Aur,6,,1600,6BFFBFFF,Blushing Nebula
+142,Deepsky,Galaxy,32.53333333,190.525,Whale Galaxy,,,,,,32,4631,,CVn,9.3,,22000000,6BFFBFFF,Spiral Galaxy
+143,Deepsky,Galaxy,31.71666667,314.1,East Veil Nebula,,,,,,33,6992,,Cyg,7.9,,2500,6BFFBFFF,Supernova Nebula
+144,Deepsky,Galaxy,30.71666667,311.425,West Veil Nebula,,,,,,34,6960,,Cyg,8.1,,2500,6BFFBFFF,Supernova Nebula
+145,Deepsky,Galaxy,27.98333333,195.025,,,,,,,35,4889,,Com,11.4,,300000000,6BFFBFFF,Elliptical Galaxy
+146,Deepsky,Galaxy,27.96666667,189,,,,,,,36,4559,,Com,9.8,,32000000,6BFFBFFF,Spiral Galaxy
+147,Deepsky,Galaxy,26.48333333,303,,,,,,,37,6885,,Vul,5.7,,1950,6BFFBFFF,Open Cluster
+148,Deepsky,Galaxy,25.98333333,189.075,Needle Galaxy,,,,,,38,4565,,Com,9.6,,32000000,6BFFBFFF,Barred Spiral Galaxy
+149,Deepsky,Galaxy,20.91666667,112.3,Eskimo Nebula;Clown Nebula,,,,,,39,2392,,Gem,9.9,,4000,6BFFBFFF,Planetary Nebula
+150,Deepsky,Galaxy,18.35,170.025,,,,,,,40,3626,,Leo,10.9,,86000000,6BFFBFFF,Barred Spiral Galaxy
+151,Deepsky,Galaxy,16,66.75,Hyades,,,,,,41,,,Tau,1,,151,6BFFBFFF,Open Cluster
+152,Deepsky,Galaxy,16.18333333,315.375,,,,,,,42,7006,,Del,10.6,,135000,6BFFBFFF,Globular Cluster
+153,Deepsky,Galaxy,16.15,0.825,,,,,,,43,7814,,Peg,10.5,,49000000,6BFFBFFF,Barred Spiral Galaxy
+154,Deepsky,Galaxy,12.31666667,346.225,,,,,,,44,7479,,Peg,11,,106000000,6BFFBFFF,Barred Spiral Galaxy
+155,Deepsky,Galaxy,8.88333333,204.375,,,,,,,45,5248,,Boo,10.2,,74000000,6BFFBFFF,Spiral Galaxy
+156,Deepsky,Galaxy,8.73333333,99.8,Hubble's Variable Nebula,,,,,,46,2261,,Mon,10,,2500,6BFFBFFF,Blushing Nebula
+157,Deepsky,Galaxy,7.4,308.55,,,,,,,47,6934,,Del,8.9,,57000,6BFFBFFF,Globular Cluster
+158,Deepsky,Galaxy,7.03333333,137.575,,,,,,,48,2775,,Cnc,10.3,,55000000,6BFFBFFF,Spiral Galaxy
+159,Deepsky,Galaxy,5.05,98.075,Rosette Nebula,,,,,,49,2237,,Mon,9,,4900,6BFFBFFF,Blushing Nebula
+160,Deepsky,Galaxy,4.86666667,98.1,,,,,,,50,2244,,Mon,4.8,,4900,6BFFBFFF,Open Cluster
+161,Deepsky,Galaxy,2.11666667,16.2,,,,,,,51,,1613,Cet,9,,2300000,6BFFBFFF,Irregular Galaxy
+162,Deepsky,Galaxy,-5.8,192.15,,,,,,,52,4697,,Vir,9.3,,76000000,6BFFBFFF,Elliptical Galaxy
+163,Deepsky,Galaxy,-7.71666667,151.3,Spindle Galaxy,,,,,,53,3115,,Sex,9.1,,22000000,6BFFBFFF,Elliptical Galaxy
+164,Deepsky,Galaxy,-10.78333333,120.05,,,,,,,54,2506,,Mon,7.6,,10000,6BFFBFFF,Open Cluster
+165,Deepsky,Galaxy,-11.36666667,316.05,Saturn Nebula,,,,,,55,7009,,Aqr,8.3,,1400,6BFFBFFF,Planetary Nebula
+166,Deepsky,Galaxy,-11.88333333,11.75,,,,,,,56,246,,Cet,8,,1600,6BFFBFFF,Planetary Nebula
+167,Deepsky,Galaxy,-14.8,296.225,Barnard's Galaxy,,,,,,57,6822,,Sgr,9.3,,2300000,6BFFBFFF,Irregular Galaxy
+168,Deepsky,Galaxy,-15.61666667,109.45,,,,,,,58,2360,,CMa,7.2,,3700,6BFFBFFF,Open Cluster
+169,Deepsky,Galaxy,-18.63333333,156.2,Ghost of Jupiter,,,,,,59,3242,,Hya,8.6,,1400,6BFFBFFF,Planetary Nebula
+170,Deepsky,Galaxy,-18.86666667,180.475,Antennae Galaxies,,,,,,60,4038,,Crv,11.3,,83000000,6BFFBFFF,Spiral Galaxy
+171,Deepsky,Galaxy,-18.88333333,180.475,Antennae Galaxies,,,,,,61,4039,,Crv,13,,83000000,6BFFBFFF,Spiral Galaxy
+172,Deepsky,Galaxy,-20.76666667,11.775,,,,,,,62,247,,Cet,8.9,,6800000,6BFFBFFF,Spiral Galaxy
+173,Deepsky,Galaxy,-20.8,337.4,Helix Nebula,,,,,,63,7293,,Aqr,6.5,,522,6BFFBFFF,Planetary Nebula
+174,Deepsky,Galaxy,-24.95,109.7,,,,,,,64,2362,,CMa,4.1,,5100,6BFFBFFF,Open Cluster
+175,Deepsky,Galaxy,-25.28333333,11.9,Sculptor Galaxy,,,,,,65,253,,Scl,7.1,,9800000,6BFFBFFF,Spiral Galaxy
+176,Deepsky,Galaxy,-26.53333333,219.9,,,,,,,66,5694,,Hya,10.2,,113000,6BFFBFFF,Globular Cluster
+177,Deepsky,Galaxy,-30.28333333,41.575,,,,,,,67,1097,,For,9.2,,47000000,6BFFBFFF,Barred Spiral Galaxy
+178,Deepsky,Galaxy,-36.95,285.475,,,,,,,68,6729,,CrA,9.7,,424,6BFFBFFF,Blushing Nebula
+179,Deepsky,Galaxy,-37.1,258.425,Bug Nebula,,,,,,69,6302,,Sco,12.8,,5200,6BFFBFFF,Planetary Nebula
+180,Deepsky,Galaxy,-37.68333333,13.725,,,,,,,70,300,,Scl,8.1,,3900000,6BFFBFFF,Spiral Galaxy
+181,Deepsky,Galaxy,-38.55,118.075,,,,,,,71,2477,,Pup,5.8,,3700,6BFFBFFF,Open Cluster
+182,Deepsky,Galaxy,-39.18333333,3.725,,,,,,,72,55,,Scl,8.2,,4200000,6BFFBFFF,Barred Spiral Galaxy
+183,Deepsky,Galaxy,-40.05,78.525,,,,,,,73,1851,,Col,7.3,,39400,6BFFBFFF,Globular Cluster
+184,Deepsky,Galaxy,-40.43333333,151.925,Eight Burst Nebula,,,,,,74,3132,,Vel,8.2,,2000,6BFFBFFF,Planetary Nebula
+185,Deepsky,Galaxy,-40.66666667,246.4,,,,,,,75,6124,,Sco,5.8,,1500,6BFFBFFF,Open Cluster
+186,Deepsky,Galaxy,-41.8,253.5,,,,,,,76,6231,,Sco,2.6,,6000,6BFFBFFF,Open Cluster
+187,Deepsky,Galaxy,-43.01666667,201.375,Centaurus A,,,,,,77,5128,,Cen,7,,16000000,6BFFBFFF,Lenticular Galaxy
+188,Deepsky,Galaxy,-43.7,272,,,,,,,78,6541,,CrA,6.6,,22300,6BFFBFFF,Globular Cluster
+189,Deepsky,Galaxy,-46.41666667,154.4,,,,,,,79,3201,,Vel,6.7,,17000,6BFFBFFF,Globular Cluster
+190,Deepsky,Galaxy,-47.48333333,201.7,Omega Centauri,,,,,,80,5139,,Cen,3.6,,17300,6BFFBFFF,Globular Cluster
+191,Deepsky,Galaxy,-48.41666667,261.375,,,,,,,81,6352,,Ara,8.1,,18600,6BFFBFFF,Globular Cluster
+192,Deepsky,Galaxy,-48.76666667,250.325,,,,,,,82,6193,,Ara,5.2,,4300,6BFFBFFF,Open Cluster
+193,Deepsky,Galaxy,-49.46666667,196.35,,,,,,,83,4945,,Cen,9.5,,17000000,6BFFBFFF,Spiral Galaxy
+194,Deepsky,Galaxy,-51.36666667,206.6,,,,,,,84,5286,,Cen,7.6,,36000,6BFFBFFF,Globular Cluster
+195,Deepsky,Galaxy,-53.06666667,130.05,Omicron Vel Cluster,,,,,,85,,2391,Vel,2.5,,500,6BFFBFFF,Open Cluster
+196,Deepsky,Galaxy,-53.66666667,265.175,,,,,,,86,6397,,Ara,5.6,,7500,6BFFBFFF,Globular Cluster
+197,Deepsky,Galaxy,-55.21666667,48.075,,,,,,,87,1261,,Hor,8.4,,55500,6BFFBFFF,Globular Cluster
+198,Deepsky,Galaxy,-55.6,226.425,,,,,,,88,5823,,Cir,7.9,,3400,6BFFBFFF,Open Cluster
+199,Deepsky,Galaxy,-57.9,244.725,S Norma Cluster,,,,,,89,6087,,Nor,5.4,,3300,6BFFBFFF,Open Cluster
+200,Deepsky,Galaxy,-58.31666667,140.35,,,,,,,90,2867,,Car,9.7,,5500,6BFFBFFF,Planetary Nebula
+201,Deepsky,Galaxy,-58.66666667,166.6,,,,,,,91,3532,,Car,3,,1600,6BFFBFFF,Open Cluster
+202,Deepsky,Galaxy,-59.86666667,160.95,Eta Carinae Nebula,,,,,,92,3372,,Car,6.2,,7500,6BFFBFFF,Blushing Nebula
+203,Deepsky,Galaxy,-59.98333333,287.725,,,,,,,93,6752,,Pav,5.4,,13000,6BFFBFFF,Globular Cluster
+204,Deepsky,Galaxy,-60.33333333,193.4,Jewel Box,,,,,,94,4755,,Cru,4.2,,4900,6BFFBFFF,Open Cluster
+205,Deepsky,Galaxy,-60.5,240.925,,,,,,,95,6025,,TrA,5.1,,2500,6BFFBFFF,Open Cluster
+206,Deepsky,Galaxy,-60.86666667,119.575,,,,,,,96,2516,,Car,3.8,,1300,6BFFBFFF,Open Cluster
+207,Deepsky,Galaxy,-61.61666667,174.025,,,,,,,97,3766,,Cen,5.3,,5800,6BFFBFFF,Open Cluster
+208,Deepsky,Galaxy,-62.96666667,190.575,,,,,,,98,4609,,Cru,6.9,,4200,6BFFBFFF,Open Cluster
+209,Deepsky,Galaxy,-63,193.25,Coalsack Nebula,,,,,,99,,,Cru,,,610,6BFFBFFF,Dark Nebula
+210,Deepsky,Galaxy,-63.03333333,174.15,Lambda Centauri Nebula,,,,,,100,,2944,Cen,4.5,,6000,6BFFBFFF,Open Cluster
+211,Deepsky,Galaxy,-63.85,287.45,,,,,,,101,6744,,Pav,9,,34000000,6BFFBFFF,Barred Spiral Galaxy
+212,Deepsky,Galaxy,-64.4,160.8,Theta Car Cluster,,,,,,102,,2602,Car,1.9,,492,6BFFBFFF,Open Cluster
+213,Deepsky,Galaxy,-69.1,84.675,Tarantula Nebula,,,,,,103,2070,,Dor,1,,170000,6BFFBFFF,Blushing Nebula
+214,Deepsky,Galaxy,-70.85,15.8,,,,,,,104,362,,Tuc,6.6,,27700,6BFFBFFF,Globular Cluster
+215,Deepsky,Galaxy,-70.88333333,194.9,,,,,,,105,4833,,Mus,7.3,,19600,6BFFBFFF,Globular Cluster
+216,Deepsky,Galaxy,-72.08333333,6.025,47 Tucanae,,,,,,106,104,,Tuc,4,,14700,6BFFBFFF,Globular Cluster
+217,Deepsky,Galaxy,-72.2,246.45,,,,,,,107,6101,,Aps,9.3,,49900,6BFFBFFF,Globular Cluster
+218,Deepsky,Galaxy,-72.66666667,186.45,,,,,,,108,4372,,Mus,7.8,,18900,6BFFBFFF,Globular Cluster
+219,Deepsky,Galaxy,-80.86666667,152.375,,,,,,,109,3195,,Cha,11.6,,5400,6BFFBFFF,Planetary Nebula
