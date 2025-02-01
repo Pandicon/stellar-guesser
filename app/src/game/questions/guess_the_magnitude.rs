@@ -8,6 +8,12 @@ use angle::Deg;
 use eframe::egui;
 use std::collections::HashMap;
 
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
+pub struct SmallSettings {
+    pub rotate_to_point: bool,
+    pub replay_incorrect: bool,
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -43,6 +49,7 @@ pub struct Question {
     pub mag: f32,
 
     pub state: State,
+    pub small_settings: SmallSettings,
 }
 
 impl Question {
@@ -142,8 +149,8 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn can_choose_as_next(&self, questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
-        questions_settings.guess_the_magnitude.show && self.mag < questions_settings.guess_the_magnitude.magnitude_cutoff
+    fn can_choose_as_next(&self, _questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
+        true
     }
 
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
@@ -153,6 +160,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             mag: self.mag,
 
             state: State::default(),
+            small_settings: self.small_settings,
         })
     }
 
@@ -180,7 +188,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, _questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
         self.state = Default::default();
         cellestial_sphere.game_markers.markers = vec![GameMarker::new(
             GameMarkerType::Task,
@@ -192,7 +200,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             false,
             &theme.game_visuals.game_markers_colours,
         )];
-        if questions_settings.guess_the_magnitude.rotate_to_point {
+        if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             cellestial_sphere.look_at_point(&final_vector);
             cellestial_sphere.init_renderers();

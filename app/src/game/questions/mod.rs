@@ -29,3 +29,14 @@ impl Default for Settings {
         }
     }
 }
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub enum QuestionType {
+    AngularSeparation(angular_separation::SmallSettings),
+    FindThisObject(find_this_object::SmallSettings),
+    GuessDec(guess_ra_dec::SmallSettings),
+    GuessRa(guess_ra_dec::SmallSettings),
+    GuessTheMagnitude(guess_the_magnitude::SmallSettings),
+    WhatIsThisObject(which_object_is_here::SmallSettings),
+    WhichConstellationIsThisPointIn(which_constellation_is_point_in::SmallSettings),
+}

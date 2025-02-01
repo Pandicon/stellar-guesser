@@ -3,6 +3,11 @@ use angle::Angle;
 
 pub mod parser;
 
+pub struct QuestionPack {
+    pub query: String,
+    pub question_objects: Vec<(crate::game::questions::QuestionType, Vec<u64>)>,
+}
+
 pub fn check(expression: &parser::Keyword, object: &QuestionObject) -> bool {
     match expression {
         parser::Keyword::And(expressions) => expressions.iter().all(|expression| check(expression, object)),

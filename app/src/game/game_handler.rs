@@ -169,6 +169,9 @@ pub struct GameHandler {
 
     pub request_input_focus: bool,
     pub switch_to_next_question: bool,
+
+    pub active_question_pack: String,
+    pub question_packs: HashMap<String, crate::game::questions_filter::QuestionPack>,
 }
 
 impl GameHandler {
@@ -187,6 +190,7 @@ impl GameHandler {
     pub fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
         self.question_catalog[self.question_number].render_window(data)
     }
+
     pub fn init(cellestial_sphere: &mut CellestialSphere, storage: Option<&dyn eframe::Storage>) -> Self {
         let mut active_constellations = HashMap::new();
         for constellation_abbreviation in cellestial_sphere.constellations.keys() {
@@ -200,218 +204,48 @@ impl GameHandler {
                 }
             }
         }
-        let mut catalog: Vec<Box<dyn QuestionTrait>> = Vec::new();
-        // catalog.push(QuestionEnum::NoMoreQuestions);
-        for deepskies_group in cellestial_sphere.deepskies.values() {
-            for deepsky in &deepskies_group.deepskies {
-                let mut possible_names = Vec::new();
-                let is_messier = deepsky.messier.is_some();
-                let is_caldwell = deepsky.caldwell.is_some();
-                let is_ngc = deepsky.ngc.is_some();
-                let is_ic = deepsky.ic.is_some();
-                let object_type = deepsky.object_type.clone().unwrap_or("Unknown".to_string());
-                if let Some(messier_number) = &deepsky.messier {
-                    let messier_name: String = format!("M{}", messier_number);
-                    catalog.push(Box::new(questions::find_this_object::Question {
-                        name: messier_name.to_owned(),
-                        ra: deepsky.ra,
-                        dec: deepsky.dec,
-                        is_messier: true,
-                        is_caldwell: false,
-                        is_ngc: false,
-                        is_ic: false,
-                        is_bayer: false,
-                        is_starname: false,
-                        magnitude: None,
-                        object_type: object_type.clone(),
-                        constellation_abbreviation: deepsky.constellation.to_owned(),
-                        images: deepsky.images.clone(),
 
-                        state: Default::default(),
-                    }));
-                    possible_names.push(messier_name);
-                }
-                if let Some(caldwell_number) = &deepsky.caldwell {
-                    let caldwell_name: String = format!("C {}", caldwell_number);
-                    catalog.push(Box::new(questions::find_this_object::Question {
-                        name: caldwell_name.to_owned(),
-                        ra: deepsky.ra,
-                        dec: deepsky.dec,
-                        is_messier: false,
-                        is_caldwell: true,
-                        is_ngc: false,
-                        is_ic: false,
-                        is_bayer: false,
-                        is_starname: false,
-                        magnitude: None,
-                        object_type: object_type.clone(),
-                        constellation_abbreviation: deepsky.constellation.to_owned(),
-                        images: deepsky.images.clone(),
-
-                        state: Default::default(),
-                    }));
-                    possible_names.push(caldwell_name.to_owned());
-                }
-                if let Some(ngc_number) = &deepsky.ngc {
-                    let ngc_name = format!("NGC {}", ngc_number);
-                    catalog.push(Box::new(questions::find_this_object::Question {
-                        name: ngc_name.to_owned(),
-                        ra: deepsky.ra,
-                        dec: deepsky.dec,
-                        is_messier: false,
-                        is_caldwell: false,
-                        is_ngc: true,
-                        is_ic: false,
-                        is_bayer: false,
-                        is_starname: false,
-                        magnitude: None,
-                        object_type: object_type.clone(),
-                        constellation_abbreviation: deepsky.constellation.to_owned(),
-                        images: deepsky.images.clone(),
-
-                        state: Default::default(),
-                    }));
-                    possible_names.push(ngc_name.to_owned());
-                }
-                if let Some(ic_number) = &deepsky.ic {
-                    let ic_name = format!("IC {}", ic_number);
-                    catalog.push(Box::new(questions::find_this_object::Question {
-                        name: ic_name.to_owned(),
-                        ra: deepsky.ra,
-                        dec: deepsky.dec,
-                        is_messier: false,
-                        is_caldwell: false,
-                        is_ngc: false,
-                        is_ic: true,
-                        is_bayer: false,
-                        is_starname: false,
-                        magnitude: None,
-                        object_type: object_type.clone(),
-                        constellation_abbreviation: deepsky.constellation.to_owned(),
-                        images: deepsky.images.clone(),
-
-                        state: Default::default(),
-                    }));
-                    possible_names.push(ic_name.to_owned());
-                }
-                if !possible_names.is_empty() {
-                    catalog.push(Box::new(questions::which_object_is_here::Question {
-                        possible_names,
-                        ra: deepsky.ra,
-                        dec: deepsky.dec,
-                        is_messier,
-                        is_caldwell,
-                        is_ngc,
-                        is_ic,
-                        is_bayer: false,
-                        is_starname: false,
-                        magnitude: None,
-                        object_type: object_type.clone(),
-                        constellation_abbreviation: deepsky.constellation.to_owned(),
-                        images: deepsky.images.clone(),
-
-                        state: Default::default(),
-                    }));
-                }
+        let mut active_question_pack = String::new();
+        let mut question_packs = HashMap::new();
+        if let Some(storage) = storage {
+            if let Some(active_question_pack_recovered) = storage.get_string(StorageKeys::ActiveQuestionPack.as_ref()) {
+                active_question_pack = active_question_pack_recovered;
             }
-        }
-        for file in cellestial_sphere.star_names.values() {
-            for starname in file {
-                let mut possible_names: Vec<String> = vec![starname.name.to_owned()];
-                catalog.push(Box::new(questions::find_this_object::Question {
-                    ra: starname.ra,
-                    dec: starname.dec,
-                    is_messier: false,
-                    is_caldwell: false,
-                    is_ngc: false,
-                    is_ic: false,
-                    is_bayer: false,
-                    is_starname: true,
-                    magnitude: Some(starname.mag),
-                    name: starname.name.to_owned(),
-                    object_type: String::from("Star"),
-                    constellation_abbreviation: starname.con.to_owned(),
-                    images: Vec::new(),
-
-                    state: Default::default(),
-                }));
-                let is_bayer: bool = match &starname.id_greek {
-                    Some(id) => {
-                        let name = format!("{} {}", id, starname.con);
-                        possible_names.push(name.to_owned());
-                        if let Some(id) = &starname.id {
-                            possible_names.push(format!("{} {}", id, starname.con));
-                        }
-                        catalog.push(Box::new(questions::find_this_object::Question {
-                            name,
-                            ra: starname.ra,
-                            dec: starname.dec,
-                            is_messier: false,
-                            is_caldwell: false,
-                            is_ngc: false,
-                            is_ic: false,
-                            is_bayer: true,
-                            is_starname: false,
-                            magnitude: Some(starname.mag),
-                            object_type: String::from("Star"),
-                            constellation_abbreviation: starname.con.to_owned(),
-                            images: Vec::new(),
-
-                            state: Default::default(),
-                        }));
-                        catalog.push(Box::new(questions::guess_the_magnitude::Question {
-                            ra: starname.ra,
-                            dec: starname.dec,
-                            mag: starname.mag,
-
-                            state: Default::default(),
-                        }));
-                        true
+            if let Some(question_packs_str) = storage.get_string(StorageKeys::QuestionPacks.as_ref()) {
+                for question_pack_str in question_packs_str.split("|||||") {
+                    let spl = question_pack_str.split("||||").collect::<Vec<&str>>();
+                    if spl.len() < 3 {
+                        log::error!("Not enough parts in a question pack: {} < 3 ({:?})", spl.len(), spl);
+                        continue;
                     }
-                    None => false,
-                };
-                catalog.push(Box::new(questions::which_object_is_here::Question {
-                    possible_names,
-                    ra: starname.ra,
-                    dec: starname.dec,
-                    is_messier: false,
-                    is_caldwell: false,
-                    is_ngc: false,
-                    is_ic: false,
-                    is_bayer,
-                    is_starname: true,
-                    magnitude: Some(starname.mag),
-                    object_type: String::from("Star"),
-                    constellation_abbreviation: starname.con.to_owned(),
-                    images: Vec::new(),
-
-                    state: Default::default(),
-                }));
+                    let name = spl[0].to_owned();
+                    let query = spl[1].to_owned();
+                    let mut sets = Vec::new();
+                    for set in spl[2].split("|||") {
+                        let spl = set.split("||").collect::<Vec<&str>>();
+                        if spl.len() < 2 {
+                            log::error!("Not enough parts in a question pack set: {} < 2 ({:?})", spl.len(), spl);
+                            continue;
+                        }
+                        let question_settings = match serde_json::from_str(&spl[0]) {
+                            Ok(data) => data,
+                            Err(err) => {
+                                log::error!("Failed to deserialize question game settings: {:?}", err);
+                                continue;
+                            }
+                        };
+                        let object_ids = spl[1].split(",").filter_map(|s| s.trim().parse::<u64>().ok()).collect::<Vec<u64>>();
+                        sets.push((question_settings, object_ids));
+                    }
+                    question_packs.insert(name, crate::game::questions_filter::QuestionPack { query, question_objects: sets });
+                }
             }
         }
-
-        let mut rand = rand::thread_rng();
-        for i in 1..catalog.len() {
-            catalog.push(Box::new(questions::angular_separation::Question {
-                point1: sg_geometry::generate_random_point(&mut rand),
-                point2: sg_geometry::generate_random_point(&mut rand),
-
-                state: Default::default(),
-            }));
-            let (ra, dec) = sg_geometry::generate_random_point(&mut rand);
-            catalog.push(Box::new(questions::which_constellation_is_point_in::Question { ra, dec, state: Default::default() }));
-
-            let (ra, dec) = sg_geometry::generate_random_point(&mut rand);
-            if i % 2 == 0 {
-                catalog.push(Box::new(questions::guess_ra_dec::DecQuestion { ra, dec, state: Default::default() }));
-            } else {
-                catalog.push(Box::new(questions::guess_ra_dec::RaQuestion { ra, dec, state: Default::default() }));
-            }
-        }
-
-        // let entry = cellestial_sphere.markers.entry("game".to_string()).or_default();
-        // *entry = Vec::new();
-        // cellestial_sphere.init_single_renderer("markers", "game");
+        let catalog = if let Some(question_pack) = question_packs.get(&active_question_pack) {
+            cellestial_sphere.generate_questions(&question_pack.question_objects)
+        } else {
+            Vec::new()
+        };
 
         let mut questions_settings = questions::Settings::default();
         if let Some(storage) = storage {
@@ -456,6 +290,9 @@ impl GameHandler {
             constellation_groups_settings,
             request_input_focus: false,
             switch_to_next_question: false,
+
+            active_question_pack,
+            question_packs,
         }
     }
     pub fn evaluate_score(distance: angle::Deg<f32>) -> u32 {

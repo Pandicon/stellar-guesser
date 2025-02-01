@@ -42,6 +42,21 @@ pub enum StarType {
     Any,
 }
 
+impl StarType {
+    pub fn to_option_string(&self) -> Option<String> {
+        match self {
+            &Self::Single => Some(String::from("Star")),
+            &Self::Double => Some(String::from("Double star")),
+            &Self::Multiple => Some(String::from("Multiple star")),
+            &Self::Unknown | &Self::Any => None,
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        self.to_option_string().unwrap_or(String::from("Star"))
+    }
+}
+
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub enum DeepskyType {
     Nebula,
@@ -64,6 +79,10 @@ impl DeepskyType {
             &Self::Galaxy => Some(String::from("Galaxy")),
             &Self::Unknown | &Self::Any => None,
         }
+    }
+
+    pub fn to_string(&self) -> String {
+        self.to_option_string().unwrap_or(String::from("Unknown deepsky"))
     }
 }
 

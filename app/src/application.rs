@@ -110,10 +110,14 @@ impl Application {
                 }
             }
         }
-        ctx.set_visuals(theme.egui_visuals.clone());
-
         let timestamp = chrono::Utc::now().timestamp();
-        let state = state::State::new(timestamp, time_spent_start);
+        let mut state = state::State::new(timestamp, time_spent_start);
+        if let Some(storage) = cc.storage {
+            if let Some(last_question_pack_query) = storage.get_string(StorageKeys::QuestionPackQuery.as_ref()) {
+                state.windows.settings.game_settings.query = last_question_pack_query;
+            }
+        }
+        ctx.set_visuals(theme.egui_visuals.clone());
 
         let mut cellestial_sphere = CellestialSphere::load(cc.storage, &mut theme).unwrap();
         cellestial_sphere.init();
@@ -221,6 +225,39 @@ impl eframe::App for Application {
         match serde_json::to_string(&self.graphics_settings) {
             Ok(string) => storage.set_string(StorageKeys::GraphicsSettings.as_ref(), string),
             Err(err) => log::error!("Failed to serialize graphics settings: {:?}", err),
+        }
+
+        let question_packs = self
+            .game_handler
+            .question_packs
+            .iter()
+            .map(|(name, pack)| {
+                format!(
+                    "{}||||{}||||{}",
+                    name,
+                    pack.query,
+                    pack.question_objects
+                        .iter()
+                        .filter_map(|(settings, object_ids)| {
+                            match serde_json::to_string(settings) {
+                                Ok(string) => Some(format!("{}||{}", string, object_ids.iter().map(|n| n.to_string()).collect::<Vec<String>>().join(","))),
+                                Err(err) => {
+                                    log::error!("Failed to serialize question pack settings: {:?}", err);
+                                    None
+                                }
+                            }
+                        })
+                        .collect::<Vec<String>>()
+                        .join("|||")
+                )
+            })
+            .collect::<Vec<String>>()
+            .join("|||||");
+        log::warn!("{}", question_packs);
+        storage.set_string(StorageKeys::QuestionPacks.as_ref(), question_packs);
+        storage.set_string(StorageKeys::ActiveQuestionPack.as_ref(), self.game_handler.active_question_pack.clone());
+        if let Some(active_pack) = self.game_handler.question_packs.get(&self.game_handler.active_question_pack) {
+            storage.set_string(StorageKeys::QuestionPackQuery.as_ref(), active_pack.query.clone());
         }
 
         self.game_handler.constellation_groups_settings.save_to_storage(storage);

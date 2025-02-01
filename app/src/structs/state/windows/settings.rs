@@ -39,6 +39,8 @@ pub struct GameSettingsWindowState {
     pub questions_subwindow: GameSettingsQuestionsSubWindowState,
     pub generated_query: String,
     pub query: String,
+    pub internal_query: String,
+    pub question_pack_new_name: String,
 }
 
 impl Default for GameSettingsWindowState {
@@ -49,6 +51,8 @@ impl Default for GameSettingsWindowState {
             questions_subwindow: GameSettingsQuestionsSubWindowState::default(),
             generated_query: String::new(),
             query: String::new(),
+            internal_query: String::new(),
+            question_pack_new_name: String::new(),
         }
     }
 }

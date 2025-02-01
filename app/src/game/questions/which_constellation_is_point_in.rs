@@ -8,6 +8,11 @@ use angle::{Angle, Deg};
 use eframe::egui;
 use std::collections::HashMap;
 
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
+pub struct SmallSettings {
+    pub rotate_to_point: bool,
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -35,14 +40,10 @@ pub struct Question {
     pub dec: angle::Deg<f32>,
 
     pub state: State,
+    pub small_settings: SmallSettings,
 }
 
 impl Question {
-    pub fn new_random() -> Self {
-        let (ra, dec) = sg_geometry::generate_random_point(&mut rand::thread_rng());
-        Self { ra, dec, state: State::default() }
-    }
-
     fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
             ui.heading(self.get_display_question());
@@ -136,12 +137,17 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn can_choose_as_next(&self, questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
-        questions_settings.what_constellation_is_this_point_in.show
+    fn can_choose_as_next(&self, _questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
+        true
     }
 
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(Self::new_random())
+        Box::new(Self {
+            ra: self.ra,
+            dec: self.dec,
+            state: Default::default(),
+            small_settings: self.small_settings,
+        })
     }
 
     fn show_tolerance_marker(&self) -> bool {
@@ -168,7 +174,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, _questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
         self.state = Default::default();
         cellestial_sphere.game_markers.markers = vec![GameMarker::new(
             GameMarkerType::Task,
@@ -180,7 +186,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             false,
             &theme.game_visuals.game_markers_colours,
         )];
-        if questions_settings.what_constellation_is_this_point_in.rotate_to_point {
+        if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             cellestial_sphere.look_at_point(&final_vector);
             cellestial_sphere.init_renderers();

@@ -9,6 +9,40 @@ use eframe::egui;
 use rand::Rng;
 use std::collections::HashMap;
 
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
+#[serde(default)]
+pub struct SmallSettings {
+    pub rotate_to_point: bool,
+    pub replay_incorrect: bool,
+    pub accept_messier: bool,
+    pub accept_caldwell: bool,
+    pub accept_ngc: bool,
+    pub accept_ic: bool,
+    pub accept_hip: bool,
+    pub accept_hd: bool,
+    pub accept_proper: bool,
+    pub accept_bayer: bool,
+    pub accept_flamsteed: bool,
+}
+
+impl Default for SmallSettings {
+    fn default() -> Self {
+        Self {
+            rotate_to_point: true,
+            replay_incorrect: true,
+            accept_messier: true,
+            accept_caldwell: true,
+            accept_ngc: true,
+            accept_ic: true,
+            accept_hip: true,
+            accept_hd: true,
+            accept_proper: true,
+            accept_bayer: true,
+            accept_flamsteed: true,
+        }
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -54,6 +88,7 @@ pub struct State {
 
 #[derive(Clone)]
 pub struct Question {
+    pub small_settings: SmallSettings,
     pub possible_names: Vec<String>,
     pub ra: angle::Deg<f32>,
     pub dec: angle::Deg<f32>,
@@ -143,7 +178,7 @@ impl Question {
             self.object_type
         );
         *data.possible_score += 1;
-        if !data.questions_settings.what_is_this_object.replay_incorrect || correct {
+        if !self.small_settings.replay_incorrect || correct {
             data.used_questions.push(data.current_question);
         } else {
             *data.question_number += 1;
@@ -177,29 +212,13 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn can_choose_as_next(&self, questions_settings: &super::Settings, active_constellations: &mut HashMap<String, bool>) -> bool {
-        let mag = (self.magnitude).unwrap_or(-1.0);
-        questions_settings.what_is_this_object.show
-            && ((questions_settings.what_is_this_object.show_messiers && self.is_messier)
-                || (questions_settings.what_is_this_object.show_caldwells && self.is_caldwell)
-                || (questions_settings.what_is_this_object.show_ngcs && self.is_ngc)
-                || (questions_settings.what_is_this_object.show_ics && self.is_ic)
-                || (questions_settings.what_is_this_object.show_bayer && self.is_bayer)
-                || (questions_settings.what_is_this_object.show_starnames && self.is_starname))
-            && ((!self.is_bayer && !self.is_starname) || mag < questions_settings.what_is_this_object.magnitude_cutoff)
-            && *active_constellations
-                .entry(
-                    active_constellations
-                        .keys()
-                        .find(|con| con.to_lowercase() == self.constellation_abbreviation.to_lowercase())
-                        .cloned()
-                        .unwrap_or(self.constellation_abbreviation.clone()),
-                )
-                .or_insert(true)
+    fn can_choose_as_next(&self, _questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
+        true
     }
 
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self {
+            small_settings: self.small_settings,
             possible_names: self.possible_names,
             ra: self.ra,
             dec: self.dec,
@@ -242,7 +261,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, _questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
         self.state = Default::default();
         cellestial_sphere.game_markers.markers = if self.is_bayer || self.is_starname {
             vec![GameMarker::new(
@@ -267,7 +286,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
                 &theme.game_visuals.game_markers_colours,
             )]
         };
-        if questions_settings.what_is_this_object.rotate_to_point {
+        if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             cellestial_sphere.look_at_point(&final_vector);
             cellestial_sphere.init_renderers();
@@ -275,7 +294,35 @@ impl crate::game::game_handler::QuestionTrait for Question {
     }
 
     fn get_display_question(&self) -> String {
-        String::from("What is this object?")
+        let mut accepted = Vec::new();
+        if self.small_settings.accept_bayer {
+            accepted.push("Bayer");
+        }
+        if self.small_settings.accept_caldwell {
+            accepted.push("Caldwell");
+        }
+        if self.small_settings.accept_flamsteed {
+            accepted.push("Flamsteed");
+        }
+        if self.small_settings.accept_hd {
+            accepted.push("HD");
+        }
+        if self.small_settings.accept_hip {
+            accepted.push("HIP");
+        }
+        if self.small_settings.accept_ic {
+            accepted.push("IC");
+        }
+        if self.small_settings.accept_messier {
+            accepted.push("Messier");
+        }
+        if self.small_settings.accept_ngc {
+            accepted.push("NGC");
+        }
+        if self.small_settings.accept_proper {
+            accepted.push("Proper name");
+        }
+        format!("What is this object?\nAccepted names: {}", accepted.join(", "))
     }
 
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {

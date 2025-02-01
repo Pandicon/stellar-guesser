@@ -9,6 +9,43 @@ use eframe::egui;
 use rand::Rng;
 use std::collections::HashMap;
 
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
+#[serde(default)]
+pub struct SmallSettings {
+    pub correctness_threshold: f32,
+    pub rotate_to_answer: bool,
+    pub replay_incorrect: bool,
+
+    pub ask_messier: bool,
+    pub ask_caldwell: bool,
+    pub ask_ic: bool,
+    pub ask_ngc: bool,
+    pub ask_hd: bool,
+    pub ask_hip: bool,
+    pub ask_bayer: bool,
+    pub ask_flamsteed: bool,
+    pub ask_proper: bool,
+}
+
+impl Default for SmallSettings {
+    fn default() -> Self {
+        Self {
+            correctness_threshold: 1.0,
+            rotate_to_answer: true,
+            replay_incorrect: true,
+            ask_messier: false,
+            ask_caldwell: false,
+            ask_ic: false,
+            ask_ngc: false,
+            ask_hd: false,
+            ask_hip: false,
+            ask_bayer: false,
+            ask_flamsteed: false,
+            ask_proper: false,
+        }
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -68,6 +105,7 @@ pub struct Question {
     pub images: Vec<crate::structs::image_info::ImageInfo>,
 
     pub state: State,
+    pub small_settings: SmallSettings,
 }
 
 impl Question {
@@ -167,7 +205,7 @@ impl Question {
         } else {
             *data.question_number += 1;
         }
-        if data.questions_settings.find_this_object.rotate_to_correct_point {
+        if self.small_settings.rotate_to_answer {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             data.cellestial_sphere.look_at_point(&final_vector);
             data.cellestial_sphere.init_renderers();
@@ -201,25 +239,8 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn can_choose_as_next(&self, questions_settings: &super::Settings, active_constellations: &mut HashMap<String, bool>) -> bool {
-        let mag = (self.magnitude).unwrap_or(-1.0); // TODO: Shouldn't a default magnitude be something else?
-        questions_settings.find_this_object.show
-            && ((questions_settings.find_this_object.show_messiers && self.is_messier)
-                || (questions_settings.find_this_object.show_caldwells && self.is_caldwell)
-                || (questions_settings.find_this_object.show_ngcs && self.is_ngc)
-                || (questions_settings.find_this_object.show_ics && self.is_ic)
-                || (questions_settings.find_this_object.show_bayer && self.is_bayer)
-                || (questions_settings.find_this_object.show_starnames && self.is_starname))
-            && ((!self.is_bayer && !self.is_starname) || mag < questions_settings.find_this_object.magnitude_cutoff)
-            && *active_constellations
-                .entry(
-                    active_constellations
-                        .keys()
-                        .find(|con| con.to_lowercase() == self.constellation_abbreviation.to_lowercase())
-                        .cloned()
-                        .unwrap_or(self.constellation_abbreviation.clone()),
-                )
-                .or_insert(true)
+    fn can_choose_as_next(&self, _questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
+        true
     }
 
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
@@ -239,6 +260,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             images: self.images,
 
             state: Default::default(),
+            small_settings: self.small_settings,
         })
     }
 

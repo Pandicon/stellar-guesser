@@ -9,6 +9,7 @@ enum KeywordRaw {
     RaDeg,
     Ra,
     Constellation,
+    //ConstellationGroup, // Transforms into CONSTELLATION(list of constellations in the group)
     Catalogue,
     Type,
     MagBelow,
@@ -33,7 +34,7 @@ pub enum Keyword {
 }
 
 impl Keyword {
-    pub fn from_raw(keyword_raw: KeywordRaw, args: Vec<Node>, ident_pos: usize) -> Result<Self, String> {
+    fn from_raw(keyword_raw: KeywordRaw, args: Vec<Node>, ident_pos: usize) -> Result<Self, String> {
         let keyword = match keyword_raw {
             KeywordRaw::And => {
                 let mut new_args = Vec::new();
@@ -262,12 +263,12 @@ impl Keyword {
 }
 
 #[derive(Debug)]
-enum Node {
+pub enum Node {
     Keyword(Keyword),
     Value(String),
 }
 
-struct Parser<'a> {
+pub struct Parser<'a> {
     chars: Chars<'a>,
     pos: usize,
 }
@@ -304,11 +305,11 @@ impl Catalogue {
 }
 
 impl<'a> Parser<'a> {
-    fn new(input: &'a str) -> Self {
+    pub fn new(input: &'a str) -> Self {
         Self { chars: input.chars(), pos: 0 }
     }
 
-    fn parse(&mut self) -> Result<Option<Node>, String> {
+    pub fn parse(&mut self) -> Result<Option<Node>, String> {
         self.parse_expression()
     }
 
@@ -416,3 +417,37 @@ impl<'a> Parser<'a> {
         Err(e) => println!("Error: {}", e),
     }
 }*/
+
+pub fn parse_question_type_and_settings(question_type: &str, question_settings: &str) -> Result<crate::game::questions::QuestionType, String> {
+    match question_type.to_uppercase().as_str() {
+        "ANGULAR_SEPARATION" => match serde_json::from_str(question_settings) {
+            Ok(question_settings) => Ok(crate::game::questions::QuestionType::AngularSeparation(question_settings)),
+            Err(err) => Err(format!("Error when parsing question settings ({err})")),
+        },
+        "FIND_THIS_OBJECT" => match serde_json::from_str(question_settings) {
+            Ok(question_settings) => Ok(crate::game::questions::QuestionType::FindThisObject(question_settings)),
+            Err(err) => Err(format!("Error when parsing question settings ({err})")),
+        },
+        "GUESS_DEC" => match serde_json::from_str(question_settings) {
+            Ok(question_settings) => Ok(crate::game::questions::QuestionType::GuessDec(question_settings)),
+            Err(err) => Err(format!("Error when parsing question settings ({err})")),
+        },
+        "GUESS_RA" => match serde_json::from_str(question_settings) {
+            Ok(question_settings) => Ok(crate::game::questions::QuestionType::GuessRa(question_settings)),
+            Err(err) => Err(format!("Error when parsing question settings ({err})")),
+        },
+        "GUESS_THE_MAGNITUDE" => match serde_json::from_str(question_settings) {
+            Ok(question_settings) => Ok(crate::game::questions::QuestionType::GuessTheMagnitude(question_settings)),
+            Err(err) => Err(format!("Error when parsing question settings ({err})")),
+        },
+        "WHAT_IS_THIS_OBJECT" => match serde_json::from_str(question_settings) {
+            Ok(question_settings) => Ok(crate::game::questions::QuestionType::WhatIsThisObject(question_settings)),
+            Err(err) => Err(format!("Error when parsing question settings ({err})")),
+        },
+        "WHICH_CONSTELLATION_IS_THIS_POINT_IN" => match serde_json::from_str(question_settings) {
+            Ok(question_settings) => Ok(crate::game::questions::QuestionType::WhichConstellationIsThisPointIn(question_settings)),
+            Err(err) => Err(format!("Error when parsing question settings ({err})")),
+        },
+        _ => Err(String::from("Error when parsing the query, the question type could not be matched")),
+    }
+}

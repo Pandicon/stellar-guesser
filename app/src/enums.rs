@@ -76,6 +76,9 @@ pub enum StorageKeys {
     SkySettings,
     Theme,
     GraphicsSettings,
+    ActiveQuestionPack,
+    QuestionPackQuery,
+    QuestionPacks,
 }
 
 impl AsRef<str> for StorageKeys {
@@ -95,6 +98,9 @@ impl AsRef<str> for StorageKeys {
             Self::SkySettings => "sky_settings",
             Self::Theme => "theme",
             Self::GraphicsSettings => "graphics_settings",
+            Self::ActiveQuestionPack => "active_question_pack",
+            Self::QuestionPackQuery => "question_pack_query",
+            Self::QuestionPacks => "question_packs",
         }
     }
 }

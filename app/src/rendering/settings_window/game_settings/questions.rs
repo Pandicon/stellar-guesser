@@ -4,6 +4,58 @@ use eframe::egui;
 
 impl Application {
     pub fn render_game_settings_questions_subwindow(&mut self, ui: &mut egui::Ui, tolerance_changed: &mut bool) {
+        let prev_active_pack = self.game_handler.active_question_pack.clone();
+        ui.horizontal(|ui| {
+            eframe::egui::ComboBox::from_label("Select question pack")
+                .selected_text(&self.game_handler.active_question_pack)
+                .show_ui(ui, |ui| {
+                    ui.style_mut().wrap_mode = Some(eframe::egui::TextWrapMode::Extend);
+                    let mut packs = self.game_handler.question_packs.keys().cloned().collect::<Vec<String>>();
+                    packs.sort_by_key(|a| a.to_lowercase());
+                    for pack_name in packs {
+                        ui.selectable_value(&mut self.game_handler.active_question_pack, pack_name.clone(), &pack_name);
+                    }
+                });
+            let removed_group = ui
+                .add_enabled_ui(self.game_handler.question_packs.keys().len() != 0, |ui| {
+                    if ui.button("Remove pack").clicked() {
+                        self.game_handler.question_packs.remove(&self.game_handler.active_question_pack);
+                        self.game_handler.active_question_pack = String::new();
+                        true
+                    } else {
+                        false
+                    }
+                })
+                .inner;
+            if !removed_group && self.game_handler.active_question_pack != prev_active_pack {
+                self.state.windows.settings.game_settings.question_pack_new_name = self.game_handler.active_question_pack.clone();
+                self.state.windows.settings.game_settings.settings_type = GameSettingsType::Advanced;
+                self.state.windows.settings.game_settings.query = self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().query.clone();
+                let new_questions = self
+                    .cellestial_sphere
+                    .generate_questions(&self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().question_objects);
+                self.game_handler.possible_no_of_questions = new_questions.len() as u32;
+                self.game_handler.question_catalog = new_questions;
+                self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
+                self.game_handler.current_question = 0;
+            }
+        });
+        ui.horizontal(|ui| {
+            ui.label("Question pack name");
+            ui.text_edit_singleline(&mut self.state.windows.settings.game_settings.question_pack_new_name);
+            self.state.windows.settings.game_settings.question_pack_new_name = self
+                .state
+                .windows
+                .settings
+                .game_settings
+                .question_pack_new_name
+                .replace("|||||", "")
+                .replace("||||", "")
+                .replace("|||", "")
+                .replace("||", "")
+        });
+        ui.separator();
+
         ui.horizontal(|ui| {
             ui.selectable_value(&mut self.state.windows.settings.game_settings.settings_type, GameSettingsType::Basic, GameSettingsType::Basic.as_ref());
             ui.selectable_value(
@@ -45,92 +97,236 @@ impl Application {
                 ui.separator();
                 ui.label("Generated query:");
                 ui.label(egui::RichText::new(&self.state.windows.settings.game_settings.generated_query).code());
+                self.state.windows.settings.game_settings.internal_query = self.state.windows.settings.game_settings.generated_query.clone();
             }
             GameSettingsType::Advanced => {
-                ui.label("Advanced settings will go here");
+                ui.label("Enter the questions query here:");
+                ui.add(egui::TextEdit::multiline(&mut self.state.windows.settings.game_settings.query).desired_width(f32::INFINITY));
+                self.state.windows.settings.game_settings.internal_query = self.state.windows.settings.game_settings.query.clone();
             }
         }
+        ui.separator();
+        let mut can_evaluate = true;
+        let mut text_parts = Vec::new();
+        let mut settings_all = Vec::new();
+        for line in self.state.windows.settings.game_settings.internal_query.split('\n') {
+            let no_spaces = line.replace(" ", "");
+            let mut spl = no_spaces.split("):").map(|s| s.trim()).filter(|s| !s.is_empty()).collect::<Vec<&str>>();
+            if spl.is_empty() {
+                continue;
+            }
+            let (parsed_result, ast_res) = if spl.len() > 1 {
+                let query = spl.pop().unwrap().replace(":", "");
+                match crate::game::questions_filter::parser::Parser::new(&query).parse() {
+                    Ok(Some(crate::game::questions_filter::parser::Node::Keyword(ast))) => (format!("{:?}", ast), Ok(Some(ast))),
+                    Ok(Some(crate::game::questions_filter::parser::Node::Value(_))) | Ok(None) => (String::from("No restrictions"), Ok(None)),
+                    Err(err) => {
+                        can_evaluate = false;
+                        (format!("Error when parsing the query: {err}"), Err(""))
+                    }
+                }
+            } else {
+                (String::from("No restrictions"), Ok(None))
+            };
+            let mut joined = spl.join("");
+            if joined.trim().ends_with(")") {
+                joined = String::from(joined.trim());
+                joined.pop();
+            }
+            let spl = joined.split('(').map(|s| s.trim()).filter(|s| !s.is_empty()).collect::<Vec<&str>>();
+            if spl.len() < 2 {
+                continue;
+            }
+            let question_type = spl[0];
+            let question_settings = spl[1];
+            let question_type = crate::game::questions_filter::parser::parse_question_type_and_settings(question_type, question_settings);
+            let question_type_res = match question_type {
+                Ok(question_type) => {
+                    let res = format!("{question_type:?}");
+                    if let Ok(ast_opt) = ast_res {
+                        settings_all.push((ast_opt, question_type));
+                    }
+                    res
+                }
+                Err(err) => {
+                    can_evaluate = false;
+                    err
+                }
+            };
+            text_parts.push(format!("{question_type_res}: {parsed_result}"));
+        }
+        let joined = text_parts.join("\n");
+        let replaced = joined.replace("SmallSettings {", "{");
+        ui.label("Parsed query:");
+        ui.label(egui::RichText::new(replaced).code());
+        ui.add_enabled_ui(can_evaluate, |ui| {
+            let button = if self.game_handler.question_packs.contains_key(&self.state.windows.settings.game_settings.question_pack_new_name) {
+                ui.button("Evaluate and save")
+            } else {
+                ui.button("Evaluate and create new pack")
+            };
+            if button.clicked() {
+                let res = self.cellestial_sphere.evaluate_questions_query(settings_all);
+                self.game_handler.question_packs.insert(
+                    self.state.windows.settings.game_settings.question_pack_new_name.clone(),
+                    crate::game::questions_filter::QuestionPack {
+                        question_objects: res,
+                        query: self.state.windows.settings.game_settings.internal_query.clone(),
+                    },
+                );
+                self.game_handler.active_question_pack = self.state.windows.settings.game_settings.question_pack_new_name.clone();
+
+                let new_questions = self
+                    .cellestial_sphere
+                    .generate_questions(&self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().question_objects);
+                self.game_handler.possible_no_of_questions = new_questions.len() as u32;
+                self.game_handler.question_catalog = new_questions;
+                self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
+                self.game_handler.current_question = 0;
+            }
+        });
     }
 
     fn generate_query_from_basic(&self) -> String {
-        let mut query = String::new();
+        use crate::game::questions;
+
+        let mut query_parts = Vec::new();
         if self.game_handler.questions_settings.find_this_object.show {
-            let mut args = vec![self.game_handler.questions_settings.find_this_object.correctness_threshold.to_deg().as_value().to_string()];
-            if self.game_handler.questions_settings.find_this_object.rotate_to_correct_point {
-                args.push(String::from("ROTATE"));
-            }
-            if self.game_handler.questions_settings.find_this_object.replay_incorrect {
-                args.push(String::from("REPLAY"));
-            }
+            let mut question_settings = questions::find_this_object::SmallSettings {
+                correctness_threshold: *self.game_handler.questions_settings.find_this_object.correctness_threshold.to_deg().as_value(),
+                rotate_to_answer: self.game_handler.questions_settings.find_this_object.rotate_to_correct_point,
+                replay_incorrect: self.game_handler.questions_settings.find_this_object.replay_incorrect,
+                ask_messier: false,
+                ask_caldwell: false,
+                ask_ic: false,
+                ask_ngc: false,
+                ask_hd: false,
+                ask_hip: false,
+                ask_bayer: false,
+                ask_flamsteed: false,
+                ask_proper: false,
+            };
             let mut settings_catalogues = Vec::new();
             if self.game_handler.questions_settings.find_this_object.show_messiers {
                 settings_catalogues.push("CATALOGUE(MESSIER)");
+                question_settings.ask_messier = true;
             }
             if self.game_handler.questions_settings.find_this_object.show_caldwells {
                 settings_catalogues.push("CATALOGUE(CALDWELL)");
+                question_settings.ask_caldwell = true;
             }
             if self.game_handler.questions_settings.find_this_object.show_ngcs {
                 settings_catalogues.push("CATALOGUE(NGC)");
+                question_settings.ask_ngc = true;
             }
             if self.game_handler.questions_settings.find_this_object.show_ics {
                 settings_catalogues.push("CATALOGUE(IC)");
+                question_settings.ask_ic = true;
             }
             if self.game_handler.questions_settings.find_this_object.show_bayer {
                 settings_catalogues.push("CATALOGUE(BAYER)");
+                question_settings.ask_bayer = true;
             }
             if self.game_handler.questions_settings.find_this_object.show_starnames {
+                settings_catalogues.push("AND(TYPE(STAR), CATALOGUE(PROPER_NAME))");
+                question_settings.ask_proper = true;
+            }
+            if !settings_catalogues.is_empty() {
+                let settings = format!(
+                    "OR(AND(TYPE(STAR), MAG_BELOW({}), OR({})), AND(NOT(TYPE(STAR)), OR({})))",
+                    self.game_handler.questions_settings.find_this_object.magnitude_cutoff,
+                    settings_catalogues.join(", "),
+                    settings_catalogues.join(", ")
+                );
+                if let Ok(question_settings) = serde_json::to_string(&question_settings) {
+                    query_parts.push(format!("FIND_THIS_OBJECT({}): {}", question_settings, settings));
+                }
+            };
+        }
+        if self.game_handler.questions_settings.what_is_this_object.show {
+            let question_settings = questions::which_object_is_here::SmallSettings {
+                rotate_to_point: self.game_handler.questions_settings.what_is_this_object.rotate_to_point,
+                replay_incorrect: self.game_handler.questions_settings.what_is_this_object.replay_incorrect,
+                accept_messier: true,
+                accept_caldwell: true,
+                accept_ngc: true,
+                accept_ic: true,
+                accept_hip: true,
+                accept_hd: true,
+                accept_proper: true,
+                accept_bayer: true,
+                accept_flamsteed: true,
+            };
+            let mut settings_catalogues = Vec::new();
+            if self.game_handler.questions_settings.what_is_this_object.show_messiers {
+                settings_catalogues.push("CATALOGUE(MESSIER)");
+            }
+            if self.game_handler.questions_settings.what_is_this_object.show_caldwells {
+                settings_catalogues.push("CATALOGUE(CALDWELL)");
+            }
+            if self.game_handler.questions_settings.what_is_this_object.show_ngcs {
+                settings_catalogues.push("CATALOGUE(NGC)");
+            }
+            if self.game_handler.questions_settings.what_is_this_object.show_ics {
+                settings_catalogues.push("CATALOGUE(IC)");
+            }
+            if self.game_handler.questions_settings.what_is_this_object.show_bayer {
+                settings_catalogues.push("CATALOGUE(BAYER)");
+            }
+            if self.game_handler.questions_settings.what_is_this_object.show_starnames {
                 settings_catalogues.push("AND(TYPE(STAR), CATALOGUE(PROPER_NAME))");
             }
             if !settings_catalogues.is_empty() {
                 let settings = format!(
                     "OR(AND(TYPE(STAR), MAG_BELOW({}), OR({})), AND(NOT(TYPE(STAR)), OR({})))",
-                    self.game_handler.questions_settings.find_this_object.correctness_threshold.value(),
+                    self.game_handler.questions_settings.what_is_this_object.magnitude_cutoff,
                     settings_catalogues.join(", "),
                     settings_catalogues.join(", ")
                 );
-                query = format!("FIND_THIS_OBJECT({}): {}", args.join(", "), settings);
+                if let Ok(question_settings) = serde_json::to_string(&question_settings) {
+                    query_parts.push(format!("WHAT_IS_THIS_OBJECT({}): {}", question_settings, settings));
+                }
             };
         }
-
         if self.game_handler.questions_settings.what_constellation_is_this_point_in.show {
-            query = format!(
-                "{query}\nWHAT_CONSTELLATION_IS_THIS_POINT_IN({})",
-                if self.game_handler.questions_settings.what_constellation_is_this_point_in.rotate_to_point {
-                    "ROTATE"
-                } else {
-                    ""
-                }
-            );
+            let question_settings = questions::which_constellation_is_point_in::SmallSettings {
+                rotate_to_point: self.game_handler.questions_settings.what_constellation_is_this_point_in.rotate_to_point,
+            };
+            if let Ok(question_settings) = serde_json::to_string(&question_settings) {
+                query_parts.push(format!("WHICH_CONSTELLATION_IS_THIS_POINT_IN({})", question_settings));
+            }
         }
         if self.game_handler.questions_settings.angular_separation.show {
-            query = format!(
-                "{query}\nANGULAR_SEPARATION({})",
-                if self.game_handler.questions_settings.angular_separation.rotate_to_midpoint {
-                    "ROTATE"
-                } else {
-                    ""
-                }
-            );
+            let question_settings = questions::angular_separation::SmallSettings {
+                rotate_to_midpoint: self.game_handler.questions_settings.angular_separation.rotate_to_midpoint,
+            };
+            if let Ok(question_settings) = serde_json::to_string(&question_settings) {
+                query_parts.push(format!("ANGULAR_SEPARATION({})", question_settings));
+            }
         }
         if self.game_handler.questions_settings.guess_rad_dec.show {
-            query = format!("{query}\nDEC({})", if self.game_handler.questions_settings.guess_rad_dec.rotate_to_point { "ROTATE" } else { "" });
-            query = format!("{query}\nRA({})", if self.game_handler.questions_settings.guess_rad_dec.rotate_to_point { "ROTATE" } else { "" });
+            let question_settings = questions::guess_ra_dec::SmallSettings {
+                rotate_to_point: self.game_handler.questions_settings.guess_rad_dec.rotate_to_point,
+            };
+            if let Ok(question_settings) = serde_json::to_string(&question_settings) {
+                query_parts.push(format!("GUESS_DEC({})", question_settings));
+                query_parts.push(format!("GUESS_RA({})", question_settings));
+            }
         }
         if self.game_handler.questions_settings.guess_the_magnitude.show {
-            let mut args = Vec::new();
-            if self.game_handler.questions_settings.guess_the_magnitude.rotate_to_point {
-                args.push("ROTATE")
+            let question_settings = questions::guess_the_magnitude::SmallSettings {
+                rotate_to_point: self.game_handler.questions_settings.guess_the_magnitude.rotate_to_point,
+                replay_incorrect: self.game_handler.questions_settings.guess_the_magnitude.replay_incorrect,
             };
-            if self.game_handler.questions_settings.guess_the_magnitude.replay_incorrect {
-                args.push("REPLAY");
+            if let Ok(question_settings) = serde_json::to_string(&question_settings) {
+                query_parts.push(format!(
+                    "GUESS_THE_MAGNITUDE({}): MAG_BELOW({})",
+                    question_settings, self.game_handler.questions_settings.guess_the_magnitude.magnitude_cutoff
+                ));
             }
-            query = format!(
-                "{query}\nGUESS_THE_MAGNITUDE({}): AND(TYPE(STAR), MAG_BELOW({}))",
-                args.join(", "),
-                self.game_handler.questions_settings.guess_the_magnitude.magnitude_cutoff
-            );
         }
-        query
+        let query = query_parts.join("\n");
+        query.replace("SmallSettings {", "{")
     }
 
     // If adding new question types, make sure that the picker gets collapsed into a combo box on an appropriately wide/narrow screens
