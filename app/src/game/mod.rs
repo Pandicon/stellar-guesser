@@ -59,11 +59,15 @@ impl StarType {
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub enum DeepskyType {
+    DarkNebula,
+    DiffuseNebula,
     Nebula,
     PlanetaryNebula,
     OpenCluster,
     GlobularCluster,
     Galaxy,
+    SupernovaRemnant,
+    StarCloud,
 
     Unknown,
     Any,
@@ -72,17 +76,21 @@ pub enum DeepskyType {
 impl DeepskyType {
     pub fn to_option_string(&self) -> Option<String> {
         match self {
+            &Self::DarkNebula => Some(String::from("Dark nebula")),
+            &Self::DiffuseNebula => Some(String::from("Diffuse nebula")),
             &Self::Nebula => Some(String::from("Nebula")),
             &Self::PlanetaryNebula => Some(String::from("Planetary nebula")),
             &Self::OpenCluster => Some(String::from("Open cluster")),
             &Self::GlobularCluster => Some(String::from("Globular cluster")),
             &Self::Galaxy => Some(String::from("Galaxy")),
+            &Self::SupernovaRemnant => Some(String::from("Supernova remnant")),
+            &Self::StarCloud => Some(String::from("Star cloud")),
             &Self::Unknown | &Self::Any => None,
         }
     }
 
     pub fn display_name(&self) -> String {
-        self.to_option_string().unwrap_or(String::from("Unknown deepsky"))
+        self.to_option_string().unwrap_or(String::from("Unknown deepsky object"))
     }
 }
 

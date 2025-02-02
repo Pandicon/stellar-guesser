@@ -53,11 +53,15 @@ pub fn check(expression: &parser::Keyword, object: &QuestionObject) -> bool {
             crate::game::ObjectType::Star(crate::game::StarType::Multiple) => matches!(object.object_type, crate::game::ObjectType::Star(crate::game::StarType::Multiple)),
             crate::game::ObjectType::Star(crate::game::StarType::Unknown) => matches!(object.object_type, crate::game::ObjectType::Star(crate::game::StarType::Unknown)),
 
+            crate::game::ObjectType::Deepsky(crate::game::DeepskyType::DarkNebula) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::DarkNebula)),
+            crate::game::ObjectType::Deepsky(crate::game::DeepskyType::DiffuseNebula) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::DiffuseNebula)),
             crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Nebula) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Nebula)),
             crate::game::ObjectType::Deepsky(crate::game::DeepskyType::PlanetaryNebula) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::PlanetaryNebula)),
             crate::game::ObjectType::Deepsky(crate::game::DeepskyType::OpenCluster) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::OpenCluster)),
             crate::game::ObjectType::Deepsky(crate::game::DeepskyType::GlobularCluster) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::GlobularCluster)),
             crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Galaxy) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Galaxy)),
+            crate::game::ObjectType::Deepsky(crate::game::DeepskyType::SupernovaRemnant) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::SupernovaRemnant)),
+            crate::game::ObjectType::Deepsky(crate::game::DeepskyType::StarCloud) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::StarCloud)),
             crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Unknown) => matches!(object.object_type, crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Unknown)),
         }),
         &parser::Keyword::Mag(min, max) => {
