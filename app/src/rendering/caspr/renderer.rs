@@ -491,7 +491,7 @@ impl CellestialSphere {
                                     }
                                 }
                                 Ok(false) | Err(_) => {
-                                    println!("Couldn't find image {} (path checked: {:?})", path_raw, path);
+                                    log::warn!("Couldn't find image {} (path checked: {:?})", path_raw, path);
                                 }
                             }
                             objects_images.push(object_image_data);
