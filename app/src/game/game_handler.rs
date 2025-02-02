@@ -12,6 +12,11 @@ use eframe::egui;
 use rand::Rng;
 use std::collections::HashMap;
 
+pub const QUESTION_PACKS_DIV: &str = "&||||&";
+pub const QUESTION_PACK_PARTS_DIV: &str = "&|||&";
+pub const QUESTION_PACK_QUESTIONS_DIV: &str = "&||&";
+pub const QUESTION_PACK_QUESTIONS_PARTS_DIV: &str = "&|&";
+
 pub struct QuestionWindowData<'a> {
     pub cellestial_sphere: &'a mut CellestialSphere,
     pub theme: &'a Theme,
@@ -212,8 +217,8 @@ impl GameHandler {
                 active_question_pack = active_question_pack_recovered;
             }
             if let Some(question_packs_str) = storage.get_string(StorageKeys::QuestionPacks.as_ref()) {
-                for question_pack_str in question_packs_str.split("|||||") {
-                    let spl = question_pack_str.split("||||").collect::<Vec<&str>>();
+                for question_pack_str in question_packs_str.split(QUESTION_PACKS_DIV) {
+                    let spl = question_pack_str.split(QUESTION_PACK_PARTS_DIV).collect::<Vec<&str>>();
                     if spl.len() < 3 {
                         log::error!("Not enough parts in a question pack: {} < 3 ({:?})", spl.len(), spl);
                         continue;
@@ -221,8 +226,8 @@ impl GameHandler {
                     let name = spl[0].to_owned();
                     let query = spl[1].to_owned();
                     let mut sets = Vec::new();
-                    for set in spl[2].split("|||") {
-                        let spl = set.split("||").collect::<Vec<&str>>();
+                    for set in spl[2].split(QUESTION_PACK_QUESTIONS_DIV) {
+                        let spl = set.split(QUESTION_PACK_QUESTIONS_PARTS_DIV).collect::<Vec<&str>>();
                         if spl.len() < 2 {
                             log::error!("Not enough parts in a question pack set: {} < 2 ({:?})", spl.len(), spl);
                             continue;

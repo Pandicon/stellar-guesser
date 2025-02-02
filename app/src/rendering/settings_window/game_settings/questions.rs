@@ -38,6 +38,8 @@ impl Application {
                 self.game_handler.question_catalog = new_questions;
                 self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
                 self.game_handler.current_question = 0;
+                self.game_handler.stage = crate::enums::GameStage::NotStartedYet;
+                self.game_handler.question_number_text = String::new();
             }
         });
         ui.horizontal(|ui| {
@@ -49,10 +51,10 @@ impl Application {
                 .settings
                 .game_settings
                 .question_pack_new_name
-                .replace("|||||", "")
-                .replace("||||", "")
-                .replace("|||", "")
-                .replace("||", "")
+                .replace(crate::game::game_handler::QUESTION_PACKS_DIV, "")
+                .replace(crate::game::game_handler::QUESTION_PACK_PARTS_DIV, "")
+                .replace(crate::game::game_handler::QUESTION_PACK_QUESTIONS_DIV, "")
+                .replace(crate::game::game_handler::QUESTION_PACK_QUESTIONS_PARTS_DIV, "")
         });
         ui.separator();
 
@@ -183,6 +185,8 @@ impl Application {
                 self.game_handler.question_catalog = new_questions;
                 self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
                 self.game_handler.current_question = 0;
+                self.game_handler.stage = crate::enums::GameStage::NotStartedYet;
+                self.game_handler.question_number_text = String::new();
             }
         });
     }

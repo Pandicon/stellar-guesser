@@ -122,6 +122,9 @@ impl Application {
         let mut cellestial_sphere = CellestialSphere::load(cc.storage, &mut theme).unwrap();
         cellestial_sphere.init();
         let game_handler = GameHandler::init(&mut cellestial_sphere, cc.storage);
+        if game_handler.question_packs.contains_key(&game_handler.active_question_pack) {
+            state.windows.settings.game_settings.question_pack_new_name = game_handler.active_question_pack.clone();
+        }
         let mut app = Self {
             input: input::Input::default(),
             state,
@@ -233,14 +236,21 @@ impl eframe::App for Application {
             .iter()
             .map(|(name, pack)| {
                 format!(
-                    "{}||||{}||||{}",
+                    "{}{}{}{}{}",
                     name,
+                    crate::game::game_handler::QUESTION_PACK_PARTS_DIV,
                     pack.query,
+                    crate::game::game_handler::QUESTION_PACK_PARTS_DIV,
                     pack.question_objects
                         .iter()
                         .filter_map(|(settings, object_ids)| {
                             match serde_json::to_string(settings) {
-                                Ok(string) => Some(format!("{}||{}", string, object_ids.iter().map(|n| n.to_string()).collect::<Vec<String>>().join(","))),
+                                Ok(string) => Some(format!(
+                                    "{}{}{}",
+                                    string,
+                                    crate::game::game_handler::QUESTION_PACK_QUESTIONS_PARTS_DIV,
+                                    object_ids.iter().map(|n| n.to_string()).collect::<Vec<String>>().join(",")
+                                )),
                                 Err(err) => {
                                     log::error!("Failed to serialize question pack settings: {:?}", err);
                                     None
@@ -248,12 +258,11 @@ impl eframe::App for Application {
                             }
                         })
                         .collect::<Vec<String>>()
-                        .join("|||")
+                        .join(crate::game::game_handler::QUESTION_PACK_QUESTIONS_DIV)
                 )
             })
             .collect::<Vec<String>>()
-            .join("|||||");
-        log::warn!("{}", question_packs);
+            .join(crate::game::game_handler::QUESTION_PACKS_DIV);
         storage.set_string(StorageKeys::QuestionPacks.as_ref(), question_packs);
         storage.set_string(StorageKeys::ActiveQuestionPack.as_ref(), self.game_handler.active_question_pack.clone());
         if let Some(active_pack) = self.game_handler.question_packs.get(&self.game_handler.active_question_pack) {
