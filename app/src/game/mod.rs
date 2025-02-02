@@ -52,7 +52,7 @@ impl StarType {
         }
     }
 
-    pub fn to_string(&self) -> String {
+    pub fn display_name(&self) -> String {
         self.to_option_string().unwrap_or(String::from("Star"))
     }
 }
@@ -81,7 +81,7 @@ impl DeepskyType {
         }
     }
 
-    pub fn to_string(&self) -> String {
+    pub fn display_name(&self) -> String {
         self.to_option_string().unwrap_or(String::from("Unknown deepsky"))
     }
 }

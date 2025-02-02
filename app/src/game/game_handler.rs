@@ -232,7 +232,7 @@ impl GameHandler {
                             log::error!("Not enough parts in a question pack set: {} < 2 ({:?})", spl.len(), spl);
                             continue;
                         }
-                        let question_settings = match serde_json::from_str(&spl[0]) {
+                        let question_settings = match serde_json::from_str(spl[0]) {
                             Ok(data) => data,
                             Err(err) => {
                                 log::error!("Failed to deserialize question game settings: {:?}", err);

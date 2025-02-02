@@ -192,8 +192,8 @@ impl CellestialSphere {
                 }
             }
             objects.shuffle(&mut rand::thread_rng());
-            match question_type {
-                &crate::game::questions::QuestionType::AngularSeparation(small_settings) => {
+            match *question_type {
+                crate::game::questions::QuestionType::AngularSeparation(small_settings) => {
                     for i in (0..objects.len()).step_by(2) {
                         if i + 1 >= objects.len() {
                             break;
@@ -206,7 +206,7 @@ impl CellestialSphere {
                         }));
                     }
                 }
-                &crate::game::questions::QuestionType::FindThisObject(small_settings) => {
+                crate::game::questions::QuestionType::FindThisObject(small_settings) => {
                     for object in objects {
                         let question = crate::game::questions::find_this_object::Question {
                             small_settings,
@@ -222,8 +222,8 @@ impl CellestialSphere {
                             is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
                             magnitude: object.mag,
                             object_type: match &object.object_type {
-                                crate::game::ObjectType::Star(star_type) => star_type.to_string(),
-                                crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.to_string(),
+                                crate::game::ObjectType::Star(star_type) => star_type.display_name(),
+                                crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
                             },
                             constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
                             images: Vec::new(),
@@ -293,7 +293,7 @@ impl CellestialSphere {
                         }
                     }
                 }
-                &crate::game::questions::QuestionType::GuessDec(small_settings) => {
+                crate::game::questions::QuestionType::GuessDec(small_settings) => {
                     for object in objects {
                         questions.push(Box::new(crate::game::questions::guess_ra_dec::DecQuestion {
                             ra: object.ra,
@@ -303,7 +303,7 @@ impl CellestialSphere {
                         }));
                     }
                 }
-                &crate::game::questions::QuestionType::GuessRa(small_settings) => {
+                crate::game::questions::QuestionType::GuessRa(small_settings) => {
                     for object in objects {
                         questions.push(Box::new(crate::game::questions::guess_ra_dec::RaQuestion {
                             ra: object.ra,
@@ -313,7 +313,7 @@ impl CellestialSphere {
                         }));
                     }
                 }
-                &crate::game::questions::QuestionType::GuessTheMagnitude(small_settings) => {
+                crate::game::questions::QuestionType::GuessTheMagnitude(small_settings) => {
                     for object in objects {
                         if let Some(mag) = object.mag {
                             questions.push(Box::new(crate::game::questions::guess_the_magnitude::Question {
@@ -326,7 +326,7 @@ impl CellestialSphere {
                         }
                     }
                 }
-                &crate::game::questions::QuestionType::WhatIsThisObject(small_settings) => {
+                crate::game::questions::QuestionType::WhatIsThisObject(small_settings) => {
                     for object in objects {
                         let mut possible_names = Vec::new();
                         if small_settings.accept_bayer {
@@ -389,8 +389,8 @@ impl CellestialSphere {
                                 is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
                                 magnitude: object.mag,
                                 object_type: match &object.object_type {
-                                    crate::game::ObjectType::Star(star_type) => star_type.to_string(),
-                                    crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.to_string(),
+                                    crate::game::ObjectType::Star(star_type) => star_type.display_name(),
+                                    crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
                                 },
                                 constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
                                 state: Default::default(),
@@ -398,7 +398,7 @@ impl CellestialSphere {
                         }
                     }
                 }
-                &crate::game::questions::QuestionType::WhichConstellationIsThisPointIn(small_settings) => {
+                crate::game::questions::QuestionType::WhichConstellationIsThisPointIn(small_settings) => {
                     for object in objects {
                         questions.push(Box::new(crate::game::questions::which_constellation_is_point_in::Question {
                             ra: object.ra,
