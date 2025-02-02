@@ -119,7 +119,7 @@ impl Application {
             }
             let (parsed_result, ast_res) = if spl.len() > 1 {
                 let query = spl.pop().unwrap().replace(":", "");
-                match crate::game::questions_filter::parser::Parser::new(&query).parse() {
+                match crate::game::questions_filter::parser::Parser::new(&query).parse(&self.game_handler.constellation_groups_settings.constellation_groups) {
                     Ok(Some(crate::game::questions_filter::parser::Node::Keyword(ast))) => (format!("{:?}", ast), Ok(Some(ast))),
                     Ok(Some(crate::game::questions_filter::parser::Node::Value(_))) | Ok(None) => (String::from("No restrictions"), Ok(None)),
                     Err(err) => {

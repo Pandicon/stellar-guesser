@@ -9,7 +9,7 @@ enum KeywordRaw {
     RaDeg,
     Ra,
     Constellation,
-    //ConstellationGroup, // Transforms into CONSTELLATION(list of constellations in the group)
+    ConstellationGroup, // Transforms into CONSTELLATION(list of constellations in the group)
     Catalogue,
     Type,
     MagBelow,
@@ -34,7 +34,7 @@ pub enum Keyword {
 }
 
 impl Keyword {
-    fn from_raw(keyword_raw: KeywordRaw, args: Vec<Node>, ident_pos: usize) -> Result<Self, String> {
+    fn from_raw(keyword_raw: KeywordRaw, args: Vec<Node>, ident_pos: usize, constellation_groups: &std::collections::HashMap<String, std::collections::HashMap<String, bool>>) -> Result<Self, String> {
         let keyword = match keyword_raw {
             KeywordRaw::And => {
                 let mut new_args = Vec::new();
@@ -163,6 +163,35 @@ impl Keyword {
                     return Err(format!("Keyword 'CONSTELLATION' at position {} expects at least 1 argument, found 0", ident_pos));
                 }
                 Self::Constellation(new_args)
+            }
+            KeywordRaw::ConstellationGroup => {
+                let mut group_names = Vec::new();
+                for arg in args {
+                    match arg {
+                        Node::Keyword(_) => return Err(format!("Keyword 'CONSTELLATION_GROUP' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Value(group_name) => {
+                            group_names.push(group_name);
+                        }
+                    }
+                }
+                if group_names.is_empty() {
+                    return Err(format!("Keyword 'CONSTELLATION_GROUP' at position {} expects at least 1 argument, found 0", ident_pos));
+                }
+                let mut constellations = std::collections::HashSet::new();
+                for group_name in group_names {
+                    if let Some(group) = constellation_groups.get(&group_name) {
+                        for (name, enabled) in group.iter() {
+                            if *enabled {
+                                constellations.insert(name.to_uppercase());
+                            }
+                        }
+                    } else {
+                        return Err(format!("Could not find constellation group named '{}'", group_name));
+                    }
+                }
+                let mut constellations = constellations.into_iter().collect::<Vec<String>>();
+                constellations.sort();
+                Self::Constellation(constellations)
             }
             KeywordRaw::Catalogue => {
                 let mut new_args = Vec::new();
@@ -309,11 +338,11 @@ impl<'a> Parser<'a> {
         Self { chars: input.chars(), pos: 0 }
     }
 
-    pub fn parse(&mut self) -> Result<Option<Node>, String> {
-        self.parse_expression()
+    pub fn parse(&mut self, constellation_groups: &std::collections::HashMap<String, std::collections::HashMap<String, bool>>) -> Result<Option<Node>, String> {
+        self.parse_expression(constellation_groups)
     }
 
-    fn parse_expression(&mut self) -> Result<Option<Node>, String> {
+    fn parse_expression(&mut self, constellation_groups: &std::collections::HashMap<String, std::collections::HashMap<String, bool>>) -> Result<Option<Node>, String> {
         self.consume_whitespace();
 
         if let Some(ident) = self.parse_identifier() {
@@ -329,6 +358,7 @@ impl<'a> Parser<'a> {
                     "RA_DEG" => KeywordRaw::RaDeg,
                     "RA" => KeywordRaw::Ra,
                     "CONSTELLATION" => KeywordRaw::Constellation,
+                    "CONSTELLATION_GROUP" => KeywordRaw::ConstellationGroup,
                     "CATALOGUE" => KeywordRaw::Catalogue,
                     "TYPE" => KeywordRaw::Type,
                     "MAG_BELOW" => KeywordRaw::MagBelow,
@@ -339,9 +369,9 @@ impl<'a> Parser<'a> {
                 self.chars.next(); // Consume '('
                 self.pos += 1;
 
-                let args = self.parse_arguments()?;
+                let args = self.parse_arguments(constellation_groups)?;
 
-                let keyword = Keyword::from_raw(keyword_raw, args, ident_pos)?;
+                let keyword = Keyword::from_raw(keyword_raw, args, ident_pos, constellation_groups)?;
 
                 return Ok(Some(Node::Keyword(keyword)));
             } else {
@@ -351,10 +381,10 @@ impl<'a> Parser<'a> {
         Ok(None)
     }
 
-    fn parse_arguments(&mut self) -> Result<Vec<Node>, String> {
+    fn parse_arguments(&mut self, constellation_groups: &std::collections::HashMap<String, std::collections::HashMap<String, bool>>) -> Result<Vec<Node>, String> {
         let mut args = Vec::new();
 
-        while let Some(node) = self.parse_expression()? {
+        while let Some(node) = self.parse_expression(constellation_groups)? {
             args.push(node);
             self.consume_whitespace();
 
