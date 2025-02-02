@@ -34,6 +34,16 @@ pub fn check(expression: &parser::Keyword, object: &QuestionObject) -> bool {
             parser::Catalogue::Hip => object.hipparcos_number.is_some(),
             parser::Catalogue::ProperName => !object.proper_names.is_empty(),
         }),
+        parser::Keyword::CatalogueDesignation(catalogue_designations) => catalogue_designations.iter().any(|(catalogue, number)| match *catalogue {
+            parser::Catalogue::Bayer => object.bayer_designation.as_ref() == Some(number),
+            parser::Catalogue::Flamsteed => object.flamsteed_designation.as_ref() == Some(number),
+            parser::Catalogue::Caldwell => object.caldwell_number == number.parse().ok(),
+            parser::Catalogue::Messier => object.messier_number == number.parse().ok(),
+            parser::Catalogue::Ngc => object.ngc_number == number.parse().ok(),
+            parser::Catalogue::Hd => object.hd_number == number.parse().ok(),
+            parser::Catalogue::Hip => object.hipparcos_number == number.parse().ok(),
+            parser::Catalogue::ProperName => object.proper_names.iter().any(|s| s.trim().to_lowercase() == number.trim().to_lowercase()),
+        }),
         parser::Keyword::Type(object_types) => object_types.iter().any(|object_type| match *object_type {
             crate::game::ObjectType::Star(crate::game::StarType::Any) => matches!(object.object_type, crate::game::ObjectType::Star(_)),
             crate::game::ObjectType::Deepsky(crate::game::DeepskyType::Any) => matches!(object.object_type, crate::game::ObjectType::Deepsky(_)),
@@ -71,5 +81,6 @@ pub fn check(expression: &parser::Keyword, object: &QuestionObject) -> bool {
                 false
             }
         }
+        &parser::Keyword::ObjectId(object_id) => object.object_id == object_id,
     }
 }

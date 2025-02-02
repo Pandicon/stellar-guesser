@@ -15,6 +15,8 @@ enum KeywordRaw {
     MagBelow,
     MagAbove,
     Mag,
+    ObjectId,
+    CatalogueDesignation,
 }
 
 #[derive(Debug)]
@@ -31,6 +33,8 @@ pub enum Keyword {
     MagBelow(f32),
     MagAbove(f32),
     Mag(f32, f32),
+    ObjectId(u64),
+    CatalogueDesignation(Vec<(Catalogue, String)>),
 }
 
 impl Keyword {
@@ -209,6 +213,44 @@ impl Keyword {
                 }
                 Self::Catalogue(new_args)
             }
+            KeywordRaw::CatalogueDesignation => {
+                let mut new_args_raw = Vec::new();
+                for arg in args {
+                    match arg {
+                        Node::Keyword(_) => return Err(format!("Keyword 'CATALOGUE_DESIGNATION' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Value(value) => {
+                            new_args_raw.push(value);
+                        }
+                    }
+                }
+                if new_args_raw.is_empty() {
+                    return Err(format!("Keyword 'CATALOGUE_DESIGNATION' at position {} expects at least 1 argument, found 0", ident_pos));
+                }
+                let mut new_args = Vec::with_capacity(new_args_raw.len());
+                for s in new_args_raw {
+                    let spl = s.split(":").collect::<Vec<&str>>();
+                    if spl.len() != 2 {
+                        return Err(format!(
+                            "Each argument of 'CATALOGUE_DESIGNATION' has to be in the format <catalogue>:<catalogue number>, did not get the correct amount of colons at position {} ",
+                            ident_pos
+                        ));
+                    };
+                    let catalogue = Catalogue::from_string(&spl[0])?;
+                    match catalogue {
+                        Catalogue::Caldwell | Catalogue::Hd | Catalogue::Hip | Catalogue::Messier | Catalogue::Ngc => {
+                            if let Err(err) = spl[1].parse::<u32>() {
+                                return Err(format!(
+                                    "The catalogue number has to be a whole number, found {} ({}) as an argument of 'CATALOGUE_DESIGNATION' at position {}",
+                                    spl[1], err, ident_pos
+                                ));
+                            }
+                        }
+                        Catalogue::Bayer | Catalogue::Flamsteed | Catalogue::ProperName => {}
+                    };
+                    new_args.push((catalogue, spl[1].to_owned()));
+                }
+                Self::CatalogueDesignation(new_args)
+            }
             KeywordRaw::Type => {
                 let mut new_args = Vec::new();
                 for arg in args {
@@ -285,6 +327,29 @@ impl Keyword {
                     std::mem::swap(&mut min, &mut max);
                 }
                 Self::Mag(min, max)
+            }
+            KeywordRaw::ObjectId => {
+                let mut new_args = Vec::new();
+                for arg in args {
+                    match arg {
+                        Node::Keyword(_) => return Err(format!("Keyword 'OBJECT_ID' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Value(value) => new_args.push(value),
+                    }
+                }
+                if new_args.len() != 1 {
+                    return Err(format!("Keyword 'OBJECT_ID' at position {} expects exactly 1 argument, found {}", ident_pos, new_args.len()));
+                }
+                let val = new_args[0].clone();
+                let val = match val.parse() {
+                    Ok(val) => val,
+                    Err(err) => {
+                        return Err(format!(
+                            "Keyword 'OBJECT_ID' at position {} expects a whole numbers as argument, found '{}' ('{}')",
+                            ident_pos, val, err
+                        ))
+                    }
+                };
+                Self::ObjectId(val)
             }
         };
         Ok(keyword)
@@ -364,6 +429,8 @@ impl<'a> Parser<'a> {
                     "MAG_BELOW" => KeywordRaw::MagBelow,
                     "MAG_ABOVE" => KeywordRaw::MagAbove,
                     "MAG" => KeywordRaw::Mag,
+                    "OBJECT_ID" => KeywordRaw::ObjectId,
+                    "CATALOGUE_DESIGNATION" => KeywordRaw::CatalogueDesignation,
                     _ => return Err(format!("Unknown keyword '{}' at position {}", ident, ident_pos)),
                 };
                 self.chars.next(); // Consume '('
@@ -407,7 +474,7 @@ impl<'a> Parser<'a> {
     fn parse_identifier(&mut self) -> Option<String> {
         let mut ident = String::new();
         while let Some(c) = self.peek() {
-            if c.is_alphanumeric() || c == '_' || c == '.' {
+            if c.is_alphanumeric() || c == '_' || c == '.' || c == ':' {
                 ident.push(self.chars.next().unwrap());
                 self.pos += 1;
             } else {
