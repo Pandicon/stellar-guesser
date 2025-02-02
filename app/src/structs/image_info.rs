@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 #[derive(Clone, Deserialize)]
 pub struct DeepskyObjectImageInfo {
-    pub object_designation: String,
+    pub object_id: u64,
     pub image: String,
     pub image_source: Option<String>,
 }

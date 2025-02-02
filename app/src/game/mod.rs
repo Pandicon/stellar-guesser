@@ -130,10 +130,11 @@ pub struct QuestionObject {
     pub mag: Option<f32>,
     pub distance: Option<f32>,
     pub bv: Option<f32>,
+    pub images: Vec<crate::structs::image_info::ImageInfo>,
 }
 
 impl QuestionObject {
-    pub fn from_raw(raw: QuestionObjectRaw) -> Self {
+    pub fn from_raw(raw: QuestionObjectRaw, images: Vec<crate::structs::image_info::ImageInfo>) -> Self {
         Self {
             object_id: raw.object_id,
             object_type: raw.object_type,
@@ -153,6 +154,7 @@ impl QuestionObject {
             mag: raw.mag,
             distance: raw.distance,
             bv: raw.bv,
+            images,
         }
     }
 }
