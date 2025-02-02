@@ -1,12 +1,10 @@
 use crate::enums::GameStage;
 use crate::game::game_handler::{self, GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::game::questions;
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
 use angle::{Angle, Deg};
 use eframe::egui;
-use std::collections::HashMap;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
 pub struct SmallSettings {
@@ -48,7 +46,7 @@ pub struct Question {
 impl Question {
     fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
-            ui.heading(self.get_display_question());
+            self.render_display_question(ui);
             if self.should_display_input() {
                 let text_input_response = ui.text_edit_singleline(&mut self.state.answer);
                 if *data.request_input_focus {
@@ -146,10 +144,6 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn can_choose_as_next(&self, _questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
-        true
-    }
-
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self {
             point1: self.point1,
@@ -183,7 +177,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, _questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
         self.state = Default::default();
         let (ra1, dec1) = self.point1;
         let (ra2, dec2) = self.point2;
@@ -202,8 +196,8 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn get_display_question(&self) -> String {
-        String::from("What is the angular distance between these markers?")
+    fn render_display_question(&self, ui: &mut egui::Ui) {
+        ui.heading("What is the angular distance between these markers?");
     }
 
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {

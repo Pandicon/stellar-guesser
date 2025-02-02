@@ -59,8 +59,6 @@ pub trait QuestionTrait {
 
     // fn check_answer(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
 
-    fn can_choose_as_next(&self, questions_settings: &questions::Settings, active_constellations: &mut HashMap<String, bool>) -> bool;
-
     fn reset(self: Box<Self>) -> Box<dyn QuestionTrait>;
 
     fn show_tolerance_marker(&self) -> bool;
@@ -75,9 +73,9 @@ pub trait QuestionTrait {
 
     fn should_display_input(&self) -> bool;
 
-    fn start_question(&mut self, questions_settings: &questions::Settings, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
+    fn start_question(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
 
-    fn get_display_question(&self) -> String;
+    fn render_display_question(&self, ui: &mut egui::Ui);
 
     fn clone_box(&self) -> Box<dyn QuestionTrait>;
 }
@@ -316,7 +314,7 @@ impl GameHandler {
         self.answer = String::new();
         let mut possible_questions: Vec<usize> = Vec::new();
         for question in 0..self.question_catalog.len() {
-            if !self.used_questions.contains(&question) && self.question_catalog[question].can_choose_as_next(&self.questions_settings, &mut self.constellation_groups_settings.active_constellations) {
+            if !self.used_questions.contains(&question) {
                 possible_questions.push(question);
             }
         }
@@ -334,23 +332,10 @@ impl GameHandler {
             );
 
             self.add_marker_on_click = self.question_catalog[self.current_question].add_marker_on_click();
-            self.question_catalog[self.current_question].start_question(&self.questions_settings, cellestial_sphere, theme);
+            self.question_catalog[self.current_question].start_question(cellestial_sphere, theme);
             self.request_input_focus = true;
             cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
             self.stage = GameStage::Guessing;
-        }
-    }
-    pub fn get_display_question(&self) -> String {
-        match self.stage {
-            GameStage::NoMoreQuestions => String::from("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return to the questions you already went through by clicking 'Reset and next question'."),
-            GameStage::ScoredModeFinished => {
-                let percentage = (self.score as f32) / (self.possible_score as f32) * 100.0;
-                format!(
-                    "Game over! Your score was {}/{}, that is {:.1}% of the maximum. Click Reset if you want to play a new game!",
-                    self.score, self.possible_score, percentage
-                )
-            },
-            _ => self.question_catalog[self.current_question].get_display_question()
         }
     }
 

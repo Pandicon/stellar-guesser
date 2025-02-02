@@ -1,13 +1,12 @@
 use crate::enums::{GameStage, RendererCategory};
+use crate::game::game_handler;
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::game::{game_handler, questions};
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
 use angle::{Angle, Deg};
 use eframe::egui;
 use rand::Rng;
-use std::collections::HashMap;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
 #[serde(default)]
@@ -111,7 +110,7 @@ pub struct Question {
 impl Question {
     fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
-            ui.heading(self.get_display_question());
+            self.render_display_question(ui);
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {
                     cellestial_sphere: data.cellestial_sphere,
@@ -239,10 +238,6 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn can_choose_as_next(&self, _questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
-        true
-    }
-
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self {
             name: self.name,
@@ -288,13 +283,13 @@ impl crate::game::game_handler::QuestionTrait for Question {
         false
     }
 
-    fn start_question(&mut self, _questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
         self.state = Default::default();
         cellestial_sphere.game_markers.markers = Vec::new();
     }
 
-    fn get_display_question(&self) -> String {
-        format!("Find {}", self.name)
+    fn render_display_question(&self, ui: &mut egui::Ui) {
+        ui.heading(format!("Find {}", self.name));
     }
 
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {

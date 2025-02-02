@@ -1,13 +1,12 @@
 use crate::enums::GameStage;
+use crate::game::game_handler;
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::game::{game_handler, questions};
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
 use angle::Deg;
 use eframe::egui;
 use rand::Rng;
-use std::collections::HashMap;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
 #[serde(default)]
@@ -109,7 +108,7 @@ pub struct Question {
 impl Question {
     fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
-            ui.heading(self.get_display_question());
+            self.render_display_question(ui);
             if self.should_display_input() {
                 let text_input_response = ui.text_edit_singleline(&mut self.state.answer);
                 if *data.request_input_focus {
@@ -212,10 +211,6 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn can_choose_as_next(&self, _questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
-        true
-    }
-
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self {
             small_settings: self.small_settings,
@@ -261,7 +256,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, _questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
         self.state = Default::default();
         cellestial_sphere.game_markers.markers = if self.is_bayer || self.is_starname {
             vec![GameMarker::new(
@@ -293,7 +288,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn get_display_question(&self) -> String {
+    fn render_display_question(&self, ui: &mut egui::Ui) {
         let mut accepted = Vec::new();
         if self.small_settings.accept_bayer {
             accepted.push("Bayer");
@@ -322,7 +317,8 @@ impl crate::game::game_handler::QuestionTrait for Question {
         if self.small_settings.accept_proper {
             accepted.push("Proper name");
         }
-        format!("What is this object?\nAccepted names: {}", accepted.join(", "))
+        ui.heading("What is this object?");
+        ui.label(format!("Accepted names: {}", accepted.join(", ")));
     }
 
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
