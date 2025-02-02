@@ -139,7 +139,7 @@ impl QuestionObject {
             object_type: raw.object_type,
             dec: raw.dec,
             ra: raw.ra,
-            proper_names: raw.proper_names.split(';').map(|s| s.to_owned()).collect(),
+            proper_names: raw.proper_names.split(';').map(|s| s.to_owned()).filter(|s| !s.is_empty()).collect(),
             bayer_designation: raw.bayer_designation,
             flamsteed_designation: raw.flamsteed_designation,
             hipparcos_number: raw.hipparcos_number,
