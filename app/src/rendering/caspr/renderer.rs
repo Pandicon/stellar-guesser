@@ -415,7 +415,7 @@ impl CellestialSphere {
 
     pub fn evaluate_questions_query(
         &self,
-        query: Vec<(Option<crate::game::questions_filter::parser::Keyword>, crate::game::questions::QuestionType)>,
+        query: &[(Option<crate::game::questions_filter::parser::Keyword>, crate::game::questions::QuestionType)],
     ) -> Vec<(crate::game::questions::QuestionType, Vec<u64>)> {
         let mut answer = Vec::new();
         for (query, question) in query {
@@ -426,12 +426,12 @@ impl CellestialSphere {
                         objects.push(object.object_id);
                     }
                 }
-                answer.push((question, objects));
+                answer.push((question.clone(), objects));
             } else {
                 for object in &self.question_objects {
                     objects.push(object.object_id);
                 }
-                answer.push((question, objects));
+                answer.push((question.clone(), objects));
             }
         }
         answer

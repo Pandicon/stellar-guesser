@@ -210,39 +210,62 @@ impl GameHandler {
 
         let mut active_question_pack = String::new();
         let mut question_packs = HashMap::new();
+        let mut question_pack_strs = Vec::new();
         if let Some(storage) = storage {
             if let Some(active_question_pack_recovered) = storage.get_string(StorageKeys::ActiveQuestionPack.as_ref()) {
                 active_question_pack = active_question_pack_recovered;
             }
             if let Some(question_packs_str) = storage.get_string(StorageKeys::QuestionPacks.as_ref()) {
                 for question_pack_str in question_packs_str.split(QUESTION_PACKS_DIV) {
-                    let spl = question_pack_str.split(QUESTION_PACK_PARTS_DIV).collect::<Vec<&str>>();
-                    if spl.len() < 3 {
-                        log::error!("Not enough parts in a question pack: {} < 3 ({:?})", spl.len(), spl);
-                        continue;
-                    }
-                    let name = spl[0].to_owned();
-                    let query = spl[1].to_owned();
-                    let mut sets = Vec::new();
-                    for set in spl[2].split(QUESTION_PACK_QUESTIONS_DIV) {
-                        let spl = set.split(QUESTION_PACK_QUESTIONS_PARTS_DIV).collect::<Vec<&str>>();
-                        if spl.len() < 2 {
-                            log::error!("Not enough parts in a question pack set: {} < 2 ({:?})", spl.len(), spl);
-                            continue;
-                        }
-                        let question_settings = match serde_json::from_str(spl[0]) {
-                            Ok(data) => data,
-                            Err(err) => {
-                                log::error!("Failed to deserialize question game settings: {:?}", err);
-                                continue;
-                            }
-                        };
-                        let object_ids = spl[1].split(",").filter_map(|s| s.trim().parse::<u64>().ok()).collect::<Vec<u64>>();
-                        sets.push((question_settings, object_ids));
-                    }
-                    question_packs.insert(name, crate::game::questions_filter::QuestionPack { query, question_objects: sets });
+                    question_pack_strs.push((None, question_pack_str.to_owned()));
                 }
             }
+        }
+        let question_packs_files = crate::files::load_all_files_folder(crate::public_constants::QUESTION_PACKS_FOLDER);
+        for file in question_packs_files {
+            question_pack_strs.push((file.path, file.content));
+        }
+        for (file_path, question_pack_str) in question_pack_strs {
+            let spl = question_pack_str.split(QUESTION_PACK_PARTS_DIV).collect::<Vec<&str>>();
+            if spl.len() < 3 {
+                log::error!("Not enough parts in a question pack: {} < 3 ({:?})", spl.len(), spl);
+                continue;
+            }
+            let mut name = spl[0].to_owned();
+            let query = spl[1].to_owned();
+            let mut sets = Vec::new();
+            for set in spl[2].split(QUESTION_PACK_QUESTIONS_DIV) {
+                let spl = set.split(QUESTION_PACK_QUESTIONS_PARTS_DIV).collect::<Vec<&str>>();
+                if spl.len() < 2 {
+                    log::error!("Not enough parts in a question pack set: {} < 2 ({:?})", spl.len(), spl);
+                    continue;
+                }
+                let question_settings = match serde_json::from_str(spl[0]) {
+                    Ok(data) => data,
+                    Err(err) => {
+                        log::error!("Failed to deserialize question game settings: {:?}", err);
+                        continue;
+                    }
+                };
+                let object_ids = spl[1].split(",").filter_map(|s| s.trim().parse::<u64>().ok()).collect::<Vec<u64>>();
+                sets.push((question_settings, object_ids));
+            }
+            if question_packs.contains_key(&name) {
+                let mut i = 0;
+                let name_original = name.clone();
+                while question_packs.contains_key(&name) {
+                    i += 1;
+                    name = format!("{name_original} ({i})");
+                }
+            }
+            question_packs.insert(
+                name,
+                crate::game::questions_filter::QuestionPack {
+                    query,
+                    question_objects: sets,
+                    file_path,
+                },
+            );
         }
         let catalog = if let Some(question_pack) = question_packs.get(&active_question_pack) {
             cellestial_sphere.generate_questions(&question_pack.question_objects)

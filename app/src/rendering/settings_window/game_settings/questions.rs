@@ -1,4 +1,8 @@
-use crate::{structs::state::windows::settings::GameSettingsQuestionsSubWindow, structs::state::windows::settings::GameSettingsType, Application};
+use crate::{
+    public_constants,
+    structs::state::windows::settings::{GameSettingsQuestionsSubWindow, GameSettingsType},
+    Application,
+};
 use angle::Angle;
 use eframe::egui;
 
@@ -19,9 +23,43 @@ impl Application {
             let removed_group = ui
                 .add_enabled_ui(self.game_handler.question_packs.keys().len() != 0, |ui| {
                     if ui.button("Remove pack").clicked() {
-                        self.game_handler.question_packs.remove(&self.game_handler.active_question_pack);
-                        self.game_handler.active_question_pack = String::new();
-                        true
+                        if let Some(pack) = self.game_handler.question_packs.get(&self.game_handler.active_question_pack) {
+                            let remove = if let Some(path) = &pack.file_path {
+                                let path_buf = std::path::PathBuf::from(path);
+                                if let Err(err) = std::fs::remove_file(&path_buf) {
+                                    let exists_res = std::fs::exists(&path_buf);
+                                    log::error!(
+                                        "Failed to remove the question pack file: {err} (file path: {path:?}, file path buf: {path_buf:?}). {}",
+                                        match exists_res {
+                                            Ok(exists) =>
+                                                if exists {
+                                                    "It is known the file exists."
+                                                } else {
+                                                    "It is known the file does not exist."
+                                                },
+                                            Err(ref err) => {
+                                                log::error!("Could not check if the question pack exists: {err}");
+                                                "It is not known if the file exists."
+                                            }
+                                        }
+                                    );
+                                    !exists_res.unwrap_or(true)
+                                } else {
+                                    true
+                                }
+                            } else {
+                                true
+                            };
+                            if remove {
+                                self.game_handler.question_packs.remove(&self.game_handler.active_question_pack);
+                                self.game_handler.active_question_pack = String::new();
+                                true
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        }
                     } else {
                         false
                     }
@@ -162,32 +200,87 @@ impl Application {
         ui.label("Parsed query:");
         ui.label(egui::RichText::new(replaced).code());
         ui.add_enabled_ui(can_evaluate, |ui| {
-            let button = if self.game_handler.question_packs.contains_key(&self.state.windows.settings.game_settings.question_pack_new_name) {
-                ui.button("Evaluate and save")
-            } else {
-                ui.button("Evaluate and create new pack")
-            };
-            if button.clicked() {
-                let res = self.cellestial_sphere.evaluate_questions_query(settings_all);
-                self.game_handler.question_packs.insert(
-                    self.state.windows.settings.game_settings.question_pack_new_name.clone(),
-                    crate::game::questions_filter::QuestionPack {
-                        question_objects: res,
-                        query: self.state.windows.settings.game_settings.internal_query.clone(),
-                    },
-                );
-                self.game_handler.active_question_pack = self.state.windows.settings.game_settings.question_pack_new_name.clone();
-
-                let new_questions = self
-                    .cellestial_sphere
-                    .generate_questions(&self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().question_objects);
-                self.game_handler.possible_no_of_questions = new_questions.len() as u32;
-                self.game_handler.question_catalog = new_questions;
-                self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
-                self.game_handler.current_question = 0;
-                self.game_handler.stage = crate::enums::GameStage::NotStartedYet;
-                self.game_handler.question_number_text = String::new();
-            }
+            ui.horizontal(|ui| {
+                let save_button = if self.game_handler.question_packs.contains_key(&self.state.windows.settings.game_settings.question_pack_new_name) {
+                    ui.button("Evaluate and save")
+                } else {
+                    ui.button("Evaluate and create new pack")
+                };
+                if save_button.clicked() {
+                    let res = self.cellestial_sphere.evaluate_questions_query(&settings_all);
+                    self.game_handler.question_packs.insert(
+                        self.state.windows.settings.game_settings.question_pack_new_name.clone(),
+                        crate::game::questions_filter::QuestionPack {
+                            question_objects: res,
+                            query: self.state.windows.settings.game_settings.internal_query.clone(),
+                            file_path: None,
+                        },
+                    );
+                    self.game_handler.active_question_pack = self.state.windows.settings.game_settings.question_pack_new_name.clone();
+                }
+                let export_button = ui.button("Evaluate and export");
+                if export_button.clicked() {
+                    let res = self.cellestial_sphere.evaluate_questions_query(&settings_all);
+                    if let Some(path) = crate::files::get_dir_opt(public_constants::QUESTION_PACKS_FOLDER) {
+                        log::debug!("Question pack save path: {:?}", path);
+                        let name = self.state.windows.settings.game_settings.question_pack_new_name.clone();
+                        let pack = crate::game::questions_filter::QuestionPack {
+                            question_objects: res,
+                            query: self.state.windows.settings.game_settings.internal_query.clone(),
+                            file_path: None,
+                        };
+                        let pack_string = crate::game::questions::question_pack_to_string(&name, &pack);
+                        #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+                        let save_path_opt: Option<std::path::PathBuf> = {
+                            if !path.exists() {
+                                if let Err(err) = std::fs::create_dir_all(&path) {
+                                    log::error!("Failed to create the question pack folder: {err}");
+                                } else {
+                                    log::debug!("Created the folder for question packs")
+                                }
+                            }
+                            let dialog = rfd::FileDialog::new().add_filter("Question pack", &["txt"]).set_directory(path);
+                            dialog.save_file()
+                        };
+                        #[cfg(any(target_os = "android", target_os = "ios"))]
+                        let save_path_opt: Option<std::path::PathBuf> = {
+                            let mut save_path_intermediate = path;
+                            save_path_intermediate.push(format!("{}--{}.txt", &name, chrono::Local::now().timestamp_millis()));
+                            Some(save_path_intermediate)
+                        };
+                        match save_path_opt {
+                            Some(save_path) => {
+                                if let Some(dir) = save_path.parent() {
+                                    if !dir.exists() {
+                                        if let Err(err) = std::fs::create_dir_all(dir) {
+                                            log::error!("Failed to create the folders for the question pack: {err}");
+                                        } else {
+                                            log::debug!("Created the folder for question packs")
+                                        }
+                                    }
+                                } else {
+                                    log::warn!("No question pack folder: {:?}", save_path);
+                                }
+                                if let Err(err) = std::fs::write(save_path, pack_string) {
+                                    log::error!("Failed to save the question pack: {err}");
+                                }
+                            }
+                            None => log::info!("Question pack saving cancelled by the user"),
+                        }
+                    }
+                }
+                if save_button.clicked() || export_button.clicked() {
+                    let new_questions = self
+                        .cellestial_sphere
+                        .generate_questions(&self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().question_objects);
+                    self.game_handler.possible_no_of_questions = new_questions.len() as u32;
+                    self.game_handler.question_catalog = new_questions;
+                    self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
+                    self.game_handler.current_question = 0;
+                    self.game_handler.stage = crate::enums::GameStage::NotStartedYet;
+                    self.game_handler.question_number_text = String::new();
+                }
+            });
         });
     }
 

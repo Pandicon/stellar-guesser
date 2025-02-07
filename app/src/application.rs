@@ -234,33 +234,8 @@ impl eframe::App for Application {
             .game_handler
             .question_packs
             .iter()
-            .map(|(name, pack)| {
-                format!(
-                    "{}{}{}{}{}",
-                    name,
-                    crate::game::game_handler::QUESTION_PACK_PARTS_DIV,
-                    pack.query,
-                    crate::game::game_handler::QUESTION_PACK_PARTS_DIV,
-                    pack.question_objects
-                        .iter()
-                        .filter_map(|(settings, object_ids)| {
-                            match serde_json::to_string(settings) {
-                                Ok(string) => Some(format!(
-                                    "{}{}{}",
-                                    string,
-                                    crate::game::game_handler::QUESTION_PACK_QUESTIONS_PARTS_DIV,
-                                    object_ids.iter().map(|n| n.to_string()).collect::<Vec<String>>().join(",")
-                                )),
-                                Err(err) => {
-                                    log::error!("Failed to serialize question pack settings: {:?}", err);
-                                    None
-                                }
-                            }
-                        })
-                        .collect::<Vec<String>>()
-                        .join(crate::game::game_handler::QUESTION_PACK_QUESTIONS_DIV)
-                )
-            })
+            .filter(|(_, pack)| pack.file_path.is_none()) // Do not save question packs that are in separate files
+            .map(|(name, pack)| crate::game::questions::question_pack_to_string(name, pack))
             .collect::<Vec<String>>()
             .join(crate::game::game_handler::QUESTION_PACKS_DIV);
         storage.set_string(StorageKeys::QuestionPacks.as_ref(), question_packs);

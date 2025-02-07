@@ -30,7 +30,7 @@ impl Default for Settings {
     }
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub enum QuestionType {
     AngularSeparation(angular_separation::SmallSettings),
     FindThisObject(find_this_object::SmallSettings),
@@ -39,4 +39,33 @@ pub enum QuestionType {
     GuessTheMagnitude(guess_the_magnitude::SmallSettings),
     WhatIsThisObject(which_object_is_here::SmallSettings),
     WhichConstellationIsThisPointIn(which_constellation_is_point_in::SmallSettings),
+}
+
+pub fn question_pack_to_string(name: &str, question_pack: &crate::game::questions_filter::QuestionPack) -> String {
+    format!(
+        "{}{}{}{}{}",
+        name,
+        crate::game::game_handler::QUESTION_PACK_PARTS_DIV,
+        question_pack.query,
+        crate::game::game_handler::QUESTION_PACK_PARTS_DIV,
+        question_pack
+            .question_objects
+            .iter()
+            .filter_map(|(settings, object_ids)| {
+                match serde_json::to_string(settings) {
+                    Ok(string) => Some(format!(
+                        "{}{}{}",
+                        string,
+                        crate::game::game_handler::QUESTION_PACK_QUESTIONS_PARTS_DIV,
+                        object_ids.iter().map(|n| n.to_string()).collect::<Vec<String>>().join(",")
+                    )),
+                    Err(err) => {
+                        log::error!("Failed to serialize question pack settings: {:?}", err);
+                        None
+                    }
+                }
+            })
+            .collect::<Vec<String>>()
+            .join(crate::game::game_handler::QUESTION_PACK_QUESTIONS_DIV)
+    )
 }
