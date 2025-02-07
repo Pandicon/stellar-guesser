@@ -235,7 +235,7 @@ impl Keyword {
                             ident_pos
                         ));
                     };
-                    let catalogue = Catalogue::from_string(&spl[0])?;
+                    let catalogue = Catalogue::from_string(spl[0])?;
                     match catalogue {
                         Catalogue::Caldwell | Catalogue::Hd | Catalogue::Hip | Catalogue::Messier | Catalogue::Ngc => {
                             if let Err(err) = spl[1].parse::<u32>() {

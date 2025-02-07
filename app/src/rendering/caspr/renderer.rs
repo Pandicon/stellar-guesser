@@ -422,7 +422,7 @@ impl CellestialSphere {
             let mut objects = Vec::new();
             if let Some(query) = query {
                 for object in &self.question_objects {
-                    if crate::game::questions_filter::check(&query, object) {
+                    if crate::game::questions_filter::check(query, object) {
                         objects.push(object.object_id);
                     }
                 }
