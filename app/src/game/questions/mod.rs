@@ -43,10 +43,12 @@ pub enum QuestionType {
 
 pub fn question_pack_to_string(name: &str, question_pack: &crate::game::questions_filter::QuestionPack) -> String {
     format!(
-        "{}{}{}{}{}",
+        "{}{}{}{}{}{}{}",
         name,
         crate::game::game_handler::QUESTION_PACK_PARTS_DIV,
         question_pack.query,
+        crate::game::game_handler::QUESTION_PACK_PARTS_DIV,
+        question_pack.description,
         crate::game::game_handler::QUESTION_PACK_PARTS_DIV,
         question_pack
             .question_objects

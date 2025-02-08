@@ -227,14 +227,15 @@ impl GameHandler {
         }
         for (file_path, question_pack_str) in question_pack_strs {
             let spl = question_pack_str.split(QUESTION_PACK_PARTS_DIV).collect::<Vec<&str>>();
-            if spl.len() < 3 {
+            if spl.len() < 4 {
                 log::error!("Not enough parts in a question pack: {} < 3 ({:?})", spl.len(), spl);
                 continue;
             }
             let mut name = spl[0].to_owned();
             let query = spl[1].to_owned();
+            let description = spl[2].to_owned();
             let mut sets = Vec::new();
-            for set in spl[2].split(QUESTION_PACK_QUESTIONS_DIV) {
+            for set in spl[3].split(QUESTION_PACK_QUESTIONS_DIV) {
                 let spl = set.split(QUESTION_PACK_QUESTIONS_PARTS_DIV).collect::<Vec<&str>>();
                 if spl.len() < 2 {
                     log::error!("Not enough parts in a question pack set: {} < 2 ({:?})", spl.len(), spl);
@@ -263,6 +264,7 @@ impl GameHandler {
                 crate::game::questions_filter::QuestionPack {
                     query,
                     question_objects: sets,
+                    description,
                     file_path,
                 },
             );

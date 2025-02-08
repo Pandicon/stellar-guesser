@@ -116,6 +116,9 @@ impl Application {
             if let Some(last_question_pack_query) = storage.get_string(StorageKeys::QuestionPackQuery.as_ref()) {
                 state.windows.settings.game_settings.query = last_question_pack_query;
             }
+            if let Some(last_question_pack_description) = storage.get_string(StorageKeys::QuestionPackDescription.as_ref()) {
+                state.windows.settings.game_settings.question_pack_new_description = last_question_pack_description;
+            }
         }
         ctx.set_visuals(theme.egui_visuals.clone());
 
@@ -240,9 +243,11 @@ impl eframe::App for Application {
             .join(crate::game::game_handler::QUESTION_PACKS_DIV);
         storage.set_string(StorageKeys::QuestionPacks.as_ref(), question_packs);
         storage.set_string(StorageKeys::ActiveQuestionPack.as_ref(), self.game_handler.active_question_pack.clone());
-        if let Some(active_pack) = self.game_handler.question_packs.get(&self.game_handler.active_question_pack) {
-            storage.set_string(StorageKeys::QuestionPackQuery.as_ref(), active_pack.query.clone());
-        }
+        storage.set_string(StorageKeys::QuestionPackQuery.as_ref(), self.state.windows.settings.game_settings.internal_query.clone());
+        storage.set_string(
+            StorageKeys::QuestionPackDescription.as_ref(),
+            self.state.windows.settings.game_settings.question_pack_new_description.clone(),
+        );
 
         self.game_handler.constellation_groups_settings.save_to_storage(storage);
     }

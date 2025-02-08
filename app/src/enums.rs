@@ -78,6 +78,7 @@ pub enum StorageKeys {
     GraphicsSettings,
     ActiveQuestionPack,
     QuestionPackQuery,
+    QuestionPackDescription,
     QuestionPacks,
 }
 
@@ -100,6 +101,7 @@ impl AsRef<str> for StorageKeys {
             Self::GraphicsSettings => "graphics_settings",
             Self::ActiveQuestionPack => "active_question_pack",
             Self::QuestionPackQuery => "question_pack_query",
+            Self::QuestionPackDescription => "question_pack_description",
             Self::QuestionPacks => "question_packs",
         }
     }

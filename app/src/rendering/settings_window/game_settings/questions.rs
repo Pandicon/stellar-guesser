@@ -17,7 +17,8 @@ impl Application {
                     let mut packs = self.game_handler.question_packs.keys().cloned().collect::<Vec<String>>();
                     packs.sort_by_key(|a| a.to_lowercase());
                     for pack_name in packs {
-                        ui.selectable_value(&mut self.game_handler.active_question_pack, pack_name.clone(), &pack_name);
+                        ui.selectable_value(&mut self.game_handler.active_question_pack, pack_name.clone(), &pack_name)
+                            .on_hover_text(self.game_handler.question_packs.get(&pack_name).map(|pack| pack.description.as_str()).unwrap_or(""));
                     }
                 });
             let removed_group = ui
@@ -69,6 +70,7 @@ impl Application {
                 self.state.windows.settings.game_settings.question_pack_new_name = self.game_handler.active_question_pack.clone();
                 self.state.windows.settings.game_settings.settings_type = GameSettingsType::Advanced;
                 self.state.windows.settings.game_settings.query = self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().query.clone();
+                self.state.windows.settings.game_settings.question_pack_new_description = self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().description.clone();
                 let new_questions = self
                     .cellestial_sphere
                     .generate_questions(&self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().question_objects);
@@ -92,113 +94,127 @@ impl Application {
                 .replace(crate::game::game_handler::QUESTION_PACKS_DIV, "")
                 .replace(crate::game::game_handler::QUESTION_PACK_PARTS_DIV, "")
                 .replace(crate::game::game_handler::QUESTION_PACK_QUESTIONS_DIV, "")
-                .replace(crate::game::game_handler::QUESTION_PACK_QUESTIONS_PARTS_DIV, "")
+                .replace(crate::game::game_handler::QUESTION_PACK_QUESTIONS_PARTS_DIV, "");
         });
+        ui.label("Question pack description");
+        ui.add(eframe::egui::TextEdit::multiline(&mut self.state.windows.settings.game_settings.question_pack_new_description).desired_rows(2));
+        self.state.windows.settings.game_settings.question_pack_new_description = self
+            .state
+            .windows
+            .settings
+            .game_settings
+            .question_pack_new_description
+            .replace(crate::game::game_handler::QUESTION_PACKS_DIV, "")
+            .replace(crate::game::game_handler::QUESTION_PACK_PARTS_DIV, "")
+            .replace(crate::game::game_handler::QUESTION_PACK_QUESTIONS_DIV, "")
+            .replace(crate::game::game_handler::QUESTION_PACK_QUESTIONS_PARTS_DIV, "");
         ui.separator();
 
-        ui.horizontal(|ui| {
-            ui.selectable_value(&mut self.state.windows.settings.game_settings.settings_type, GameSettingsType::Basic, GameSettingsType::Basic.as_ref());
-            ui.selectable_value(
-                &mut self.state.windows.settings.game_settings.settings_type,
-                GameSettingsType::Advanced,
-                GameSettingsType::Advanced.as_ref(),
-            );
-        });
-        ui.separator();
-
-        match self.state.windows.settings.game_settings.settings_type {
-            GameSettingsType::Basic => {
-                ui.horizontal(|ui| {
-                    // If adding new question types, make sure that the picker gets collapsed into a combo box on an appropriately wide/narrow screens
-                    if self.screen_width.narrow() {
-                        ui.label("Question type: ");
-                        egui::ComboBox::from_id_salt("Question type: ")
-                            .selected_text(format!("{}", self.state.windows.settings.game_settings.questions_subwindow.subwindow))
-                            .show_ui(ui, |ui: &mut egui::Ui| {
-                                ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                                self.render_question_type_picker(ui);
-                            });
-                    } else {
-                        self.render_question_type_picker(ui);
-                    }
-                });
-                ui.separator();
-                match self.state.windows.settings.game_settings.questions_subwindow.subwindow {
-                    GameSettingsQuestionsSubWindow::FindThisObject => self.render_game_settings_find_this_object_subwindow(ui, tolerance_changed),
-                    GameSettingsQuestionsSubWindow::WhatIsThisObject => self.render_game_settings_what_is_this_object_subwindow(ui),
-                    GameSettingsQuestionsSubWindow::WhichConstellationIsThisPointIn => self.render_game_settings_guess_the_constellation_subwindow(ui),
-                    GameSettingsQuestionsSubWindow::GuessTheAngularDistance => self.render_game_settings_angular_distance_subwindow(ui),
-                    GameSettingsQuestionsSubWindow::GuessTheCoordinates => self.render_game_settings_coordinates_subwindow(ui),
-                    GameSettingsQuestionsSubWindow::GuessTheMagnitude => self.render_game_settings_magnitude_subwindow(ui),
-                }
-
-                self.state.windows.settings.game_settings.generated_query = self.generate_query_from_basic();
-
-                ui.separator();
-                ui.label("Generated query:");
-                ui.label(egui::RichText::new(&self.state.windows.settings.game_settings.generated_query).code());
-                self.state.windows.settings.game_settings.internal_query = self.state.windows.settings.game_settings.generated_query.clone();
-            }
-            GameSettingsType::Advanced => {
-                ui.label("Enter the questions query here:");
-                ui.add(egui::TextEdit::multiline(&mut self.state.windows.settings.game_settings.query).desired_width(f32::INFINITY));
-                self.state.windows.settings.game_settings.internal_query = self.state.windows.settings.game_settings.query.clone();
-            }
-        }
-        ui.separator();
         let mut can_evaluate = true;
-        let mut text_parts = Vec::new();
         let mut settings_all = Vec::new();
-        for line in self.state.windows.settings.game_settings.internal_query.split('\n') {
-            let no_spaces = line.replace(" ", "");
-            let mut spl = no_spaces.split("):").map(|s| s.trim()).filter(|s| !s.is_empty()).collect::<Vec<&str>>();
-            if spl.is_empty() {
-                continue;
+        ui.collapsing("Edit question pack", |ui| {
+            ui.horizontal(|ui| {
+                ui.selectable_value(&mut self.state.windows.settings.game_settings.settings_type, GameSettingsType::Basic, GameSettingsType::Basic.as_ref());
+                ui.selectable_value(
+                    &mut self.state.windows.settings.game_settings.settings_type,
+                    GameSettingsType::Advanced,
+                    GameSettingsType::Advanced.as_ref(),
+                );
+            });
+            ui.separator();
+
+            match self.state.windows.settings.game_settings.settings_type {
+                GameSettingsType::Basic => {
+                    ui.horizontal(|ui| {
+                        // If adding new question types, make sure that the picker gets collapsed into a combo box on an appropriately wide/narrow screens
+                        if self.screen_width.narrow() {
+                            ui.label("Question type: ");
+                            egui::ComboBox::from_id_salt("Question type: ")
+                                .selected_text(format!("{}", self.state.windows.settings.game_settings.questions_subwindow.subwindow))
+                                .show_ui(ui, |ui: &mut egui::Ui| {
+                                    ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                                    self.render_question_type_picker(ui);
+                                });
+                        } else {
+                            self.render_question_type_picker(ui);
+                        }
+                    });
+                    ui.separator();
+                    match self.state.windows.settings.game_settings.questions_subwindow.subwindow {
+                        GameSettingsQuestionsSubWindow::FindThisObject => self.render_game_settings_find_this_object_subwindow(ui, tolerance_changed),
+                        GameSettingsQuestionsSubWindow::WhatIsThisObject => self.render_game_settings_what_is_this_object_subwindow(ui),
+                        GameSettingsQuestionsSubWindow::WhichConstellationIsThisPointIn => self.render_game_settings_guess_the_constellation_subwindow(ui),
+                        GameSettingsQuestionsSubWindow::GuessTheAngularDistance => self.render_game_settings_angular_distance_subwindow(ui),
+                        GameSettingsQuestionsSubWindow::GuessTheCoordinates => self.render_game_settings_coordinates_subwindow(ui),
+                        GameSettingsQuestionsSubWindow::GuessTheMagnitude => self.render_game_settings_magnitude_subwindow(ui),
+                    }
+
+                    self.state.windows.settings.game_settings.generated_query = self.generate_query_from_basic();
+
+                    ui.separator();
+                    ui.label("Generated query:");
+                    ui.label(egui::RichText::new(&self.state.windows.settings.game_settings.generated_query).code());
+                    self.state.windows.settings.game_settings.internal_query = self.state.windows.settings.game_settings.generated_query.clone();
+                }
+                GameSettingsType::Advanced => {
+                    ui.label("Enter the questions query here:");
+                    ui.add(egui::TextEdit::multiline(&mut self.state.windows.settings.game_settings.query).desired_width(f32::INFINITY));
+                    self.state.windows.settings.game_settings.internal_query = self.state.windows.settings.game_settings.query.clone();
+                }
             }
-            let (parsed_result, ast_res) = if spl.len() > 1 {
-                let query = spl.pop().unwrap(); //.replace(":", "");
-                match crate::game::questions_filter::parser::Parser::new(query).parse(&self.game_handler.constellation_groups_settings.constellation_groups) {
-                    Ok(Some(crate::game::questions_filter::parser::Node::Keyword(ast))) => (format!("{:?}", ast), Ok(Some(ast))),
-                    Ok(Some(crate::game::questions_filter::parser::Node::Value(_))) | Ok(None) => (String::from("No restrictions"), Ok(None)),
+            ui.separator();
+            let mut text_parts = Vec::new();
+            for line in self.state.windows.settings.game_settings.internal_query.split('\n') {
+                let no_spaces = line.replace(" ", "");
+                let mut spl = no_spaces.split("):").map(|s| s.trim()).filter(|s| !s.is_empty()).collect::<Vec<&str>>();
+                if spl.is_empty() {
+                    continue;
+                }
+                let (parsed_result, ast_res) = if spl.len() > 1 {
+                    let query = spl.pop().unwrap(); //.replace(":", "");
+                    match crate::game::questions_filter::parser::Parser::new(query).parse(&self.game_handler.constellation_groups_settings.constellation_groups) {
+                        Ok(Some(crate::game::questions_filter::parser::Node::Keyword(ast))) => (format!("{:?}", ast), Ok(Some(ast))),
+                        Ok(Some(crate::game::questions_filter::parser::Node::Value(_))) | Ok(None) => (String::from("No restrictions"), Ok(None)),
+                        Err(err) => {
+                            can_evaluate = false;
+                            (format!("Error when parsing the query: {err}"), Err(""))
+                        }
+                    }
+                } else {
+                    (String::from("No restrictions"), Ok(None))
+                };
+                let mut joined = spl.join("");
+                if joined.trim().ends_with(")") {
+                    joined = String::from(joined.trim());
+                    joined.pop();
+                }
+                let spl = joined.split('(').map(|s| s.trim()).filter(|s| !s.is_empty()).collect::<Vec<&str>>();
+                if spl.len() < 2 {
+                    continue;
+                }
+                let question_type = spl[0];
+                let question_settings = spl[1];
+                let question_type = crate::game::questions_filter::parser::parse_question_type_and_settings(question_type, question_settings);
+                let question_type_res = match question_type {
+                    Ok(question_type) => {
+                        let res = format!("{question_type:?}");
+                        if let Ok(ast_opt) = ast_res {
+                            settings_all.push((ast_opt, question_type));
+                        }
+                        res
+                    }
                     Err(err) => {
                         can_evaluate = false;
-                        (format!("Error when parsing the query: {err}"), Err(""))
+                        err
                     }
-                }
-            } else {
-                (String::from("No restrictions"), Ok(None))
-            };
-            let mut joined = spl.join("");
-            if joined.trim().ends_with(")") {
-                joined = String::from(joined.trim());
-                joined.pop();
+                };
+                text_parts.push(format!("{question_type_res}: {parsed_result}"));
             }
-            let spl = joined.split('(').map(|s| s.trim()).filter(|s| !s.is_empty()).collect::<Vec<&str>>();
-            if spl.len() < 2 {
-                continue;
-            }
-            let question_type = spl[0];
-            let question_settings = spl[1];
-            let question_type = crate::game::questions_filter::parser::parse_question_type_and_settings(question_type, question_settings);
-            let question_type_res = match question_type {
-                Ok(question_type) => {
-                    let res = format!("{question_type:?}");
-                    if let Ok(ast_opt) = ast_res {
-                        settings_all.push((ast_opt, question_type));
-                    }
-                    res
-                }
-                Err(err) => {
-                    can_evaluate = false;
-                    err
-                }
-            };
-            text_parts.push(format!("{question_type_res}: {parsed_result}"));
-        }
-        let joined = text_parts.join("\n");
-        let replaced = joined.replace("SmallSettings {", "{");
-        ui.label("Parsed query:");
-        ui.label(egui::RichText::new(replaced).code());
+            let joined = text_parts.join("\n");
+            let replaced = joined.replace("SmallSettings {", "{");
+            ui.label("Parsed query:");
+            ui.label(egui::RichText::new(replaced).code());
+        });
         ui.add_enabled_ui(can_evaluate, |ui| {
             ui.horizontal(|ui| {
                 let save_button = if self.game_handler.question_packs.contains_key(&self.state.windows.settings.game_settings.question_pack_new_name) {
@@ -213,6 +229,7 @@ impl Application {
                         crate::game::questions_filter::QuestionPack {
                             question_objects: res,
                             query: self.state.windows.settings.game_settings.internal_query.clone(),
+                            description: self.state.windows.settings.game_settings.question_pack_new_description.clone(),
                             file_path: None,
                         },
                     );
@@ -227,6 +244,7 @@ impl Application {
                         let pack = crate::game::questions_filter::QuestionPack {
                             question_objects: res,
                             query: self.state.windows.settings.game_settings.internal_query.clone(),
+                            description: self.state.windows.settings.game_settings.question_pack_new_description.clone(),
                             file_path: None,
                         };
                         let pack_string = crate::game::questions::question_pack_to_string(&name, &pack);

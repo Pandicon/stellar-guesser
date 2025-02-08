@@ -6,6 +6,7 @@ pub mod parser;
 pub struct QuestionPack {
     pub query: String,
     pub question_objects: Vec<(crate::game::questions::QuestionType, Vec<u64>)>,
+    pub description: String,
     pub file_path: Option<String>,
 }
 
