@@ -53,6 +53,51 @@ impl Theme {
             egui_visuals: egui::Visuals::dark(),
         }
     }
+
+    pub fn extra_dark() -> Self {
+        let mut egui_visuals = egui::Visuals::dark();
+        egui_visuals.panel_fill = Color32::BLACK;
+        egui_visuals.window_fill = Color32::BLACK;
+        egui_visuals.extreme_bg_color = Color32::from_rgb(27, 27, 27);
+        Self {
+            name: "Extra dark".into(),
+            game_visuals: Visuals {
+                default_colour: Color32::WHITE,
+                override_star_colour: Color32::WHITE,
+                use_overriden_star_colour: false,
+                lines_colours: HashMap::from(
+                    [
+                        ("celestial-lines-of-latitude.csv", [217, 98, 13, 255]),
+                        ("celestial-meridians.csv", [217, 98, 13, 255]),
+                        ("asterisms.csv", [107, 119, 255, 255]),
+                        ("constellation-borders.csv", [135, 197, 255, 255]),
+                        ("ecliptic.csv", [107, 255, 107, 255]),
+                        ("celestial-equator.csv", [217, 13, 13, 255]),
+                        ("galactic-equator.csv", [166, 107, 255, 255]),
+                        ("constellation-connections.csv", [107, 119, 255, 255]),
+                        ("prime-meridian.csv", [217, 13, 13, 255]),
+                    ]
+                    .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
+                ),
+                markers_colours: HashMap::from(
+                    [
+                        ("galactic_poles.csv", [166, 107, 255, 255]),
+                        ("first_point_of_aries.csv", [255, 251, 0, 255]),
+                        ("galactic_centre_anticentre.csv", [146, 81, 245, 255]),
+                        ("celestial_poles.csv", [217, 13, 13, 255]),
+                        ("ecliptic_poles.csv", [107, 255, 107, 255]),
+                    ]
+                    .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
+                ),
+                game_markers_colours: GameMarkersColours::default(),
+                deepskies_colours: HashMap::from(
+                    [("messier-catalogue.csv", [107, 238, 255, 255]), ("caldwell-catalogue.csv", [107, 255, 191, 255])]
+                        .map(|(n, c)| (n.to_string(), Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3]))),
+                ),
+            },
+            egui_visuals,
+        }
+    }
 }
 
 pub struct ThemesHandler {
@@ -120,6 +165,8 @@ pub fn default_themes() -> ThemesHandler {
     let mut themes = HashMap::new();
     let dark_theme = Theme::dark();
     themes.insert(dark_theme.name.clone(), dark_theme);
+    let extra_dark_theme = Theme::extra_dark();
+    themes.insert(extra_dark_theme.name.clone(), extra_dark_theme);
     themes.insert(
         "Light".into(),
         Theme {
