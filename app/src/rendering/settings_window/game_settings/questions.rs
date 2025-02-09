@@ -125,6 +125,7 @@ impl Application {
 
             match self.state.windows.settings.game_settings.settings_type {
                 GameSettingsType::Basic => {
+                    ui.colored_label(egui::Color32::YELLOW, "Warning: If the question pack was defined using the 'Advanced' tab, you must edit it there. The settings below will not match because the 'Advanced' tab provides much more control over question packs.");
                     ui.horizontal(|ui| {
                         // If adding new question types, make sure that the picker gets collapsed into a combo box on an appropriately wide/narrow screens
                         if self.screen_width.narrow() {
