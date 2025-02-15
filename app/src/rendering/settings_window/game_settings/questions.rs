@@ -289,9 +289,11 @@ impl Application {
                     }
                 }
                 if save_button.clicked() || export_button.clicked() {
-                    let new_questions = self
-                        .cellestial_sphere
-                        .generate_questions(&self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().question_objects);
+                    let new_questions = if let Some(active_pack) = self.game_handler.question_packs.get(&self.game_handler.active_question_pack) {
+                        self.cellestial_sphere.generate_questions(&active_pack.question_objects)
+                    } else {
+                        Vec::new()
+                    };
                     self.game_handler.possible_no_of_questions = new_questions.len() as u32;
                     self.game_handler.question_catalog = new_questions;
                     self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
