@@ -27,24 +27,38 @@ pub fn check(expression: &parser::Keyword, object: &QuestionObject) -> bool {
                 .contains(&constellation.to_lowercase())
         }),
         parser::Keyword::Catalogue(catalogues) => catalogues.iter().any(|catalogue| match *catalogue {
-            parser::Catalogue::Bayer => object.bayer_designation.is_some(),
-            parser::Catalogue::Flamsteed => object.flamsteed_designation.is_some(),
+            parser::Catalogue::Bayer => object.bayer_designation_full.is_some(),
+            parser::Catalogue::Flamsteed => object.flamsteed_designation_full.is_some(),
             parser::Catalogue::Caldwell => object.caldwell_number.is_some(),
             parser::Catalogue::Messier => object.messier_number.is_some(),
             parser::Catalogue::Ngc => object.ngc_number.is_some(),
             parser::Catalogue::Hd => object.hd_number.is_some(),
             parser::Catalogue::Hip => object.hipparcos_number.is_some(),
-            parser::Catalogue::ProperName => !object.proper_names.is_empty(),
+            parser::Catalogue::ProperName => !object.proper_names_all.is_empty(),
         }),
         parser::Keyword::CatalogueDesignation(catalogue_designations) => catalogue_designations.iter().any(|(catalogue, designation)| match *catalogue {
-            parser::Catalogue::Bayer => object.bayer_designation.as_ref() == Some(designation),
-            parser::Catalogue::Flamsteed => object.flamsteed_designation.as_ref() == Some(designation),
+            parser::Catalogue::Bayer => {
+                if let Some(raw) = &object.bayer_designation_raw {
+                    let names = crate::rendering::caspr::generate_name_combinations(&raw, crate::rendering::caspr::SpecificName::None);
+                    names.contains(&designation)
+                } else {
+                    false
+                }
+            }
+            parser::Catalogue::Flamsteed => {
+                if let Some(raw) = &object.flamsteed_designation_raw {
+                    let names = crate::rendering::caspr::generate_name_combinations(&raw, crate::rendering::caspr::SpecificName::None);
+                    names.contains(&designation)
+                } else {
+                    false
+                }
+            }
             parser::Catalogue::Caldwell => object.caldwell_number == designation.parse().ok(),
             parser::Catalogue::Messier => object.messier_number == designation.parse().ok(),
             parser::Catalogue::Ngc => object.ngc_number == designation.parse().ok(),
             parser::Catalogue::Hd => object.hd_number == designation.parse().ok(),
             parser::Catalogue::Hip => object.hipparcos_number == designation.parse().ok(),
-            parser::Catalogue::ProperName => object.proper_names.iter().any(|s| s.trim().to_lowercase() == designation.trim().to_lowercase()),
+            parser::Catalogue::ProperName => object.proper_names_all.iter().any(|s| s.trim().to_lowercase() == designation.trim().to_lowercase()),
         }),
         parser::Keyword::Type(object_types) => object_types.iter().any(|object_type| match *object_type {
             crate::game::ObjectType::Star(crate::game::StarType::Any) => matches!(object.object_type, crate::game::ObjectType::Star(_)),

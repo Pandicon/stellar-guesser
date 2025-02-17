@@ -124,9 +124,13 @@ pub struct QuestionObject {
     pub object_type: ObjectType,
     pub dec: angle::Deg<f32>,
     pub ra: angle::Deg<f32>,
-    pub proper_names: Vec<String>,
-    pub bayer_designation: Option<String>,
-    pub flamsteed_designation: Option<String>,
+    pub proper_names_raw: Vec<String>,
+    pub proper_names_full: Vec<String>,
+    pub proper_names_all: Vec<String>,
+    pub bayer_designation_raw: Option<String>,
+    pub bayer_designation_full: Option<String>,
+    pub flamsteed_designation_raw: Option<String>,
+    pub flamsteed_designation_full: Option<String>,
     pub hipparcos_number: Option<u32>,
     pub hd_number: Option<u32>,
     pub messier_number: Option<u32>,
@@ -143,14 +147,50 @@ pub struct QuestionObject {
 
 impl QuestionObject {
     pub fn from_raw(raw: QuestionObjectRaw, images: Vec<crate::structs::image_info::ImageInfo>) -> Self {
+        let proper_names_raw: Vec<String> = raw.proper_names.split(';').map(|s| s.to_owned()).filter(|s| !s.is_empty()).collect();
+        let mut proper_names_full = Vec::new();
+        let mut proper_names_all = Vec::new();
+        for name in proper_names_raw.iter() {
+            let names = crate::rendering::caspr::generate_name_combinations(name, crate::rendering::caspr::SpecificName::None);
+            if let Some(full) = names.last() {
+                proper_names_full.push(full.clone());
+            }
+            proper_names_all.extend(names);
+        }
+
+        let bayer_designation_raw = raw.bayer_designation;
+        let bayer_designation_full = if let Some(bayer_raw) = &bayer_designation_raw {
+            if let Some(full) = crate::rendering::caspr::generate_name_combinations(bayer_raw, crate::rendering::caspr::SpecificName::AllOptional).last() {
+                Some(full.to_owned())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        let flamsteed_designation_raw = raw.flamsteed_designation;
+        let flamsteed_designation_full = if let Some(flamsteed_raw) = &flamsteed_designation_raw {
+            if let Some(full) = crate::rendering::caspr::generate_name_combinations(flamsteed_raw, crate::rendering::caspr::SpecificName::AllOptional).last() {
+                Some(full.to_owned())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
         Self {
             object_id: raw.object_id,
             object_type: raw.object_type,
             dec: raw.dec,
             ra: raw.ra,
-            proper_names: raw.proper_names.split(';').map(|s| s.to_owned()).filter(|s| !s.is_empty()).collect(),
-            bayer_designation: raw.bayer_designation,
-            flamsteed_designation: raw.flamsteed_designation,
+            proper_names_raw,
+            proper_names_full,
+            proper_names_all,
+            bayer_designation_raw,
+            bayer_designation_full,
+            flamsteed_designation_raw,
+            flamsteed_designation_full,
             hipparcos_number: raw.hipparcos_number,
             hd_number: raw.hd_number,
             messier_number: raw.messier_number,

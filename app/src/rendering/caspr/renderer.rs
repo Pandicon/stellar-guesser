@@ -218,7 +218,7 @@ impl CellestialSphere {
                             is_caldwell: object.caldwell_number.is_some(),
                             is_ngc: object.ngc_number.is_some(),
                             is_ic: object.ic_number.is_some(),
-                            is_bayer: object.bayer_designation.is_some(),
+                            is_bayer: object.bayer_designation_full.is_some(),
                             is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
                             magnitude: object.mag,
                             object_type: match &object.object_type {
@@ -229,16 +229,16 @@ impl CellestialSphere {
                             images: object.images.clone(),
                         };
                         if small_settings.ask_bayer {
-                            if let Some(name) = &object.bayer_designation {
+                            if let Some(name_full) = &object.bayer_designation_full {
                                 let mut q_2 = question.clone();
-                                q_2.name = name.clone();
+                                q_2.name = name_full.clone();
                                 questions.push(Box::new(q_2));
                             }
                         }
                         if small_settings.ask_flamsteed {
-                            if let Some(name) = &object.flamsteed_designation {
+                            if let Some(name_full) = &object.flamsteed_designation_full {
                                 let mut q_2 = question.clone();
-                                q_2.name = name.clone();
+                                q_2.name = name_full.clone();
                                 questions.push(Box::new(q_2));
                             }
                         }
@@ -285,9 +285,9 @@ impl CellestialSphere {
                             }
                         }
                         if small_settings.ask_proper {
-                            for name in &object.proper_names {
+                            for name_full in &object.proper_names_full {
                                 let mut q_2 = question.clone();
-                                q_2.name = name.clone();
+                                q_2.name = name_full.clone();
                                 questions.push(Box::new(q_2));
                             }
                         }
@@ -330,8 +330,9 @@ impl CellestialSphere {
                     for object in objects {
                         let mut possible_names = Vec::new();
                         if small_settings.accept_bayer {
-                            if let Some(designation) = &object.bayer_designation {
-                                possible_names.push(designation.clone());
+                            if let Some(designation) = &object.bayer_designation_raw {
+                                let names = super::generate_name_combinations(&designation, super::SpecificName::None);
+                                possible_names.extend(names);
                             }
                         }
                         if small_settings.accept_caldwell {
@@ -340,8 +341,9 @@ impl CellestialSphere {
                             }
                         }
                         if small_settings.accept_flamsteed {
-                            if let Some(designation) = &object.flamsteed_designation {
-                                possible_names.push(designation.clone());
+                            if let Some(designation) = &object.flamsteed_designation_raw {
+                                let names = super::generate_name_combinations(&designation, super::SpecificName::None);
+                                possible_names.extend(names);
                             }
                         }
                         if small_settings.accept_hd {
@@ -370,8 +372,9 @@ impl CellestialSphere {
                             }
                         }
                         if small_settings.accept_proper {
-                            for name in &object.proper_names {
-                                possible_names.push(name.clone());
+                            for name in &object.proper_names_raw {
+                                let names = super::generate_name_combinations(&name, super::SpecificName::None);
+                                possible_names.extend(names);
                             }
                         }
                         if !possible_names.is_empty() {
@@ -384,7 +387,7 @@ impl CellestialSphere {
                                 is_caldwell: object.caldwell_number.is_some(),
                                 is_ngc: object.ngc_number.is_some(),
                                 is_ic: object.ic_number.is_some(),
-                                is_bayer: object.bayer_designation.is_some(),
+                                is_bayer: object.bayer_designation_full.is_some(),
                                 images: object.images.clone(),
                                 is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
                                 magnitude: object.mag,
