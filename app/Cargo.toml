@@ -53,6 +53,7 @@ spherical_geometry = "0.2.0" # { path = "../spherical-geometry-fork" }
 sg_credits = { path = "../crates/sg_credits" }
 sg_game_constellations = { path = "../crates/sg_game_constellations" }
 sg_geometry = { path = "../crates/sg_geometry" }
+regex = "1.11.1"
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "0.13.1"

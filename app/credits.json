@@ -204,6 +204,15 @@
 		"license_file": "apache-2-0.txt"
 	},
 	{
+		"name": "regex",
+		"description": "A library for working with regular expressions",
+		"source_link": "https://github.com/rust-lang/regex/",
+		"copyright_notice": "Copyright [yyyy] [name of copyright owner] (From the MIT license: Copyright (c) 2014 The Rust Project Developers)",
+		"license": "Apache 2.0 (or MIT)",
+		"license_link": "https://github.com/rust-lang/regex/blob/1a069b9232c607b34c4937122361aa075ef573fa/LICENSE-APACHE",
+		"license_file": "apache-2-0.txt"
+	},
+	{
 		"name": "reqwest",
 		"description": "A library for making HTTP(S) (web) requests",
 		"source_link": "https://github.com/seanmonstar/reqwest",
