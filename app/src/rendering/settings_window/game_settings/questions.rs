@@ -81,6 +81,62 @@ impl Application {
                 self.game_handler.stage = crate::enums::GameStage::NotStartedYet;
                 self.game_handler.question_number_text = String::new();
             }
+            if ui
+                .button("Add default packs")
+                .on_hover_text("Will add the default question packs. If a question pack with a name of a default pack exists already, that default pack will not be added.")
+                .clicked()
+            {
+                for (name, pack) in crate::game::questions_filter::default_packs() {
+                    if !self.game_handler.question_packs.contains_key(&name) {
+                        self.game_handler.question_packs.insert(name, pack);
+                    } else {
+                        log::warn!("A pack with the '{}' name already exists, skipping adding a default pack.", name);
+                    }
+                }
+            }
+            if self.testing_mode {
+                let active_pack = self.game_handler.question_packs.get(&self.game_handler.active_question_pack);
+                ui.add_enabled_ui(active_pack.is_some(), |ui| {
+                    if ui.button("Print out the question pack").clicked() {
+                        if let Some(pack) = active_pack {
+                            let name = format!(r##"String::from(r#"{}"#)"##, self.game_handler.active_question_pack);
+                            let query = format!(
+                                r##"String::from(concat!({}))"##,
+                                self.state
+                                    .windows
+                                    .settings
+                                    .game_settings
+                                    .query
+                                    .split("\n")
+                                    .map(|line| format!(r##"r#"{line}"#"##))
+                                    .collect::<Vec<String>>()
+                                    .join(r#", "\n", "#)
+                            );
+                            let description = format!(r##"String::from(r#"{}"#)"##, self.state.windows.settings.game_settings.question_pack_new_description);
+                            let file_path = format!("{:?}", pack.file_path);
+                            let mut question_objects = Vec::new();
+                            for (question_type, objects) in &pack.question_objects {
+                                let settings = match question_type {
+                                    crate::game::questions::QuestionType::AngularSeparation(small_settings) => format!("QuestionType::AngularSeparation(angular_separation::{:?}))", small_settings),
+                                    crate::game::questions::QuestionType::FindThisObject(small_settings) => format!("QuestionType::FindThisObject(find_this_object::{:?})", small_settings),
+                                    crate::game::questions::QuestionType::GuessDec(small_settings) => format!("QuestionType::GuessDec(guess_ra_dec::{:?})", small_settings),
+                                    crate::game::questions::QuestionType::GuessRa(small_settings) => format!("QuestionType::GuessRa(guess_ra_dec::{:?})", small_settings),
+                                    crate::game::questions::QuestionType::GuessTheMagnitude(small_settings) => format!("QuestionType::GuessTheMagnitude(guess_the_magnitude::{:?})", small_settings),
+                                    crate::game::questions::QuestionType::WhatIsThisObject(small_settings) => format!("QuestionType::WhatIsThisObject(which_object_is_here::{:?})", small_settings),
+                                    crate::game::questions::QuestionType::WhichConstellationIsThisPointIn(small_settings) => {
+                                        format!("QuestionType::WhichConstellationIsThisPointIn(which_constellation_is_point_in::{:?})", small_settings)
+                                    }
+                                };
+                                question_objects.push(format!("({settings}, vec!{objects:?})"));
+                            }
+                            println!(
+                                "({name}, QuestionPack {{ query: {query}, question_objects: vec![{}], description: {description}, file_path: {file_path} }})",
+                                question_objects.join(", ")
+                            );
+                        }
+                    }
+                });
+            }
         });
         ui.horizontal(|ui| {
             ui.label("Question pack name");
