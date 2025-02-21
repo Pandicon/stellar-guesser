@@ -194,7 +194,7 @@ impl GameHandler {
         self.question_catalog[self.question_number].render_window(data)
     }
 
-    pub fn init(cellestial_sphere: &mut CellestialSphere, storage: Option<&dyn eframe::Storage>) -> Self {
+    pub fn init(cellestial_sphere: &mut CellestialSphere, storage: Option<&dyn eframe::Storage>, first_launch: bool) -> Self {
         let mut active_constellations = HashMap::new();
         for constellation_abbreviation in cellestial_sphere.constellations.keys() {
             active_constellations.insert(constellation_abbreviation.to_owned(), true);
@@ -274,6 +274,11 @@ impl GameHandler {
         } else {
             Vec::new()
         };
+        if first_launch && question_packs.is_empty() {
+            for (name, pack) in crate::game::questions_filter::default_packs() {
+                question_packs.insert(name, pack);
+            }
+        }
 
         let mut questions_settings = questions::Settings::default();
         if let Some(storage) = storage {

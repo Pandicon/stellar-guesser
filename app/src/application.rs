@@ -110,6 +110,7 @@ impl Application {
                 }
             }
         }
+        let first_application_launch = time_spent_start == 0;
         let timestamp = chrono::Utc::now().timestamp();
         let mut state = state::State::new(timestamp, time_spent_start);
         if let Some(storage) = cc.storage {
@@ -124,7 +125,7 @@ impl Application {
 
         let mut cellestial_sphere = CellestialSphere::load(cc.storage, &mut theme).unwrap();
         cellestial_sphere.init();
-        let game_handler = GameHandler::init(&mut cellestial_sphere, cc.storage);
+        let game_handler = GameHandler::init(&mut cellestial_sphere, cc.storage, first_application_launch);
         if game_handler.question_packs.contains_key(&game_handler.active_question_pack) {
             state.windows.settings.game_settings.question_pack_new_name = game_handler.active_question_pack.clone();
         }
