@@ -10,6 +10,7 @@ pub enum ObjectType {
     Deepsky(DeepskyType),
 }
 
+pub const ALLOWED_TYPES: &str = "STAR, STAR(SINGLE), STAR(DOUBLE), STAR(MULTIPLE), STAR(UNKNOWN), DEEPSKY, DEEPSKY(NEBULA), DEEPSKY(PLANETARY_NEBULA), DEEPSKY(OPEN_CLUSTER), DEEPSKY(GLOBULAR_CLUSTER), DEEPSKY(GALAXY), DEEPSKY(UNKNOWN)";
 impl ObjectType {
     pub fn from_string(string: &str) -> Result<Self, String> {
         match string.to_uppercase().as_str() {
@@ -27,7 +28,7 @@ impl ObjectType {
             "DEEPSKY(GALAXY)" => Ok(Self::Deepsky(DeepskyType::Galaxy)),
             "DEEPSKY(UNKNOWN)" => Ok(Self::Deepsky(DeepskyType::Unknown)),
 
-			_ => Err(format!("Unknown object type '{string}'. Allowed types are: STAR, STAR(SINGLE), STAR(DOUBLE), STAR(MULTIPLE), STAR(UNKNOWN), DEEPSKY, DEEPSKY(NEBULA), DEEPSKY(PLANETARY_NEBULA), DEEPSKY(OPEN_CLUSTER), DEEPSKY(GLOBULAR_CLUSTER), DEEPSKY(GALAXY), DEEPSKY(UNKNOWN)"))
+            _ => Err(format!("Unknown object type '{string}'. Allowed types are: {ALLOWED_TYPES}")),
         }
     }
 }

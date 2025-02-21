@@ -214,6 +214,50 @@ impl Application {
                     self.state.windows.settings.game_settings.internal_query = self.state.windows.settings.game_settings.generated_query.clone();
                 }
                 GameSettingsType::Advanced => {
+                    ui.collapsing("Query guide", |ui| {
+                        egui::CollapsingHeader::new("Overview").default_open(true).show(ui, |ui| {
+                            ui.label("The query defines all of the questions in the question pack. On each line of the query (so separated by a line break inserted by pressing the Enter key) there is first a question type declaration along with its settings, and then an objects filter. The question pack is then constructing by going through all of these question type - filter pairs, and adding questions of said question type (with the declared settings) to the pack for each object in your catalogue which matches the object filter. By including one question type multiple times in the query, one can have different settings for different objects, or have one object included multiple times.");
+                            ui.label("Example:");
+                            ui.label(egui::RichText::new(concat!(r#"FIND_THIS_OBJECT({..., "replay_incorrect":true}): CATALOGUE_DESIGNATION(MESSIER:1)"#, "\n", r#"FIND_THIS_OBJECT({..., "replay_incorrect":false}): CATALOGUE_DESIGNATION(MESSIER:2)"#)).code());
+                            ui.label("In the example above, the first line defines a question type where the player is asked to mark an object in the sky and if the answer is incorrect, the question will be repeated later. For the sake of example, this behaviour would only be present for finding Messier 1. The second line also adds a question type for marking objects in the sky, but this time incorrectly answered questions will not be asked again. This behaviour would only be present for finding Messier 2.");
+                        });
+                        egui::CollapsingHeader::new("Question types and settings").default_open(true).show(ui, |ui| {
+                            ui.label("There are several different question types:\n - ANGULAR_SEPARATION: Asks the player to guess the angular distance between two objects\n - FIND_THIS_OBJECT: Asks the player to mark a given object in the sky\n - GUESS_DEC, GUESS_RA: Asks the player to guess the declination/right ascension (respectively) of an object marked in the sky\n - GUESS_THE_MAGNITUDE: Asks the player to guess the magnitude of an object marked in the sky\n - WHAT_IS_THIS_OBJECT: Asks the player to give a designation (name, Messier number, ...) of an object marked in the sky\n - WHICH_CONSTELLATION_IS_THIS_POINT_IN: Asks the player to identify which constellation the point marked in the sky is");
+                            ui.label("The syntax for initiating a question type is `<name>({<settings>}):`, for example:");
+                            ui.label(egui::RichText::new(r#"FIND_THIS_OBJECT({..., "replay_incorrect":true}):"#).code());
+                            ui.label("Each question type comes with its own settings. The best way to get a list of them is to go into the 'Basic' tab, enable the corresponding question type, and look at the generated query. All settings will be there. Another option is to just leave the settings blank, so only having the curly braces in the definition, and look at the error(s). However, please be careful when using this technique as some settings have defaults so their absence may not cause errors. Always look at the parsed query to check if you are doing what you think you are doing. It is in just a slightly different format and corresponds directly to the structure used to evaluate the query.");
+                        });
+                        egui::CollapsingHeader::new("Filters").default_open(true).show(ui, |ui| {
+                            ui.label("Filters come after the colon of the question type definition and dictate which objects will be used to create questions of said type and settings. In the end all of the options are collapsed into a single true/false value for each object. A question with an object is created if (and only if) the value is true.");
+                            ui.label("There are many different filter options. The syntax is always the same: `<name>(<arguments>)`. Arguments are comma-separated. For example:");
+                            ui.label(egui::RichText::new(r#"CATALOGUE_DESIGNATION(MESSIER:1, MESSIER:2)"#).code());
+                            ui.label(format!("{}{}{}{}",
+                                concat!(
+                                    "List of filter expressions and their descriptions:\n",
+                                    " - AND(expression_1, expression_2, ...): Evaluates to true if and only if all of the inner expressions also evaluate to true. Takes at least one argument.\n",
+                                    " - OR(expression_1, expression_2, ...): Evaluates to true if and only if at least one of the inner expressions evaluates to true. Takes at least one argument.\n",
+                                    " - NOT(expression): Evaluates to true if and only if the inner expression evaluates to false. Takes exactly one argument.\n",
+                                    " - DEC(value_1, value_2): Evaluates to true if and only if the declination of the object is between value_1 and value_2 (in degrees). Takes exactly two real numbers as arguments.\n",
+                                    " - RA_DEC(value_1, value_2): Evaluates to true if and only if the right ascension of the object is between value_1 and value_2 (in degrees). Takes exactly two real numbers as arguments.\n",
+                                    " - RA(value_1, value_2): Evaluates to true if and only if the right ascension of the object is between value_1 and value_2 (in hours). Takes exactly two real numbers as arguments.\n",
+                                    " - CONSTELLATION(value_1, value_2, ...): Evaluates to true if and only if the object is in at least one of the constellations listed. Takes at least one constellation abbreviation as arguments.\n",
+                                    " - CONSTELLATION_GROUP(value_1, value_2, ...): A shorthand for CONSTELLATION(all constellations in the listed groups). Takes at least one constellation group name as arguments.\n"
+                                ),
+                                format!(" - CATALOGUE(value_1, value_2, ...): Evaluates to true if and only if the object is present in at least one of the listed catalogues. Takes at least one catalogue as arguments. Valid catalogues are: {}\n", crate::game::questions_filter::parser::VALID_CATALOGUES.join(", ")),
+                                format!(" - TYPE(value_1, value_2, ...): Evaluates to true if and only if the object is of at least one of the types listed. Takes at least one object type as arguments. Valid object types are: {}\n", crate::game::ALLOWED_TYPES),
+                                concat!(
+                                    " - MAG_BELOW(value): Evaluates to true if and only if the magnitude of the object is known and is lower than the value passed in. Takes exactly one real number as an argument.\n",
+                                    " - MAG_ABOVE(value): Evaluates to true if and only if the magnitude of the object is known and is greater than the value passed in. Takes exactly one real number as an argument.\n",
+                                    " - MAG(value_1, value_2): Evaluates to true if and only if the magnitude of the object is known and is between value_1 and value_2. Takes exactly two real numbers as arguments.\n",
+                                    " - OBJECT_ID(value_1, value_2, ...): Evaluates to true if and only if the internal id of the object matches at least one of the listed ones. Takes at least one whole number as arguments.\n",
+                                    " - CATALOGUE_DESIGNATION(value_1, value_2, ...): Evaluates to true if and only if at least one of the designations listed matches the object. The designation is in the format `<catalogue name>:<designation>`, for example `MESSIER:75` would be Messier 75 and `PROPER_NAME:Vega` would be Vega. See above for valid catalogues. Takes at least one whole number as arguments.\n",
+                                )
+                            ));
+                        });
+                        ui.label("In general, you can usually take a look onto the generated query in the 'Basic' tab, which showcases the basics of the query syntax. However, please note that the 'Basic' tab has limited options and will not showcase all of the features. You may also find that some queries have redundant parts - they are generated automatically.");
+                        ui.label(egui::RichText::new("Always look at the parsed query at the bottom of the window. It has a slightly different syntax, but corresponds directly to the internal structure which will be used to evaluate the query. You may find out you are sometimes doing something else than you thought :D It also includes potential errors which will usually guide you on how to fix them.").strong());
+                    });
+                    ui.separator();
                     ui.label("Enter the questions query here:");
                     ui.add(egui::TextEdit::multiline(&mut self.state.windows.settings.game_settings.query).desired_width(f32::INFINITY));
                     self.state.windows.settings.game_settings.internal_query = self.state.windows.settings.game_settings.query.clone();

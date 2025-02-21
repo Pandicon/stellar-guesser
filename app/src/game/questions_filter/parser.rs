@@ -367,7 +367,7 @@ pub struct Parser<'a> {
     pos: usize,
 }
 
-const VALID_CATALOGUES: [&str; 8] = ["BAYER", "FLAMSTEED", "MESSIER", "CALDWELL", "NGC", "HD", "HIP", "PROPER_NAME"];
+pub const VALID_CATALOGUES: [&str; 8] = ["BAYER", "FLAMSTEED", "MESSIER", "CALDWELL", "NGC", "HD", "HIP", "PROPER_NAME"];
 #[derive(Debug)]
 pub enum Catalogue {
     Bayer,
