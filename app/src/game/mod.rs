@@ -161,22 +161,18 @@ impl QuestionObject {
 
         let bayer_designation_raw = raw.bayer_designation;
         let bayer_designation_full = if let Some(bayer_raw) = &bayer_designation_raw {
-            if let Some(full) = crate::rendering::caspr::generate_name_combinations(bayer_raw, crate::rendering::caspr::SpecificName::AllOptional).last() {
-                Some(full.to_owned())
-            } else {
-                None
-            }
+            crate::rendering::caspr::generate_name_combinations(bayer_raw, crate::rendering::caspr::SpecificName::AllOptional)
+                .last()
+                .map(|full| full.to_owned())
         } else {
             None
         };
 
         let flamsteed_designation_raw = raw.flamsteed_designation;
         let flamsteed_designation_full = if let Some(flamsteed_raw) = &flamsteed_designation_raw {
-            if let Some(full) = crate::rendering::caspr::generate_name_combinations(flamsteed_raw, crate::rendering::caspr::SpecificName::AllOptional).last() {
-                Some(full.to_owned())
-            } else {
-                None
-            }
+            crate::rendering::caspr::generate_name_combinations(flamsteed_raw, crate::rendering::caspr::SpecificName::AllOptional)
+                .last()
+                .map(|full| full.to_owned())
         } else {
             None
         };

@@ -331,7 +331,7 @@ impl CellestialSphere {
                         let mut possible_names = Vec::new();
                         if small_settings.accept_bayer {
                             if let Some(designation) = &object.bayer_designation_raw {
-                                let names = super::generate_name_combinations(&designation, super::SpecificName::None);
+                                let names = super::generate_name_combinations(designation, super::SpecificName::None);
                                 possible_names.extend(names);
                             }
                         }
@@ -342,7 +342,7 @@ impl CellestialSphere {
                         }
                         if small_settings.accept_flamsteed {
                             if let Some(designation) = &object.flamsteed_designation_raw {
-                                let names = super::generate_name_combinations(&designation, super::SpecificName::None);
+                                let names = super::generate_name_combinations(designation, super::SpecificName::None);
                                 possible_names.extend(names);
                             }
                         }
@@ -373,7 +373,7 @@ impl CellestialSphere {
                         }
                         if small_settings.accept_proper {
                             for name in &object.proper_names_raw {
-                                let names = super::generate_name_combinations(&name, super::SpecificName::None);
+                                let names = super::generate_name_combinations(name, super::SpecificName::None);
                                 possible_names.extend(names);
                             }
                         }

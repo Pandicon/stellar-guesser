@@ -87,6 +87,7 @@ impl Application {
                 .clicked()
             {
                 for (name, pack) in crate::game::questions_filter::default_packs() {
+                    #[allow(clippy::map_entry)] // Would force a clone of 'name'
                     if !self.game_handler.question_packs.contains_key(&name) {
                         self.game_handler.question_packs.insert(name, pack);
                     } else {
@@ -183,7 +184,7 @@ impl Application {
                 GameSettingsType::Basic => {
                     ui.colored_label(egui::Color32::YELLOW, "Warning: If the question pack was defined using the 'Advanced' tab, you must edit it there. The settings below will not match because the 'Advanced' tab provides much more control over question packs.");
                     ui.horizontal(|ui| {
-                        // If adding new question types, make sure that the picker gets collapsed into a combo box on an appropriately wide/narrow screens
+                        // If adding new question types, make sure that the picker gets collapsed into a combo box on appropriately wide/narrow screens
                         if self.screen_width.narrow() {
                             ui.label("Question type: ");
                             egui::ComboBox::from_id_salt("Question type: ")
@@ -243,8 +244,8 @@ impl Application {
                                     " - CONSTELLATION(value_1, value_2, ...): Evaluates to true if and only if the object is in at least one of the constellations listed. Takes at least one constellation abbreviation as arguments.\n",
                                     " - CONSTELLATION_GROUP(value_1, value_2, ...): A shorthand for CONSTELLATION(all constellations in the listed groups). Takes at least one constellation group name as arguments.\n"
                                 ),
-                                format!(" - CATALOGUE(value_1, value_2, ...): Evaluates to true if and only if the object is present in at least one of the listed catalogues. Takes at least one catalogue as arguments. Valid catalogues are: {}\n", crate::game::questions_filter::parser::VALID_CATALOGUES.join(", ")),
-                                format!(" - TYPE(value_1, value_2, ...): Evaluates to true if and only if the object is of at least one of the types listed. Takes at least one object type as arguments. Valid object types are: {}\n", crate::game::ALLOWED_TYPES),
+                                format_args!(" - CATALOGUE(value_1, value_2, ...): Evaluates to true if and only if the object is present in at least one of the listed catalogues. Takes at least one catalogue as arguments. Valid catalogues are: {}\n", crate::game::questions_filter::parser::VALID_CATALOGUES.join(", ")),
+                                format_args!(" - TYPE(value_1, value_2, ...): Evaluates to true if and only if the object is of at least one of the types listed. Takes at least one object type as arguments. Valid object types are: {}\n", crate::game::ALLOWED_TYPES),
                                 concat!(
                                     " - MAG_BELOW(value): Evaluates to true if and only if the magnitude of the object is known and is lower than the value passed in. Takes exactly one real number as an argument.\n",
                                     " - MAG_ABOVE(value): Evaluates to true if and only if the magnitude of the object is known and is greater than the value passed in. Takes exactly one real number as an argument.\n",

@@ -21,11 +21,9 @@ impl Application {
                     ui.label("There are no more questions to be chosen from. You can either choose a different question pack from the game settings, or return to the questions you already went through by clicking 'Reset'.");
                 }
                 ui.horizontal(|ui| {
-                    if !self.game_handler.question_catalog.is_empty() {
-                        if ui.button("Reset").clicked() {
-                            self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
-                            self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
-                        }
+                    if !self.game_handler.question_catalog.is_empty() && ui.button("Reset").clicked() {
+                        self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
+                        self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
                     }
                     if ui.button("Choose a different question pack").clicked() {
                         self.state.windows.settings.opened = true;

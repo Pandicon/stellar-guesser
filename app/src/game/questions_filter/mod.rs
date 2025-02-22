@@ -41,16 +41,16 @@ pub fn check(expression: &parser::Keyword, object: &QuestionObject) -> bool {
         parser::Keyword::CatalogueDesignation(catalogue_designations) => catalogue_designations.iter().any(|(catalogue, designation)| match *catalogue {
             parser::Catalogue::Bayer => {
                 if let Some(raw) = &object.bayer_designation_raw {
-                    let names = crate::rendering::caspr::generate_name_combinations(&raw, crate::rendering::caspr::SpecificName::None);
-                    names.contains(&designation)
+                    let names = crate::rendering::caspr::generate_name_combinations(raw, crate::rendering::caspr::SpecificName::None);
+                    names.contains(designation)
                 } else {
                     false
                 }
             }
             parser::Catalogue::Flamsteed => {
                 if let Some(raw) = &object.flamsteed_designation_raw {
-                    let names = crate::rendering::caspr::generate_name_combinations(&raw, crate::rendering::caspr::SpecificName::None);
-                    names.contains(&designation)
+                    let names = crate::rendering::caspr::generate_name_combinations(raw, crate::rendering::caspr::SpecificName::None);
+                    names.contains(designation)
                 } else {
                     false
                 }
