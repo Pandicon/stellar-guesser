@@ -15,11 +15,12 @@ pub struct Deepskies {
 
 #[derive(Clone, Deserialize)]
 pub struct Deepsky {
+    pub object_id: u64,
     pub names: Option<Vec<String>>,
-    pub messier: Option<String>,
-    pub caldwell: Option<String>,
-    pub ngc: Option<String>,
-    pub ic: Option<String>,
+    pub messier: Option<u32>,
+    pub caldwell: Option<u32>,
+    pub ngc: Option<u32>,
+    pub ic: Option<u32>,
     pub object_type: Option<String>,
     pub constellation: String,
     pub ra: angle::Deg<f32>,
@@ -31,11 +32,12 @@ pub struct Deepsky {
 
 #[derive(Clone, Deserialize)]
 pub struct DeepskyRaw {
+    pub object_id: u64,
     pub names: Option<String>,
-    pub messier: Option<String>,
-    pub caldwell: Option<String>,
-    pub ngc: Option<String>,
-    pub ic: Option<String>,
+    pub messier: Option<u32>,
+    pub caldwell: Option<u32>,
+    pub ngc: Option<u32>,
+    pub ic: Option<u32>,
     pub object_type: Option<String>,
     pub constellation: String,
     pub ra: angle::Deg<f32>,
@@ -51,10 +53,11 @@ impl Deepsky {
     }
 
     pub fn from_raw(raw_deepsky: DeepskyRaw, images_data: Vec<crate::structs::image_info::ImageInfo>) -> (Self, Option<Color32>) {
-        let names = raw_deepsky.names.map(|raw_names| raw_names.split(';').map(|s| s.to_owned()).collect());
+        let names = raw_deepsky.names.map(|raw_names| raw_names.split(';').map(|s| s.to_owned()).filter(|s| !s.is_empty()).collect());
         let colour = parse_colour_option(raw_deepsky.colour);
         (
             Self {
+                object_id: raw_deepsky.object_id,
                 names,
                 messier: raw_deepsky.messier,
                 caldwell: raw_deepsky.caldwell,

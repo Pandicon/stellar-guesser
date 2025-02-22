@@ -12,7 +12,7 @@ impl Application {
                 .text("Number of questions")
                 .logarithmic(true),
         );
-        if ui.button("Reset").clicked() {
+        if ui.button("Reset questions").clicked() {
             self.game_handler.stage = GameStage::NotStartedYet;
             self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
 

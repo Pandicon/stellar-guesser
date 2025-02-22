@@ -1,23 +1,32 @@
 use crate::enums::GameStage;
-use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::game::{game_handler, questions};
+use crate::game::game_handler;
+use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
 use angle::{Angle, Deg};
 use eframe::egui;
-use std::collections::HashMap;
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
+pub struct SmallSettings {
+    pub rotate_to_point: bool,
+}
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct Settings {
     pub show: bool,
     pub rotate_to_point: bool,
+    pub limit_to_toggled_constellations: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { show: true, rotate_to_point: true }
+        Self {
+            show: true,
+            rotate_to_point: true,
+            limit_to_toggled_constellations: false,
+        }
     }
 }
 
@@ -35,16 +44,13 @@ pub struct RaQuestion {
     pub ra: angle::Deg<f32>,
 
     pub state: State,
+    pub small_settings: SmallSettings,
 }
 
 impl RaQuestion {
-    pub fn new_random() -> Self {
-        let (ra, dec) = sg_geometry::generate_random_point(&mut rand::thread_rng());
-        Self { dec, ra, state: State::default() }
-    }
     fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
-            ui.heading(self.get_display_question());
+            self.render_display_question(ui);
             if self.should_display_input() {
                 let text_input_response = ui.text_edit_singleline(&mut self.state.answer);
                 if *data.request_input_focus {
@@ -139,12 +145,13 @@ impl crate::game::game_handler::QuestionTrait for RaQuestion {
         }
     }
 
-    fn can_choose_as_next(&self, questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
-        questions_settings.guess_rad_dec.show
-    }
-
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(Self::new_random())
+        Box::new(Self {
+            ra: self.ra,
+            dec: self.dec,
+            state: Default::default(),
+            small_settings: self.small_settings,
+        })
     }
 
     fn show_tolerance_marker(&self) -> bool {
@@ -155,7 +162,7 @@ impl crate::game::game_handler::QuestionTrait for RaQuestion {
         false
     }
 
-    fn get_question_distance_tolerance(&self, _game_handler: &GameHandler) -> Deg<f32> {
+    fn get_question_distance_tolerance(&self) -> Deg<f32> {
         angle::Deg(0.0)
     }
 
@@ -171,7 +178,7 @@ impl crate::game::game_handler::QuestionTrait for RaQuestion {
         true
     }
 
-    fn start_question(&mut self, questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
         self.state = Default::default();
         cellestial_sphere.game_markers.markers = vec![GameMarker::new(
             GameMarkerType::Task,
@@ -183,15 +190,15 @@ impl crate::game::game_handler::QuestionTrait for RaQuestion {
             false,
             &theme.game_visuals.game_markers_colours,
         )];
-        if questions_settings.guess_rad_dec.rotate_to_point {
+        if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             cellestial_sphere.look_at_point(&final_vector);
             cellestial_sphere.init_renderers();
         }
     }
 
-    fn get_display_question(&self) -> String {
-        String::from("What is the right ascension of this point?")
+    fn render_display_question(&self, ui: &mut egui::Ui) {
+        ui.heading("What is the right ascension (in hours) of this point?");
     }
 
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
@@ -205,16 +212,13 @@ pub struct DecQuestion {
     pub ra: angle::Deg<f32>,
 
     pub state: State,
+    pub small_settings: SmallSettings,
 }
 
 impl DecQuestion {
-    pub fn new_random() -> Self {
-        let (ra, dec) = sg_geometry::generate_random_point(&mut rand::thread_rng());
-        Self { dec, ra, state: State::default() }
-    }
     fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
-            ui.heading(self.get_display_question());
+            self.render_display_question(ui);
             if self.should_display_input() {
                 let text_input_response = ui.text_edit_singleline(&mut self.state.answer);
                 if *data.request_input_focus {
@@ -309,12 +313,13 @@ impl crate::game::game_handler::QuestionTrait for DecQuestion {
         }
     }
 
-    fn can_choose_as_next(&self, questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
-        questions_settings.guess_rad_dec.show
-    }
-
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(Self::new_random())
+        Box::new(Self {
+            ra: self.ra,
+            dec: self.dec,
+            state: Default::default(),
+            small_settings: self.small_settings,
+        })
     }
 
     fn show_tolerance_marker(&self) -> bool {
@@ -325,7 +330,7 @@ impl crate::game::game_handler::QuestionTrait for DecQuestion {
         false
     }
 
-    fn get_question_distance_tolerance(&self, _game_handler: &GameHandler) -> Deg<f32> {
+    fn get_question_distance_tolerance(&self) -> Deg<f32> {
         angle::Deg(0.0)
     }
 
@@ -341,7 +346,7 @@ impl crate::game::game_handler::QuestionTrait for DecQuestion {
         true
     }
 
-    fn start_question(&mut self, questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
         self.state = Default::default();
         cellestial_sphere.game_markers.markers = vec![GameMarker::new(
             GameMarkerType::Task,
@@ -353,15 +358,15 @@ impl crate::game::game_handler::QuestionTrait for DecQuestion {
             false,
             &theme.game_visuals.game_markers_colours,
         )];
-        if questions_settings.guess_rad_dec.rotate_to_point {
+        if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             cellestial_sphere.look_at_point(&final_vector);
             cellestial_sphere.init_renderers();
         }
     }
 
-    fn get_display_question(&self) -> String {
-        String::from("What is the declination of this point?")
+    fn render_display_question(&self, ui: &mut egui::Ui) {
+        ui.heading("What is the declination of this point?");
     }
 
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {

@@ -2,6 +2,7 @@ use std::fs;
 
 pub struct FileData {
     pub name: String,
+    pub path: Option<String>,
     pub content: String,
 }
 
@@ -38,7 +39,7 @@ pub fn load_all_files_folder(folder: &str) -> Vec<FileData> {
             }
             Ok(true) => {
                 // The folder does exist
-                let files = fs::read_dir(dir);
+                let files = fs::read_dir(&dir);
                 if let Ok(files) = files {
                     for file in files.flatten() {
                         let path = file.path();
@@ -51,10 +52,11 @@ pub fn load_all_files_folder(folder: &str) -> Vec<FileData> {
                             continue;
                         }
                         let file_name = file_name.unwrap().to_string();
-                        let file_content = fs::read_to_string(path);
+                        let file_content = fs::read_to_string(&path);
                         if let Ok(file_content) = file_content {
                             files_data.push(FileData {
                                 name: file_name,
+                                path: path.to_str().map(|p| p.to_owned()),
                                 content: file_content,
                             })
                         }

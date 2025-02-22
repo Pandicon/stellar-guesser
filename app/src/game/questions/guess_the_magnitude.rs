@@ -1,17 +1,23 @@
 use crate::enums::GameStage;
-use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::game::{game_handler, questions};
+use crate::game::game_handler;
+use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
 use angle::Deg;
 use eframe::egui;
-use std::collections::HashMap;
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
+pub struct SmallSettings {
+    pub rotate_to_point: bool,
+    pub replay_incorrect: bool,
+}
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct Settings {
     pub rotate_to_point: bool,
+    pub limit_to_toggled_constellations: bool,
     pub magnitude_cutoff: f32,
     pub replay_incorrect: bool,
     pub show: bool,
@@ -21,6 +27,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             rotate_to_point: true,
+            limit_to_toggled_constellations: false,
             magnitude_cutoff: 6.0,
             replay_incorrect: true,
             show: true,
@@ -43,12 +50,13 @@ pub struct Question {
     pub mag: f32,
 
     pub state: State,
+    pub small_settings: SmallSettings,
 }
 
 impl Question {
     fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
-            ui.heading(self.get_display_question());
+            self.render_display_question(ui);
             if self.should_display_input() {
                 let text_input_response = ui.text_edit_singleline(&mut self.state.answer);
                 if *data.request_input_focus {
@@ -142,10 +150,6 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn can_choose_as_next(&self, questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
-        questions_settings.guess_the_magnitude.show && self.mag < questions_settings.guess_the_magnitude.magnitude_cutoff
-    }
-
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self {
             ra: self.ra,
@@ -153,6 +157,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             mag: self.mag,
 
             state: State::default(),
+            small_settings: self.small_settings,
         })
     }
 
@@ -164,7 +169,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn get_question_distance_tolerance(&self, _game_handler: &GameHandler) -> Deg<f32> {
+    fn get_question_distance_tolerance(&self) -> Deg<f32> {
         angle::Deg(0.0)
     }
 
@@ -180,7 +185,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
         self.state = Default::default();
         cellestial_sphere.game_markers.markers = vec![GameMarker::new(
             GameMarkerType::Task,
@@ -192,15 +197,15 @@ impl crate::game::game_handler::QuestionTrait for Question {
             false,
             &theme.game_visuals.game_markers_colours,
         )];
-        if questions_settings.guess_the_magnitude.rotate_to_point {
+        if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             cellestial_sphere.look_at_point(&final_vector);
             cellestial_sphere.init_renderers();
         }
     }
 
-    fn get_display_question(&self) -> String {
-        String::from("What is the magnitude of this star?")
+    fn render_display_question(&self, ui: &mut egui::Ui) {
+        ui.heading("What is the magnitude of this object?");
     }
 
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {

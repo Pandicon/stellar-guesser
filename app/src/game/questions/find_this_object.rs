@@ -1,18 +1,55 @@
 use crate::enums::{GameStage, RendererCategory};
+use crate::game::game_handler;
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::game::{game_handler, questions};
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
 use angle::{Angle, Deg};
 use eframe::egui;
 use rand::Rng;
-use std::collections::HashMap;
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
+#[serde(default)]
+pub struct SmallSettings {
+    pub correctness_threshold: angle::Deg<f32>,
+    pub rotate_to_answer: bool,
+    pub replay_incorrect: bool,
+
+    pub ask_messier: bool,
+    pub ask_caldwell: bool,
+    pub ask_ic: bool,
+    pub ask_ngc: bool,
+    pub ask_hd: bool,
+    pub ask_hip: bool,
+    pub ask_bayer: bool,
+    pub ask_flamsteed: bool,
+    pub ask_proper: bool,
+}
+
+impl Default for SmallSettings {
+    fn default() -> Self {
+        Self {
+            correctness_threshold: angle::Deg(1.0),
+            rotate_to_answer: true,
+            replay_incorrect: true,
+            ask_messier: false,
+            ask_caldwell: false,
+            ask_ic: false,
+            ask_ngc: false,
+            ask_hd: false,
+            ask_hip: false,
+            ask_bayer: false,
+            ask_flamsteed: false,
+            ask_proper: false,
+        }
+    }
+}
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct Settings {
     pub rotate_to_correct_point: bool,
+    pub limit_to_toggled_constellations: bool,
     pub show_messiers: bool,
     pub show_caldwells: bool,
     pub show_ngcs: bool,
@@ -29,6 +66,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             rotate_to_correct_point: true,
+            limit_to_toggled_constellations: true,
             show_messiers: true,
             show_caldwells: true,
             show_ngcs: true,
@@ -68,12 +106,13 @@ pub struct Question {
     pub images: Vec<crate::structs::image_info::ImageInfo>,
 
     pub state: State,
+    pub small_settings: SmallSettings,
 }
 
 impl Question {
     fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
-            ui.heading(self.get_display_question());
+            self.render_display_question(ui);
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {
                     cellestial_sphere: data.cellestial_sphere,
@@ -167,7 +206,7 @@ impl Question {
         } else {
             *data.question_number += 1;
         }
-        if data.questions_settings.find_this_object.rotate_to_correct_point {
+        if self.small_settings.rotate_to_answer {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             data.cellestial_sphere.look_at_point(&final_vector);
             data.cellestial_sphere.init_renderers();
@@ -201,27 +240,6 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn can_choose_as_next(&self, questions_settings: &super::Settings, active_constellations: &mut HashMap<String, bool>) -> bool {
-        let mag = (self.magnitude).unwrap_or(-1.0); // TODO: Shouldn't a default magnitude be something else?
-        questions_settings.find_this_object.show
-            && ((questions_settings.find_this_object.show_messiers && self.is_messier)
-                || (questions_settings.find_this_object.show_caldwells && self.is_caldwell)
-                || (questions_settings.find_this_object.show_ngcs && self.is_ngc)
-                || (questions_settings.find_this_object.show_ics && self.is_ic)
-                || (questions_settings.find_this_object.show_bayer && self.is_bayer)
-                || (questions_settings.find_this_object.show_starnames && self.is_starname))
-            && ((!self.is_bayer && !self.is_starname) || mag < questions_settings.find_this_object.magnitude_cutoff)
-            && *active_constellations
-                .entry(
-                    active_constellations
-                        .keys()
-                        .find(|con| con.to_lowercase() == self.constellation_abbreviation.to_lowercase())
-                        .cloned()
-                        .unwrap_or(self.constellation_abbreviation.clone()),
-                )
-                .or_insert(true)
-    }
-
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self {
             name: self.name,
@@ -239,6 +257,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             images: self.images,
 
             state: Default::default(),
+            small_settings: self.small_settings,
         })
     }
 
@@ -250,8 +269,8 @@ impl crate::game::game_handler::QuestionTrait for Question {
         self.is_bayer || self.is_starname
     }
 
-    fn get_question_distance_tolerance(&self, game_handler: &GameHandler) -> Deg<f32> {
-        game_handler.questions_settings.find_this_object.correctness_threshold
+    fn get_question_distance_tolerance(&self) -> Deg<f32> {
+        self.small_settings.correctness_threshold
     }
 
     fn allow_multiple_player_markers(&self) -> bool {
@@ -266,13 +285,13 @@ impl crate::game::game_handler::QuestionTrait for Question {
         false
     }
 
-    fn start_question(&mut self, _questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
         self.state = Default::default();
         cellestial_sphere.game_markers.markers = Vec::new();
     }
 
-    fn get_display_question(&self) -> String {
-        format!("Find {}", self.name)
+    fn render_display_question(&self, ui: &mut egui::Ui) {
+        ui.heading(format!("Find {}", self.name));
     }
 
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {

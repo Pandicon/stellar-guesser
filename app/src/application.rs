@@ -110,14 +110,25 @@ impl Application {
                 }
             }
         }
-        ctx.set_visuals(theme.egui_visuals.clone());
-
+        let first_application_launch = time_spent_start == 0;
         let timestamp = chrono::Utc::now().timestamp();
-        let state = state::State::new(timestamp, time_spent_start);
+        let mut state = state::State::new(timestamp, time_spent_start);
+        if let Some(storage) = cc.storage {
+            if let Some(last_question_pack_query) = storage.get_string(StorageKeys::QuestionPackQuery.as_ref()) {
+                state.windows.settings.game_settings.query = last_question_pack_query;
+            }
+            if let Some(last_question_pack_description) = storage.get_string(StorageKeys::QuestionPackDescription.as_ref()) {
+                state.windows.settings.game_settings.question_pack_new_description = last_question_pack_description;
+            }
+        }
+        ctx.set_visuals(theme.egui_visuals.clone());
 
         let mut cellestial_sphere = CellestialSphere::load(cc.storage, &mut theme).unwrap();
         cellestial_sphere.init();
-        let game_handler = GameHandler::init(&mut cellestial_sphere, cc.storage);
+        let game_handler = GameHandler::init(&mut cellestial_sphere, cc.storage, first_application_launch);
+        if game_handler.question_packs.contains_key(&game_handler.active_question_pack) {
+            state.windows.settings.game_settings.question_pack_new_name = game_handler.active_question_pack.clone();
+        }
         let mut app = Self {
             input: input::Input::default(),
             state,
@@ -222,6 +233,22 @@ impl eframe::App for Application {
             Ok(string) => storage.set_string(StorageKeys::GraphicsSettings.as_ref(), string),
             Err(err) => log::error!("Failed to serialize graphics settings: {:?}", err),
         }
+
+        let question_packs = self
+            .game_handler
+            .question_packs
+            .iter()
+            .filter(|(_, pack)| pack.file_path.is_none()) // Do not save question packs that are in separate files
+            .map(|(name, pack)| crate::game::questions::question_pack_to_string(name, pack))
+            .collect::<Vec<String>>()
+            .join(crate::game::game_handler::QUESTION_PACKS_DIV);
+        storage.set_string(StorageKeys::QuestionPacks.as_ref(), question_packs);
+        storage.set_string(StorageKeys::ActiveQuestionPack.as_ref(), self.game_handler.active_question_pack.clone());
+        storage.set_string(StorageKeys::QuestionPackQuery.as_ref(), self.state.windows.settings.game_settings.internal_query.clone());
+        storage.set_string(
+            StorageKeys::QuestionPackDescription.as_ref(),
+            self.state.windows.settings.game_settings.question_pack_new_description.clone(),
+        );
 
         self.game_handler.constellation_groups_settings.save_to_storage(storage);
     }

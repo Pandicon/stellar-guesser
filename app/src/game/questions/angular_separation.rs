@@ -1,23 +1,31 @@
 use crate::enums::GameStage;
-use crate::game::game_handler::{self, GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::game::questions;
+use crate::game::game_handler::{self, QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
 use angle::{Angle, Deg};
 use eframe::egui;
-use std::collections::HashMap;
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
+pub struct SmallSettings {
+    pub rotate_to_midpoint: bool,
+}
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct Settings {
     pub show: bool,
     pub rotate_to_midpoint: bool,
+    pub limit_to_toggled_constellations: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { show: true, rotate_to_midpoint: true }
+        Self {
+            show: true,
+            rotate_to_midpoint: true,
+            limit_to_toggled_constellations: false,
+        }
     }
 }
 
@@ -37,21 +45,13 @@ pub struct Question {
     pub point2: (angle::Deg<f32>, angle::Deg<f32>),
 
     pub state: State,
+    pub small_settings: SmallSettings,
 }
 
 impl Question {
-    pub fn new_random() -> Self {
-        Self {
-            point1: sg_geometry::generate_random_point(&mut rand::thread_rng()),
-            point2: sg_geometry::generate_random_point(&mut rand::thread_rng()),
-
-            state: State::default(),
-        }
-    }
-
     fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
-            ui.heading(self.get_display_question());
+            self.render_display_question(ui);
             if self.should_display_input() {
                 let text_input_response = ui.text_edit_singleline(&mut self.state.answer);
                 if *data.request_input_focus {
@@ -149,12 +149,13 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn can_choose_as_next(&self, questions_settings: &super::Settings, _active_constellations: &mut HashMap<String, bool>) -> bool {
-        questions_settings.angular_separation.show
-    }
-
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(Self::new_random())
+        Box::new(Self {
+            point1: self.point1,
+            point2: self.point2,
+            state: Default::default(),
+            small_settings: self.small_settings,
+        })
     }
 
     fn show_tolerance_marker(&self) -> bool {
@@ -165,7 +166,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         false
     }
 
-    fn get_question_distance_tolerance(&self, _game_handler: &GameHandler) -> Deg<f32> {
+    fn get_question_distance_tolerance(&self) -> Deg<f32> {
         angle::Deg(0.0)
     }
 
@@ -181,7 +182,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, questions_settings: &questions::Settings, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
         self.state = Default::default();
         let (ra1, dec1) = self.point1;
         let (ra2, dec2) = self.point2;
@@ -189,7 +190,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             GameMarker::new(GameMarkerType::Task, ra1, dec1, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
             GameMarker::new(GameMarkerType::Task, ra2, dec2, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
         ];
-        if questions_settings.angular_separation.rotate_to_midpoint {
+        if self.small_settings.rotate_to_midpoint {
             let end_1 = sg_geometry::get_point_vector(ra1, dec1, &nalgebra::Matrix3::<f32>::identity());
             let end_2 = sg_geometry::get_point_vector(ra2, dec2, &nalgebra::Matrix3::<f32>::identity());
             if (end_1 + end_2).magnitude_squared() > 10e-4 {
@@ -200,8 +201,8 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn get_display_question(&self) -> String {
-        String::from("What is the angular distance between these markers?")
+    fn render_display_question(&self, ui: &mut egui::Ui) {
+        ui.heading("What is the angular distance between these markers?");
     }
 
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {

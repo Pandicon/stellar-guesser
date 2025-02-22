@@ -13,15 +13,22 @@ impl Application {
                 }
             }),
             GameStage::NoMoreQuestions => egui::Window::new("Question").open(&mut self.state.windows.game_question.opened).show(ctx, |ui| {
-                ui.heading("No more questions left");
-                ui.label("There are no more questions to be chosen from. You can either add more question packs from the game settings and click 'Next question', or return to the questions you already went through by clicking 'Reset'.");
+                if self.game_handler.question_catalog.is_empty() {
+                    ui.heading("Question pack is empty");
+                    ui.label("There are no questions to be chosen from as this question pack is empty. You have to choose a different one from the game settings.");
+                } else {
+                    ui.heading("No more questions left");
+                    ui.label("There are no more questions to be chosen from. You can either choose a different question pack from the game settings, or return to the questions you already went through by clicking 'Reset'.");
+                }
                 ui.horizontal(|ui| {
-                    if ui.button("Next question").clicked() {
-                        self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
-                    }
-                    if ui.button("Reset").clicked() {
+                    if !self.game_handler.question_catalog.is_empty() && ui.button("Reset").clicked() {
                         self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
                         self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
+                    }
+                    if ui.button("Choose a different question pack").clicked() {
+                        self.state.windows.settings.opened = true;
+                        self.state.windows.settings.subwindow = crate::structs::state::windows::settings::SettingsSubWindow::Game;
+                        self.state.windows.settings.game_settings.subwindow = crate::structs::state::windows::settings::GameSettingsSubWindow::Questions;
                     }
                 });
 

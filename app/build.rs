@@ -2,10 +2,9 @@ use chrono::{Datelike, Timelike, Utc};
 use const_gen::*;
 use std::{env, fs, path::Path};
 
-const DEEPSKIES_FOLDER: &str = "./sphere/deepsky";
+const SKY_OBJECTS_FOLDER: &str = "./sphere/sky-objects";
 const LINES_FOLDER: &str = "./sphere/lines";
 const MARKERS_FOLDER: &str = "./sphere/markers";
-const STARS_FOLDER: &str = "./sphere/stars";
 const STAR_NAMES_FOLDER: &str = "./sphere/named-stars";
 const CONSTELLATION_NAMES: &str = "./data/constellations.csv";
 
@@ -32,10 +31,9 @@ fn main() {
     let _target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     let mut const_declarations_intermediate = if target_os == "android" || target_os == "ios" {
         let content_folder = [
-            ["deepskies", DEEPSKIES_FOLDER],
+            ["sky objects", SKY_OBJECTS_FOLDER],
             ["lines", LINES_FOLDER],
             ["markers", MARKERS_FOLDER],
-            ["stars", STARS_FOLDER],
             ["star names", STAR_NAMES_FOLDER],
         ];
         let mut sky_data = Vec::new();
