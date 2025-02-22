@@ -49,6 +49,7 @@ impl Default for SmallSettings {
 #[serde(default)]
 pub struct Settings {
     pub rotate_to_correct_point: bool,
+    pub limit_to_toggled_constellations: bool,
     pub show_messiers: bool,
     pub show_caldwells: bool,
     pub show_ngcs: bool,
@@ -65,6 +66,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             rotate_to_correct_point: true,
+            limit_to_toggled_constellations: true,
             show_messiers: true,
             show_caldwells: true,
             show_ngcs: true,

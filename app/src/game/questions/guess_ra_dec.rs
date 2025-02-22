@@ -17,11 +17,16 @@ pub struct SmallSettings {
 pub struct Settings {
     pub show: bool,
     pub rotate_to_point: bool,
+    pub limit_to_toggled_constellations: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { show: true, rotate_to_point: true }
+        Self {
+            show: true,
+            rotate_to_point: true,
+            limit_to_toggled_constellations: false,
+        }
     }
 }
 

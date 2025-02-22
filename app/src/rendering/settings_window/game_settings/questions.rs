@@ -408,6 +408,16 @@ impl Application {
     fn generate_query_from_basic(&self) -> String {
         use crate::game::questions;
 
+        let active_constellations = self
+            .game_handler
+            .constellation_groups_settings
+            .active_constellations
+            .iter()
+            .filter(|(_, v)| **v)
+            .map(|(k, _)| k.to_uppercase())
+            .collect::<Vec<String>>()
+            .join(", ");
+
         let mut query_parts = Vec::new();
         if self.game_handler.questions_settings.find_this_object.show {
             let mut question_settings = questions::find_this_object::SmallSettings {
@@ -450,12 +460,15 @@ impl Application {
                 question_settings.ask_proper = true;
             }
             if !settings_catalogues.is_empty() {
-                let settings = format!(
+                let mut settings = format!(
                     "OR(AND(TYPE(STAR), MAG_BELOW({}), OR({})), AND(NOT(TYPE(STAR)), OR({})))",
                     self.game_handler.questions_settings.find_this_object.magnitude_cutoff,
                     settings_catalogues.join(", "),
                     settings_catalogues.join(", ")
                 );
+                if self.game_handler.questions_settings.find_this_object.limit_to_toggled_constellations {
+                    settings = format!("AND({settings}, CONSTELLATION({}))", active_constellations);
+                }
                 if let Ok(question_settings) = serde_json::to_string(&question_settings) {
                     query_parts.push(format!("FIND_THIS_OBJECT({}): {}", question_settings, settings));
                 }
@@ -495,12 +508,15 @@ impl Application {
                 settings_catalogues.push("AND(TYPE(STAR), CATALOGUE(PROPER_NAME))");
             }
             if !settings_catalogues.is_empty() {
-                let settings = format!(
+                let mut settings = format!(
                     "OR(AND(TYPE(STAR), MAG_BELOW({}), OR({})), AND(NOT(TYPE(STAR)), OR({})))",
                     self.game_handler.questions_settings.what_is_this_object.magnitude_cutoff,
                     settings_catalogues.join(", "),
                     settings_catalogues.join(", ")
                 );
+                if self.game_handler.questions_settings.what_is_this_object.limit_to_toggled_constellations {
+                    settings = format!("AND({settings}, CONSTELLATION({}))", active_constellations);
+                }
                 if let Ok(question_settings) = serde_json::to_string(&question_settings) {
                     query_parts.push(format!("WHAT_IS_THIS_OBJECT({}): {}", question_settings, settings));
                 }
@@ -510,25 +526,40 @@ impl Application {
             let question_settings = questions::which_constellation_is_point_in::SmallSettings {
                 rotate_to_point: self.game_handler.questions_settings.what_constellation_is_this_point_in.rotate_to_point,
             };
+            let settings = if self.game_handler.questions_settings.what_constellation_is_this_point_in.limit_to_toggled_constellations {
+                format!(": CONSTELLATION({})", active_constellations)
+            } else {
+                String::new()
+            };
             if let Ok(question_settings) = serde_json::to_string(&question_settings) {
-                query_parts.push(format!("WHICH_CONSTELLATION_IS_THIS_POINT_IN({})", question_settings));
+                query_parts.push(format!("WHICH_CONSTELLATION_IS_THIS_POINT_IN({}){}", question_settings, settings));
             }
         }
         if self.game_handler.questions_settings.angular_separation.show {
             let question_settings = questions::angular_separation::SmallSettings {
                 rotate_to_midpoint: self.game_handler.questions_settings.angular_separation.rotate_to_midpoint,
             };
+            let settings = if self.game_handler.questions_settings.angular_separation.limit_to_toggled_constellations {
+                format!(": CONSTELLATION({})", active_constellations)
+            } else {
+                String::new()
+            };
             if let Ok(question_settings) = serde_json::to_string(&question_settings) {
-                query_parts.push(format!("ANGULAR_SEPARATION({})", question_settings));
+                query_parts.push(format!("ANGULAR_SEPARATION({}){}", question_settings, settings));
             }
         }
         if self.game_handler.questions_settings.guess_rad_dec.show {
             let question_settings = questions::guess_ra_dec::SmallSettings {
                 rotate_to_point: self.game_handler.questions_settings.guess_rad_dec.rotate_to_point,
             };
+            let settings = if self.game_handler.questions_settings.guess_rad_dec.limit_to_toggled_constellations {
+                format!(": CONSTELLATION({})", active_constellations)
+            } else {
+                String::new()
+            };
             if let Ok(question_settings) = serde_json::to_string(&question_settings) {
-                query_parts.push(format!("GUESS_DEC({})", question_settings));
-                query_parts.push(format!("GUESS_RA({})", question_settings));
+                query_parts.push(format!("GUESS_DEC({}){}", question_settings, settings));
+                query_parts.push(format!("GUESS_RA({}){}", question_settings, settings));
             }
         }
         if self.game_handler.questions_settings.guess_the_magnitude.show {
@@ -536,11 +567,12 @@ impl Application {
                 rotate_to_point: self.game_handler.questions_settings.guess_the_magnitude.rotate_to_point,
                 replay_incorrect: self.game_handler.questions_settings.guess_the_magnitude.replay_incorrect,
             };
+            let mut settings = format!("MAG_BELOW({})", self.game_handler.questions_settings.guess_the_magnitude.magnitude_cutoff);
+            if self.game_handler.questions_settings.guess_the_magnitude.limit_to_toggled_constellations {
+                settings = format!("AND({settings}, CONSTELLATION({}))", active_constellations);
+            };
             if let Ok(question_settings) = serde_json::to_string(&question_settings) {
-                query_parts.push(format!(
-                    "GUESS_THE_MAGNITUDE({}): MAG_BELOW({})",
-                    question_settings, self.game_handler.questions_settings.guess_the_magnitude.magnitude_cutoff
-                ));
+                query_parts.push(format!("GUESS_THE_MAGNITUDE({}): {}", question_settings, settings));
             }
         }
         let query = query_parts.join("\n");
@@ -588,6 +620,10 @@ impl Application {
             "Rotate to the correct point after answering",
         )
         .on_hover_text("Whether or not to rotate the view so that the correct point is in the centre of the screen after answering");
+        ui.checkbox(
+            &mut self.game_handler.questions_settings.find_this_object.limit_to_toggled_constellations,
+            "Limit to objects from toggled constellations",
+        );
         ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_messiers, "Show Messier objects");
         ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_caldwells, "Show Caldwell objects");
         ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_ngcs, "Show NGC objects");
@@ -610,6 +646,10 @@ impl Application {
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show, "Show the 'What is this object' questions");
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.rotate_to_point, "Rotate to the point in question")
             .on_hover_text("Whether or not to rotate the view so that the point in question is in the centre of the screen");
+        ui.checkbox(
+            &mut self.game_handler.questions_settings.what_is_this_object.limit_to_toggled_constellations,
+            "Limit to objects from toggled constellations",
+        );
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_messiers, "Show Messier objects");
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_caldwells, "Show Caldwell objects");
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_ngcs, "Show NGC objects");
@@ -630,24 +670,40 @@ impl Application {
             "Rotate to the point in question",
         )
         .on_hover_text("Whether or not to rotate the view so that the point in question is in the centre of the screen");
+        ui.checkbox(
+            &mut self.game_handler.questions_settings.what_constellation_is_this_point_in.limit_to_toggled_constellations,
+            "Limit to objects from toggled constellations",
+        );
     }
 
     fn render_game_settings_angular_distance_subwindow(&mut self, ui: &mut egui::Ui) {
         ui.checkbox(&mut self.game_handler.questions_settings.angular_separation.show, "Show the 'What is the angle between..' questions");
         ui.checkbox(&mut self.game_handler.questions_settings.angular_separation.rotate_to_midpoint, "Rotate to the midpoint")
             .on_hover_text("Whether or not to rotate the view so that the point in the middle between the points in question is in the centre of the screen");
+        ui.checkbox(
+            &mut self.game_handler.questions_settings.angular_separation.limit_to_toggled_constellations,
+            "Limit to objects from toggled constellations",
+        );
     }
 
     fn render_game_settings_coordinates_subwindow(&mut self, ui: &mut egui::Ui) {
         ui.checkbox(&mut self.game_handler.questions_settings.guess_rad_dec.show, "Show the 'What is the RA/DEC..' questions");
         ui.checkbox(&mut self.game_handler.questions_settings.guess_rad_dec.rotate_to_point, "Rotate to the point in question")
             .on_hover_text("Whether or not to rotate the view so that the point in question is in the centre of the screen");
+        ui.checkbox(
+            &mut self.game_handler.questions_settings.guess_rad_dec.limit_to_toggled_constellations,
+            "Limit to objects from toggled constellations",
+        );
     }
 
     fn render_game_settings_magnitude_subwindow(&mut self, ui: &mut egui::Ui) {
         ui.checkbox(&mut self.game_handler.questions_settings.guess_the_magnitude.show, "Show the 'Guess the magnitude' questions");
         ui.checkbox(&mut self.game_handler.questions_settings.guess_the_magnitude.rotate_to_point, "Rotate to the object in question")
             .on_hover_text("Whether or not to rotate the view so that the object in question is in the centre of the screen");
+        ui.checkbox(
+            &mut self.game_handler.questions_settings.guess_the_magnitude.limit_to_toggled_constellations,
+            "Limit to objects from toggled constellations",
+        );
         ui.add(egui::Slider::new(&mut self.game_handler.questions_settings.guess_the_magnitude.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"));
         ui.checkbox(&mut self.game_handler.questions_settings.guess_the_magnitude.replay_incorrect, "Replay incorrectly answered questions");
     }

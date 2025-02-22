@@ -17,6 +17,7 @@ pub struct SmallSettings {
 #[serde(default)]
 pub struct Settings {
     pub rotate_to_point: bool,
+    pub limit_to_toggled_constellations: bool,
     pub magnitude_cutoff: f32,
     pub replay_incorrect: bool,
     pub show: bool,
@@ -26,6 +27,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             rotate_to_point: true,
+            limit_to_toggled_constellations: false,
             magnitude_cutoff: 6.0,
             replay_incorrect: true,
             show: true,
