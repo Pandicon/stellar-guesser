@@ -26,7 +26,7 @@ impl Application {
                             self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
                             self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
                         }
-                    }                   
+                    }
                     if ui.button("Choose a different question pack").clicked() {
                         self.state.windows.settings.opened = true;
                         self.state.windows.settings.subwindow = crate::structs::state::windows::settings::SettingsSubWindow::Game;
