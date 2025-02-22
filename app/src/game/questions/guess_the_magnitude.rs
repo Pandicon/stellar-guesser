@@ -205,7 +205,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
     }
 
     fn render_display_question(&self, ui: &mut egui::Ui) {
-        ui.heading("What is the magnitude of this star?");
+        ui.heading("What is the magnitude of this object?");
     }
 
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
