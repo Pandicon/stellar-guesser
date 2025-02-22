@@ -117,7 +117,7 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
                 )),
                 question_objects: vec![(
                     QuestionType::FindThisObject(find_this_object::SmallSettings {
-                        correctness_threshold: 1.0,
+                        correctness_threshold: angle::Deg(1.0),
                         rotate_to_answer: true,
                         replay_incorrect: true,
                         ask_messier: true,
@@ -148,7 +148,7 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
                 ),
                 question_objects: vec![(
                     QuestionType::FindThisObject(find_this_object::SmallSettings {
-                        correctness_threshold: 2.0,
+                        correctness_threshold: angle::Deg(2.0),
                         rotate_to_answer: true,
                         replay_incorrect: true,
                         ask_messier: true,
@@ -179,7 +179,7 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
                 ),
                 question_objects: vec![(
                     QuestionType::FindThisObject(find_this_object::SmallSettings {
-                        correctness_threshold: 4.0,
+                        correctness_threshold: angle::Deg(4.0),
                         rotate_to_answer: true,
                         replay_incorrect: true,
                         ask_messier: true,
@@ -210,7 +210,7 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
                 ),
                 question_objects: vec![(
                     QuestionType::FindThisObject(find_this_object::SmallSettings {
-                        correctness_threshold: 0.5,
+                        correctness_threshold: angle::Deg(0.5),
                         rotate_to_answer: true,
                         replay_incorrect: true,
                         ask_messier: true,
@@ -274,7 +274,7 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
                 question_objects: vec![
                     (
                         QuestionType::FindThisObject(find_this_object::SmallSettings {
-                            correctness_threshold: 1.0,
+                            correctness_threshold: angle::Deg(1.0),
                             rotate_to_answer: true,
                             replay_incorrect: true,
                             ask_messier: false,
@@ -329,7 +329,7 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
                 question_objects: vec![
                     (
                         QuestionType::FindThisObject(find_this_object::SmallSettings {
-                            correctness_threshold: 1.0,
+                            correctness_threshold: angle::Deg(1.0),
                             rotate_to_answer: true,
                             replay_incorrect: true,
                             ask_messier: false,
@@ -376,7 +376,7 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
                 question_objects: vec![
                     (
                         QuestionType::FindThisObject(find_this_object::SmallSettings {
-                            correctness_threshold: 1.0,
+                            correctness_threshold: angle::Deg(1.0),
                             rotate_to_answer: true,
                             replay_incorrect: true,
                             ask_messier: false,
@@ -429,7 +429,7 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
                 question_objects: vec![
                     (
                         QuestionType::FindThisObject(find_this_object::SmallSettings {
-                            correctness_threshold: 1.0,
+                            correctness_threshold: angle::Deg(1.0),
                             rotate_to_answer: true,
                             replay_incorrect: true,
                             ask_messier: false,

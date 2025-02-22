@@ -1,5 +1,5 @@
 use crate::enums::GameStage;
-use crate::game::game_handler::{self, GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
+use crate::game::game_handler::{self, QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::themes::Theme;
@@ -166,7 +166,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         false
     }
 
-    fn get_question_distance_tolerance(&self, _game_handler: &GameHandler) -> Deg<f32> {
+    fn get_question_distance_tolerance(&self) -> Deg<f32> {
         angle::Deg(0.0)
     }
 

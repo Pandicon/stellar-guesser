@@ -422,7 +422,7 @@ impl Application {
         let mut query_parts = Vec::new();
         if self.game_handler.questions_settings.find_this_object.show {
             let mut question_settings = questions::find_this_object::SmallSettings {
-                correctness_threshold: *self.game_handler.questions_settings.find_this_object.correctness_threshold.to_deg().as_value(),
+                correctness_threshold: self.game_handler.questions_settings.find_this_object.correctness_threshold,
                 rotate_to_answer: self.game_handler.questions_settings.find_this_object.rotate_to_correct_point,
                 replay_incorrect: self.game_handler.questions_settings.find_this_object.replay_incorrect,
                 ask_messier: false,

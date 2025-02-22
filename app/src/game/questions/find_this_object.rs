@@ -11,7 +11,7 @@ use rand::Rng;
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
 #[serde(default)]
 pub struct SmallSettings {
-    pub correctness_threshold: f32,
+    pub correctness_threshold: angle::Deg<f32>,
     pub rotate_to_answer: bool,
     pub replay_incorrect: bool,
 
@@ -29,7 +29,7 @@ pub struct SmallSettings {
 impl Default for SmallSettings {
     fn default() -> Self {
         Self {
-            correctness_threshold: 1.0,
+            correctness_threshold: angle::Deg(1.0),
             rotate_to_answer: true,
             replay_incorrect: true,
             ask_messier: false,
@@ -269,8 +269,8 @@ impl crate::game::game_handler::QuestionTrait for Question {
         self.is_bayer || self.is_starname
     }
 
-    fn get_question_distance_tolerance(&self, game_handler: &GameHandler) -> Deg<f32> {
-        game_handler.questions_settings.find_this_object.correctness_threshold
+    fn get_question_distance_tolerance(&self) -> Deg<f32> {
+        self.small_settings.correctness_threshold
     }
 
     fn allow_multiple_player_markers(&self) -> bool {

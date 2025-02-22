@@ -65,7 +65,7 @@ pub trait QuestionTrait {
 
     fn show_circle_marker(&self) -> bool;
 
-    fn get_question_distance_tolerance(&self, game_handler: &GameHandler) -> angle::Deg<f32>;
+    fn get_question_distance_tolerance(&self) -> angle::Deg<f32>;
 
     fn allow_multiple_player_markers(&self) -> bool;
 
@@ -397,7 +397,7 @@ impl GameHandler {
     }
 
     fn get_question_distance_tolerance(&self) -> angle::Deg<f32> {
-        self.question_catalog[self.current_question].get_question_distance_tolerance(self)
+        self.question_catalog[self.current_question].get_question_distance_tolerance()
     }
 
     pub fn allow_multiple_player_marker(&self) -> bool {
