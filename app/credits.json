@@ -38,7 +38,7 @@
 		"source_link": "https://github.com/stellarguesser/spherical-geometry",
 		"copyright_notice": "Copyright (c) 2024 stellarguesser",
 		"license": "MIT",
-		"license_link": "https://github.com/stellarguesser/spherical-geometry/blob/c656828168d91f105e665ea5adf257e180ea6a55/LICENSE",
+		"license_link": "https://github.com/stellarguesser/spherical-geometry/blob/3eb761acf5b3c4605dbe0dcb33c4e76ae90d6c50/LICENSE",
 		"license_file": "mit.txt"
 	},
 	{
@@ -47,7 +47,7 @@
 		"source_link": "https://github.com/emilk/egui",
 		"copyright_notice": "Copyright [yyyy] [name of copyright owner] (From the MIT license: Copyright (c) 2018-2021 Emil Ernerfeldt <emil.ernerfeldt@gmail.com>)",
 		"license": "Apache 2.0 (or MIT)",
-		"license_link": "https://github.com/emilk/egui/blob/9aae14cdf4e50907805303c60cc96b6b2fff788e/LICENSE-APACHE",
+		"license_link": "https://github.com/emilk/egui/blob/27e7303ebe1ccca44873813a3f684cba12de973e/LICENSE-APACHE",
 		"license_file": "apache-2-0.txt"
 	},
 	{
@@ -56,7 +56,7 @@
 		"source_link": "https://github.com/ItsEthra/egui-notify/",
 		"copyright_notice": "Copyright (c) 2022-2023 ItsEthra",
 		"license": "MIT",
-		"license_link": "https://github.com/ItsEthra/egui-notify/blob/8633808809e8707e5b31573a3ccfd6b22f0aa160/LICENSE",
+		"license_link": "https://github.com/ItsEthra/egui-notify/blob/cc12d22ae054fa805bb87055b2031ca91e47d0f6/LICENSE",
 		"license_file": "mit.txt"
 	},
 	{

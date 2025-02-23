@@ -5,9 +5,9 @@ resolver = "2"
 
 [workspace.dependencies]
 angle = "0.5.0"
-eframe = "0.30"
-egui = "0.30"
+eframe = "0.31"
+egui = "0.31"
 log = "0.4.14"
 nalgebra = "0.32.2"
 rand = "0.8.5"
-spherical_geometry = "0.2.0"
+spherical_geometry = "0.3.0"
