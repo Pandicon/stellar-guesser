@@ -170,7 +170,7 @@ impl Question {
                 answer_dec.value().to_string(),
                 answer_ra.value().to_string(),
                 distance.value().to_string(),
-                if distance < data.questions_settings.find_this_object.correctness_threshold {
+                if distance < self.small_settings.correctness_threshold {
                     correct = true;
                     String::from("Correct!")
                 } else {
