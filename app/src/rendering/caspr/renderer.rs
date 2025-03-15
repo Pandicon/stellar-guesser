@@ -153,9 +153,8 @@ impl CellestialSphere {
         }
     }
 
-    //Renders the entire sphere view
+    // Renders the entire sphere view
     pub fn render_sky(&self, painter: &egui::Painter) {
-        //some stuff lol
         for line_renderers in self.line_renderers.values() {
             for line_renderer in line_renderers {
                 line_renderer.render(self, painter);
@@ -166,14 +165,24 @@ impl CellestialSphere {
                 star_renderer.render(painter);
             }
         }
-        for marker_renderers in self.marker_renderers.values() {
-            for marker_renderer in marker_renderers {
-                marker_renderer.render(self, painter);
-            }
-        }
         for deepsky_renderers in self.deepsky_renderers.values() {
             for deepsky_renderer in deepsky_renderers {
                 deepsky_renderer.render(self, painter);
+            }
+        }
+        // Make sure the game markers are rendered last, so they are not obstructed
+        let mut keys: Vec<&String> = self.marker_renderers.keys().collect();
+        keys.sort_by(|a, b| match (a.as_str() == "game", b.as_str() == "game") {
+            (true, true) => std::cmp::Ordering::Equal,
+            (true, false) => std::cmp::Ordering::Greater,
+            (false, true) => std::cmp::Ordering::Less,
+            (false, false) => a.cmp(b),
+        });
+        for key in keys {
+            if let Some(marker_renderers) = self.marker_renderers.get(key) {
+                for marker_renderer in marker_renderers {
+                    marker_renderer.render(self, painter);
+                }
             }
         }
     }
