@@ -408,11 +408,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self, constellation_groups: &std::collections::HashMap<String, std::collections::HashMap<String, bool>>) -> Result<Option<Node>, String> {
-        self.consume_whitespace();
-
         if let Some(ident) = self.parse_identifier() {
-            self.consume_whitespace();
-
             if self.peek() == Some('(') {
                 let ident_pos = self.pos - ident.len();
                 let keyword_raw = match ident.as_str() {
@@ -453,7 +449,6 @@ impl<'a> Parser<'a> {
 
         while let Some(node) = self.parse_expression(constellation_groups)? {
             args.push(node);
-            self.consume_whitespace();
 
             match self.peek() {
                 Some(',') => {
@@ -474,7 +469,7 @@ impl<'a> Parser<'a> {
     fn parse_identifier(&mut self) -> Option<String> {
         let mut ident = String::new();
         while let Some(c) = self.peek() {
-            if c.is_alphanumeric() || c == '_' || c == '.' || c == ':' {
+            if c.is_alphanumeric() || c == '_' || c == '.' || c == ':' || c == ' ' {
                 ident.push(self.chars.next().unwrap());
                 self.pos += 1;
             } else {
@@ -485,17 +480,6 @@ impl<'a> Parser<'a> {
             Some(ident)
         } else {
             None
-        }
-    }
-
-    fn consume_whitespace(&mut self) {
-        while let Some(c) = self.peek() {
-            if c.is_whitespace() {
-                self.chars.next();
-                self.pos += 1;
-            } else {
-                break;
-            }
         }
     }
 

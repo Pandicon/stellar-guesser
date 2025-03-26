@@ -267,7 +267,19 @@ impl Application {
             ui.separator();
             let mut text_parts = Vec::new();
             for line in self.state.windows.settings.game_settings.internal_query.split('\n') {
-                let no_spaces = line.replace(" ", "");
+                let mut is_str = false;
+                let mut no_spaces = String::from("");
+                for character in line.chars(){
+                    if !(character == '\'' || character==' '){
+                        no_spaces.push(character)
+                    }
+                    else if character =='\'' {
+                        is_str = ! is_str;
+                    }
+                    else if character == ' ' && is_str {
+                            no_spaces.push(character);
+                    }
+                }
                 let mut spl = no_spaces.split("):").map(|s| s.trim()).filter(|s| !s.is_empty()).collect::<Vec<&str>>();
                 if spl.is_empty() {
                     continue;
