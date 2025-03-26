@@ -117,6 +117,7 @@ impl GameMarker {
             pixel_radius: self.pixel_radius,
             angular_width: self.angular_width,
             pixel_width: self.pixel_width,
+            label: None,
         }
     }
 

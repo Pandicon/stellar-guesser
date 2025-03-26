@@ -12,6 +12,7 @@ pub struct SkySettings {
     pub mag_to_radius_id: usize,
     pub mag_to_radius_settings: [stars::MagnitudeToRadius; 2],
     pub deepsky_render_mag_decrease: f32,
+    pub render_labels:bool,
 }
 
 impl SkySettings {
@@ -25,6 +26,7 @@ impl SkySettings {
             mag_to_radius_id: sky_settings.mag_to_radius_id.min(crate::rendering::caspr::stars::MAGNITUDE_TO_RADIUS_OPTIONS - 1),
             mag_to_radius_settings: sky_settings.mag_to_radius_settings,
             deepsky_render_mag_decrease: sky_settings.deepsky_render_mag_decrease,
+            render_labels:false,
         }
     }
 }
@@ -40,6 +42,7 @@ pub struct SkySettingsRaw {
     pub mag_to_radius_id: usize,
     pub mag_to_radius_settings: [stars::MagnitudeToRadius; 2],
     pub deepsky_render_mag_decrease: f32,
+    pub render_labels:bool,
 }
 
 impl Default for SkySettingsRaw {
@@ -53,6 +56,7 @@ impl Default for SkySettingsRaw {
             mag_to_radius_id: 1.min(crate::rendering::caspr::stars::MAGNITUDE_TO_RADIUS_OPTIONS - 1),
             mag_to_radius_settings: stars::MagnitudeToRadius::defaults(),
             deepsky_render_mag_decrease: 0.0,
+            render_labels:false,
         }
     }
 }
@@ -68,6 +72,7 @@ impl SkySettingsRaw {
             mag_to_radius_id: sky_settings.mag_to_radius_id,
             mag_to_radius_settings: sky_settings.mag_to_radius_settings,
             deepsky_render_mag_decrease: sky_settings.deepsky_render_mag_decrease,
+            render_labels:sky_settings.render_labels,
         }
     }
 }

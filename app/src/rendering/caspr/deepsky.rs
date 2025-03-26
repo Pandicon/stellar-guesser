@@ -49,7 +49,12 @@ pub struct DeepskyRaw {
 
 impl Deepsky {
     pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, colour: Color32) -> DeepskyRenderer {
-        DeepskyRenderer::new(sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix), colour)
+        let name = match self.messier {
+            Some(num) => Some(format!("M {num}")),
+            None => self.caldwell.map(|num| format!("C {num}")),
+        };
+
+        DeepskyRenderer::new(sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix), colour, name)
     }
 
     pub fn from_raw(raw_deepsky: DeepskyRaw, images_data: Vec<crate::structs::image_info::ImageInfo>) -> (Self, Option<Color32>) {
@@ -79,15 +84,16 @@ impl Deepsky {
 pub struct DeepskyRenderer {
     pub unit_vector: Vector3<f32>,
     pub colour: Color32,
+    pub label: Option<String>,
 }
 
 impl DeepskyRenderer {
-    pub fn new(vector: Vector3<f32>, colour: Color32) -> Self {
-        Self { unit_vector: vector, colour }
+    pub fn new(vector: Vector3<f32>, colour: Color32, label: Option<String>) -> Self {
+        Self { unit_vector: vector, colour, label }
     }
 
     pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter) {
         //cellestial_sphere.render_circle(&self.unit_vector, cellestial_sphere.mag_to_radius(self.vmag - magnitude_decrease), self.colour, painter);
-        cellestial_sphere.render_marker(&self.unit_vector, &None, false, Some(5.0), self.colour, 1.5, painter);
+        cellestial_sphere.render_marker(&self.unit_vector, &None, false, Some(5.0), self.colour, 1.5, painter, self.label.clone());
     }
 }

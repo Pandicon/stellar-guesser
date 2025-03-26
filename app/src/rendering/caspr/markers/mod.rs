@@ -23,6 +23,7 @@ pub struct Marker {
     pub pixel_radius: Option<f32>,
     pub angular_width: Option<angle::Deg<f32>>,
     pub pixel_width: Option<f32>,
+    pub label: Option<[char; 20]>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -79,6 +80,7 @@ impl Marker {
                 pixel_radius: raw_marker.pixel_radius,
                 angular_width: raw_marker.angular_width,
                 pixel_width: raw_marker.pixel_width,
+                label: None,
             },
             colour,
         )
@@ -93,7 +95,7 @@ impl Marker {
      * circular - if the marker is circular or not, if not then it is a cross
      * angular_size - if the half_size is in degrees or in pixels
      */
-    pub fn new(ra: angle::Deg<f32>, dec: angle::Deg<f32>, line_width: f32, half_size: f32, circular: bool, angular_size: bool) -> Self {
+    pub fn new(ra: angle::Deg<f32>, dec: angle::Deg<f32>, line_width: f32, half_size: f32, circular: bool, angular_size: bool, label: Option<[char; 20]>) -> Self {
         #[allow(clippy::collapsible_else_if)]
         let [angular_radius, pixel_radius, angular_width, pixel_width] = if circular {
             if angular_size {
@@ -112,6 +114,7 @@ impl Marker {
             ra,
             dec,
             line_width,
+            label,
             angular_radius: angular_radius.map(angle::Deg),
             pixel_radius,
             angular_width: angular_width.map(angle::Deg),
@@ -130,6 +133,7 @@ pub struct MarkerRenderer {
     pub angular_width: Option<angle::Deg<f32>>,
     pub pixel_width: Option<f32>,
     pub circle: bool,
+    pub label: Option<String>,
 }
 
 impl MarkerRenderer {
@@ -144,6 +148,7 @@ impl MarkerRenderer {
             angular_width: marker.angular_width,
             pixel_width: marker.pixel_width,
             circle: marker.angular_radius.is_some() || marker.pixel_radius.is_some(),
+            label: marker.label.map(|a| a.iter().collect()),
         }
     }
 
@@ -156,6 +161,7 @@ impl MarkerRenderer {
             self.colour,
             self.line_width,
             painter,
+            self.label.clone(),
         )
     }
 }

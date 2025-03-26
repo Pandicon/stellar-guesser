@@ -4,7 +4,7 @@ use crate::{
     rendering::themes::Theme,
 };
 use angle::Angle;
-use eframe::egui;
+use eframe::egui::{self, Align2, FontFamily, FontId};
 use egui::epaint::Color32;
 use nalgebra::{Rotation3, Vector3};
 use sg_geometry::{intersections, LineSegment, Rectangle};
@@ -125,7 +125,17 @@ impl CellestialSphere {
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub fn render_marker(&self, centre_vector: &Vector3<f32>, other_vector: &Option<Vector3<f32>>, circle: bool, pixel_size: Option<f32>, colour: Color32, width: f32, painter: &egui::Painter) {
+    pub fn render_marker(
+        &self,
+        centre_vector: &Vector3<f32>,
+        other_vector: &Option<Vector3<f32>>,
+        circle: bool,
+        pixel_size: Option<f32>,
+        colour: Color32,
+        width: f32,
+        painter: &egui::Painter,
+        label: Option<String>,
+    ) {
         let (centre_point, is_centre_within_bounds) = sg_geometry::project_point(centre_vector, self.zoom, self.viewport_rect);
         if !is_centre_within_bounds {
             return;
@@ -150,6 +160,17 @@ impl CellestialSphere {
                 [egui::pos2(centre_point.x - size, centre_point.y), egui::pos2(centre_point.x + size, centre_point.y)],
                 egui::Stroke::new(width, colour),
             );
+        }
+        if self.sky_settings.render_labels {
+            if let Some(text) = label {
+                _ = painter.text(
+                    egui::pos2(centre_point.x + size + 0.1, centre_point.y + size + 0.1),
+                    Align2::LEFT_TOP,
+                    text,
+                    FontId::new(10.0, FontFamily::Monospace),
+                    colour,
+                );
+            }
         }
     }
 

@@ -268,6 +268,9 @@ impl Application {
                 .on_hover_text("By how much should the magnitude of the deepsky objects be decreased for rendering - this way the objects can be made to be seen even without zooming in");
         });
 
+        ui.checkbox(&mut self.cellestial_sphere.sky_settings.render_labels, "Render labels");
+
+
         let mut deepsky_groups_to_init = HashSet::new();
         let mut deepsky_groups_to_deinit = HashSet::new();
         for (name, deepskies_set) in &mut self.cellestial_sphere.deepskies {
@@ -287,6 +290,8 @@ impl Application {
                 }
             });
             self.theme.game_visuals.deepskies_colours.insert(name.clone(), deepskies_set.colour);
+            
+            
         }
         for name in &deepsky_groups_to_init {
             self.cellestial_sphere.init_single_renderer(RendererCategory::Deepskies, name);

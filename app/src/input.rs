@@ -41,8 +41,7 @@ impl Application {
                                     });
                                 }
                             }
-                            GameStage::NotStartedYet => unimplemented!(),
-                            GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
+                            GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
                         }
                     }
                 }
