@@ -202,7 +202,6 @@ impl eframe::App for Application {
         ctx.request_repaint();
     }
 
-    // TODO: Somehow make this run when the app is exited
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         storage.set_string(
             StorageKeys::TimeSpent.as_ref(),

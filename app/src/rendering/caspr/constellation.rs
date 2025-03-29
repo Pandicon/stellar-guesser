@@ -15,7 +15,7 @@ impl BorderVertex {
     }
 }
 
-#[derive(Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct ConstellationRaw {
     pub name_latin: String,
     pub abbreviation: String,
@@ -31,29 +31,16 @@ pub struct Constellation {
 
 impl Constellation {
     pub fn from_raw(raw: ConstellationRaw) -> Result<(Self, String), Box<dyn std::error::Error>> {
-        let mut polygons = Vec::new();
-        for polygon_raw in raw.polygons.split('#') {
-            let mut vertices = Vec::new();
-            for ra_dec_str in polygon_raw.split('|') {
-                let spl = ra_dec_str.split(';').collect::<Vec<&str>>();
-                if spl.len() < 2 {
-                    return Err(Box::from(format!("Missing ra and/or dec for a vertex in the {} constellation", raw.name_latin)));
-                }
-                let ra = angle::Deg(spl[0].parse::<f32>()?);
-                let dec = angle::Deg(spl[1].parse::<f32>()?);
-                vertices.push(SphericalPoint::new(ra.to_rad().value(), dec.to_rad().value()));
-            }
-            match Polygon::new(vertices, spherical_geometry::EdgeDirection::CounterClockwise) {
-                Ok(polygon) => {
+		let polygons = match serde_json::from_str(&raw.polygons) {
+                Ok(polygons) => {
                     log::debug!("Created the polygon for the {} constellation", raw.name_latin);
-                    polygons.push(polygon);
+                    polygons
                 }
                 Err(err) => {
-                    log::error!("Failed to create the polygon for the {} constellation: {:?}", raw.name_latin, err);
-                    return Err(Box::from(format!("Failed to create the polygon for the {} constellation: {:?}", raw.name_latin, err)));
+                    log::error!("Failed to create polygons for the {} constellation: {:?}", raw.name_latin, err);
+                    return Err(Box::from(format!("Failed to create polygons for the {} constellation: {:?}", raw.name_latin, err)));
                 }
-            }
-        }
+            };
         let abbreviation = raw.abbreviation;
         Ok((
             Self {
