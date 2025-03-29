@@ -1,6 +1,6 @@
-use eframe::egui;
+use eframe::{egui, egui_glow::painter, wgpu::Color};
 use egui::epaint::Color32;
-use nalgebra::{Matrix3, Vector3};
+use nalgebra::{Matrix3, Vector2, Vector3};
 use serde::Deserialize;
 
 use crate::graphics;
@@ -14,12 +14,60 @@ pub struct SkyLines {
     pub lines: Vec<SkyLine>,
 }
 
+pub struct NewSkyLine {
+    pub colour: Color32,
+    pub width:f32,
+    pub active:bool,
+    pub pole_ra: angle::Deg<f32>,
+    pub pole_dec: angle::Deg<f32>,
+}
+pub struct NewSkyLineRenderer {
+    pub colour: Color32,
+    pub width:f32,
+    pub center_vect: Vector3<f32>,
+}
+
+
 pub struct SkyLine {
     pub ra_start: angle::Deg<f32>,
     pub dec_start: angle::Deg<f32>,
     pub ra_end: angle::Deg<f32>,
     pub dec_end: angle::Deg<f32>,
     pub width: f32,
+}
+
+impl NewSkyLine {
+    pub fn get_renderer(&self,  rotation_matrix: &Matrix3<f32>) -> NewSkyLineRenderer{
+        NewSkyLineRenderer::new(
+            sg_geometry::get_point_vector(self.pole_ra, self.pole_dec, rotation_matrix),
+            self.colour,
+            self.width,
+        )
+    }
+    pub fn new(pole_ra: angle::Deg<f32>, pole_dec: angle::Deg<f32>, colour: Color32, width: f32) -> Self{
+        Self {
+            pole_ra,
+            pole_dec, 
+            colour, 
+            width,
+            active:true,
+        }
+    }
+}
+
+impl NewSkyLineRenderer {
+    pub fn render(&self, cellestial_sphere:&CellestialSphere,painter:&egui::Painter){
+        cellestial_sphere.render_circle_new(self.center_vect, self.colour, self.width, painter);
+    }
+
+    pub fn new(center_vect:Vector3<f32>, colour:Color32, width:f32) -> Self{
+        Self{
+            center_vect,
+            colour,
+            width
+        }
+    }
+
 }
 
 impl SkyLine {

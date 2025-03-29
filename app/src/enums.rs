@@ -150,4 +150,5 @@ pub enum RendererCategory {
     Lines,
     Deepskies,
     Markers,
+    Newlines, 
 }

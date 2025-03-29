@@ -9,6 +9,7 @@ pub struct SkySettings {
     pub deepskies_categories_active: HashMap<String, bool>,
     pub markers_categories_active: HashMap<String, bool>,
     pub star_names_categories_active: HashMap<String, bool>,
+    pub newlines_categories_active: HashMap<String, bool>, 
     pub mag_to_radius_id: usize,
     pub mag_to_radius_settings: [stars::MagnitudeToRadius; 2],
     pub deepsky_render_mag_decrease: f32,
@@ -17,6 +18,11 @@ pub struct SkySettings {
 
 impl SkySettings {
     pub fn from_raw(sky_settings: &SkySettingsRaw) -> Self {
+
+        // TODO: implement proper loading from a file. This is just a test. 
+        let mut active_newlines = HashMap::new();
+        active_newlines.insert(String::from("Equator_test"),true);
+
         Self {
             stars_categories_active: string_to_partial_hash_map(&sky_settings.star_files_to_not_render),
             lines_categories_active: string_to_partial_hash_map(&sky_settings.line_files_to_not_render),
@@ -25,6 +31,7 @@ impl SkySettings {
             star_names_categories_active: string_to_partial_hash_map(&sky_settings.star_names_files_to_not_use),
             mag_to_radius_id: sky_settings.mag_to_radius_id.min(crate::rendering::caspr::stars::MAGNITUDE_TO_RADIUS_OPTIONS - 1),
             mag_to_radius_settings: sky_settings.mag_to_radius_settings,
+            newlines_categories_active: active_newlines, 
             deepsky_render_mag_decrease: sky_settings.deepsky_render_mag_decrease,
             render_labels:false,
         }

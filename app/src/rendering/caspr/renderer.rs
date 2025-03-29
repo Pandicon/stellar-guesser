@@ -3,10 +3,10 @@ use crate::{
     game::{game_handler::QuestionTrait, QuestionObject, QuestionObjectRaw},
     rendering::themes::Theme,
 };
-use angle::Angle;
-use eframe::egui::{self, Align2, FontFamily, FontId};
+use angle::{Angle, Deg};
+use eframe::{egui::{self, viewport, Align2, FontFamily, FontId, Pos2, Stroke}, wgpu::Color};
 use egui::epaint::Color32;
-use nalgebra::{Rotation3, Vector3};
+use nalgebra::{Rotation, Rotation3, Vector, Vector3};
 use sg_geometry::{intersections, LineSegment, Rectangle};
 use std::{collections::HashMap, error::Error, f32::consts::PI, fs};
 
@@ -47,7 +47,7 @@ pub const MAG_TO_LIGHT_POLLUTION_RAW: [(LightPollution, [Option<stars::Magnitude
 
 // use geometry::{cast_onto_sphere, project_point};
 
-use super::markers::{Marker, MarkerRaw, MarkerRenderer, Markers};
+use super::{lines::{NewSkyLine, NewSkyLineRenderer}, markers::{Marker, MarkerRaw, MarkerRenderer, Markers}};
 use super::sky_settings;
 use super::star_names::{StarName, StarNameRaw};
 use super::stars::{Star, StarRaw, StarRenderer};
@@ -70,6 +70,7 @@ pub struct CellestialSphere {
 
     pub stars: HashMap<String, Vec<Star>>,
     pub lines: HashMap<String, SkyLines>,
+    pub newlines:HashMap<String, Vec<NewSkyLine>>,
     pub deepskies: HashMap<String, Deepskies>,
     pub markers: HashMap<String, Markers>,
     pub question_objects: Vec<QuestionObject>,
@@ -83,6 +84,7 @@ pub struct CellestialSphere {
     line_renderers: HashMap<String, Vec<LineRenderer>>,
     deepsky_renderers: HashMap<String, Vec<DeepskyRenderer>>,
     marker_renderers: HashMap<String, Vec<MarkerRenderer>>,
+    newline_renderers:HashMap<String, Vec<NewSkyLineRenderer>>,
 
     pub light_pollution_place: LightPollution,
     pub light_pollution_place_to_mag: HashMap<LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]>,
@@ -122,6 +124,33 @@ impl CellestialSphere {
         if is_start_within_bounds || is_end_within_bounds || intersections::rect_segment(screen_rect, LineSegment::new(start_point, end_point)) {
             painter.line_segment([start_point, end_point], egui::Stroke::new(width, colour));
         }
+    }
+    pub fn render_circle_new(&self, centre_vector: Vector3<f32>, colour: Color32, width: f32, painter: &egui::Painter){
+        let rotation = Rotation3::rotation_between(&Vector3::z(), &centre_vector);
+        let radius = 1.0/centre_vector.z.abs() *(self.viewport_rect.max.x*self.viewport_rect.max.x + self.viewport_rect.max.y*self.viewport_rect.max.y).sqrt()*self.zoom/2.0;
+        // TODO: Remove a bug where rotation cannot be created if this vector is 180dg from (0,0,1). 
+        if let Some(rot) = rotation {
+            let center = -1.0*(rot * centre_vector);
+            let (center_screen_pos, _ )= sg_geometry::project_point(&center, self.zoom, self.viewport_rect);
+            let furthest_corner = Pos2::new(
+                (if (center_screen_pos.x-self.viewport_rect.center().x)/(center_screen_pos.x-self.viewport_rect.center().x).abs() <0.0 {
+                     self.viewport_rect.max.x-self.viewport_rect.min.x 
+                    } else {
+                        0.0
+                    })  + self.viewport_rect.min.x,
+                    (if (center_screen_pos.y-self.viewport_rect.center().y)/(center_screen_pos.y-self.viewport_rect.center().y).abs() <0.0 {
+                        self.viewport_rect.max.y-self.viewport_rect.min.y 
+                       } else {
+                           0.0
+                       })  + self.viewport_rect.min.y,
+        );
+            let is_furthest_point_in_circle = (furthest_corner.x -center_screen_pos.x )*(furthest_corner.x -center_screen_pos.x ) +(furthest_corner.y -center_screen_pos.y )*(furthest_corner.y -center_screen_pos.y ) <= radius*radius;
+            if (center_screen_pos.x-self.viewport_rect.center().x).abs() <= radius + (self.viewport_rect.max.x-self.viewport_rect.center().x) && (center_screen_pos.y - self.viewport_rect.center().y).abs() <= radius + (self.viewport_rect.max.y-self.viewport_rect.center().y)  && !is_furthest_point_in_circle{
+                // TODO: Implement a fix for infinite radius (just render a line then). 
+                painter.circle(center_screen_pos, radius, Color32::TRANSPARENT, Stroke::new(width, colour));
+            }
+        }
+
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -191,6 +220,12 @@ impl CellestialSphere {
                 deepsky_renderer.render(self, painter);
             }
         }
+        for newline_renderers in self.newline_renderers.values(){
+            for newline_renderer in newline_renderers {
+                newline_renderer.render(self, painter);
+            }
+        }
+
         // Make sure the game markers are rendered last, so they are not obstructed
         let mut keys: Vec<&String> = self.marker_renderers.keys().collect();
         keys.sort_by(|a, b| match (a.as_str() == "game", b.as_str() == "game") {
@@ -867,10 +902,18 @@ impl CellestialSphere {
         let viewport_rect = egui::Rect::from_two_pos(egui::pos2(0.0, 0.0), egui::pos2(0.0, 0.0));
         let zoom = 3.0_f32.sqrt();
         let fov = Self::zoom_to_fov(zoom);
+
+        // This is a dirty debug setup. In the future the lines will be defined in a separate file.
+        let mut newlines = HashMap::new();
+        let mut equator_newlines = Vec::new();
+        equator_newlines.push(NewSkyLine::new(Deg(0.0),Deg(90.0), Color32::GREEN, 3.0));
+        newlines.insert(String::from("Equator_test"), equator_newlines);
+
         Ok(Self {
             sky_settings,
             stars: catalog,
             lines,
+            newlines,
             deepskies,
             markers,
             question_objects,
@@ -882,6 +925,7 @@ impl CellestialSphere {
             camera_z: Self::fov_to_camera_z(fov),
             star_renderers: HashMap::new(),
             line_renderers: HashMap::new(),
+            newline_renderers: HashMap::new(),
             deepsky_renderers: HashMap::new(),
             marker_renderers: HashMap::new(),
 
@@ -986,6 +1030,19 @@ impl CellestialSphere {
         if self.game_markers.active {
             self.init_single_renderer(RendererCategory::Markers, "game");
         }
+        self.newline_renderers = HashMap::new();
+        let mut active_newline_groups = Vec::new();
+        for name in self.newlines.keys() {
+            let active = self.sky_settings.newlines_categories_active.entry(name.to_owned()).or_insert(true);
+            if !*active {
+                continue;
+            }
+            active_newline_groups.push(name.to_owned());
+        }
+        for name in active_newline_groups {
+            println!("{name}");
+            self.init_single_renderer(RendererCategory::Newlines, &name);
+        }
     }
 
     pub fn reinit_renderer_category(&mut self, category: RendererCategory) {
@@ -1051,6 +1108,21 @@ impl CellestialSphere {
                     self.init_single_renderer(RendererCategory::Markers, "game");
                 }
             }
+            RendererCategory::Newlines => {
+                self.newline_renderers = HashMap::new();
+                let mut active_newline_groups = Vec::new();
+                for name in self.newlines.keys() {
+                    let active = self.sky_settings.newlines_categories_active.entry(name.to_owned()).or_insert(true);
+                    if !*active {
+                        continue;
+                    }
+                    active_newline_groups.push(name.to_owned());
+                }
+                for name in active_newline_groups {
+                    self.init_single_renderer(RendererCategory::Newlines, &name);
+                }
+
+            }
         }
     }
 
@@ -1102,6 +1174,14 @@ impl CellestialSphere {
                     );
                 }
             }
+            RendererCategory::Newlines => {
+                if let Some(newlines) = self.newlines.get(name) {
+                    self.newline_renderers.insert(
+                        name.to_string(),
+                        newlines.iter().map( |newline| newline.get_renderer(self.rotation.matrix())).collect()
+                    );
+                }
+            }
         }
     }
 
@@ -1118,6 +1198,9 @@ impl CellestialSphere {
             }
             RendererCategory::Markers => {
                 self.marker_renderers.insert(name.to_string(), Vec::new());
+            }
+            RendererCategory::Newlines => {
+                self.newline_renderers.insert(name.to_string(), Vec::new());
             }
         }
     }
