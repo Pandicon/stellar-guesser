@@ -69,6 +69,61 @@ impl Application {
             let settings = self.cellestial_sphere.light_pollution_place_to_mag_settings(&self.cellestial_sphere.light_pollution_place);
             self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id] = settings;
         }
+        ui.separator();
+        let previous_enabled = self.cellestial_sphere.sky_settings.cloud_settings.enabled;
+        let previous_coverage = self.cellestial_sphere.sky_settings.cloud_settings.coverage;
+        let previous_thickness = self.cellestial_sphere.sky_settings.cloud_settings.thickness;
+        let previous_iterations = self.cellestial_sphere.sky_settings.cloud_settings.iterations;
+        ui.label("Cloudiness")
+            .on_hover_text("These settings dictate what the maximum increase in magnitude (decrease in brightness) should be due to clouds and how the clouds should look like");
+
+        ui.horizontal(|ui| {
+            ui.add(egui::Checkbox::without_text(&mut self.cellestial_sphere.sky_settings.cloud_settings.recalculate_on_change));
+            ui.label("Recalculate on change of settings").on_hover_text("Should the clouds be recalculated when settings change?");
+        });
+        ui.horizontal(|ui| {
+            ui.add(egui::Checkbox::without_text(&mut self.cellestial_sphere.sky_settings.cloud_settings.enabled));
+            ui.label("Enabled").on_hover_text("Should there be any clouds?");
+        });
+        ui.horizontal(|ui| {
+            ui.add(egui::DragValue::new(&mut self.cellestial_sphere.sky_settings.cloud_settings.coverage).speed(0.02));
+            ui.label("Coverage").on_hover_text("How much of the sky (a fraction from 0 to 1) should be covered in clouds?");
+        });
+        ui.horizontal(|ui| {
+            ui.add(egui::DragValue::new(&mut self.cellestial_sphere.sky_settings.cloud_settings.thickness).speed(0.1))
+                .on_hover_text("How thick should the clouds be? More specifically, what should the maximum increase in magnitude due to clouds be?");
+            ui.label("Thickness");
+        });
+        ui.horizontal(|ui| {
+            ui.add(egui::DragValue::new(&mut self.cellestial_sphere.sky_settings.cloud_settings.iterations).speed(0.1))
+                .on_hover_text("How detailed should the clouds be? Higher values lead to more structured clouds (1 corresponds to essentially blobs on the sky, 8 and higher actually look like clouds) but at the cost of longer computation times.");
+            ui.label("Level of detail");
+        });
+
+        let recalculate = ui.button("Apply settings").clicked();
+
+        self.cellestial_sphere.sky_settings.cloud_settings.clamp();
+
+        if recalculate
+            || (self.cellestial_sphere.sky_settings.cloud_settings.recalculate_on_change
+                && (previous_enabled != self.cellestial_sphere.sky_settings.cloud_settings.enabled
+                    || previous_coverage != self.cellestial_sphere.sky_settings.cloud_settings.coverage
+                    || previous_thickness != self.cellestial_sphere.sky_settings.cloud_settings.thickness
+                    || previous_iterations != self.cellestial_sphere.sky_settings.cloud_settings.iterations))
+        {
+            if self.cellestial_sphere.sky_settings.cloud_settings.enabled {
+                crate::rendering::caspr::clouds::apply_dimming(&mut self.cellestial_sphere.stars, &self.cellestial_sphere.sky_settings.cloud_settings);
+            } else {
+                crate::rendering::caspr::clouds::disable(&mut self.cellestial_sphere.stars);
+            }
+            let keys = self.cellestial_sphere.stars.keys().cloned().collect::<Vec<String>>();
+            for star_set_name in keys {
+                self.cellestial_sphere.init_single_renderer(RendererCategory::Stars, &star_set_name);
+            }
+        }
+
+        ui.separator();
+
         let previous_theme_name = self.theme.name.clone();
         let mut selected_theme_name = self.theme.name.clone();
         ui.label("Theme: ");
@@ -270,7 +325,6 @@ impl Application {
 
         ui.checkbox(&mut self.cellestial_sphere.sky_settings.render_labels, "Render labels");
 
-
         let mut deepsky_groups_to_init = HashSet::new();
         let mut deepsky_groups_to_deinit = HashSet::new();
         for (name, deepskies_set) in &mut self.cellestial_sphere.deepskies {
@@ -290,8 +344,6 @@ impl Application {
                 }
             });
             self.theme.game_visuals.deepskies_colours.insert(name.clone(), deepskies_set.colour);
-            
-            
         }
         for name in &deepsky_groups_to_init {
             self.cellestial_sphere.init_single_renderer(RendererCategory::Deepskies, name);

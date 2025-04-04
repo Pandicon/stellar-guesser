@@ -926,6 +926,9 @@ impl CellestialSphere {
     pub fn init(&mut self) {
         let settings = self.light_pollution_place_to_mag_settings(&self.light_pollution_place);
         self.sky_settings.mag_to_radius_settings[self.sky_settings.mag_to_radius_id] = settings;
+        if self.sky_settings.cloud_settings.enabled {
+            crate::rendering::caspr::clouds::apply_dimming(&mut self.stars, &self.sky_settings.cloud_settings);
+        }
         self.init_renderers();
     }
 
