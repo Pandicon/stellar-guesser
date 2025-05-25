@@ -14,16 +14,6 @@ pub struct SmallSettings {
     pub correctness_threshold: angle::Deg<f32>,
     pub rotate_to_answer: bool,
     pub replay_incorrect: bool,
-
-    pub ask_messier: bool,
-    pub ask_caldwell: bool,
-    pub ask_ic: bool,
-    pub ask_ngc: bool,
-    pub ask_hd: bool,
-    pub ask_hip: bool,
-    pub ask_bayer: bool,
-    pub ask_flamsteed: bool,
-    pub ask_proper: bool,
 }
 
 impl Default for SmallSettings {
@@ -32,15 +22,6 @@ impl Default for SmallSettings {
             correctness_threshold: angle::Deg(1.0),
             rotate_to_answer: true,
             replay_incorrect: true,
-            ask_messier: false,
-            ask_caldwell: false,
-            ask_ic: false,
-            ask_ngc: false,
-            ask_hd: false,
-            ask_hip: false,
-            ask_bayer: false,
-            ask_flamsteed: false,
-            ask_proper: false,
         }
     }
 }
@@ -91,7 +72,8 @@ pub struct State {
 
 #[derive(Clone)]
 pub struct Question {
-    pub name: String,
+    pub small_settings: SmallSettings,
+    pub possible_names: Vec<String>,
     pub ra: angle::Deg<f32>,
     pub dec: angle::Deg<f32>,
     pub is_messier: bool,
@@ -104,9 +86,9 @@ pub struct Question {
     pub object_type: String,
     pub constellation_abbreviation: String,
     pub images: Vec<crate::structs::image_info::ImageInfo>,
+    pub object_id: u64,
 
     pub state: State,
-    pub small_settings: SmallSettings,
 }
 
 impl Question {
@@ -174,15 +156,16 @@ impl Question {
                     correct = true;
                     String::from("Correct!")
                 } else {
-                    format!("You were {} degrees away from {} !", (distance.value() * 100.0).round() / 100.0, self.name)
+                    format!("You were {} degrees away from the missing object!", (distance.value() * 100.0).round() / 100.0)
                 },
             )
         } else {
-            (String::from("-"), String::from("-"), String::from("-"), format!("You didn't guess where {} is", self.name))
+            (String::from("-"), String::from("-"), String::from("-"), format!("You didn't guess where the missing object is"))
         };
         self.state.answer_review_text_heading = answer_review_text_heading;
         self.state.answer_review_text = format!(
-            "Your coordinates: [dec = {}°; ra = {}°]\nCorrect coordinates: [dec = {}°; ra = {}°]\nFully precise distance: {}°\nYou can see the correct place marked with a new {}.\nObject type: {}",
+            "Designations of the missing object: {}\nYour coordinates: [dec = {}°; ra = {}°]\nCorrect coordinates: [dec = {}°; ra = {}°]\nFully precise distance: {}°\nYou can see the correct place marked with a new {}.\nObject type: {}",
+            self.possible_names.join(", "),
             answer_dec_text,
             answer_ra_text,
             self.dec.value(),
@@ -235,6 +218,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             }
             GameStage::Checked => {
                 *data.start_next_question = true;
+                data.cellestial_sphere.enable_single_renderer(self.object_id);
             }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
@@ -242,7 +226,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
 
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self {
-            name: self.name,
+            possible_names: self.possible_names,
             ra: self.ra,
             dec: self.dec,
             is_messier: self.is_messier,
@@ -258,6 +242,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
 
             state: Default::default(),
             small_settings: self.small_settings,
+            object_id: self.object_id,
         })
     }
 
@@ -288,10 +273,11 @@ impl crate::game::game_handler::QuestionTrait for Question {
     fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
         self.state = Default::default();
         cellestial_sphere.game_markers.markers = Vec::new();
+        cellestial_sphere.disable_single_renderer(self.object_id);
     }
 
     fn render_display_question(&self, ui: &mut egui::Ui) {
-        ui.heading(format!("Find {}", self.name));
+        ui.heading(format!("Find the object that is missing in the sky"));
     }
 
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {

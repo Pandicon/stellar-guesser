@@ -469,7 +469,7 @@ impl<'a> Parser<'a> {
     fn parse_identifier(&mut self) -> Option<String> {
         let mut ident = String::new();
         while let Some(c) = self.peek() {
-            if c.is_alphanumeric() || c == '_' || c == '.' || c == ':' || c == ' ' {
+            if c.is_alphanumeric() || c == '_' || c == '.' || c == ':' || c == ' ' || c == '-' {
                 ident.push(self.chars.next().unwrap());
                 self.pos += 1;
             } else {
@@ -519,6 +519,10 @@ pub fn parse_question_type_and_settings(question_type: &str, question_settings: 
         },
         "GUESS_THE_MAGNITUDE" => match serde_json::from_str(question_settings) {
             Ok(question_settings) => Ok(crate::game::questions::QuestionType::GuessTheMagnitude(question_settings)),
+            Err(err) => Err(format!("Error when parsing question settings ({err})")),
+        },
+        "MARK_MISSING_OBJECT" => match serde_json::from_str(question_settings) {
+            Ok(question_settings) => Ok(crate::game::questions::QuestionType::MarkMissingObject(question_settings)),
             Err(err) => Err(format!("Error when parsing question settings ({err})")),
         },
         "WHAT_IS_THIS_OBJECT" => match serde_json::from_str(question_settings) {

@@ -50,7 +50,7 @@ serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
 tokio = { version = "1.35.0", features = ["macros", "rt-multi-thread"] }
 winit = "0.30"
-spherical_geometry = { version = "0.4.0", features = ["serde"] }
+spherical_geometry = { path = "../../spherical-geometry", features = ["serde"] }
 
 sg_credits = { path = "../crates/sg_credits" }
 sg_game_constellations = { path = "../crates/sg_game_constellations" }

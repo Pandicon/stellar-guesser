@@ -281,7 +281,7 @@ impl Application {
             }
         }
         for name in deepskies_to_reinit {
-            self.cellestial_sphere.init_single_renderer(RendererCategory::Deepskies, &name);
+            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Deepskies, &name);
         }
         let mut lines_to_reinit = Vec::new();
         for (name, lines) in &mut self.cellestial_sphere.lines {
@@ -298,7 +298,7 @@ impl Application {
             }
         }
         for name in lines_to_reinit {
-            self.cellestial_sphere.init_single_renderer(RendererCategory::Lines, &name);
+            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Lines, &name);
         }
         let mut markers_to_reinit = Vec::new();
         for (name, markers) in &mut self.cellestial_sphere.markers {
@@ -315,7 +315,7 @@ impl Application {
             }
         }
         for name in markers_to_reinit {
-            self.cellestial_sphere.init_single_renderer(RendererCategory::Markers, &name);
+            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, &name);
         }
         ctx.set_visuals(self.theme.egui_visuals.clone());
     }

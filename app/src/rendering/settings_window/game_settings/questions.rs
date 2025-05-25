@@ -123,6 +123,7 @@ impl Application {
                                     crate::game::questions::QuestionType::GuessDec(small_settings) => format!("QuestionType::GuessDec(guess_ra_dec::{:?})", small_settings),
                                     crate::game::questions::QuestionType::GuessRa(small_settings) => format!("QuestionType::GuessRa(guess_ra_dec::{:?})", small_settings),
                                     crate::game::questions::QuestionType::GuessTheMagnitude(small_settings) => format!("QuestionType::GuessTheMagnitude(guess_the_magnitude::{:?})", small_settings),
+                                    crate::game::questions::QuestionType::MarkMissingObject(small_settings) => format!("QuestionType::MarkMissingObject(mark_missing_object::{:?})", small_settings),
                                     crate::game::questions::QuestionType::WhatIsThisObject(small_settings) => format!("QuestionType::WhatIsThisObject(which_object_is_here::{:?})", small_settings),
                                     crate::game::questions::QuestionType::WhichConstellationIsThisPointIn(small_settings) => {
                                         format!("QuestionType::WhichConstellationIsThisPointIn(which_constellation_is_point_in::{:?})", small_settings)
@@ -205,6 +206,7 @@ impl Application {
                         GameSettingsQuestionsSubWindow::GuessTheAngularDistance => self.render_game_settings_angular_distance_subwindow(ui),
                         GameSettingsQuestionsSubWindow::GuessTheCoordinates => self.render_game_settings_coordinates_subwindow(ui),
                         GameSettingsQuestionsSubWindow::GuessTheMagnitude => self.render_game_settings_magnitude_subwindow(ui),
+                        GameSettingsQuestionsSubWindow::MarkMissingObject => self.render_game_settings_mark_missing_object_subwindow(ui, tolerance_changed),
                     }
 
                     self.state.windows.settings.game_settings.generated_query = self.generate_query_from_basic();
@@ -223,7 +225,7 @@ impl Application {
                             ui.label("In the example above, the first line defines a question type where the player is asked to mark an object in the sky and if the answer is incorrect, the question will be repeated later. For the sake of example, this behaviour would only be present for finding Messier 1. The second line also adds a question type for marking objects in the sky, but this time incorrectly answered questions will not be asked again. This behaviour would only be present for finding Messier 2.");
                         });
                         egui::CollapsingHeader::new("Question types and settings").default_open(true).show(ui, |ui| {
-                            ui.label("There are several different question types:\n - ANGULAR_SEPARATION: Asks the player to guess the angular distance between two objects\n - FIND_THIS_OBJECT: Asks the player to mark a given object in the sky\n - GUESS_DEC, GUESS_RA: Asks the player to guess the declination/right ascension (respectively) of an object marked in the sky\n - GUESS_THE_MAGNITUDE: Asks the player to guess the magnitude of an object marked in the sky\n - WHAT_IS_THIS_OBJECT: Asks the player to give a designation (name, Messier number, ...) of an object marked in the sky\n - WHICH_CONSTELLATION_IS_THIS_POINT_IN: Asks the player to identify which constellation the point marked in the sky is");
+                            ui.label("There are several different question types:\n - ANGULAR_SEPARATION: Asks the player to guess the angular distance between two objects\n - FIND_THIS_OBJECT: Asks the player to mark a given object in the sky\n - GUESS_DEC, GUESS_RA: Asks the player to guess the declination/right ascension (respectively) of an object marked in the sky\n - GUESS_THE_MAGNITUDE: Asks the player to guess the magnitude of an object marked in the sky\n - MARK_MISSING_OBJECT: Asks the player to mark the position of an object hidden from the sky (for example a star that is not rendered for the duration of answering the question) \n - WHAT_IS_THIS_OBJECT: Asks the player to give a designation (name, Messier number, ...) of an object marked in the sky\n - WHICH_CONSTELLATION_IS_THIS_POINT_IN: Asks the player to identify which constellation the point marked in the sky is");
                             ui.label("The syntax for initiating a question type is `<name>({<settings>}):`, for example:");
                             ui.label(egui::RichText::new(r#"FIND_THIS_OBJECT({..., "replay_incorrect":true}):"#).code());
                             ui.label("Each question type comes with its own settings. The best way to get a list of them is to go into the 'Basic' tab, enable the corresponding question type, and look at the generated query. All settings will be there. Another option is to just leave the settings blank, so only having the curly braces in the definition, and look at the error(s). However, please be careful when using this technique as some settings have defaults so their absence may not cause errors. Always look at the parsed query to check if you are doing what you think you are doing. It is in just a slightly different format and corresponds directly to the structure used to evaluate the query.");
@@ -588,6 +590,46 @@ impl Application {
                 query_parts.push(format!("GUESS_THE_MAGNITUDE({}): {}", question_settings, settings));
             }
         }
+        if self.game_handler.questions_settings.mark_missing_object.show {
+            let question_settings = questions::mark_missing_object::SmallSettings {
+                correctness_threshold: self.game_handler.questions_settings.mark_missing_object.correctness_threshold,
+                rotate_to_answer: self.game_handler.questions_settings.mark_missing_object.rotate_to_correct_point,
+                replay_incorrect: self.game_handler.questions_settings.mark_missing_object.replay_incorrect,
+            };
+            let mut settings_catalogues = Vec::new();
+            if self.game_handler.questions_settings.mark_missing_object.show_messiers {
+                settings_catalogues.push("CATALOGUE(MESSIER)");
+            }
+            if self.game_handler.questions_settings.mark_missing_object.show_caldwells {
+                settings_catalogues.push("CATALOGUE(CALDWELL)");
+            }
+            if self.game_handler.questions_settings.mark_missing_object.show_ngcs {
+                settings_catalogues.push("CATALOGUE(NGC)");
+            }
+            if self.game_handler.questions_settings.mark_missing_object.show_ics {
+                settings_catalogues.push("CATALOGUE(IC)");
+            }
+            if self.game_handler.questions_settings.mark_missing_object.show_bayer {
+                settings_catalogues.push("CATALOGUE(BAYER)");
+            }
+            if self.game_handler.questions_settings.mark_missing_object.show_starnames {
+                settings_catalogues.push("AND(TYPE(STAR), CATALOGUE(PROPER_NAME))");
+            }
+            if !settings_catalogues.is_empty() {
+                let mut settings = format!(
+                    "OR(AND(TYPE(STAR), MAG_BELOW({}), OR({})), AND(NOT(TYPE(STAR)), OR({})))",
+                    self.game_handler.questions_settings.mark_missing_object.magnitude_cutoff,
+                    settings_catalogues.join(", "),
+                    settings_catalogues.join(", ")
+                );
+                if self.game_handler.questions_settings.mark_missing_object.limit_to_toggled_constellations {
+                    settings = format!("AND({settings}, CONSTELLATION({}))", active_constellations);
+                }
+                if let Ok(question_settings) = serde_json::to_string(&question_settings) {
+                    query_parts.push(format!("MARK_MISSING_OBJECT({}): {}", question_settings, settings));
+                }
+            };
+        }
         let query = query_parts.join("\n");
         query.replace("SmallSettings {", "{")
     }
@@ -624,6 +666,11 @@ impl Application {
             GameSettingsQuestionsSubWindow::GuessTheMagnitude,
             GameSettingsQuestionsSubWindow::GuessTheMagnitude.as_ref(),
         );
+        ui.selectable_value(
+            &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
+            GameSettingsQuestionsSubWindow::MarkMissingObject,
+            GameSettingsQuestionsSubWindow::MarkMissingObject.as_ref(),
+        );
     }
 
     fn render_game_settings_find_this_object_subwindow(&mut self, ui: &mut egui::Ui, tolerance_changed: &mut bool) {
@@ -653,6 +700,35 @@ impl Application {
         self.game_handler.questions_settings.find_this_object.correctness_threshold = angle::Deg(correctness_threshold_inner);
         *tolerance_changed |= correctness_threshold_widget.changed();
         ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.replay_incorrect, "Replay incorrectly answered questions");
+    }
+
+    fn render_game_settings_mark_missing_object_subwindow(&mut self, ui: &mut egui::Ui, tolerance_changed: &mut bool) {
+        ui.checkbox(&mut self.game_handler.questions_settings.mark_missing_object.show, "Show the 'Mark the missing object' questions");
+        ui.checkbox(
+            &mut self.game_handler.questions_settings.mark_missing_object.rotate_to_correct_point,
+            "Rotate to the correct point after answering",
+        )
+        .on_hover_text("Whether or not to rotate the view so that the correct point is in the centre of the screen after answering");
+        ui.checkbox(
+            &mut self.game_handler.questions_settings.mark_missing_object.limit_to_toggled_constellations,
+            "Limit to objects from toggled constellations",
+        );
+        ui.checkbox(&mut self.game_handler.questions_settings.mark_missing_object.show_bayer, "Ask stars with Bayer designations");
+        ui.checkbox(&mut self.game_handler.questions_settings.mark_missing_object.show_starnames, "Ask named stars");
+        ui.checkbox(&mut self.game_handler.questions_settings.mark_missing_object.show_messiers, "Ask Messier objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.mark_missing_object.show_caldwells, "Ask Caldwell objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.mark_missing_object.show_ngcs, "Ask NGC objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.mark_missing_object.show_ics, "Ask IC objects");
+        ui.add(egui::Slider::new(&mut self.game_handler.questions_settings.mark_missing_object.magnitude_cutoff, 0.0..=20.0).text("Magnitude cutoff"));
+        let mut correctness_threshold_inner = self.game_handler.questions_settings.mark_missing_object.correctness_threshold.value();
+        let correctness_threshold_widget = ui.add(
+            egui::Slider::new(&mut correctness_threshold_inner, 0.0..=180.0)
+                .text("Correctness threshold (degrees)")
+                .logarithmic(true),
+        );
+        self.game_handler.questions_settings.mark_missing_object.correctness_threshold = angle::Deg(correctness_threshold_inner);
+        *tolerance_changed |= correctness_threshold_widget.changed();
+        ui.checkbox(&mut self.game_handler.questions_settings.mark_missing_object.replay_incorrect, "Replay incorrectly answered questions");
     }
 
     fn render_game_settings_what_is_this_object_subwindow(&mut self, ui: &mut egui::Ui) {

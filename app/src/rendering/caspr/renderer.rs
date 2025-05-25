@@ -356,6 +356,63 @@ impl CellestialSphere {
                         }
                     }
                 }
+                crate::game::questions::QuestionType::MarkMissingObject(small_settings) => {
+                    for object in objects {
+                        let mut possible_names = Vec::new();
+                        if let Some(designation) = &object.bayer_designation_raw {
+                            let names = super::generate_name_combinations(designation, super::SpecificName::None);
+                            possible_names.extend(names);
+                        }
+                        if let Some(designation) = object.caldwell_number {
+                            possible_names.push(format!("C{}", designation));
+                        }
+                        if let Some(designation) = &object.flamsteed_designation_raw {
+                            let names = super::generate_name_combinations(designation, super::SpecificName::None);
+                            possible_names.extend(names);
+                        }
+                        if let Some(designation) = &object.hd_number {
+                            possible_names.push(format!("HD{}", designation));
+                        }
+                        if let Some(designation) = &object.hipparcos_number {
+                            possible_names.push(format!("HIP{}", designation));
+                        }
+                        if let Some(designation) = &object.ic_number {
+                            possible_names.push(format!("IC{}", designation));
+                        }
+                        if let Some(designation) = &object.messier_number {
+                            possible_names.push(format!("M{}", designation));
+                        }
+                        if let Some(designation) = &object.ngc_number {
+                            possible_names.push(format!("NGC{}", designation));
+                        }
+                        for name in &object.proper_names_raw {
+                            let names = super::generate_name_combinations(name, super::SpecificName::None);
+                            possible_names.extend(names);
+                        }
+                        let question = crate::game::questions::mark_missing_object::Question {
+                            small_settings,
+                            ra: object.ra,
+                            dec: object.dec,
+                            state: Default::default(),
+                            possible_names,
+                            is_messier: object.messier_number.is_some(),
+                            is_caldwell: object.caldwell_number.is_some(),
+                            is_ngc: object.ngc_number.is_some(),
+                            is_ic: object.ic_number.is_some(),
+                            is_bayer: object.bayer_designation_full.is_some(),
+                            is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
+                            magnitude: object.mag,
+                            object_type: match &object.object_type {
+                                crate::game::ObjectType::Star(star_type) => star_type.display_name(),
+                                crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
+                            },
+                            constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
+                            images: object.images.clone(),
+                            object_id: object.object_id,
+                        };
+                        questions.push(Box::new(question));
+                    }
+                }
                 crate::game::questions::QuestionType::WhatIsThisObject(small_settings) => {
                     for object in objects {
                         let mut possible_names = Vec::new();
@@ -932,18 +989,44 @@ impl CellestialSphere {
         self.init_renderers();
     }
 
+    /// Preserves disabled renderers - will reinitialise them, but will also keep them disabled
     pub fn init_renderers(&mut self) {
-        self.star_renderers = HashMap::new();
-        let mut active_star_groups = Vec::new();
-        for name in self.stars.keys() {
-            let active = self.sky_settings.stars_categories_active.entry(name.to_owned()).or_insert(true);
-            if !*active {
-                continue;
+        {
+            let mut old_renderers = HashMap::new();
+            std::mem::swap(&mut self.star_renderers, &mut old_renderers);
+            let mut active_star_groups = Vec::new();
+            let mut all_disabled_renderers = std::collections::HashMap::new();
+            for name in self.stars.keys() {
+                let active = self.sky_settings.stars_categories_active.entry(name.to_owned()).or_insert(true);
+                if !*active {
+                    continue;
+                }
+                active_star_groups.push(name.to_owned());
+
+                let mut disabled_renderers = std::collections::HashSet::new();
+                if let Some(renderers) = old_renderers.get(name) {
+                    for renderer in renderers {
+                        if renderer.disabled {
+                            disabled_renderers.insert(renderer.object_id);
+                        }
+                    }
+                }
+                if !disabled_renderers.is_empty() {
+                    all_disabled_renderers.insert(name.to_owned(), disabled_renderers);
+                }
             }
-            active_star_groups.push(name.to_owned());
-        }
-        for name in active_star_groups {
-            self.init_single_renderer(RendererCategory::Stars, &name);
+            for name in active_star_groups {
+                self.init_single_renderer_group(RendererCategory::Stars, &name);
+                if let Some(disabled_renderers) = all_disabled_renderers.get(&name) {
+                    if let Some(renderers) = self.star_renderers.get_mut(&name) {
+                        for renderer in renderers {
+                            if disabled_renderers.contains(&renderer.object_id) {
+                                renderer.disabled = true;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         self.line_renderers = HashMap::new();
@@ -955,20 +1038,45 @@ impl CellestialSphere {
             active_line_groups.push(name.to_owned());
         }
         for name in active_line_groups {
-            self.init_single_renderer(RendererCategory::Lines, &name);
+            self.init_single_renderer_group(RendererCategory::Lines, &name);
         }
 
-        self.deepsky_renderers = HashMap::new();
-        let mut active_deepsky_groups = Vec::new();
-        for name in self.deepskies.keys() {
-            let active = self.sky_settings.deepskies_categories_active.entry(name.to_owned()).or_insert(true);
-            if !*active {
-                continue;
+        {
+            let mut old_renderers = HashMap::new();
+            std::mem::swap(&mut self.deepsky_renderers, &mut old_renderers);
+            let mut active_deepsky_groups = Vec::new();
+            let mut all_disabled_renderers = std::collections::HashMap::new();
+            for name in self.stars.keys() {
+                let active = self.sky_settings.deepskies_categories_active.entry(name.to_owned()).or_insert(true);
+                if !*active {
+                    continue;
+                }
+                active_deepsky_groups.push(name.to_owned());
+
+                let mut disabled_renderers = std::collections::HashSet::new();
+                if let Some(renderers) = old_renderers.get(name) {
+                    for renderer in renderers {
+                        if renderer.disabled {
+                            disabled_renderers.insert(renderer.object_id);
+                        }
+                    }
+                }
+                if !disabled_renderers.is_empty() {
+                    all_disabled_renderers.insert(name.to_owned(), disabled_renderers);
+                }
             }
-            active_deepsky_groups.push(name.to_owned());
-        }
-        for name in active_deepsky_groups {
-            self.init_single_renderer(RendererCategory::Deepskies, &name);
+            for name in active_deepsky_groups {
+                self.init_single_renderer_group(RendererCategory::Deepskies, &name);
+                if let Some(disabled_renderers) = all_disabled_renderers.get(&name) {
+                    if let Some(renderers) = self.deepsky_renderers.get_mut(&name) {
+                        for renderer in renderers {
+                            if disabled_renderers.contains(&renderer.object_id) {
+                                renderer.disabled = true;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         self.marker_renderers = HashMap::new();
@@ -980,31 +1088,53 @@ impl CellestialSphere {
             active_markers_groups.push(name.to_owned());
         }
         for name in active_markers_groups {
-            self.init_single_renderer(RendererCategory::Markers, &name);
+            self.init_single_renderer_group(RendererCategory::Markers, &name);
         }
         if self.game_markers.active {
-            self.init_single_renderer(RendererCategory::Markers, "game");
+            self.init_single_renderer_group(RendererCategory::Markers, "game");
         }
 
         if self.game_markers.active {
-            self.init_single_renderer(RendererCategory::Markers, "game");
+            self.init_single_renderer_group(RendererCategory::Markers, "game");
         }
     }
 
+    /// Preserves disabled renderers - will reinitialise them, but will also keep them disabled
     pub fn reinit_renderer_category(&mut self, category: RendererCategory) {
         match category {
             RendererCategory::Stars => {
-                self.star_renderers = HashMap::new();
+                let mut old_renderers = HashMap::new();
+                std::mem::swap(&mut self.star_renderers, &mut old_renderers);
                 let mut active_star_groups = Vec::new();
+                let mut all_disabled_renderers = std::collections::HashMap::new();
                 for name in self.stars.keys() {
                     let active = self.sky_settings.stars_categories_active.entry(name.to_owned()).or_insert(true);
                     if !*active {
                         continue;
                     }
                     active_star_groups.push(name.to_owned());
+
+                    let mut disabled_renderers = std::collections::HashSet::new();
+                    if let Some(renderers) = old_renderers.get(name) {
+                        for renderer in renderers {
+                            if renderer.disabled {
+                                disabled_renderers.insert(renderer.object_id);
+                            }
+                        }
+                    }
+                    all_disabled_renderers.insert(name.to_owned(), disabled_renderers);
                 }
                 for name in active_star_groups {
-                    self.init_single_renderer(RendererCategory::Stars, &name);
+                    self.init_single_renderer_group(RendererCategory::Stars, &name);
+                    if let Some(disabled_renderers) = all_disabled_renderers.get(&name) {
+                        if let Some(renderers) = self.star_renderers.get_mut(&name) {
+                            for renderer in renderers {
+                                if disabled_renderers.contains(&renderer.object_id) {
+                                    renderer.disabled = true;
+                                }
+                            }
+                        }
+                    }
                 }
             }
             RendererCategory::Lines => {
@@ -1017,21 +1147,44 @@ impl CellestialSphere {
                     active_line_groups.push(name.to_owned());
                 }
                 for name in active_line_groups {
-                    self.init_single_renderer(RendererCategory::Lines, &name);
+                    self.init_single_renderer_group(RendererCategory::Lines, &name);
                 }
             }
             RendererCategory::Deepskies => {
-                self.deepsky_renderers = HashMap::new();
+                let mut old_renderers = HashMap::new();
+                std::mem::swap(&mut self.deepsky_renderers, &mut old_renderers);
                 let mut active_deepsky_groups = Vec::new();
-                for name in self.deepskies.keys() {
+                let mut all_disabled_renderers = std::collections::HashMap::new();
+                for name in self.stars.keys() {
                     let active = self.sky_settings.deepskies_categories_active.entry(name.to_owned()).or_insert(true);
                     if !*active {
                         continue;
                     }
                     active_deepsky_groups.push(name.to_owned());
+
+                    let mut disabled_renderers = std::collections::HashSet::new();
+                    if let Some(renderers) = old_renderers.get(name) {
+                        for renderer in renderers {
+                            if renderer.disabled {
+                                disabled_renderers.insert(renderer.object_id);
+                            }
+                        }
+                    }
+                    if !disabled_renderers.is_empty() {
+                        all_disabled_renderers.insert(name.to_owned(), disabled_renderers);
+                    }
                 }
                 for name in active_deepsky_groups {
-                    self.init_single_renderer(RendererCategory::Deepskies, &name);
+                    self.init_single_renderer_group(RendererCategory::Deepskies, &name);
+                    if let Some(disabled_renderers) = all_disabled_renderers.get(&name) {
+                        if let Some(renderers) = self.deepsky_renderers.get_mut(&name) {
+                            for renderer in renderers {
+                                if disabled_renderers.contains(&renderer.object_id) {
+                                    renderer.disabled = true;
+                                }
+                            }
+                        }
+                    }
                 }
             }
             RendererCategory::Markers => {
@@ -1044,20 +1197,20 @@ impl CellestialSphere {
                     active_markers_groups.push(name.to_owned());
                 }
                 for name in active_markers_groups {
-                    self.init_single_renderer(RendererCategory::Markers, &name);
+                    self.init_single_renderer_group(RendererCategory::Markers, &name);
                 }
                 if self.game_markers.active {
-                    self.init_single_renderer(RendererCategory::Markers, "game");
+                    self.init_single_renderer_group(RendererCategory::Markers, "game");
                 }
 
                 if self.game_markers.active {
-                    self.init_single_renderer(RendererCategory::Markers, "game");
+                    self.init_single_renderer_group(RendererCategory::Markers, "game");
                 }
             }
         }
     }
 
-    pub fn init_single_renderer(&mut self, category: RendererCategory, name: &str) {
+    pub fn init_single_renderer_group(&mut self, category: RendererCategory, name: &str) {
         match category {
             RendererCategory::Stars => {
                 if let Some(stars) = self.stars.get(name) {
@@ -1086,9 +1239,27 @@ impl CellestialSphere {
             }
             RendererCategory::Deepskies => {
                 if let Some(deepskies) = self.deepskies.get(name) {
+                    let mut disabled_renderers = std::collections::HashSet::new();
+                    if let Some(renderers) = self.deepsky_renderers.get(name) {
+                        for renderer in renderers {
+                            if renderer.disabled {
+                                disabled_renderers.insert(renderer.object_id);
+                            }
+                        }
+                    }
                     self.deepsky_renderers.insert(
                         name.to_string(),
-                        deepskies.deepskies.iter().map(|deepsky| deepsky.get_renderer(self.rotation.matrix(), deepskies.colour)).collect(),
+                        deepskies
+                            .deepskies
+                            .iter()
+                            .map(|deepsky| {
+                                let mut renderer = deepsky.get_renderer(self.rotation.matrix(), deepskies.colour);
+                                if disabled_renderers.contains(&deepsky.object_id) {
+                                    renderer.disabled = true;
+                                }
+                                renderer
+                            })
+                            .collect(),
                     );
                 }
             }
@@ -1108,7 +1279,7 @@ impl CellestialSphere {
         }
     }
 
-    pub fn deinit_single_renderer(&mut self, category: RendererCategory, name: &str) {
+    pub fn deinit_single_renderer_group(&mut self, category: RendererCategory, name: &str) {
         match category {
             RendererCategory::Stars => {
                 self.star_renderers.insert(name.to_string(), Vec::new());
@@ -1121,6 +1292,40 @@ impl CellestialSphere {
             }
             RendererCategory::Markers => {
                 self.marker_renderers.insert(name.to_string(), Vec::new());
+            }
+        }
+    }
+
+    pub fn enable_single_renderer(&mut self, object_id: u64) {
+        for renderer_group in self.star_renderers.values_mut() {
+            for renderer in renderer_group {
+                if renderer.object_id == object_id {
+                    renderer.disabled = false;
+                }
+            }
+        }
+        for renderer_group in self.deepsky_renderers.values_mut() {
+            for renderer in renderer_group {
+                if renderer.object_id == object_id {
+                    renderer.disabled = false;
+                }
+            }
+        }
+    }
+
+    pub fn disable_single_renderer(&mut self, object_id: u64) {
+        for renderer_group in self.star_renderers.values_mut() {
+            for renderer in renderer_group {
+                if renderer.object_id == object_id {
+                    renderer.disabled = true;
+                }
+            }
+        }
+        for renderer_group in self.deepsky_renderers.values_mut() {
+            for renderer in renderer_group {
+                if renderer.object_id == object_id {
+                    renderer.disabled = true;
+                }
             }
         }
     }

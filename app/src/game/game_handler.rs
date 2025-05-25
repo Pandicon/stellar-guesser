@@ -364,7 +364,7 @@ impl GameHandler {
             self.add_marker_on_click = self.question_catalog[self.current_question].add_marker_on_click();
             self.question_catalog[self.current_question].start_question(cellestial_sphere, theme);
             self.request_input_focus = true;
-            cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
+            cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, "game");
             self.stage = GameStage::Guessing;
         }
     }
