@@ -1,3 +1,4 @@
+pub mod clouds;
 pub mod constellation;
 pub mod deepsky;
 pub mod lines;

@@ -31,16 +31,16 @@ pub struct Constellation {
 
 impl Constellation {
     pub fn from_raw(raw: ConstellationRaw) -> Result<(Self, String), Box<dyn std::error::Error>> {
-		let polygons = match serde_json::from_str(&raw.polygons) {
-                Ok(polygons) => {
-                    log::debug!("Created the polygon for the {} constellation", raw.name_latin);
-                    polygons
-                }
-                Err(err) => {
-                    log::error!("Failed to create polygons for the {} constellation: {:?}", raw.name_latin, err);
-                    return Err(Box::from(format!("Failed to create polygons for the {} constellation: {:?}", raw.name_latin, err)));
-                }
-            };
+        let polygons = match serde_json::from_str(&raw.polygons) {
+            Ok(polygons) => {
+                log::debug!("Created the polygon for the {} constellation", raw.name_latin);
+                polygons
+            }
+            Err(err) => {
+                log::error!("Failed to create polygons for the {} constellation: {:?}", raw.name_latin, err);
+                return Err(Box::from(format!("Failed to create polygons for the {} constellation: {:?}", raw.name_latin, err)));
+            }
+        };
         let abbreviation = raw.abbreviation;
         Ok((
             Self {
