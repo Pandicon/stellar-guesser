@@ -161,7 +161,7 @@ impl Question {
                 },
             )
         } else {
-            (String::from("-"), String::from("-"), String::from("-"), format!("You didn't guess where the missing object is"))
+            (String::from("-"), String::from("-"), String::from("-"), "You didn't guess where the missing object is".to_string())
         };
         self.state.answer_review_text_heading = answer_review_text_heading;
         self.state.answer_review_text = format!(
@@ -278,7 +278,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
     }
 
     fn render_display_question(&self, ui: &mut egui::Ui) {
-        ui.heading(format!("Find the object that is missing in the sky"));
+        ui.heading("Find the object that is missing in the sky");
     }
 
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
