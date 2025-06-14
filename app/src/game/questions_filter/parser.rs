@@ -533,6 +533,10 @@ pub fn parse_question_type_and_settings(question_type: &str, question_settings: 
             Ok(question_settings) => Ok(crate::game::questions::QuestionType::WhichConstellationIsThisPointIn(question_settings)),
             Err(err) => Err(format!("Error when parsing question settings ({err})")),
         },
+        "WHICH_OBJECT_IS_MISSING" => match serde_json::from_str(question_settings) {
+            Ok(question_settings) => Ok(crate::game::questions::QuestionType::WhichObjectIsMissing(question_settings)),
+            Err(err) => Err(format!("Error when parsing question settings ({err})")),
+        },
         _ => Err(String::from("Error when parsing the query, the question type could not be matched")),
     }
 }

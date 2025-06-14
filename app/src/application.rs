@@ -184,6 +184,25 @@ impl eframe::App for Application {
         self.toasts.show(ctx);
         self.frames_handler.handle();
         self.frames_handler.last_frame = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
+        if self.game_handler.switch_to_next_part {
+            let data = game_handler::QuestionCheckingData {
+                cellestial_sphere: &mut self.cellestial_sphere,
+                theme: &self.theme,
+                game_stage: &mut self.game_handler.stage,
+                score: &mut self.game_handler.score,
+                possible_score: &mut self.game_handler.possible_score,
+                is_scored_mode: self.game_handler.game_settings.is_scored_mode,
+                current_question: self.game_handler.current_question,
+                used_questions: &mut self.game_handler.used_questions,
+                add_marker_on_click: &mut self.game_handler.add_marker_on_click,
+                questions_settings: &self.game_handler.questions_settings,
+                question_number: &mut self.game_handler.question_number,
+                start_next_question: &mut self.game_handler.switch_to_next_question,
+                switch_to_next_part: &mut self.game_handler.switch_to_next_part,
+            };
+            self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(data);
+            self.game_handler.switch_to_next_part = false;
+        }
         if self.game_handler.switch_to_next_question {
             self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
             self.game_handler.switch_to_next_question = false;

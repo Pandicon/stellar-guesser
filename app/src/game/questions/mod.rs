@@ -5,6 +5,7 @@ pub mod guess_the_magnitude;
 pub mod mark_missing_object;
 pub mod which_constellation_is_point_in;
 pub mod which_object_is_here;
+pub mod which_object_is_missing;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -43,6 +44,7 @@ pub enum QuestionType {
     MarkMissingObject(mark_missing_object::SmallSettings),
     WhatIsThisObject(which_object_is_here::SmallSettings),
     WhichConstellationIsThisPointIn(which_constellation_is_point_in::SmallSettings),
+    WhichObjectIsMissing(which_object_is_missing::SmallSettings),
 }
 
 pub fn question_pack_to_string(name: &str, question_pack: &crate::game::questions_filter::QuestionPack) -> String {

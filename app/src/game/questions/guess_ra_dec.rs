@@ -72,6 +72,7 @@ impl RaQuestion {
                     questions_settings: data.questions_settings,
                     question_number: data.question_number,
                     start_next_question: data.start_next_question,
+                    switch_to_next_part: data.switch_to_next_part,
                 });
             }
             ui.label(data.question_number_text);
@@ -85,7 +86,7 @@ impl RaQuestion {
             }
             ui.label(&self.state.answer_review_text);
             if ui.button("Next").clicked() {
-                *data.start_next_question = true;
+                *data.switch_to_next_part = true;
             }
             ui.label(data.question_number_text);
         })
@@ -240,6 +241,7 @@ impl DecQuestion {
                     questions_settings: data.questions_settings,
                     question_number: data.question_number,
                     start_next_question: data.start_next_question,
+                    switch_to_next_part: data.switch_to_next_part,
                 });
             }
             ui.label(data.question_number_text);
@@ -253,7 +255,7 @@ impl DecQuestion {
             }
             ui.label(&self.state.answer_review_text);
             if ui.button("Next").clicked() {
-                *data.start_next_question = true;
+                *data.switch_to_next_part = true;
             }
             ui.label(data.question_number_text);
         })

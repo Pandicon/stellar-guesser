@@ -38,6 +38,7 @@ impl Application {
                                         questions_settings: &self.game_handler.questions_settings,
                                         question_number: &mut self.game_handler.question_number,
                                         start_next_question: &mut self.game_handler.switch_to_next_question,
+                                        switch_to_next_part: &mut self.game_handler.switch_to_next_part,
                                     });
                                 }
                             }
