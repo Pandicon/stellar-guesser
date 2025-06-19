@@ -243,7 +243,7 @@ impl GameHandler {
             for set in spl[3].split(QUESTION_PACK_QUESTIONS_DIV) {
                 let spl = set.split(QUESTION_PACK_QUESTIONS_PARTS_DIV).collect::<Vec<&str>>();
                 if spl.len() < 2 {
-                    log::error!("Not enough parts in a question pack set: {} < 2 ({:?})", spl.len(), spl);
+                    log::error!("Not enough parts in a question pack set: {} < 2 ({:?}) (name: {})", spl.len(), spl, name);
                     continue;
                 }
                 let question_settings = match serde_json::from_str(spl[0]) {
