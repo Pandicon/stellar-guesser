@@ -140,6 +140,7 @@ pub enum GameSettingsQuestionsSubWindow {
     GuessTheCoordinates,
     GuessTheMagnitude,
     MarkMissingObject,
+    WhichObjectIsMissing,
 }
 
 impl AsRef<str> for GameSettingsQuestionsSubWindow {
@@ -152,6 +153,7 @@ impl AsRef<str> for GameSettingsQuestionsSubWindow {
             Self::GuessTheCoordinates => "Guess the coordinates",
             Self::GuessTheMagnitude => "Guess the magnitude",
             Self::MarkMissingObject => "Mark missing object",
+            Self::WhichObjectIsMissing => "Which object is missing",
         }
     }
 }

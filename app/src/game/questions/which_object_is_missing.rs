@@ -45,7 +45,7 @@ impl Default for SmallSettings {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct Settings {
-    pub rotate_to_point: bool,
+    pub rotate_to_answer: bool,
     pub limit_to_toggled_constellations: bool,
     pub show_messiers: bool,
     pub show_caldwells: bool,
@@ -62,7 +62,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            rotate_to_point: true,
+            rotate_to_answer: true,
             limit_to_toggled_constellations: true,
             show_messiers: true,
             show_caldwells: true,

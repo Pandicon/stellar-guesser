@@ -17,6 +17,7 @@ pub struct Settings {
     pub mark_missing_object: mark_missing_object::Settings,
     pub what_constellation_is_this_point_in: which_constellation_is_point_in::Settings,
     pub what_is_this_object: which_object_is_here::Settings,
+    pub which_object_is_missing: which_object_is_missing::Settings,
 }
 
 #[allow(clippy::derivable_impls)]
@@ -30,6 +31,7 @@ impl Default for Settings {
             mark_missing_object: mark_missing_object::Settings::default(),
             what_constellation_is_this_point_in: which_constellation_is_point_in::Settings::default(),
             what_is_this_object: which_object_is_here::Settings::default(),
+            which_object_is_missing: which_object_is_missing::Settings::default(),
         }
     }
 }

@@ -210,6 +210,7 @@ impl Application {
                         GameSettingsQuestionsSubWindow::GuessTheCoordinates => self.render_game_settings_coordinates_subwindow(ui),
                         GameSettingsQuestionsSubWindow::GuessTheMagnitude => self.render_game_settings_magnitude_subwindow(ui),
                         GameSettingsQuestionsSubWindow::MarkMissingObject => self.render_game_settings_mark_missing_object_subwindow(ui, tolerance_changed),
+                        GameSettingsQuestionsSubWindow::WhichObjectIsMissing => self.render_game_settings_which_object_is_missing_subwindow(ui),
                     }
 
                     self.state.windows.settings.game_settings.generated_query = self.generate_query_from_basic();
@@ -633,6 +634,54 @@ impl Application {
                 }
             };
         }
+        if self.game_handler.questions_settings.which_object_is_missing.show {
+            let question_settings = questions::which_object_is_missing::SmallSettings {
+                rotate_to_answer: self.game_handler.questions_settings.which_object_is_missing.rotate_to_answer,
+                replay_incorrect: self.game_handler.questions_settings.which_object_is_missing.replay_incorrect,
+                accept_messier: true,
+                accept_caldwell: true,
+                accept_ngc: true,
+                accept_ic: true,
+                accept_hip: true,
+                accept_hd: true,
+                accept_proper: true,
+                accept_bayer: true,
+                accept_flamsteed: true,
+            };
+            let mut settings_catalogues = Vec::new();
+            if self.game_handler.questions_settings.which_object_is_missing.show_messiers {
+                settings_catalogues.push("CATALOGUE(MESSIER)");
+            }
+            if self.game_handler.questions_settings.which_object_is_missing.show_caldwells {
+                settings_catalogues.push("CATALOGUE(CALDWELL)");
+            }
+            if self.game_handler.questions_settings.which_object_is_missing.show_ngcs {
+                settings_catalogues.push("CATALOGUE(NGC)");
+            }
+            if self.game_handler.questions_settings.which_object_is_missing.show_ics {
+                settings_catalogues.push("CATALOGUE(IC)");
+            }
+            if self.game_handler.questions_settings.which_object_is_missing.show_bayer {
+                settings_catalogues.push("CATALOGUE(BAYER)");
+            }
+            if self.game_handler.questions_settings.which_object_is_missing.show_starnames {
+                settings_catalogues.push("AND(TYPE(STAR), CATALOGUE(PROPER_NAME))");
+            }
+            if !settings_catalogues.is_empty() {
+                let mut settings = format!(
+                    "OR(AND(TYPE(STAR), MAG_BELOW({}), OR({})), AND(NOT(TYPE(STAR)), OR({})))",
+                    self.game_handler.questions_settings.which_object_is_missing.magnitude_cutoff,
+                    settings_catalogues.join(", "),
+                    settings_catalogues.join(", ")
+                );
+                if self.game_handler.questions_settings.which_object_is_missing.limit_to_toggled_constellations {
+                    settings = format!("AND({settings}, CONSTELLATION({}))", active_constellations);
+                }
+                if let Ok(question_settings) = serde_json::to_string(&question_settings) {
+                    query_parts.push(format!("WHICH_OBJECT_IS_MISSING({}): {}", question_settings, settings));
+                }
+            };
+        }
         let query = query_parts.join("\n");
         query.replace("SmallSettings {", "{")
     }
@@ -674,6 +723,11 @@ impl Application {
             GameSettingsQuestionsSubWindow::MarkMissingObject,
             GameSettingsQuestionsSubWindow::MarkMissingObject.as_ref(),
         );
+        ui.selectable_value(
+            &mut self.state.windows.settings.game_settings.questions_subwindow.subwindow,
+            GameSettingsQuestionsSubWindow::WhichObjectIsMissing,
+            GameSettingsQuestionsSubWindow::WhichObjectIsMissing.as_ref(),
+        );
     }
 
     fn render_game_settings_find_this_object_subwindow(&mut self, ui: &mut egui::Ui, tolerance_changed: &mut bool) {
@@ -687,12 +741,12 @@ impl Application {
             &mut self.game_handler.questions_settings.find_this_object.limit_to_toggled_constellations,
             "Limit to objects from toggled constellations",
         );
-        ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_messiers, "Show Messier objects");
-        ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_caldwells, "Show Caldwell objects");
-        ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_ngcs, "Show NGC objects");
-        ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_ics, "Show IC objects");
-        ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_bayer, "Show Bayer designations");
-        ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_starnames, "Show star names");
+        ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_messiers, "Ask about Messier objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_caldwells, "Ask about Caldwell objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_ngcs, "Ask about NGC objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_ics, "Ask about IC objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_bayer, "Ask about stars with Bayer designations");
+        ui.checkbox(&mut self.game_handler.questions_settings.find_this_object.show_starnames, "Ask about named stars");
         ui.add(egui::Slider::new(&mut self.game_handler.questions_settings.find_this_object.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"));
         let mut correctness_threshold_inner = self.game_handler.questions_settings.find_this_object.correctness_threshold.value();
         let correctness_threshold_widget = ui.add(
@@ -734,6 +788,30 @@ impl Application {
         ui.checkbox(&mut self.game_handler.questions_settings.mark_missing_object.replay_incorrect, "Replay incorrectly answered questions");
     }
 
+    fn render_game_settings_which_object_is_missing_subwindow(&mut self, ui: &mut egui::Ui) {
+        ui.checkbox(&mut self.game_handler.questions_settings.which_object_is_missing.show, "Show the 'Which object is missing' questions");
+        ui.checkbox(
+            &mut self.game_handler.questions_settings.which_object_is_missing.rotate_to_answer,
+            "Rotate to the correct point after answering",
+        )
+        .on_hover_text("Whether or not to rotate the view so that the correct point is in the centre of the screen after answering");
+        ui.checkbox(
+            &mut self.game_handler.questions_settings.which_object_is_missing.limit_to_toggled_constellations,
+            "Limit to objects from toggled constellations",
+        );
+        ui.checkbox(&mut self.game_handler.questions_settings.which_object_is_missing.show_messiers, "Ask about Messier objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.which_object_is_missing.show_caldwells, "Ask about Caldwell objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.which_object_is_missing.show_ngcs, "Ask about NGC objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.which_object_is_missing.show_ics, "Ask about IC objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.which_object_is_missing.show_bayer, "Ask about stars with Bayer designations");
+        ui.checkbox(&mut self.game_handler.questions_settings.which_object_is_missing.show_starnames, "Ask about named stars");
+        ui.add(egui::Slider::new(&mut self.game_handler.questions_settings.which_object_is_missing.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"));
+        ui.checkbox(
+            &mut self.game_handler.questions_settings.which_object_is_missing.replay_incorrect,
+            "Replay incorrectly answered questions",
+        );
+    }
+
     fn render_game_settings_what_is_this_object_subwindow(&mut self, ui: &mut egui::Ui) {
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show, "Show the 'What is this object' questions");
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.rotate_to_point, "Rotate to the point in question")
@@ -742,12 +820,12 @@ impl Application {
             &mut self.game_handler.questions_settings.what_is_this_object.limit_to_toggled_constellations,
             "Limit to objects from toggled constellations",
         );
-        ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_messiers, "Show Messier objects");
-        ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_caldwells, "Show Caldwell objects");
-        ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_ngcs, "Show NGC objects");
-        ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_ics, "Show IC objects");
-        ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_bayer, "Show Bayer designations");
-        ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_starnames, "Show star names");
+        ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_messiers, "Ask about Messier objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_caldwells, "Ask about Caldwell objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_ngcs, "Ask about NGC objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_ics, "Ask about IC objects");
+        ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_bayer, "Ask about stars with Bayer designations");
+        ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.show_starnames, "Ask about named stars");
         ui.add(egui::Slider::new(&mut self.game_handler.questions_settings.what_is_this_object.magnitude_cutoff, 0.0..=20.0).text("Star magnitude cutoff"));
         ui.checkbox(&mut self.game_handler.questions_settings.what_is_this_object.replay_incorrect, "Replay incorrectly answered questions");
     }
