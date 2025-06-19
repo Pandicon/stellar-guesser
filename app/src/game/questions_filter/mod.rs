@@ -33,6 +33,7 @@ pub fn check(expression: &parser::Keyword, object: &QuestionObject) -> bool {
             parser::Catalogue::Flamsteed => object.flamsteed_designation_full.is_some(),
             parser::Catalogue::Caldwell => object.caldwell_number.is_some(),
             parser::Catalogue::Messier => object.messier_number.is_some(),
+            parser::Catalogue::Ic => object.ic_number.is_some(),
             parser::Catalogue::Ngc => object.ngc_number.is_some(),
             parser::Catalogue::Hd => object.hd_number.is_some(),
             parser::Catalogue::Hip => object.hipparcos_number.is_some(),
@@ -63,6 +64,7 @@ pub fn check(expression: &parser::Keyword, object: &QuestionObject) -> bool {
             }
             parser::Catalogue::Caldwell => object.caldwell_number == designation.parse().ok(),
             parser::Catalogue::Messier => object.messier_number == designation.parse().ok(),
+            parser::Catalogue::Ic => object.ic_number == designation.parse().ok(),
             parser::Catalogue::Ngc => object.ngc_number == designation.parse().ok(),
             parser::Catalogue::Hd => object.hd_number == designation.parse().ok(),
             parser::Catalogue::Hip => object.hipparcos_number == designation.parse().ok(),

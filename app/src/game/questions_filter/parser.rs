@@ -237,7 +237,7 @@ impl Keyword {
                     };
                     let catalogue = Catalogue::from_string(spl[0])?;
                     match catalogue {
-                        Catalogue::Caldwell | Catalogue::Hd | Catalogue::Hip | Catalogue::Messier | Catalogue::Ngc => {
+                        Catalogue::Caldwell | Catalogue::Hd | Catalogue::Hip | Catalogue::Ic | Catalogue::Messier | Catalogue::Ngc => {
                             if let Err(err) = spl[1].parse::<u32>() {
                                 return Err(format!(
                                     "The catalogue number has to be a whole number, found {} ({}) as an argument of 'CATALOGUE_DESIGNATION' at position {}",
@@ -367,13 +367,14 @@ pub struct Parser<'a> {
     pos: usize,
 }
 
-pub const VALID_CATALOGUES: [&str; 8] = ["BAYER", "FLAMSTEED", "MESSIER", "CALDWELL", "NGC", "HD", "HIP", "PROPER_NAME"];
+pub const VALID_CATALOGUES: [&str; 9] = ["BAYER", "FLAMSTEED", "MESSIER", "CALDWELL", "IC", "NGC", "HD", "HIP", "PROPER_NAME"];
 #[derive(Debug)]
 pub enum Catalogue {
     Bayer,
     Flamsteed,
     Messier,
     Caldwell,
+    Ic,
     Ngc,
     Hd,
     Hip,
@@ -388,6 +389,7 @@ impl Catalogue {
             "FLAMSTEED" => Self::Flamsteed,
             "MESSIER" => Self::Messier,
             "CALDWELL" => Self::Caldwell,
+            "IC" => Self::Ic,
             "NGC" => Self::Ngc,
             "HD" => Self::Hd,
             "HIP" => Self::Hip,
