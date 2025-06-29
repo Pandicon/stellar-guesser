@@ -49,7 +49,7 @@ impl Keyword {
                     }
                 }
                 if new_args.is_empty() {
-                    return Err(format!("Keyword 'AND' at position {} expects at least 1 argument, found 0", ident_pos));
+                    return Err(format!("Keyword 'AND' at position {ident_pos} expects at least 1 argument, found 0"));
                 }
                 Self::And(new_args)
             }
@@ -62,7 +62,7 @@ impl Keyword {
                     }
                 }
                 if new_args.is_empty() {
-                    return Err(format!("Keyword 'OR' at position {} expects at least 1 argument, found 0", ident_pos));
+                    return Err(format!("Keyword 'OR' at position {ident_pos} expects at least 1 argument, found 0"));
                 }
                 Self::Or(new_args)
             }
@@ -164,7 +164,7 @@ impl Keyword {
                     }
                 }
                 if new_args.is_empty() {
-                    return Err(format!("Keyword 'CONSTELLATION' at position {} expects at least 1 argument, found 0", ident_pos));
+                    return Err(format!("Keyword 'CONSTELLATION' at position {ident_pos} expects at least 1 argument, found 0"));
                 }
                 Self::Constellation(new_args)
             }
@@ -224,7 +224,7 @@ impl Keyword {
                     }
                 }
                 if new_args_raw.is_empty() {
-                    return Err(format!("Keyword 'CATALOGUE_DESIGNATION' at position {} expects at least 1 argument, found 0", ident_pos));
+                    return Err(format!("Keyword 'CATALOGUE_DESIGNATION' at position {ident_pos} expects at least 1 argument, found 0"));
                 }
                 let mut new_args = Vec::with_capacity(new_args_raw.len());
                 for s in new_args_raw {

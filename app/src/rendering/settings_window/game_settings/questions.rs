@@ -546,12 +546,12 @@ impl Application {
                 rotate_to_point: self.game_handler.questions_settings.what_constellation_is_this_point_in.rotate_to_point,
             };
             let settings = if self.game_handler.questions_settings.what_constellation_is_this_point_in.limit_to_toggled_constellations {
-                format!(": CONSTELLATION({})", active_constellations)
+                format!(": CONSTELLATION({active_constellations})")
             } else {
                 String::new()
             };
             if let Ok(question_settings) = serde_json::to_string(&question_settings) {
-                query_parts.push(format!("WHICH_CONSTELLATION_IS_THIS_POINT_IN({}){}", question_settings, settings));
+                query_parts.push(format!("WHICH_CONSTELLATION_IS_THIS_POINT_IN({question_settings}){settings}"));
             }
         }
         if self.game_handler.questions_settings.angular_separation.show {
@@ -559,12 +559,12 @@ impl Application {
                 rotate_to_midpoint: self.game_handler.questions_settings.angular_separation.rotate_to_midpoint,
             };
             let settings = if self.game_handler.questions_settings.angular_separation.limit_to_toggled_constellations {
-                format!(": CONSTELLATION({})", active_constellations)
+                format!(": CONSTELLATION({active_constellations})")
             } else {
                 String::new()
             };
             if let Ok(question_settings) = serde_json::to_string(&question_settings) {
-                query_parts.push(format!("ANGULAR_SEPARATION({}){}", question_settings, settings));
+                query_parts.push(format!("ANGULAR_SEPARATION({question_settings}){settings}"));
             }
         }
         if self.game_handler.questions_settings.guess_rad_dec.show {
@@ -572,13 +572,13 @@ impl Application {
                 rotate_to_point: self.game_handler.questions_settings.guess_rad_dec.rotate_to_point,
             };
             let settings = if self.game_handler.questions_settings.guess_rad_dec.limit_to_toggled_constellations {
-                format!(": CONSTELLATION({})", active_constellations)
+                format!(": CONSTELLATION({active_constellations})")
             } else {
                 String::new()
             };
             if let Ok(question_settings) = serde_json::to_string(&question_settings) {
-                query_parts.push(format!("GUESS_DEC({}){}", question_settings, settings));
-                query_parts.push(format!("GUESS_RA({}){}", question_settings, settings));
+                query_parts.push(format!("GUESS_DEC({question_settings}){settings}"));
+                query_parts.push(format!("GUESS_RA({question_settings}){settings}"));
             }
         }
         if self.game_handler.questions_settings.guess_the_magnitude.show {
