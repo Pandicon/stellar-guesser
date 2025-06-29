@@ -1,4 +1,4 @@
-use crate::enums::GameStage;
+use crate::enums::{GameStage, RendererCategory};
 use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::renderer::CellestialSphere;
@@ -11,7 +11,7 @@ use rand::Rng;
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
 #[serde(default)]
 pub struct SmallSettings {
-    pub rotate_to_point: bool,
+    pub rotate_to_answer: bool,
     pub replay_incorrect: bool,
     pub accept_messier: bool,
     pub accept_caldwell: bool,
@@ -27,7 +27,7 @@ pub struct SmallSettings {
 impl Default for SmallSettings {
     fn default() -> Self {
         Self {
-            rotate_to_point: true,
+            rotate_to_answer: true,
             replay_incorrect: true,
             accept_messier: true,
             accept_caldwell: true,
@@ -45,7 +45,7 @@ impl Default for SmallSettings {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct Settings {
-    pub rotate_to_point: bool,
+    pub rotate_to_answer: bool,
     pub limit_to_toggled_constellations: bool,
     pub show_messiers: bool,
     pub show_caldwells: bool,
@@ -62,7 +62,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            rotate_to_point: true,
+            rotate_to_answer: true,
             limit_to_toggled_constellations: true,
             show_messiers: true,
             show_caldwells: true,
@@ -103,6 +103,7 @@ pub struct Question {
     pub object_type: String,
     pub constellation_abbreviation: String,
     pub images: Vec<crate::structs::image_info::ImageInfo>,
+    pub object_id: u64,
 
     pub state: State,
 }
@@ -179,6 +180,23 @@ impl Question {
             self.possible_names.join(", "),
             self.object_type
         );
+        data.cellestial_sphere.game_markers.markers.push(GameMarker::new(
+            GameMarkerType::CorrectAnswer,
+            self.ra,
+            self.dec,
+            2.0,
+            5.0,
+            self.is_bayer || self.is_starname,
+            false,
+            &data.theme.game_visuals.game_markers_colours,
+        ));
+        if self.small_settings.rotate_to_answer {
+            let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
+            data.cellestial_sphere.look_at_point(&final_vector);
+            data.cellestial_sphere.init_renderers();
+        } else {
+            data.cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, "game");
+        }
         *data.possible_score += 1;
         if !self.small_settings.replay_incorrect || correct {
             data.used_questions.push(data.current_question);
@@ -209,6 +227,8 @@ impl crate::game::game_handler::QuestionTrait for Question {
             }
             GameStage::Checked => {
                 *data.start_next_question = true;
+                data.cellestial_sphere.enable_single_renderer(self.object_id);
+                data.cellestial_sphere.game_markers.markers = Vec::new();
             }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
@@ -230,6 +250,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             object_type: self.object_type,
             constellation_abbreviation: self.constellation_abbreviation,
             images: self.images,
+            object_id: self.object_id,
 
             state: State::default(),
         })
@@ -259,36 +280,9 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
         self.state = Default::default();
-        cellestial_sphere.game_markers.markers = if self.is_bayer || self.is_starname {
-            vec![GameMarker::new(
-                GameMarkerType::Task,
-                self.ra,
-                self.dec,
-                2.0,
-                5.0,
-                true,
-                false,
-                &theme.game_visuals.game_markers_colours,
-            )]
-        } else {
-            vec![GameMarker::new(
-                GameMarkerType::Task,
-                self.ra,
-                self.dec,
-                2.0,
-                5.0,
-                false,
-                false,
-                &theme.game_visuals.game_markers_colours,
-            )]
-        };
-        if self.small_settings.rotate_to_point {
-            let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
-            cellestial_sphere.look_at_point(&final_vector);
-            cellestial_sphere.init_renderers();
-        }
+        cellestial_sphere.disable_single_renderer(self.object_id);
     }
 
     fn render_display_question(&self, ui: &mut egui::Ui) {
@@ -320,7 +314,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         if self.small_settings.accept_proper {
             accepted.push("Proper name");
         }
-        ui.heading("What is this object?");
+        ui.heading("Which object is hidden from the sky?");
         ui.label(format!("Accepted names: {}", accepted.join(", ")));
     }
 

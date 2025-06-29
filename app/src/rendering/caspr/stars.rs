@@ -47,7 +47,7 @@ impl Star {
             // It will not be rendered anyway, so why bother calculating the values
             (egui::pos2(0.0, 0.0), false)
         };
-        StarRenderer::new(radius, colour, projected_point, is_within_bounds)
+        StarRenderer::new(self.object_id, radius, colour, projected_point, is_within_bounds, false)
     }
 
     pub fn from_raw(raw_star: StarRaw, default_colour: Color32, override_colour: Option<Color32>) -> Self {
@@ -105,23 +105,30 @@ impl Star {
 }
 
 pub struct StarRenderer {
+    pub object_id: u64,
     pub screen_pos: egui::Pos2,
     pub is_on_screen: bool,
     pub radius: f32,
     pub colour: Color32,
+    pub disabled: bool,
 }
 
 impl StarRenderer {
-    pub fn new(radius: f32, colour: Color32, screen_pos: egui::Pos2, is_on_screen: bool) -> Self {
+    pub fn new(object_id: u64, radius: f32, colour: Color32, screen_pos: egui::Pos2, is_on_screen: bool, disabled: bool) -> Self {
         Self {
+            object_id,
             screen_pos,
             is_on_screen,
             radius,
             colour,
+            disabled,
         }
     }
 
     pub fn render(&self, painter: &egui::Painter) {
+        if self.disabled {
+            return;
+        }
         if Self::radius_enough_to_render(self.radius) && self.is_on_screen {
             painter.circle_filled(self.screen_pos, self.radius, self.colour);
         }

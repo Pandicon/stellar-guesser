@@ -30,7 +30,7 @@ impl GameConstellations {
                     let constellation = if let Some(constellation) = constellations.iter().find(|s| s.to_lowercase() == constellation_raw.to_lowercase()) {
                         constellation.to_string()
                     } else {
-                        log::warn!("Unknown constellation: {}", constellation_raw);
+                        log::warn!("Unknown constellation: {constellation_raw}");
                         continue;
                     };
                     active_constellations.insert(constellation, true);
@@ -57,7 +57,7 @@ impl GameConstellations {
                             let constellation = if let Some(constellation) = constellations.iter().find(|s| s.to_lowercase() == constellation_raw.to_lowercase()) {
                                 constellation.to_string()
                             } else {
-                                log::warn!("Unknown constellation: {}", constellation_raw);
+                                log::warn!("Unknown constellation: {constellation_raw}");
                                 continue;
                             };
                             active.insert(constellation, true);

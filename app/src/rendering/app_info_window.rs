@@ -15,7 +15,7 @@ impl Application {
             if let Some(update_exists) = self.version.update_available {
                 if update_exists {
                     if let Some(newest_version) = &self.version.latest_released_version {
-                        ui.label(format!("There is an update available, newest version is {}", newest_version));
+                        ui.label(format!("There is an update available, newest version is {newest_version}"));
                     } else {
                         ui.label("There is an update available");
                     }
@@ -67,7 +67,7 @@ impl Application {
                 }
                 None => format!("{}.{}.{}, {}:{}:{} UTC", BUILD_DATE[2], BUILD_DATE[1], BUILD_DATE[0], BUILD_DATE[3], BUILD_DATE[4], BUILD_DATE[5]),
             };
-            ui.label(format!("Build date and time: {}", date_string));
+            ui.label(format!("Build date and time: {date_string}"));
         })
     }
 }

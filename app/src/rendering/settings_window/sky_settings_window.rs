@@ -61,7 +61,7 @@ impl Application {
             .show_ui(ui, |ui| {
                 ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
                 for val in LightPollution::variants() {
-                    ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, val, format!("{}", val))
+                    ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, val, format!("{val}"))
                         .on_hover_text(LightPollution::explanation(&val));
                 }
             });
@@ -118,7 +118,7 @@ impl Application {
             }
             let keys = self.cellestial_sphere.stars.keys().cloned().collect::<Vec<String>>();
             for star_set_name in keys {
-                self.cellestial_sphere.init_single_renderer(RendererCategory::Stars, &star_set_name);
+                self.cellestial_sphere.init_single_renderer_group(RendererCategory::Stars, &star_set_name);
             }
         }
 
@@ -140,7 +140,7 @@ impl Application {
                 Some(theme) => {
                     self.apply_theme(ctx, theme.clone());
                 }
-                None => log::error!("Failed to get the selected theme: {}", selected_theme_name),
+                None => log::error!("Failed to get the selected theme: {selected_theme_name}"),
             }
         }
         ui.heading("Export theme");
@@ -212,7 +212,7 @@ impl Application {
             }
             let keys = self.cellestial_sphere.stars.keys().cloned().collect::<Vec<String>>();
             for star_set_name in keys {
-                self.cellestial_sphere.init_single_renderer(RendererCategory::Stars, &star_set_name);
+                self.cellestial_sphere.init_single_renderer_group(RendererCategory::Stars, &star_set_name);
             }
         }
 
@@ -297,7 +297,7 @@ impl Application {
         let mut newly_inactive_star_groups = Vec::new();
         for (name, active) in &mut self.cellestial_sphere.sky_settings.stars_categories_active {
             let active_before = *active;
-            ui.checkbox(active, format!("Render stars from the {} file", name));
+            ui.checkbox(active, format!("Render stars from the {name} file"));
             if !active_before && *active {
                 newly_active_star_groups.push(name.to_owned());
             } else if active_before && !*active {
@@ -306,10 +306,10 @@ impl Application {
         }
 
         for name in &newly_active_star_groups {
-            self.cellestial_sphere.init_single_renderer(RendererCategory::Stars, name);
+            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Stars, name);
         }
         for name in &newly_inactive_star_groups {
-            self.cellestial_sphere.deinit_single_renderer(RendererCategory::Stars, name);
+            self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Stars, name);
         }
         if reinit_stars {
             self.cellestial_sphere.reinit_renderer_category(RendererCategory::Stars);
@@ -329,7 +329,7 @@ impl Application {
         let mut deepsky_groups_to_deinit = HashSet::new();
         for (name, deepskies_set) in &mut self.cellestial_sphere.deepskies {
             ui.heading(name);
-            if ui.checkbox(&mut deepskies_set.active, format!("Render deepsky objects from the {} file", name)).changed() {
+            if ui.checkbox(&mut deepskies_set.active, format!("Render deepsky objects from the {name} file")).changed() {
                 if deepskies_set.active {
                     deepsky_groups_to_init.insert(name.to_owned());
                 } else {
@@ -346,10 +346,10 @@ impl Application {
             self.theme.game_visuals.deepskies_colours.insert(name.clone(), deepskies_set.colour);
         }
         for name in &deepsky_groups_to_init {
-            self.cellestial_sphere.init_single_renderer(RendererCategory::Deepskies, name);
+            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Deepskies, name);
         }
         for name in &deepsky_groups_to_deinit {
-            self.cellestial_sphere.deinit_single_renderer(RendererCategory::Deepskies, name);
+            self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Deepskies, name);
         }
     }
 
@@ -358,7 +358,7 @@ impl Application {
         let mut line_groups_to_deinit = HashSet::new();
         for (name, lines_set) in &mut self.cellestial_sphere.lines {
             ui.heading(name);
-            if ui.checkbox(&mut lines_set.active, format!("Render lines from the {} file", name)).changed() {
+            if ui.checkbox(&mut lines_set.active, format!("Render lines from the {name} file")).changed() {
                 if lines_set.active {
                     line_groups_to_init.insert(name.to_owned());
                 } else {
@@ -375,10 +375,10 @@ impl Application {
             self.theme.game_visuals.lines_colours.insert(name.clone(), lines_set.colour);
         }
         for name in &line_groups_to_init {
-            self.cellestial_sphere.init_single_renderer(RendererCategory::Lines, name);
+            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Lines, name);
         }
         for name in &line_groups_to_deinit {
-            self.cellestial_sphere.deinit_single_renderer(RendererCategory::Lines, name);
+            self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Lines, name);
         }
     }
 
@@ -405,14 +405,14 @@ impl Application {
             for marker in self.cellestial_sphere.game_markers.markers.iter_mut() {
                 marker.colour = GameMarker::get_colour(marker.marker_type, &self.theme.game_visuals.game_markers_colours);
             }
-            self.cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
+            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, "game");
         }
         ui.separator();
         let mut marker_groups_to_init = HashSet::new();
         let mut marker_groups_to_deinit = HashSet::new();
         for (name, markers_set) in &mut self.cellestial_sphere.markers {
             ui.heading(name);
-            if ui.checkbox(&mut markers_set.active, format!("Render markers from the {} file", name)).changed() {
+            if ui.checkbox(&mut markers_set.active, format!("Render markers from the {name} file")).changed() {
                 if markers_set.active {
                     marker_groups_to_init.insert(name.to_owned());
                 } else {
@@ -429,10 +429,10 @@ impl Application {
             self.theme.game_visuals.markers_colours.insert(name.clone(), markers_set.colour);
         }
         for name in &marker_groups_to_init {
-            self.cellestial_sphere.init_single_renderer(RendererCategory::Markers, name);
+            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, name);
         }
         for name in &marker_groups_to_deinit {
-            self.cellestial_sphere.deinit_single_renderer(RendererCategory::Markers, name);
+            self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Markers, name);
         }
     }
 }

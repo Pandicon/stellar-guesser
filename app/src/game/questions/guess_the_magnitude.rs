@@ -78,6 +78,7 @@ impl Question {
                     questions_settings: data.questions_settings,
                     question_number: data.question_number,
                     start_next_question: data.start_next_question,
+                    switch_to_next_part: data.switch_to_next_part,
                 });
             }
             ui.label(data.question_number_text);
@@ -91,7 +92,7 @@ impl Question {
             }
             ui.label(&self.state.answer_review_text);
             if ui.button("Next").clicked() {
-                *data.start_next_question = true;
+                *data.switch_to_next_part = true;
             }
             ui.label(data.question_number_text);
         })
@@ -100,7 +101,7 @@ impl Question {
         match self.state.answer.parse::<f32>() {
             Ok(answer) => {
                 let error = (self.mag - answer).abs();
-                self.state.answer_review_text_heading = format!("You were {:.1} mag away!", error);
+                self.state.answer_review_text_heading = format!("You were {error:.1} mag away!");
 
                 self.state.answer_review_text = format!("The magnitude was {:.1}.", self.mag);
 

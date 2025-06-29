@@ -13,7 +13,7 @@ impl Application {
         time_spent_changing /= 60;
         let hours = time_spent_changing;
         egui::Window::new("Statistics").open(&mut self.state.windows.stats.opened).show(ctx, |ui| {
-            ui.label(format!("Time spent in the application: {}h {}min {}s", hours, minutes, seconds));
+            ui.label(format!("Time spent in the application: {hours}h {minutes}min {seconds}s"));
         })
     }
 }

@@ -26,6 +26,7 @@ pub struct QuestionWindowData<'a> {
     pub question_number_text: &'a String,
     pub game_stage: &'a mut GameStage,
     pub ctx: &'a eframe::egui::Context,
+    pub switch_to_next_part: &'a mut bool,
     pub start_next_question: &'a mut bool,
     pub score: &'a mut u32,
     pub possible_score: &'a mut u32,
@@ -48,6 +49,9 @@ pub struct QuestionCheckingData<'a> {
     pub add_marker_on_click: &'a mut bool,
     pub questions_settings: &'a questions::Settings,
     pub question_number: &'a mut usize,
+    /// Signals that the current question should run the generic_to_next_part() function
+    pub switch_to_next_part: &'a mut bool,
+    /// Signals that the current question gives up its place and a new one should be picked
     pub start_next_question: &'a mut bool,
 }
 
@@ -171,6 +175,7 @@ pub struct GameHandler {
     pub constellation_groups_settings: sg_game_constellations::GameConstellations,
 
     pub request_input_focus: bool,
+    pub switch_to_next_part: bool,
     pub switch_to_next_question: bool,
 
     pub active_question_pack: String,
@@ -238,7 +243,7 @@ impl GameHandler {
             for set in spl[3].split(QUESTION_PACK_QUESTIONS_DIV) {
                 let spl = set.split(QUESTION_PACK_QUESTIONS_PARTS_DIV).collect::<Vec<&str>>();
                 if spl.len() < 2 {
-                    log::error!("Not enough parts in a question pack set: {} < 2 ({:?})", spl.len(), spl);
+                    log::error!("Not enough parts in a question pack set: {} < 2 ({:?}) (name: {})", spl.len(), spl, name);
                     continue;
                 }
                 let question_settings = match serde_json::from_str(spl[0]) {
@@ -322,6 +327,7 @@ impl GameHandler {
             possible_score: 0,
             constellation_groups_settings,
             request_input_focus: false,
+            switch_to_next_part: false,
             switch_to_next_question: false,
 
             active_question_pack,
@@ -364,7 +370,7 @@ impl GameHandler {
             self.add_marker_on_click = self.question_catalog[self.current_question].add_marker_on_click();
             self.question_catalog[self.current_question].start_question(cellestial_sphere, theme);
             self.request_input_focus = true;
-            cellestial_sphere.init_single_renderer(RendererCategory::Markers, "game");
+            cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, "game");
             self.stage = GameStage::Guessing;
         }
     }
