@@ -81,7 +81,7 @@ pub fn render_constellations_settings_subwindow(
                 if let Some(constellation) = settings.active_constellations.keys().find(|con| con.to_lowercase() == constellation_raw.to_lowercase()) {
                     settings.active_constellations.insert(constellation.to_owned(), new_state);
                 } else {
-                    log::debug!("Invalid constellation entered: {}", constellation_raw);
+                    log::debug!("Invalid constellation entered: {constellation_raw}");
                 }
             }
         }

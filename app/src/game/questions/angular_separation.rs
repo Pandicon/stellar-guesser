@@ -117,7 +117,7 @@ impl Question {
             }
             Err(_) => {
                 self.state.answer_review_text_heading = "You didn't guess".to_string();
-                self.state.answer_review_text = format!("The real distance was {:.1}°.", distance);
+                self.state.answer_review_text = format!("The real distance was {distance:.1}°.");
             }
         };
         data.used_questions.push(data.current_question);

@@ -364,26 +364,26 @@ impl CellestialSphere {
                             possible_names.extend(names);
                         }
                         if let Some(designation) = object.caldwell_number {
-                            possible_names.push(format!("C{}", designation));
+                            possible_names.push(format!("C{designation}"));
                         }
                         if let Some(designation) = &object.flamsteed_designation_raw {
                             let names = super::generate_name_combinations(designation, super::SpecificName::None);
                             possible_names.extend(names);
                         }
                         if let Some(designation) = &object.hd_number {
-                            possible_names.push(format!("HD{}", designation));
+                            possible_names.push(format!("HD{designation}"));
                         }
                         if let Some(designation) = &object.hipparcos_number {
-                            possible_names.push(format!("HIP{}", designation));
+                            possible_names.push(format!("HIP{designation}"));
                         }
                         if let Some(designation) = &object.ic_number {
-                            possible_names.push(format!("IC{}", designation));
+                            possible_names.push(format!("IC{designation}"));
                         }
                         if let Some(designation) = &object.messier_number {
-                            possible_names.push(format!("M{}", designation));
+                            possible_names.push(format!("M{designation}"));
                         }
                         if let Some(designation) = &object.ngc_number {
-                            possible_names.push(format!("NGC{}", designation));
+                            possible_names.push(format!("NGC{designation}"));
                         }
                         for name in &object.proper_names_raw {
                             let names = super::generate_name_combinations(name, super::SpecificName::None);
@@ -424,7 +424,7 @@ impl CellestialSphere {
                         }
                         if small_settings.accept_caldwell {
                             if let Some(designation) = object.caldwell_number {
-                                possible_names.push(format!("C{}", designation));
+                                possible_names.push(format!("C{designation}"));
                             }
                         }
                         if small_settings.accept_flamsteed {
@@ -435,27 +435,27 @@ impl CellestialSphere {
                         }
                         if small_settings.accept_hd {
                             if let Some(designation) = &object.hd_number {
-                                possible_names.push(format!("HD{}", designation));
+                                possible_names.push(format!("HD{designation}"));
                             }
                         }
                         if small_settings.accept_hip {
                             if let Some(designation) = &object.hipparcos_number {
-                                possible_names.push(format!("HIP{}", designation));
+                                possible_names.push(format!("HIP{designation}"));
                             }
                         }
                         if small_settings.accept_ic {
                             if let Some(designation) = &object.ic_number {
-                                possible_names.push(format!("IC{}", designation));
+                                possible_names.push(format!("IC{designation}"));
                             }
                         }
                         if small_settings.accept_messier {
                             if let Some(designation) = &object.messier_number {
-                                possible_names.push(format!("M{}", designation));
+                                possible_names.push(format!("M{designation}"));
                             }
                         }
                         if small_settings.accept_ngc {
                             if let Some(designation) = &object.ngc_number {
-                                possible_names.push(format!("NGC{}", designation));
+                                possible_names.push(format!("NGC{designation}"));
                             }
                         }
                         if small_settings.accept_proper {
@@ -509,7 +509,7 @@ impl CellestialSphere {
                         }
                         if small_settings.accept_caldwell {
                             if let Some(designation) = object.caldwell_number {
-                                possible_names.push(format!("C{}", designation));
+                                possible_names.push(format!("C{designation}"));
                             }
                         }
                         if small_settings.accept_flamsteed {
@@ -520,27 +520,27 @@ impl CellestialSphere {
                         }
                         if small_settings.accept_hd {
                             if let Some(designation) = &object.hd_number {
-                                possible_names.push(format!("HD{}", designation));
+                                possible_names.push(format!("HD{designation}"));
                             }
                         }
                         if small_settings.accept_hip {
                             if let Some(designation) = &object.hipparcos_number {
-                                possible_names.push(format!("HIP{}", designation));
+                                possible_names.push(format!("HIP{designation}"));
                             }
                         }
                         if small_settings.accept_ic {
                             if let Some(designation) = &object.ic_number {
-                                possible_names.push(format!("IC{}", designation));
+                                possible_names.push(format!("IC{designation}"));
                             }
                         }
                         if small_settings.accept_messier {
                             if let Some(designation) = &object.messier_number {
-                                possible_names.push(format!("M{}", designation));
+                                possible_names.push(format!("M{designation}"));
                             }
                         }
                         if small_settings.accept_ngc {
                             if let Some(designation) = &object.ngc_number {
-                                possible_names.push(format!("NGC{}", designation));
+                                possible_names.push(format!("NGC{designation}"));
                             }
                         }
                         if small_settings.accept_proper {

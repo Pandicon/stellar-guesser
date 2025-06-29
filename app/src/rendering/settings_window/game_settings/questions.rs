@@ -91,7 +91,7 @@ impl Application {
                     if !self.game_handler.question_packs.contains_key(&name) {
                         self.game_handler.question_packs.insert(name, pack);
                     } else {
-                        log::warn!("A pack with the '{}' name already exists, skipping adding a default pack.", name);
+                        log::debug!("A pack with the '{}' name already exists, skipping adding a default pack.", name);
                     }
                 }
             }
@@ -118,18 +118,18 @@ impl Application {
                             let mut question_objects = Vec::new();
                             for (question_type, objects) in &pack.question_objects {
                                 let settings = match question_type {
-                                    crate::game::questions::QuestionType::AngularSeparation(small_settings) => format!("QuestionType::AngularSeparation(angular_separation::{:?}))", small_settings),
-                                    crate::game::questions::QuestionType::FindThisObject(small_settings) => format!("QuestionType::FindThisObject(find_this_object::{:?})", small_settings),
-                                    crate::game::questions::QuestionType::GuessDec(small_settings) => format!("QuestionType::GuessDec(guess_ra_dec::{:?})", small_settings),
-                                    crate::game::questions::QuestionType::GuessRa(small_settings) => format!("QuestionType::GuessRa(guess_ra_dec::{:?})", small_settings),
-                                    crate::game::questions::QuestionType::GuessTheMagnitude(small_settings) => format!("QuestionType::GuessTheMagnitude(guess_the_magnitude::{:?})", small_settings),
-                                    crate::game::questions::QuestionType::MarkMissingObject(small_settings) => format!("QuestionType::MarkMissingObject(mark_missing_object::{:?})", small_settings),
-                                    crate::game::questions::QuestionType::WhatIsThisObject(small_settings) => format!("QuestionType::WhatIsThisObject(which_object_is_here::{:?})", small_settings),
+                                    crate::game::questions::QuestionType::AngularSeparation(small_settings) => format!("QuestionType::AngularSeparation(angular_separation::{small_settings:?}))"),
+                                    crate::game::questions::QuestionType::FindThisObject(small_settings) => format!("QuestionType::FindThisObject(find_this_object::{small_settings:?})"),
+                                    crate::game::questions::QuestionType::GuessDec(small_settings) => format!("QuestionType::GuessDec(guess_ra_dec::{small_settings:?})"),
+                                    crate::game::questions::QuestionType::GuessRa(small_settings) => format!("QuestionType::GuessRa(guess_ra_dec::{small_settings:?})"),
+                                    crate::game::questions::QuestionType::GuessTheMagnitude(small_settings) => format!("QuestionType::GuessTheMagnitude(guess_the_magnitude::{small_settings:?})"),
+                                    crate::game::questions::QuestionType::MarkMissingObject(small_settings) => format!("QuestionType::MarkMissingObject(mark_missing_object::{small_settings:?})"),
+                                    crate::game::questions::QuestionType::WhatIsThisObject(small_settings) => format!("QuestionType::WhatIsThisObject(which_object_is_here::{small_settings:?})"),
                                     crate::game::questions::QuestionType::WhichConstellationIsThisPointIn(small_settings) => {
-                                        format!("QuestionType::WhichConstellationIsThisPointIn(which_constellation_is_point_in::{:?})", small_settings)
+                                        format!("QuestionType::WhichConstellationIsThisPointIn(which_constellation_is_point_in::{small_settings:?})")
                                     }
                                     crate::game::questions::QuestionType::WhichObjectIsMissing(small_settings) => {
-                                        format!("QuestionType::WhichObjectIsMissing(which_object_is_missing::{:?})", small_settings)
+                                        format!("QuestionType::WhichObjectIsMissing(which_object_is_missing::{small_settings:?})")
                                     }
                                 };
                                 question_objects.push(format!("({settings}, vec!{objects:?})"));
@@ -293,7 +293,7 @@ impl Application {
                 let (parsed_result, ast_res) = if spl.len() > 1 {
                     let query = spl.pop().unwrap(); //.replace(":", "");
                     match crate::game::questions_filter::parser::Parser::new(query).parse(&self.game_handler.constellation_groups_settings.constellation_groups) {
-                        Ok(Some(crate::game::questions_filter::parser::Node::Keyword(ast))) => (format!("{:?}", ast), Ok(Some(ast))),
+                        Ok(Some(crate::game::questions_filter::parser::Node::Keyword(ast))) => (format!("{ast:?}"), Ok(Some(ast))),
                         Ok(Some(crate::game::questions_filter::parser::Node::Value(_))) | Ok(None) => (String::from("No restrictions"), Ok(None)),
                         Err(err) => {
                             can_evaluate = false;
@@ -486,10 +486,10 @@ impl Application {
                     settings_catalogues.join(", ")
                 );
                 if self.game_handler.questions_settings.find_this_object.limit_to_toggled_constellations {
-                    settings = format!("AND({settings}, CONSTELLATION({}))", active_constellations);
+                    settings = format!("AND({settings}, CONSTELLATION({active_constellations}))");
                 }
                 if let Ok(question_settings) = serde_json::to_string(&question_settings) {
-                    query_parts.push(format!("FIND_THIS_OBJECT({}): {}", question_settings, settings));
+                    query_parts.push(format!("FIND_THIS_OBJECT({question_settings}): {settings}"));
                 }
             };
         }
@@ -534,10 +534,10 @@ impl Application {
                     settings_catalogues.join(", ")
                 );
                 if self.game_handler.questions_settings.what_is_this_object.limit_to_toggled_constellations {
-                    settings = format!("AND({settings}, CONSTELLATION({}))", active_constellations);
+                    settings = format!("AND({settings}, CONSTELLATION({active_constellations}))");
                 }
                 if let Ok(question_settings) = serde_json::to_string(&question_settings) {
-                    query_parts.push(format!("WHAT_IS_THIS_OBJECT({}): {}", question_settings, settings));
+                    query_parts.push(format!("WHAT_IS_THIS_OBJECT({question_settings}): {settings}"));
                 }
             };
         }
@@ -588,10 +588,10 @@ impl Application {
             };
             let mut settings = format!("MAG_BELOW({})", self.game_handler.questions_settings.guess_the_magnitude.magnitude_cutoff);
             if self.game_handler.questions_settings.guess_the_magnitude.limit_to_toggled_constellations {
-                settings = format!("AND({settings}, CONSTELLATION({}))", active_constellations);
+                settings = format!("AND({settings}, CONSTELLATION({active_constellations}))");
             };
             if let Ok(question_settings) = serde_json::to_string(&question_settings) {
-                query_parts.push(format!("GUESS_THE_MAGNITUDE({}): {}", question_settings, settings));
+                query_parts.push(format!("GUESS_THE_MAGNITUDE({question_settings}): {settings}"));
             }
         }
         if self.game_handler.questions_settings.mark_missing_object.show {
@@ -627,10 +627,10 @@ impl Application {
                     settings_catalogues.join(", ")
                 );
                 if self.game_handler.questions_settings.mark_missing_object.limit_to_toggled_constellations {
-                    settings = format!("AND({settings}, CONSTELLATION({}))", active_constellations);
+                    settings = format!("AND({settings}, CONSTELLATION({active_constellations}))");
                 }
                 if let Ok(question_settings) = serde_json::to_string(&question_settings) {
-                    query_parts.push(format!("MARK_MISSING_OBJECT({}): {}", question_settings, settings));
+                    query_parts.push(format!("MARK_MISSING_OBJECT({question_settings}): {settings}"));
                 }
             };
         }
@@ -675,10 +675,10 @@ impl Application {
                     settings_catalogues.join(", ")
                 );
                 if self.game_handler.questions_settings.which_object_is_missing.limit_to_toggled_constellations {
-                    settings = format!("AND({settings}, CONSTELLATION({}))", active_constellations);
+                    settings = format!("AND({settings}, CONSTELLATION({active_constellations}))");
                 }
                 if let Ok(question_settings) = serde_json::to_string(&question_settings) {
-                    query_parts.push(format!("WHICH_OBJECT_IS_MISSING({}): {}", question_settings, settings));
+                    query_parts.push(format!("WHICH_OBJECT_IS_MISSING({question_settings}): {settings}"));
                 }
             };
         }

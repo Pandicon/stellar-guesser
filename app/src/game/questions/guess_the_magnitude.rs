@@ -101,7 +101,7 @@ impl Question {
         match self.state.answer.parse::<f32>() {
             Ok(answer) => {
                 let error = (self.mag - answer).abs();
-                self.state.answer_review_text_heading = format!("You were {:.1} mag away!", error);
+                self.state.answer_review_text_heading = format!("You were {error:.1} mag away!");
 
                 self.state.answer_review_text = format!("The magnitude was {:.1}.", self.mag);
 

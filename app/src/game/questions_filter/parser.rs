@@ -45,7 +45,7 @@ impl Keyword {
                 for arg in args {
                     match arg {
                         Node::Keyword(keyword) => new_args.push(Box::new(keyword)),
-                        Node::Value(_) => return Err(format!("Keyword 'AND' can only take other keywords, not values (position {})", ident_pos)),
+                        Node::Value(_) => return Err(format!("Keyword 'AND' can only take other keywords, not values (position {ident_pos})")),
                     }
                 }
                 if new_args.is_empty() {
@@ -58,7 +58,7 @@ impl Keyword {
                 for arg in args {
                     match arg {
                         Node::Keyword(keyword) => new_args.push(Box::new(keyword)),
-                        Node::Value(_) => return Err(format!("Keyword 'OR' can only take other keywords, not values (position {})", ident_pos)),
+                        Node::Value(_) => return Err(format!("Keyword 'OR' can only take other keywords, not values (position {ident_pos})")),
                     }
                 }
                 if new_args.is_empty() {
@@ -71,7 +71,7 @@ impl Keyword {
                 for arg in args {
                     match arg {
                         Node::Keyword(keyword) => new_args.push(Box::new(keyword)),
-                        Node::Value(_) => return Err(format!("Keyword 'NOT' can only take other keywords, not values (position {})", ident_pos)),
+                        Node::Value(_) => return Err(format!("Keyword 'NOT' can only take other keywords, not values (position {ident_pos})")),
                     }
                 }
                 if new_args.len() != 1 {
@@ -83,7 +83,7 @@ impl Keyword {
                 let mut new_args = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'DEC' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'DEC' can only take values, not other keywords (position {ident_pos})")),
                         Node::Value(value) => new_args.push(value),
                     }
                 }
@@ -93,11 +93,11 @@ impl Keyword {
                 let (min, max) = (new_args.remove(0), new_args.remove(0));
                 let mut min = match min.parse() {
                     Ok(min) => min,
-                    Err(err) => return Err(format!("Keyword 'DEC' at position {} expects numbers as arguments, found '{}' ('{}')", ident_pos, min, err)),
+                    Err(err) => return Err(format!("Keyword 'DEC' at position {ident_pos} expects numbers as arguments, found '{min}' ('{err}')")),
                 };
                 let mut max = match max.parse() {
                     Ok(max) => max,
-                    Err(err) => return Err(format!("Keyword 'DEC' at position {} expects numbers as arguments, found '{}' ('{}')", ident_pos, max, err)),
+                    Err(err) => return Err(format!("Keyword 'DEC' at position {ident_pos} expects numbers as arguments, found '{max}' ('{err}')")),
                 };
                 if min > max {
                     std::mem::swap(&mut min, &mut max);
@@ -108,7 +108,7 @@ impl Keyword {
                 let mut new_args = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'RA_DEG' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'RA_DEG' can only take values, not other keywords (position {ident_pos})")),
                         Node::Value(value) => new_args.push(value),
                     }
                 }
@@ -118,11 +118,11 @@ impl Keyword {
                 let (min, max) = (new_args[0].clone(), new_args[1].clone());
                 let mut min = match min.parse() {
                     Ok(min) => min,
-                    Err(err) => return Err(format!("Keyword 'RA_DEG' at position {} expects numbers as arguments, found '{}' ('{}')", ident_pos, min, err)),
+                    Err(err) => return Err(format!("Keyword 'RA_DEG' at position {ident_pos} expects numbers as arguments, found '{min}' ('{err}')")),
                 };
                 let mut max = match max.parse() {
                     Ok(max) => max,
-                    Err(err) => return Err(format!("Keyword 'RA_DEG' at position {} expects numbers as arguments, found '{}' ('{}')", ident_pos, max, err)),
+                    Err(err) => return Err(format!("Keyword 'RA_DEG' at position {ident_pos} expects numbers as arguments, found '{max}' ('{err}')")),
                 };
                 if min > max {
                     std::mem::swap(&mut min, &mut max);
@@ -133,7 +133,7 @@ impl Keyword {
                 let mut new_args = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'RA' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'RA' can only take values, not other keywords (position {ident_pos})")),
                         Node::Value(value) => new_args.push(value),
                     }
                 }
@@ -143,11 +143,11 @@ impl Keyword {
                 let (min, max) = (new_args[0].clone(), new_args[1].clone());
                 let mut min = match min.parse() {
                     Ok(min) => min,
-                    Err(err) => return Err(format!("Keyword 'RA' at position {} expects numbers as arguments, found '{}' ('{}')", ident_pos, min, err)),
+                    Err(err) => return Err(format!("Keyword 'RA' at position {ident_pos} expects numbers as arguments, found '{min}' ('{err}')")),
                 };
                 let mut max = match max.parse() {
                     Ok(max) => max,
-                    Err(err) => return Err(format!("Keyword 'RA' at position {} expects numbers as arguments, found '{}' ('{}')", ident_pos, max, err)),
+                    Err(err) => return Err(format!("Keyword 'RA' at position {ident_pos} expects numbers as arguments, found '{max}' ('{err}')")),
                 };
                 if min > max {
                     std::mem::swap(&mut min, &mut max);
@@ -159,7 +159,7 @@ impl Keyword {
                 let mut new_args = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'CONSTELLATION' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'CONSTELLATION' can only take values, not other keywords (position {ident_pos})")),
                         Node::Value(value) => new_args.push(value),
                     }
                 }
@@ -172,14 +172,14 @@ impl Keyword {
                 let mut group_names = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'CONSTELLATION_GROUP' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'CONSTELLATION_GROUP' can only take values, not other keywords (position {ident_pos})")),
                         Node::Value(group_name) => {
                             group_names.push(group_name);
                         }
                     }
                 }
                 if group_names.is_empty() {
-                    return Err(format!("Keyword 'CONSTELLATION_GROUP' at position {} expects at least 1 argument, found 0", ident_pos));
+                    return Err(format!("Keyword 'CONSTELLATION_GROUP' at position {ident_pos} expects at least 1 argument, found 0"));
                 }
                 let mut constellations = std::collections::HashSet::new();
                 for group_name in group_names {
@@ -190,7 +190,7 @@ impl Keyword {
                             }
                         }
                     } else {
-                        return Err(format!("Could not find constellation group named '{}'", group_name));
+                        return Err(format!("Could not find constellation group named '{group_name}'"));
                     }
                 }
                 let mut constellations = constellations.into_iter().collect::<Vec<String>>();
@@ -201,7 +201,7 @@ impl Keyword {
                 let mut new_args = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'CATALOGUE' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'CATALOGUE' can only take values, not other keywords (position {ident_pos})")),
                         Node::Value(value) => {
                             let catalogue = Catalogue::from_string(&value)?;
                             new_args.push(catalogue);
@@ -209,7 +209,7 @@ impl Keyword {
                     }
                 }
                 if new_args.is_empty() {
-                    return Err(format!("Keyword 'CATALOGUE' at position {} expects at least 1 argument, found 0", ident_pos));
+                    return Err(format!("Keyword 'CATALOGUE' at position {ident_pos} expects at least 1 argument, found 0"));
                 }
                 Self::Catalogue(new_args)
             }
@@ -217,7 +217,7 @@ impl Keyword {
                 let mut new_args_raw = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'CATALOGUE_DESIGNATION' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'CATALOGUE_DESIGNATION' can only take values, not other keywords (position {ident_pos})")),
                         Node::Value(value) => {
                             new_args_raw.push(value);
                         }
@@ -231,8 +231,7 @@ impl Keyword {
                     let spl = s.split(":").collect::<Vec<&str>>();
                     if spl.len() != 2 {
                         return Err(format!(
-                            "Each argument of 'CATALOGUE_DESIGNATION' has to be in the format <catalogue>:<catalogue number>, did not get the correct amount of colons at position {} ",
-                            ident_pos
+                            "Each argument of 'CATALOGUE_DESIGNATION' has to be in the format <catalogue>:<catalogue number>, did not get the correct amount of colons at position {ident_pos}"
                         ));
                     };
                     let catalogue = Catalogue::from_string(spl[0])?;
@@ -255,7 +254,7 @@ impl Keyword {
                 let mut new_args = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'TYPE' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'TYPE' can only take values, not other keywords (position {ident_pos})")),
                         Node::Value(value) => {
                             let object_type = crate::game::ObjectType::from_string(&value)?;
                             new_args.push(object_type);
@@ -263,7 +262,7 @@ impl Keyword {
                     }
                 }
                 if new_args.is_empty() {
-                    return Err(format!("Keyword 'TYPE' at position {} expects at least 1 argument, found 0", ident_pos));
+                    return Err(format!("Keyword 'TYPE' at position {ident_pos} expects at least 1 argument, found 0"));
                 }
                 Self::Type(new_args)
             }
@@ -271,7 +270,7 @@ impl Keyword {
                 let mut new_args = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'MAG_BELOW' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'MAG_BELOW' can only take values, not other keywords (position {ident_pos})")),
                         Node::Value(value) => new_args.push(value),
                     }
                 }
@@ -281,7 +280,7 @@ impl Keyword {
                 let val = new_args[0].clone();
                 let val = match val.parse() {
                     Ok(val) => val,
-                    Err(err) => return Err(format!("Keyword 'MAG_BELOW' at position {} expects a numbers as argument, found '{}' ('{}')", ident_pos, val, err)),
+                    Err(err) => return Err(format!("Keyword 'MAG_BELOW' at position {ident_pos} expects a numbers as argument, found '{val}' ('{err}')")),
                 };
                 Self::MagBelow(val)
             }
@@ -289,7 +288,7 @@ impl Keyword {
                 let mut new_args = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'MAG_ABOVE' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'MAG_ABOVE' can only take values, not other keywords (position {ident_pos})")),
                         Node::Value(value) => new_args.push(value),
                     }
                 }
@@ -299,7 +298,7 @@ impl Keyword {
                 let val = new_args[0].clone();
                 let val = match val.parse() {
                     Ok(val) => val,
-                    Err(err) => return Err(format!("Keyword 'MAG_ABOVE' at position {} expects a numbers as argument, found '{}' ('{}')", ident_pos, val, err)),
+                    Err(err) => return Err(format!("Keyword 'MAG_ABOVE' at position {ident_pos} expects a numbers as argument, found '{val}' ('{err}')")),
                 };
                 Self::MagAbove(val)
             }
@@ -307,7 +306,7 @@ impl Keyword {
                 let mut new_args = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'MAG' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'MAG' can only take values, not other keywords (position {ident_pos})")),
                         Node::Value(value) => new_args.push(value),
                     }
                 }
@@ -317,11 +316,11 @@ impl Keyword {
                 let (min, max) = (new_args[0].clone(), new_args[1].clone());
                 let mut min = match min.parse() {
                     Ok(min) => min,
-                    Err(err) => return Err(format!("Keyword 'MAG' at position {} expects numbers as arguments, found '{}' ('{}')", ident_pos, min, err)),
+                    Err(err) => return Err(format!("Keyword 'MAG' at position {ident_pos} expects numbers as arguments, found '{min}' ('{err}')")),
                 };
                 let mut max = match max.parse() {
                     Ok(max) => max,
-                    Err(err) => return Err(format!("Keyword 'MAG' at position {} expects numbers as arguments, found '{}' ('{}')", ident_pos, max, err)),
+                    Err(err) => return Err(format!("Keyword 'MAG' at position {ident_pos} expects numbers as arguments, found '{max}' ('{err}')")),
                 };
                 if min > max {
                     std::mem::swap(&mut min, &mut max);
@@ -332,7 +331,7 @@ impl Keyword {
                 let mut new_args = Vec::new();
                 for arg in args {
                     match arg {
-                        Node::Keyword(_) => return Err(format!("Keyword 'OBJECT_ID' can only take values, not other keywords (position {})", ident_pos)),
+                        Node::Keyword(_) => return Err(format!("Keyword 'OBJECT_ID' can only take values, not other keywords (position {ident_pos})")),
                         Node::Value(value) => new_args.push(value),
                     }
                 }
@@ -342,12 +341,7 @@ impl Keyword {
                 let val = new_args[0].clone();
                 let val = match val.parse() {
                     Ok(val) => val,
-                    Err(err) => {
-                        return Err(format!(
-                            "Keyword 'OBJECT_ID' at position {} expects a whole numbers as argument, found '{}' ('{}')",
-                            ident_pos, val, err
-                        ))
-                    }
+                    Err(err) => return Err(format!("Keyword 'OBJECT_ID' at position {ident_pos} expects a whole numbers as argument, found '{val}' ('{err}')")),
                 };
                 Self::ObjectId(val)
             }
@@ -429,7 +423,7 @@ impl<'a> Parser<'a> {
                     "MAG" => KeywordRaw::Mag,
                     "OBJECT_ID" => KeywordRaw::ObjectId,
                     "CATALOGUE_DESIGNATION" => KeywordRaw::CatalogueDesignation,
-                    _ => return Err(format!("Unknown keyword '{}' at position {}", ident, ident_pos)),
+                    _ => return Err(format!("Unknown keyword '{ident}' at position {ident_pos}")),
                 };
                 self.chars.next(); // Consume '('
                 self.pos += 1;

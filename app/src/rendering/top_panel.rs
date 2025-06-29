@@ -90,7 +90,7 @@ fn render_left_controls(app: &mut crate::application::Application, ui: &mut egui
             .show_ui(ui, |ui| {
                 ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
                 for val in LightPollution::variants() {
-                    ui.selectable_value(&mut app.cellestial_sphere.light_pollution_place, val, format!("{}", val))
+                    ui.selectable_value(&mut app.cellestial_sphere.light_pollution_place, val, format!("{val}"))
                         .on_hover_text(LightPollution::explanation(&val));
                 }
             });
