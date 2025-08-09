@@ -428,11 +428,15 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
             String::from(r#"Stars (IOAA)"#),
             QuestionPack {
                 query: String::from(concat!(
-                    r#"FIND_THIS_OBJECT({"correctness_threshold":1.0,"rotate_to_answer":true,"replay_incorrect":true,"ask_messier":false,"ask_caldwell":false,"ask_ic":false,"ask_ngc":false,"ask_hd":false,"ask_hip":false,"ask_bayer":true,"ask_flamsteed":false,"ask_proper":true}): AND(TYPE(STAR), MAG_BELOW(2.0), OR(CATALOGUE(PROPER_NAME), CATALOGUE(BAYER)))"#,
+                    r#"FIND_THIS_OBJECT({"correctness_threshold":1.0,"rotate_to_answer":true,"replay_incorrect":true,"ask_messier":false,"ask_caldwell":false,"ask_ic":false,"ask_ngc":false,"ask_hd":false,"ask_hip":false,"ask_bayer":true,"ask_flamsteed":false,"ask_proper":true}): AND(OR(CATALOGUE(PROPER_NAME), CATALOGUE(BAYER)), OR(AND(TYPE(STAR), MAG_BELOW(2.21)), CATALOGUE_DESIGNATION(PROPER_NAME:Sadr, PROPER_NAME:Albireo, PROPER_NAME:Sheliak, PROPER_NAME:Sulafat, PROPER_NAME:Vindemiatrix, PROPER_NAME:Porrima, PROPER_NAME:Alcor, PROPER_NAME:Mizar, PROPER_NAME:Izar, HIP:79593, HIP:79882, PROPER_NAME:Sabik, PROPER_NAME:Dschubba, PROPER_NAME:Acrab, PROPER_NAME:Ankaa, PROPER_NAME:Menkar, PROPER_NAME:Thuban, PROPER_NAME:Phecda, PROPER_NAME:Merak, PROPER_NAME:Megrez, PROPER_NAME:Caph, HIP:3179, PROPER_NAME:Ruchbah, PROPER_NAME:Segin, PROPER_NAME:Mintaka, HIP:89931, HIP:90496, HIP:88635, HIP:92041, HIP:93506, HIP:105199, HIP:87833, HIP:85670, HIP:75097, HIP:110130, HIP:63125)))"#,
                     "\n",
-                    r#"WHAT_IS_THIS_OBJECT({"rotate_to_point":true,"replay_incorrect":true,"accept_messier":false,"accept_caldwell":false,"accept_ngc":false,"accept_ic":false,"accept_hip":true,"accept_hd":true,"accept_proper":true,"accept_bayer":false,"accept_flamsteed":false}): AND(TYPE(STAR), MAG_BELOW(2.0), CATALOGUE(PROPER_NAME))"#,
+                    r#""#,
                     "\n",
-                    r#"WHAT_IS_THIS_OBJECT({"rotate_to_point":true,"replay_incorrect":true,"accept_messier":false,"accept_caldwell":false,"accept_ngc":false,"accept_ic":false,"accept_hip":true,"accept_hd":true,"accept_proper":false,"accept_bayer":true,"accept_flamsteed":false}): AND(TYPE(STAR), MAG_BELOW(2.0), CATALOGUE(BAYER))"#
+                    r#"WHAT_IS_THIS_OBJECT({"rotate_to_point":true,"replay_incorrect":true,"accept_messier":false,"accept_caldwell":false,"accept_ngc":false,"accept_ic":false,"accept_hip":true,"accept_hd":true,"accept_proper":true,"accept_bayer":false,"accept_flamsteed":false}): AND(CATALOGUE(PROPER_NAME), OR(AND(TYPE(STAR), MAG_BELOW(2.21)), CATALOGUE_DESIGNATION(PROPER_NAME:Sadr, PROPER_NAME:Albireo, PROPER_NAME:Sheliak, PROPER_NAME:Sulafat, PROPER_NAME:Vindemiatrix, PROPER_NAME:Porrima, PROPER_NAME:Alcor, PROPER_NAME:Mizar, PROPER_NAME:Izar, HIP:79593, HIP:79882, PROPER_NAME:Sabik, PROPER_NAME:Dschubba, PROPER_NAME:Acrab, PROPER_NAME:Ankaa, PROPER_NAME:Menkar, PROPER_NAME:Thuban, PROPER_NAME:Phecda, PROPER_NAME:Merak, PROPER_NAME:Megrez, PROPER_NAME:Caph, HIP:3179, PROPER_NAME:Ruchbah, PROPER_NAME:Segin, PROPER_NAME:Mintaka, HIP:89931, HIP:90496, HIP:88635, HIP:92041, HIP:93506, HIP:105199, HIP:87833, HIP:85670, HIP:75097, HIP:110130, HIP:63125)))"#,
+                    "\n",
+                    r#""#,
+                    "\n",
+                    r#"WHAT_IS_THIS_OBJECT({"rotate_to_point":true,"replay_incorrect":true,"accept_messier":false,"accept_caldwell":false,"accept_ngc":false,"accept_ic":false,"accept_hip":true,"accept_hd":true,"accept_proper":false,"accept_bayer":true,"accept_flamsteed":false}): AND(CATALOGUE(BAYER), OR(AND(TYPE(STAR), MAG_BELOW(2.21)), CATALOGUE_DESIGNATION(PROPER_NAME:Sadr, PROPER_NAME:Albireo, PROPER_NAME:Sheliak, PROPER_NAME:Sulafat, PROPER_NAME:Vindemiatrix, PROPER_NAME:Porrima, PROPER_NAME:Alcor, PROPER_NAME:Mizar, PROPER_NAME:Izar, HIP:79593, HIP:79882, PROPER_NAME:Sabik, PROPER_NAME:Dschubba, PROPER_NAME:Acrab, PROPER_NAME:Ankaa, PROPER_NAME:Menkar, PROPER_NAME:Thuban, PROPER_NAME:Phecda, PROPER_NAME:Merak, PROPER_NAME:Megrez, PROPER_NAME:Caph, HIP:3179, PROPER_NAME:Ruchbah, PROPER_NAME:Segin, PROPER_NAME:Mintaka, HIP:89931, HIP:90496, HIP:88635, HIP:92041, HIP:93506, HIP:105199, HIP:87833, HIP:85670, HIP:75097, HIP:110130, HIP:63125)))"#
                 )),
                 question_objects: vec![
                     (
@@ -451,9 +455,11 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
                             ask_proper: true,
                         }),
                         vec![
-                            7793, 11953, 16044, 21587, 24597, 24768, 25494, 25585, 26465, 26881, 28138, 28507, 30470, 30584, 31821, 32484, 33712, 34573, 36964, 37392, 37938, 40059, 41140, 43013,
-                            45325, 46479, 49748, 54127, 60753, 61116, 62460, 62979, 65490, 67309, 68704, 69672, 71675, 71678, 80740, 82243, 85886, 86186, 90127, 91200, 97559, 100646, 101988, 109144,
-                            113229,
+                            896, 963, 2295, 3391, 3632, 4636, 5655, 6891, 7793, 9087, 9838, 10080, 11953, 14319, 14759, 16044, 21587, 24597, 24768, 25494, 25585, 26086, 26465, 26881, 27517, 28138,
+                            28507, 30470, 30584, 31821, 32484, 33712, 34573, 36964, 37392, 37938, 40059, 41140, 43013, 45325, 46479, 49748, 50660, 53976, 54127, 57680, 58049, 59813, 60753, 61116,
+                            61960, 61969, 62460, 62979, 63148, 63627, 65394, 65490, 65493, 67309, 68704, 68758, 68935, 69672, 71675, 71678, 72100, 72601, 75089, 78386, 78801, 79573, 79862, 80740,
+                            82243, 83976, 85631, 85886, 85990, 86186, 87782, 88582, 89874, 90127, 90438, 91200, 91976, 92355, 92785, 93123, 93434, 95869, 97559, 100349, 100646, 101988, 105082,
+                            109144, 110005, 111990, 113229,
                         ],
                     ),
                     (
@@ -471,9 +477,10 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
                             accept_flamsteed: false,
                         }),
                         vec![
-                            7793, 11953, 16044, 21587, 24597, 24768, 25494, 25585, 26465, 26881, 28138, 28507, 30470, 30584, 31821, 32484, 33712, 34573, 36964, 37392, 37938, 40059, 41140, 43013,
-                            45325, 46479, 49748, 54127, 60753, 61116, 62460, 62979, 65490, 67309, 68704, 69672, 71675, 71678, 80740, 82243, 85886, 86186, 90127, 91200, 97559, 100646, 101988, 109144,
-                            113229,
+                            896, 963, 2295, 3391, 3632, 5655, 6891, 7793, 9087, 9838, 10080, 11953, 14319, 14759, 16044, 21587, 24597, 24768, 25494, 25585, 26086, 26465, 26881, 27517, 28138, 28507,
+                            30470, 30584, 31821, 32484, 33712, 34573, 36964, 37392, 37938, 40059, 41140, 43013, 45325, 46479, 49748, 50660, 53976, 54127, 57680, 58049, 59813, 60753, 61116, 61969,
+                            62460, 62979, 63148, 63627, 65394, 65490, 65493, 67309, 68704, 68758, 68935, 69672, 71675, 71678, 72100, 72601, 75089, 78386, 78801, 79573, 79862, 80740, 82243, 83976,
+                            85631, 85886, 85990, 86186, 87782, 88582, 89874, 90127, 90438, 91200, 92355, 92785, 93123, 93434, 95869, 97559, 100349, 100646, 101988, 105082, 109144, 111990, 113229,
                         ],
                     ),
                     (
@@ -491,13 +498,15 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
                             accept_flamsteed: false,
                         }),
                         vec![
-                            7793, 11953, 16044, 21587, 24597, 24768, 25494, 25585, 26465, 26881, 28138, 28507, 30470, 30584, 31821, 32484, 33712, 34573, 36964, 37392, 37938, 40059, 41140, 43013,
-                            45325, 46479, 49748, 54127, 60753, 61116, 62460, 62979, 65490, 67309, 68704, 69672, 71675, 71678, 80740, 82243, 85886, 86186, 90127, 91200, 97559, 100646, 101988, 109144,
-                            113229,
+                            896, 963, 2295, 3391, 3632, 4636, 5655, 6891, 7793, 9087, 9838, 10080, 11953, 14319, 14759, 16044, 21587, 24597, 24768, 25494, 25585, 26086, 26465, 26881, 27517, 28138,
+                            28507, 30470, 30584, 31821, 32484, 33712, 34573, 36964, 37392, 37938, 40059, 41140, 43013, 45325, 46479, 49748, 50660, 53976, 54127, 57680, 58049, 59813, 60753, 61116,
+                            61960, 61969, 62460, 62979, 63148, 63627, 65394, 65490, 65493, 67309, 68704, 68758, 68935, 69672, 71675, 71678, 72100, 72601, 75089, 78386, 78801, 79573, 79862, 80740,
+                            82243, 83976, 85631, 85886, 85990, 86186, 87782, 88582, 89874, 90127, 90438, 91200, 91976, 92355, 92785, 93123, 93434, 95869, 97559, 100349, 100646, 101988, 105082,
+                            109144, 110005, 111990, 113229,
                         ],
                     ),
                 ],
-                description: String::from(r#"Tests the knowledge of proper name and Bayer designations of stars of up to magnitude 2.0. Should be enough for the IOAA."#),
+                description: String::from(r#"Tests the knowledge of proper name and Bayer designations of stars of up to magnitude 2.2 and some other ones deemed "important". Should be enough for the IOAA."#),
                 file_path: None,
             },
         ),
