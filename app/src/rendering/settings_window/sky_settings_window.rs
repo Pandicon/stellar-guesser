@@ -4,7 +4,6 @@ use eframe::egui;
 
 use crate::{
     enums::{LightPollution, RendererCategory},
-    files, public_constants,
     renderer::CellestialSphere,
     rendering::caspr::{markers::game_markers::GameMarker, stars},
     structs::state::windows::settings::SkySettingsSubWindow,
@@ -12,7 +11,7 @@ use crate::{
 };
 
 impl Application {
-    pub fn render_sky_settings_window(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+    pub fn render_sky_settings_window(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.selectable_value(
                 &mut self.state.windows.settings.sky_settings.subwindow,
@@ -44,7 +43,7 @@ impl Application {
         egui::ScrollArea::vertical()
             .auto_shrink([false, true])
             .show(ui, |ui| match self.state.windows.settings.sky_settings.subwindow {
-                SkySettingsSubWindow::General => self.render_sky_settings_general_subwindow(ctx, ui),
+                SkySettingsSubWindow::General => self.render_sky_settings_general_subwindow(ui),
                 SkySettingsSubWindow::Stars => self.render_sky_settings_stars_subwindow(ui),
                 SkySettingsSubWindow::Deepsky => self.render_sky_settings_deepsky_subwindow(ui),
                 SkySettingsSubWindow::Lines => self.render_sky_settings_lines_subwindow(ui),
@@ -52,7 +51,7 @@ impl Application {
             });
     }
 
-    pub fn render_sky_settings_general_subwindow(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+    pub fn render_sky_settings_general_subwindow(&mut self, ui: &mut egui::Ui) {
         let prev_light_pollution = self.cellestial_sphere.light_pollution_place;
         ui.label("Light pollution level: ")
             .on_hover_text("These settings are made to reflect how the sky looks in different locations for a person with an average eyesight.");
@@ -119,71 +118,6 @@ impl Application {
             let keys = self.cellestial_sphere.stars.keys().cloned().collect::<Vec<String>>();
             for star_set_name in keys {
                 self.cellestial_sphere.init_single_renderer_group(RendererCategory::Stars, &star_set_name);
-            }
-        }
-
-        ui.separator();
-
-        let previous_theme_name = self.theme.name.clone();
-        let mut selected_theme_name = self.theme.name.clone();
-        ui.label("Theme: ");
-        egui::ComboBox::from_id_salt("Theme: ").selected_text(&self.theme.name).show_ui(ui, |ui| {
-            ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-            let mut themes = self.themes.themes_names().collect::<Vec<&String>>();
-            themes.sort();
-            for theme_name in themes {
-                ui.selectable_value(&mut selected_theme_name, theme_name.to_owned(), theme_name);
-            }
-        });
-        if selected_theme_name != previous_theme_name {
-            match self.themes.get(&selected_theme_name) {
-                Some(theme) => {
-                    self.apply_theme(ctx, theme.clone());
-                }
-                None => log::error!("Failed to get the selected theme: {selected_theme_name}"),
-            }
-        }
-        ui.heading("Export theme");
-        ui.label("Export the current settings into a theme");
-        ui.horizontal(|ui| {
-            ui.label("Theme name: ");
-            ui.text_edit_singleline(&mut self.theme.name);
-        });
-        if ui.button("Export").clicked() {
-            if let Some(path) = files::get_dir_opt(public_constants::THEMES_FOLDER) {
-                #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
-                let save_path_opt: Option<std::path::PathBuf> = {
-                    let dialog = rfd::FileDialog::new().add_filter("Theme", &["json"]).set_directory(path);
-                    dialog.save_file()
-                };
-                #[cfg(any(target_os = "android", target_os = "ios"))]
-                let save_path_opt: Option<std::path::PathBuf> = {
-                    let mut save_path_intermediate = path;
-                    save_path_intermediate.push(format!("{}--{}.json", &self.theme.name, chrono::Local::now().timestamp_millis()));
-                    Some(save_path_intermediate)
-                };
-                match save_path_opt {
-                    Some(save_path) => match serde_json::to_string_pretty(&self.theme) {
-                        Ok(theme_to_save) => {
-                            if let Some(dir) = save_path.parent() {
-                                if !dir.exists() {
-                                    if let Err(err) = std::fs::create_dir_all(dir) {
-                                        log::error!("Failed to create the folders for the theme: {err}");
-                                    }
-                                }
-                            } else {
-                                log::warn!("No theme folder: {:?}", save_path);
-                            }
-                            if let Err(err) = std::fs::write(save_path, theme_to_save) {
-                                log::error!("Failed to save the theme: {err}");
-                            } else {
-                                self.themes.insert(self.theme.name.clone(), self.theme.clone());
-                            }
-                        }
-                        Err(err) => log::error!("Failed to serialize the theme: {err}"),
-                    },
-                    None => log::info!("Theme saving cancelled by the user"),
-                }
             }
         }
     }

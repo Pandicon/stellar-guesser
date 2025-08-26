@@ -18,7 +18,7 @@ impl Application {
             match self.state.windows.settings.subwindow {
                 SettingsSubWindow::Application => self.render_application_settings_window(ctx, ui),
                 SettingsSubWindow::Game => self.render_game_settings_window(ui),
-                SettingsSubWindow::Sky => self.render_sky_settings_window(ctx, ui),
+                SettingsSubWindow::Sky => self.render_sky_settings_window(ui),
             }
         });
         self.state.windows.settings.opened = opened;
