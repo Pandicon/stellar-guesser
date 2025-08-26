@@ -3,6 +3,7 @@ use std::fmt::Display;
 pub struct SettingsWindowState {
     pub opened: bool,
     pub subwindow: SettingsSubWindow,
+    pub application_settings: ApplicationSettingsWindowState,
     pub game_settings: GameSettingsWindowState,
     pub sky_settings: SkySettingsWindowState,
 }
@@ -12,6 +13,7 @@ impl Default for SettingsWindowState {
         Self {
             opened: false,
             subwindow: SettingsSubWindow::Game,
+            application_settings: ApplicationSettingsWindowState::default(),
             game_settings: GameSettingsWindowState::default(),
             sky_settings: SkySettingsWindowState::default(),
         }
@@ -87,8 +89,25 @@ impl Default for SkySettingsWindowState {
     }
 }
 
+pub struct ApplicationSettingsWindowState {
+    pub subwindow: ApplicationSettingsSubWindow,
+
+    pub test_input: String,
+}
+
+#[allow(clippy::derivable_impls)]
+impl Default for ApplicationSettingsWindowState {
+    fn default() -> Self {
+        Self {
+            subwindow: ApplicationSettingsSubWindow::Input,
+            test_input: String::new(),
+        }
+    }
+}
+
 #[derive(PartialEq)]
 pub enum SettingsSubWindow {
+    Application,
     Game,
     Sky,
 }
@@ -96,8 +115,9 @@ pub enum SettingsSubWindow {
 impl AsRef<str> for SettingsSubWindow {
     fn as_ref(&self) -> &str {
         match *self {
+            Self::Application => "Application settings",
             Self::Game => "Game settings",
-            Self::Sky => "Sky and theme settings",
+            Self::Sky => "Sky settings",
         }
     }
 }
@@ -186,6 +206,27 @@ impl AsRef<str> for SkySettingsSubWindow {
 }
 
 impl Display for SkySettingsSubWindow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
+#[derive(PartialEq)]
+pub enum ApplicationSettingsSubWindow {
+    Input,
+    Theme,
+}
+
+impl AsRef<str> for ApplicationSettingsSubWindow {
+    fn as_ref(&self) -> &str {
+        match *self {
+            Self::Input => "Input",
+            Self::Theme => "Theme",
+        }
+    }
+}
+
+impl Display for ApplicationSettingsSubWindow {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.as_ref())
     }

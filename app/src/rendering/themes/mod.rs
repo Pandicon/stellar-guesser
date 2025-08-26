@@ -113,7 +113,7 @@ impl ThemesHandler {
         self.data.get(name)
     }
 
-    pub fn themes_names(&self) -> std::collections::hash_map::Keys<String, Theme> {
+    pub fn themes_names(&self) -> std::collections::hash_map::Keys<'_, String, Theme> {
         self.data.keys()
     }
 

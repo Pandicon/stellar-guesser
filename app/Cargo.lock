@@ -195,6 +195,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e999941b234f3131b00bc13c22d06e8c5ff726d1b6318ac7eb276997bbb4fef0"
 
 [[package]]
+name = "android_clipboard"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "71a4be482ddedcc39415184d76761f152f16d3a39bc012d3e4ff0e51803f9a4f"
+dependencies = [
+ "jni 0.21.1",
+ "ndk-context",
+ "thiserror 2.0.16",
+]
+
+[[package]]
 name = "android_log-sys"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1415,6 +1426,16 @@ dependencies = [
  "wasm-bindgen",
  "web-sys",
  "winit",
+]
+
+[[package]]
+name = "egui_keyboard"
+version = "0.1.0"
+source = "git+https://github.com/Pandicon/egui_keyboard?branch=main#92b2b6e590eee528888bd5f7271a28e6309fc281"
+dependencies = [
+ "android_clipboard",
+ "arboard",
+ "egui",
 ]
 
 [[package]]
@@ -4502,6 +4523,7 @@ dependencies = [
  "eframe",
  "egui-notify",
  "egui_extras",
+ "egui_keyboard",
  "env_logger 0.11.8",
  "image",
  "jni 0.19.0",

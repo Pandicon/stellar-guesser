@@ -52,6 +52,8 @@ tokio = { version = "1.35.0", features = ["macros", "rt-multi-thread"] }
 winit = "0.30"
 spherical_geometry = { version = "0.4.1", features = ["serde"] }
 
+egui_keyboard = { git = "https://github.com/Pandicon/egui_keyboard", branch = "main" }
+
 sg_credits = { path = "../crates/sg_credits" }
 sg_game_constellations = { path = "../crates/sg_game_constellations" }
 sg_geometry = { path = "../crates/sg_geometry" }

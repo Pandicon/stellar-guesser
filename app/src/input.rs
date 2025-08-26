@@ -1,5 +1,6 @@
 use eframe::egui;
 use egui::epaint::Pos2;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::game::game_handler::QuestionCheckingData;
@@ -94,6 +95,11 @@ impl Application {
     }
 }
 
+#[derive(Default, Serialize, Deserialize)]
+pub struct InputSettings {
+    pub display_onscreen_keyboard: bool,
+}
+
 pub struct Input {
     pub dragged: egui::Vec2,
     pub pointer_position: PointerPosition,
@@ -111,6 +117,8 @@ pub struct Input {
 
     pub text_from_keys: String,
     pub input_field_had_focus_last_frame: bool,
+
+    pub settings: InputSettings,
 }
 
 impl Default for Input {
@@ -136,6 +144,8 @@ impl Default for Input {
 
             text_from_keys: String::new(),
             input_field_had_focus_last_frame: false,
+
+            settings: InputSettings::default(),
         }
     }
 }
