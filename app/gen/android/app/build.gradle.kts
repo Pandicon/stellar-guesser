@@ -48,6 +48,4 @@ rust {
 
 dependencies {
     implementation("com.google.android.material:material:1.8.0")
-
-    implementation("androidx.core:core-ktx:1.13.1")
 }
