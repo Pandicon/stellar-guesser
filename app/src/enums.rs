@@ -137,10 +137,10 @@ impl ScreenWidth {
     }
 
     pub fn from_width(width: f32) -> Self {
-        if width <= 600.0 {
+        if width <= 700.0 {
             return Self::VeryNarrow;
         }
-        if width <= 900.0 {
+        if width <= 1100.0 {
             return Self::Narrow;
         }
         Self::Normal
