@@ -120,9 +120,9 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
         (
             String::from(r#"Mark Messiers (accurately)"#),
             QuestionPack {
-                query: String::from(concat!(
-                    r#"FIND_THIS_OBJECT({"correctness_threshold":1.0,"rotate_to_answer":true,"replay_incorrect":true,"ask_messier":true,"ask_caldwell":false,"ask_ic":false,"ask_ngc":false,"ask_hd":false,"ask_hip":false,"ask_bayer":false,"ask_flamsteed":false,"ask_proper":false}): CATALOGUE(MESSIER)"#
-                )),
+                query: String::from(
+                    r#"FIND_THIS_OBJECT({"correctness_threshold":1.0,"rotate_to_answer":true,"replay_incorrect":true,"ask_messier":true,"ask_caldwell":false,"ask_ic":false,"ask_ngc":false,"ask_hd":false,"ask_hip":false,"ask_bayer":false,"ask_flamsteed":false,"ask_proper":false}): CATALOGUE(MESSIER)"#,
+                ),
                 question_objects: vec![(
                     QuestionType::FindThisObject(find_this_object::SmallSettings {
                         correctness_threshold: angle::Deg(1.0),
@@ -506,7 +506,9 @@ pub fn default_packs() -> [(String, QuestionPack); 9] {
                         ],
                     ),
                 ],
-                description: String::from(r#"Tests the knowledge of proper name and Bayer designations of stars of up to magnitude 2.2 and some other ones deemed "important". Should be enough for the IOAA."#),
+                description: String::from(
+                    r#"Tests the knowledge of proper name and Bayer designations of stars of up to magnitude 2.2 and some other ones deemed "important". Should be enough for the IOAA."#,
+                ),
                 file_path: None,
             },
         ),

@@ -80,6 +80,7 @@ pub enum StorageKeys {
     QuestionPackQuery,
     QuestionPackDescription,
     QuestionPacks,
+    InputSettings,
 }
 
 impl AsRef<str> for StorageKeys {
@@ -103,6 +104,7 @@ impl AsRef<str> for StorageKeys {
             Self::QuestionPackQuery => "question_pack_query",
             Self::QuestionPackDescription => "question_pack_description",
             Self::QuestionPacks => "question_packs",
+            Self::InputSettings => "input_settings",
         }
     }
 }

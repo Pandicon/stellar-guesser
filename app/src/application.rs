@@ -51,6 +51,8 @@ pub struct Application {
     pub toasts: egui_notify::Toasts,
 
     pub testing_mode: bool,
+
+    pub onscreen_keyboard: egui_keyboard::Keyboard,
 }
 
 impl Application {
@@ -81,6 +83,7 @@ impl Application {
         let mut time_spent_start = 0;
         let mut theme = themes::Theme::dark(); // Default in case the restored theme does not exist
         let mut graphics_settings = graphics_settings::GraphicsSettings::default(); // Default in case there are no saved graphics settings
+        let mut input = input::Input::default();
         if let Some(storage) = cc.storage {
             if let Some(time_spent_restore) = storage.get_string(StorageKeys::TimeSpent.as_ref()) {
                 match time_spent_restore.parse() {
@@ -109,6 +112,12 @@ impl Application {
                     Err(err) => log::error!("Failed to deserialize the graphics settings: {err}"),
                 }
             }
+            if let Some(input_settings_str) = storage.get_string(StorageKeys::InputSettings.as_ref()) {
+                match serde_json::from_str(&input_settings_str) {
+                    Ok(input_settings_loaded) => input.settings = input_settings_loaded,
+                    Err(err) => log::error!("Failed to deserialize the input settings: {err}"),
+                }
+            }
         }
         let first_application_launch = time_spent_start == 0;
         let timestamp = chrono::Utc::now().timestamp();
@@ -130,7 +139,7 @@ impl Application {
             state.windows.settings.game_settings.question_pack_new_name = game_handler.active_question_pack.clone();
         }
         let mut app = Self {
-            input: input::Input::default(),
+            input,
             state,
 
             frame_timestamp: timestamp,
@@ -159,6 +168,8 @@ impl Application {
             toasts: egui_notify::Toasts::default().with_anchor(egui_notify::Anchor::BottomRight),
 
             testing_mode,
+
+            onscreen_keyboard: egui_keyboard::Keyboard::new(['⬆', '⇧'], '⌫'),
         };
         server_communication::check_for_updates::check_for_updates(
             &mut app.threads_communication,
@@ -172,6 +183,9 @@ impl Application {
 
 impl eframe::App for Application {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if self.input.settings.display_onscreen_keyboard {
+            self.onscreen_keyboard.pump_events(ctx);
+        }
         #[cfg(any(target_os = "ios", target_os = "android"))]
         // Push the input text restored from key presses to events as a Text event so that input fields take it in by themselves
         ctx.input_mut(|i| i.events.push(egui::Event::Text(self.input.text_from_keys.clone())));
@@ -207,17 +221,23 @@ impl eframe::App for Application {
             self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
             self.game_handler.switch_to_next_question = false;
         }
+
         let input_field_has_focus = ctx.wants_keyboard_input();
-        // Toggle software keyboard
-        #[cfg(target_os = "android")]
-        if input_field_has_focus && !self.input.input_field_had_focus_last_frame {
-            // There was no focus on any text input field last frame, but there is this frame -> show the keyboard
-            crate::show_soft_input(true);
-        } else if !input_field_has_focus && self.input.input_field_had_focus_last_frame {
-            // There was focus on some text input field last frame, but there is not this frame -> hide the keyboard
-            crate::show_soft_input(false);
+        if self.input.settings.display_onscreen_keyboard {
+            self.onscreen_keyboard.show(ctx);
+        } else {
+            // Toggle software keyboard
+            #[cfg(target_os = "android")]
+            if input_field_has_focus && !self.input.input_field_had_focus_last_frame {
+                // There was no focus on any text input field last frame, but there is this frame -> show the keyboard
+                crate::show_soft_input(true);
+            } else if !input_field_has_focus && self.input.input_field_had_focus_last_frame {
+                // There was focus on some text input field last frame, but there is not this frame -> hide the keyboard
+                crate::show_soft_input(false);
+            }
         }
         self.input.input_field_had_focus_last_frame = input_field_has_focus;
+
         ctx.request_repaint();
     }
 
@@ -250,6 +270,11 @@ impl eframe::App for Application {
         match serde_json::to_string(&self.graphics_settings) {
             Ok(string) => storage.set_string(StorageKeys::GraphicsSettings.as_ref(), string),
             Err(err) => log::error!("Failed to serialize graphics settings: {:?}", err),
+        }
+
+        match serde_json::to_string(&self.input.settings) {
+            Ok(string) => storage.set_string(StorageKeys::InputSettings.as_ref(), string),
+            Err(err) => log::error!("Failed to serialize input settings: {:?}", err),
         }
 
         let question_packs = self

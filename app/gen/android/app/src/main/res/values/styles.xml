@@ -1,0 +1,10 @@
+<resources>
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <!-- Hides the status bar -->
+        <item name="android:windowFullscreen">true</item>
+        <!-- Adds padding around the application so that it is not rendered under the camera cutout -->
+        <item name="android:windowLayoutInDisplayCutoutMode">never</item>
+        <!-- Customize your theme here. -->
+    </style>
+</resources>

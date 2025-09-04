@@ -1,6 +1,7 @@
 use crate::{structs::state::windows::settings::SettingsSubWindow, Application};
 use eframe::egui;
 
+pub mod application_settings_window;
 pub mod game_settings;
 pub mod sky_settings_window;
 
@@ -9,13 +10,15 @@ impl Application {
         let mut opened = self.state.windows.settings.opened;
         let response = egui::Window::new("Settings").open(&mut opened).show(ctx, |ui| {
             ui.horizontal(|ui| {
+                ui.selectable_value(&mut self.state.windows.settings.subwindow, SettingsSubWindow::Application, SettingsSubWindow::Application.as_ref());
                 ui.selectable_value(&mut self.state.windows.settings.subwindow, SettingsSubWindow::Game, SettingsSubWindow::Game.as_ref());
                 ui.selectable_value(&mut self.state.windows.settings.subwindow, SettingsSubWindow::Sky, SettingsSubWindow::Sky.as_ref());
             });
             ui.separator();
             match self.state.windows.settings.subwindow {
+                SettingsSubWindow::Application => self.render_application_settings_window(ctx, ui),
                 SettingsSubWindow::Game => self.render_game_settings_window(ui),
-                SettingsSubWindow::Sky => self.render_sky_settings_window(ctx, ui),
+                SettingsSubWindow::Sky => self.render_sky_settings_window(ui),
             }
         });
         self.state.windows.settings.opened = opened;
