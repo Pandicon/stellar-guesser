@@ -16,18 +16,12 @@ impl Application {
                 [response.response.rect.left(), response.response.rect.bottom()],
             ]);
         }
-        /*if let Some(response) = self.render_game_settings_window(ctx) {
+        if let Some(response) = self.render_feedback_and_support_window(ctx) {
             window_rectangles.push([
                 [response.response.rect.right(), response.response.rect.top()],
                 [response.response.rect.left(), response.response.rect.bottom()],
             ]);
-        }*/
-        /*if let Some(response) = self.render_sky_settings_window(ctx) {
-            window_rectangles.push([
-                [response.response.rect.right(), response.response.rect.top()],
-                [response.response.rect.left(), response.response.rect.bottom()],
-            ]);
-        }*/
+        }
         if let Some(response) = self.render_settings_window(ctx) {
             window_rectangles.push([
                 [response.response.rect.right(), response.response.rect.top()],

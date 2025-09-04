@@ -1,6 +1,7 @@
 pub mod app_info_window;
 pub mod caspr;
 pub mod credits_window;
+pub mod feedback_and_help_window;
 pub mod question_display;
 pub mod rendering_handler;
 pub mod settings_window;

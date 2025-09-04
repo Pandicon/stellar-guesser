@@ -2,6 +2,7 @@
 pub struct Config {
     pub content_server_url: String,
     pub main_server_url: String,
+    pub discord_server_invite: String,
 }
 
 pub fn get_config() -> Config {

@@ -1,5 +1,6 @@
 pub mod app_info;
 pub mod credits;
+pub mod feedback_and_help;
 pub mod question;
 pub mod settings;
 pub mod stats;
@@ -8,6 +9,7 @@ pub mod testing;
 pub struct WindowsState {
     pub app_info: app_info::AppInfoWindowState,
     pub credits: credits::CreditsWindowState,
+    pub feedback_and_help: feedback_and_help::FeedbackAndHelpWindowState,
     pub settings: settings::SettingsWindowState,
     pub stats: stats::StatsWindowState,
     pub game_question: question::QuestionWindowState,
@@ -20,6 +22,7 @@ impl Default for WindowsState {
         Self {
             app_info: app_info::AppInfoWindowState::default(),
             credits: credits::CreditsWindowState::default(),
+            feedback_and_help: feedback_and_help::FeedbackAndHelpWindowState::default(),
             settings: settings::SettingsWindowState::default(),
             stats: stats::StatsWindowState::default(),
             game_question: question::QuestionWindowState::default(),
