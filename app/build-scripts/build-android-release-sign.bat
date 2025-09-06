@@ -1,35 +1,65 @@
 @echo off
-for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do set "dt=%%a"
-set "Year=%dt:~0,4%" & set "Mon=%dt:~4,2%" & set "Day=%dt:~6,2%"
-set "Hour=%dt:~8,2%" & set "Min=%dt:~10,2%" & set "Sec=%dt:~12,2%"
+setlocal
 
-set "fullstamp=%Year%-%Mon%-%Day%--%Hour%-%Min%-%Sec%"
+rem Get a safe timestamp using PowerShell (yyyy-MM-dd--HH-mm-ss)
+for /f "usebackq delims=" %%A in (`powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-dd--HH-mm-ss'"`) do set "fullstamp=%%A"
 
-
-set "out_folder=.\builds\android\release\%fullstamp%"
+rem Set up the paths
 set "original_dir=%CD%"
-mkdir %out_folder%
+set "out_folder=%original_dir%\builds\android\release\%fullstamp%"
 
+rem Create the output folder (unless it exists for some reason)
+if not exist "%out_folder%" (
+    mkdir "%out_folder%"
+)
+
+rem Build the release APK
 cargo android apk build --release
-copy .\gen\android\app\build\outputs\apk\universal\release\app-universal-release-unsigned.apk %out_folder%
-cd %out_folder%
-ren app-universal-release-unsigned.apk app-universal-release-unsigned-unaligned.apk
-zipalign -p 4 app-universal-release-unsigned-unaligned.apk app-universal-release-unsigned-aligned.apk
-cd %original_dir%
-start /wait cmd /c apksigner sign --ks stellar-guesser.keystore %out_folder%\app-universal-release-unsigned-aligned.apk
-cd %out_folder%
-ren app-universal-release-unsigned-aligned.apk app-universal-release-signed-aligned.apk
-cd %original_dir%
 
-copy %out_folder%\app-universal-release-signed-aligned.apk .\
-del stellar-guesser.apk
-ren app-universal-release-signed-aligned.apk stellar-guesser.apk
+rem Copy the built APK to the builds folder
+copy "%original_dir%\gen\android\app\build\outputs\apk\universal\release\app-universal-release-unsigned.apk" "%out_folder%"
 
-del /Q .\builds\android\release\latest
-xcopy /E /I "%out_folder%" ".\builds\android\release\latest\"
+rem Align and sign
+pushd "%out_folder%"
+if exist "app-universal-release-unsigned.apk" (
+    ren "app-universal-release-unsigned.apk" "app-universal-release-unsigned-unaligned.apk"
+    zipalign -p 4 "app-universal-release-unsigned-unaligned.apk" "app-universal-release-unsigned-aligned.apk"
+) else (
+    echo ERROR: Unsigned apk not found in %out_folder%, can not align it
+    popd
+    goto :eof
+)
+popd
 
-cd .\builds\android\release\latest
-ren app-universal-release-unsigned-unaligned.apk app-universal-release-unsigned-unaligned---%fullstamp%.apk
-ren app-universal-release-signed-aligned.apk app-universal-release-signed-aligned---%fullstamp%.apk
-ren app-universal-release-unsigned-aligned.apk.idsig app-universal-release-unsigned-aligned---%fullstamp%.apk.idsig
-cd %original_dir%
+rem Sign the APK
+call apksigner sign --ks "%original_dir%\stellar-guesser.keystore" "%out_folder%\app-universal-release-unsigned-aligned.apk"
+
+pushd "%out_folder%"
+if exist "app-universal-release-unsigned-aligned.apk" (
+    ren "app-universal-release-unsigned-aligned.apk" "app-universal-release-signed-aligned.apk"
+) else (
+    echo ERROR: Aligned and signed apk not found
+    popd
+    goto :eof
+)
+popd
+
+rem Copy signed apk back to project root and rename
+copy "%out_folder%\app-universal-release-signed-aligned.apk" "%original_dir%\"
+if exist "%original_dir%\stellar-guesser.apk" del "%original_dir%\stellar-guesser.apk"
+if exist "%original_dir%\app-universal-release-signed-aligned.apk" ren "%original_dir%\app-universal-release-signed-aligned.apk" "stellar-guesser.apk"
+
+rem Remove the old 'latest' folder
+if exist "%original_dir%\builds\android\release\latest" (
+    rmdir /S /Q "%original_dir%\builds\android\release\latest"
+)
+xcopy /E /I "%out_folder%" "%original_dir%\builds\android\release\latest\"
+
+rem Add timestamp to copies inside latest
+pushd "%original_dir%\builds\android\release\latest"
+if exist "app-universal-release-unsigned-unaligned.apk" ren "app-universal-release-unsigned-unaligned.apk" "app-universal-release-unsigned-unaligned---%fullstamp%.apk"
+if exist "app-universal-release-signed-aligned.apk" ren "app-universal-release-signed-aligned.apk" "app-universal-release-signed-aligned---%fullstamp%.apk"
+if exist "app-universal-release-unsigned-aligned.apk.idsig" ren "app-universal-release-unsigned-aligned.apk.idsig" "app-universal-release-unsigned-aligned---%fullstamp%.apk.idsig"
+popd
+
+endlocal
