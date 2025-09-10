@@ -2,6 +2,7 @@ use eframe::egui;
 
 use crate::enums::ScreenWidth;
 use crate::rendering::caspr::sky_settings;
+use crate::rendering::initial_setup;
 use crate::rendering::themes::{self, Theme, ThemesHandler};
 use crate::{files, public_constants, server_communication, structs};
 
@@ -53,6 +54,8 @@ pub struct Application {
     pub testing_mode: bool,
 
     pub onscreen_keyboard: egui_keyboard::Keyboard,
+
+    pub initial_setup_stage: initial_setup::InitialSetupStage,
 }
 
 impl Application {
@@ -84,6 +87,7 @@ impl Application {
         let mut theme = themes::Theme::dark(); // Default in case the restored theme does not exist
         let mut graphics_settings = graphics_settings::GraphicsSettings::default(); // Default in case there are no saved graphics settings
         let mut input = input::Input::default();
+        let mut initial_setup_stage = initial_setup::InitialSetupStage::default();
         if let Some(storage) = cc.storage {
             if let Some(time_spent_restore) = storage.get_string(StorageKeys::TimeSpent.as_ref()) {
                 match time_spent_restore.parse() {
@@ -116,6 +120,12 @@ impl Application {
                 match serde_json::from_str(&input_settings_str) {
                     Ok(input_settings_loaded) => input.settings = input_settings_loaded,
                     Err(err) => log::error!("Failed to deserialize the input settings: {err}"),
+                }
+            }
+            if let Some(initial_setup_stage_str) = storage.get_string(StorageKeys::InitialSetupStage.as_ref()) {
+                match serde_json::from_str(&initial_setup_stage_str) {
+                    Ok(initial_setup_stage_loaded) => initial_setup_stage = initial_setup_stage_loaded,
+                    Err(err) => log::error!("Failed to deserialize the state of showing initial setup: {err}"),
                 }
             }
         }
@@ -170,6 +180,8 @@ impl Application {
             testing_mode,
 
             onscreen_keyboard: egui_keyboard::Keyboard::new(['⬆', '⇧'], '⌫'),
+
+            initial_setup_stage,
         };
         server_communication::check_for_updates::check_for_updates(
             &mut app.threads_communication,
@@ -275,6 +287,11 @@ impl eframe::App for Application {
         match serde_json::to_string(&self.input.settings) {
             Ok(string) => storage.set_string(StorageKeys::InputSettings.as_ref(), string),
             Err(err) => log::error!("Failed to serialize input settings: {:?}", err),
+        }
+
+        match serde_json::to_string(&self.initial_setup_stage) {
+            Ok(string) => storage.set_string(StorageKeys::InitialSetupStage.as_ref(), string),
+            Err(err) => log::error!("Failed to serialize the initial setup stage: {:?}", err),
         }
 
         let question_packs = self
