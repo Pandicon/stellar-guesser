@@ -27,7 +27,7 @@ pub fn render_initial_setup(app: &mut Application, ctx: &egui::Context, availabl
     };
     let top_offset = available_height * 0.0;
     match app.initial_setup_stage {
-        InitialSetupStage::Finished => return,
+        InitialSetupStage::Finished => {}
         InitialSetupStage::Introduction => {
             let modal = egui::Modal::new(egui::Id::new("Onboarding"));
             let modal_area = modal.area.anchor(egui::Align2::CENTER_TOP, [0.0, top_offset]).order(egui::Order::Middle);
