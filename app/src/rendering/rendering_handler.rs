@@ -1,8 +1,16 @@
-use crate::Application;
+use crate::{rendering::initial_setup, Application};
 use eframe::egui;
 
 impl Application {
     pub fn render(&mut self, ctx: &egui::Context) -> bool {
+        let viewport_rect = ctx.input(|i| i.screen_rect());
+        if viewport_rect != self.cellestial_sphere.viewport_rect {
+            log::debug!("Viewport rect changed: {:?} -> {:?}", self.cellestial_sphere.viewport_rect, viewport_rect);
+            self.cellestial_sphere.viewport_rect = viewport_rect;
+            self.cellestial_sphere.init_renderers();
+        }
+        initial_setup::render_initial_setup(self, ctx, viewport_rect);
+
         let mut window_rectangles = Vec::new();
         if let Some(response) = self.render_application_info_window(ctx) {
             window_rectangles.push([
@@ -45,12 +53,6 @@ impl Application {
                 [response.response.rect.right(), response.response.rect.top()],
                 [response.response.rect.left(), response.response.rect.bottom()],
             ]);
-        }
-        let viewport_rect = ctx.input(|i| i.screen_rect());
-        if viewport_rect != self.cellestial_sphere.viewport_rect {
-            log::debug!("Viewport rect changed: {:?} -> {:?}", self.cellestial_sphere.viewport_rect, viewport_rect);
-            self.cellestial_sphere.viewport_rect = viewport_rect;
-            self.cellestial_sphere.init_renderers();
         }
         let central_panel_response = egui::CentralPanel::default()
             .show(ctx, |ui| {

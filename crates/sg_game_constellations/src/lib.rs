@@ -25,15 +25,17 @@ impl GameConstellations {
                 active_constellations.insert(constellation.to_owned(), false);
             }
             if let Some(active_constellations_str) = storage.get_string(CONSTELLATIONS_STORAGE_KEY) {
-                let constellations_save = active_constellations_str.split(CONSTELLATIONS_SEPARATOR);
-                for constellation_raw in constellations_save {
-                    let constellation = if let Some(constellation) = constellations.iter().find(|s| s.to_lowercase() == constellation_raw.to_lowercase()) {
-                        constellation.to_string()
-                    } else {
-                        log::warn!("Unknown constellation: {constellation_raw}");
-                        continue;
-                    };
-                    active_constellations.insert(constellation, true);
+                if !active_constellations_str.is_empty() {
+                    let constellations_save = active_constellations_str.split(CONSTELLATIONS_SEPARATOR);
+                    for constellation_raw in constellations_save {
+                        let constellation = if let Some(constellation) = constellations.iter().find(|s| s.to_lowercase() == constellation_raw.to_lowercase()) {
+                            constellation.to_string()
+                        } else {
+                            log::warn!("Unknown constellation found within the active constellations: {constellation_raw}");
+                            continue;
+                        };
+                        active_constellations.insert(constellation, true);
+                    }
                 }
             }
 
@@ -44,7 +46,7 @@ impl GameConstellations {
                         let mut group_spl = group_raw.split(CONSTELLATIONS_SEPARATOR);
                         let group_name = group_spl.next();
                         if group_name.is_none() {
-                            log::warn!("An empty constellatin group was found");
+                            log::warn!("An empty constellation group was found");
                             continue;
                         }
                         let group_name = group_name.unwrap();
@@ -57,7 +59,7 @@ impl GameConstellations {
                             let constellation = if let Some(constellation) = constellations.iter().find(|s| s.to_lowercase() == constellation_raw.to_lowercase()) {
                                 constellation.to_string()
                             } else {
-                                log::warn!("Unknown constellation: {constellation_raw}");
+                                log::warn!("Unknown constellation found in a group: {constellation_raw}");
                                 continue;
                             };
                             active.insert(constellation, true);
