@@ -44,7 +44,7 @@ impl GameConstellations {
                         let mut group_spl = group_raw.split(CONSTELLATIONS_SEPARATOR);
                         let group_name = group_spl.next();
                         if group_name.is_none() {
-                            log::warn!("An empty constellatin group was found");
+                            log::warn!("An empty constellation group was found");
                             continue;
                         }
                         let group_name = group_name.unwrap();
