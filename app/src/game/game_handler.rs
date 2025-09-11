@@ -221,8 +221,10 @@ impl GameHandler {
                 active_question_pack = active_question_pack_recovered;
             }
             if let Some(question_packs_str) = storage.get_string(StorageKeys::QuestionPacks.as_ref()) {
-                for question_pack_str in question_packs_str.split(QUESTION_PACKS_DIV) {
-                    question_pack_strs.push((None, question_pack_str.to_owned()));
+                if !question_packs_str.is_empty() {
+                    for question_pack_str in question_packs_str.split(QUESTION_PACKS_DIV) {
+                        question_pack_strs.push((None, question_pack_str.to_owned()));
+                    }
                 }
             }
         }
