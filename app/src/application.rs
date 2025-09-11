@@ -183,12 +183,14 @@ impl Application {
 
             initial_setup_stage,
         };
-        server_communication::check_for_updates::check_for_updates(
-            &mut app.threads_communication,
-            crate::PLATFORM,
-            crate::VERSION,
-            threads_communication::CheckUpdatesShowPopup::OnFoundUpdate,
-        );
+        if crate::config::ENABLE_UPDATES_CHECKS || app.testing_mode {
+            server_communication::check_for_updates::check_for_updates(
+                &mut app.threads_communication,
+                crate::PLATFORM,
+                crate::VERSION,
+                threads_communication::CheckUpdatesShowPopup::OnFoundUpdate,
+            );
+        }
         app
     }
 }

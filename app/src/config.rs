@@ -1,3 +1,8 @@
+#[cfg(debug_assertions)]
+pub const ENABLE_UPDATES_CHECKS: bool = true;
+#[cfg(not(debug_assertions))]
+pub const ENABLE_UPDATES_CHECKS: bool = false;
+
 #[derive(serde::Deserialize)]
 pub struct Config {
     pub content_server_url: String,
