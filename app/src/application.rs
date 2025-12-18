@@ -26,8 +26,6 @@ pub struct Application {
     pub input: input::Input,
     pub state: state::State,
 
-    pub frame_timestamp: i64,
-    pub frame_timestamp_ms: i64,
     pub cellestial_sphere: CellestialSphere,
     pub frames_handler: FramesHandler,
     pub game_handler: game_handler::GameHandler,
@@ -152,8 +150,6 @@ impl Application {
             input,
             state,
 
-            frame_timestamp: timestamp,
-            frame_timestamp_ms: chrono::Utc::now().timestamp_millis(),
             game_handler,
             cellestial_sphere,
             frames_handler: FramesHandler::default(),
@@ -204,7 +200,7 @@ impl eframe::App for Application {
         // Push the input text restored from key presses to events as a Text event so that input fields take it in by themselves
         ctx.input_mut(|i| i.events.push(egui::Event::Text(self.input.text_from_keys.clone())));
         self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
-        self.frame_timestamp = chrono::Utc::now().timestamp();
+        self.frames_handler.frame_timestamp = chrono::Utc::now().timestamp();
         self.screen_width = ScreenWidth::from_width(ctx.screen_rect().size().x);
         let cursor_within_central_panel = self.render(ctx);
         self.handle_input(cursor_within_central_panel, ctx);
@@ -258,7 +254,7 @@ impl eframe::App for Application {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         storage.set_string(
             StorageKeys::TimeSpent.as_ref(),
-            (self.state.time_spent_start + (self.frame_timestamp - self.state.start_timestamp)).to_string(),
+            (self.state.time_spent_start + (self.frames_handler.frame_timestamp - self.state.start_timestamp)).to_string(),
         );
 
         match serde_json::to_string(&self.game_handler.questions_settings) {

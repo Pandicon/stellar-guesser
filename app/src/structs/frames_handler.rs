@@ -17,6 +17,7 @@ impl Default for Frame {
 }
 
 pub struct FramesHandler {
+    pub frame_timestamp: i64,
     pub last_frame: i64,
     pub fps_display_holder: String,
     pub average_fps_display_holder: String,
@@ -35,6 +36,7 @@ pub struct FramesHandler {
 impl Default for FramesHandler {
     fn default() -> Self {
         Self {
+            frame_timestamp: chrono::Utc::now().timestamp(),
             last_frame: chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds."),
             fps_display_holder: String::new(),
             average_fps_display_holder: String::new(),

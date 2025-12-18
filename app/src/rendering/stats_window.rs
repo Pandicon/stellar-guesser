@@ -3,7 +3,7 @@ use eframe::egui;
 
 impl Application {
     pub fn render_statistics_window(&mut self, ctx: &egui::Context) -> Option<egui::InnerResponse<Option<()>>> {
-        let seconds_spent = self.state.time_spent_start + (self.frame_timestamp - self.state.start_timestamp);
+        let seconds_spent = self.state.time_spent_start + (self.frames_handler.frame_timestamp - self.state.start_timestamp);
         let mut time_spent_changing = seconds_spent;
         let seconds = time_spent_changing % 60;
         time_spent_changing -= seconds;
