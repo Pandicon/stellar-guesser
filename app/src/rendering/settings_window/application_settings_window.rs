@@ -77,7 +77,7 @@ impl Application {
                 #[cfg(any(target_os = "android", target_os = "ios"))]
                 let save_path_opt: Option<std::path::PathBuf> = {
                     let mut save_path_intermediate = path;
-                    save_path_intermediate.push(format!("{}--{}.json", &self.theme.name, chrono::Local::now().timestamp_millis()));
+                    save_path_intermediate.push(format!("{}--{}.json", &self.theme.name, chrono::Utc::now().timestamp_millis()));
                     Some(save_path_intermediate)
                 };
                 match save_path_opt {
