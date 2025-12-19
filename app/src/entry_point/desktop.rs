@@ -21,7 +21,7 @@ fn _main(options: eframe::NativeOptions) {
 }
 
 pub fn main() {
-    env_logger::builder().filter_level(log::LevelFilter::Warn).parse_default_env().init();
+    env_logger::builder().filter_level(crate::config::LOGGING_FILTER_LEVEL).parse_default_env().init();
 
     let mut options = eframe::NativeOptions {
         viewport: eframe::egui::viewport::ViewportBuilder::default().with_maximized(true),

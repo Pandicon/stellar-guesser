@@ -35,7 +35,7 @@ fn stop_unwind<F: FnOnce() -> T, T>(f: F) -> T {
 #[allow(dead_code)]
 #[no_mangle]
 fn android_main(app: AndroidApp) {
-    android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Warn));
+    android_logger::init_once(android_logger::Config::default().with_max_level(crate::config::LOGGING_FILTER_LEVEL));
 
     let mut options = eframe::NativeOptions {
         persist_window: false,
