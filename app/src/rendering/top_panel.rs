@@ -81,11 +81,11 @@ fn render_right_controls(app: &mut crate::application::Application, ui: &mut egu
 }
 
 fn render_left_controls(app: &mut crate::application::Application, ui: &mut egui::Ui) {
-    ui.label(app.frames_handler.fps_display_holder.clone());
-    ui.label(app.frames_handler.average_fps_display_holder.clone()).on_hover_text(format!(
+    ui.label(app.frames_handler.get_fps_display());
+    ui.label(app.frames_handler.get_average_fps_display()).on_hover_text(format!(
         "The average FPS over the last {} frame{}",
-        app.frames_handler.frames_analysed,
-        if app.frames_handler.frames_analysed != 1 { "s" } else { "" }
+        app.frames_handler.get_no_of_analysed_frames(),
+        if app.frames_handler.get_no_of_analysed_frames() != 1 { "s" } else { "" }
     ));
     let prev_light_pollution: LightPollution = app.cellestial_sphere.light_pollution_place;
     ui.horizontal(|ui| {

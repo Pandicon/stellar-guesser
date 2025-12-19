@@ -199,15 +199,12 @@ impl eframe::App for Application {
         #[cfg(any(target_os = "ios", target_os = "android"))]
         // Push the input text restored from key presses to events as a Text event so that input fields take it in by themselves
         ctx.input_mut(|i| i.events.push(egui::Event::Text(self.input.text_from_keys.clone())));
-        self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
-        self.frames_handler.frame_timestamp = chrono::Utc::now().timestamp();
+        self.frames_handler.update_started();
         self.screen_width = ScreenWidth::from_width(ctx.screen_rect().size().x);
         let cursor_within_central_panel = self.render(ctx);
         self.handle_input(cursor_within_central_panel, ctx);
         self.receive_threads_messages();
         self.toasts.show(ctx);
-        self.frames_handler.handle();
-        self.frames_handler.last_frame = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
         if self.game_handler.switch_to_next_part {
             let data = game_handler::QuestionCheckingData {
                 cellestial_sphere: &mut self.cellestial_sphere,
@@ -248,13 +245,15 @@ impl eframe::App for Application {
         }
         self.input.input_field_had_focus_last_frame = input_field_has_focus;
 
+        self.frames_handler.update_ended();
+
         ctx.request_repaint();
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         storage.set_string(
             StorageKeys::TimeSpent.as_ref(),
-            (self.state.time_spent_start + (self.frames_handler.frame_timestamp - self.state.start_timestamp)).to_string(),
+            (self.state.time_spent_start + (self.frames_handler.get_current_frame_timestamp() - self.state.start_timestamp)).to_string(),
         );
 
         match serde_json::to_string(&self.game_handler.questions_settings) {
