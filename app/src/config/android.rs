@@ -1,0 +1,3 @@
+pub const OBJECT_IMAGES_ADDON_FOLDER: &str = "/storage/emulated/0/Android/data/com.github.noreply.users.stellar_guesser/files/addons/object-images"; // For whatever reason the Documents folder wouldn't work...
+pub const THEMES_FOLDER: &str = "/storage/emulated/0/Android/data/com.github.noreply.users.stellar_guesser/files/addons/themes";
+pub const QUESTION_PACKS_FOLDER: &str = "/storage/emulated/0/Android/data/com.github.noreply.users.stellar_guesser/files/addons/question-packs";

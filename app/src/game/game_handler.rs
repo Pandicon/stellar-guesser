@@ -228,7 +228,7 @@ impl GameHandler {
                 }
             }
         }
-        let question_packs_files = crate::files::load_all_files_folder(crate::public_constants::QUESTION_PACKS_FOLDER);
+        let question_packs_files = crate::files::load_all_files_folder(crate::config::QUESTION_PACKS_FOLDER);
         for file in question_packs_files {
             question_pack_strs.push((file.path, file.content));
         }

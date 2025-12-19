@@ -1,5 +1,4 @@
 use crate::{
-    public_constants,
     structs::state::windows::settings::{GameSettingsQuestionsSubWindow, GameSettingsType},
     Application,
 };
@@ -358,7 +357,7 @@ impl Application {
                 let export_button = ui.button("Evaluate and export");
                 if export_button.clicked() {
                     let res = self.cellestial_sphere.evaluate_questions_query(&settings_all);
-                    if let Some(path) = crate::files::get_dir_opt(public_constants::QUESTION_PACKS_FOLDER) {
+                    if let Some(path) = crate::files::get_dir_opt(crate::config::QUESTION_PACKS_FOLDER) {
                         log::debug!("Question pack save path: {:?}", path);
                         let name = self.state.windows.settings.game_settings.question_pack_new_name.clone();
                         let pack = crate::game::questions_filter::QuestionPack {

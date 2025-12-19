@@ -63,7 +63,7 @@ use super::{
 use super::constellation::{Constellation, ConstellationRaw};
 
 const _MERIDIAN_CONSTELLATIONS: [&str; 10] = ["cep", "cas", "and", "peg", "pis", "cet", "scl", "phe", "tuc", "oct"];
-const OBJECT_IMAGES_FOLDER: &str = crate::OBJECT_IMAGES_ADDON_FOLDER;
+const OBJECT_IMAGES_FOLDER: &str = crate::config::OBJECT_IMAGES_ADDON_FOLDER;
 
 pub struct CellestialSphere {
     pub sky_settings: sky_settings::SkySettings,

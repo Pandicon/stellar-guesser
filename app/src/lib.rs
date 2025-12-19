@@ -3,8 +3,10 @@
 #![allow(clippy::redundant_static_lifetimes)] // Comes from const_gen
 
 pub use application::Application;
-pub use public_constants::*;
 pub use rendering::caspr::renderer;
+
+pub use config::{ANDROID_PACKAGE_NAME, DESKTOP_PACKAGE_NAME};
+pub use entry_point::*;
 
 pub mod application;
 pub mod config;
@@ -14,7 +16,6 @@ pub mod files;
 pub mod game;
 pub mod graphics;
 pub mod input;
-mod public_constants;
 pub mod rendering;
 pub mod server_communication;
 pub mod structs;
@@ -43,5 +44,3 @@ pub static CONFIG: once_cell::sync::Lazy<config::Config> = once_cell::sync::Lazy
 pub static CREDITS: once_cell::sync::Lazy<Vec<sg_credits::Credits>> = once_cell::sync::Lazy::new(sg_credits::get_credits);
 
 include!(concat!(env!("OUT_DIR"), "/const_gen.rs"));
-
-pub use entry_point::*;

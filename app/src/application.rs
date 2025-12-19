@@ -4,7 +4,7 @@ use crate::enums::ScreenWidth;
 use crate::rendering::caspr::sky_settings;
 use crate::rendering::initial_setup;
 use crate::rendering::themes::{self, Theme, ThemesHandler};
-use crate::{files, public_constants, server_communication, structs};
+use crate::{files, server_communication, structs};
 
 use crate::renderer::CellestialSphere;
 use crate::structs::{graphics_settings, testing_settings};
@@ -64,7 +64,7 @@ impl Application {
         let testing_mode = std::env::var("TESTING").unwrap_or_default().to_lowercase() == *"true";
 
         let mut themes = themes::default_themes();
-        let themes_files = files::load_all_files_folder(public_constants::THEMES_FOLDER);
+        let themes_files = files::load_all_files_folder(crate::config::THEMES_FOLDER);
         for file in themes_files {
             if let Err(err) = themes.add_theme_str(&file.content) {
                 log::error!("Failed to load a theme (from file {}): {err}", file.name);

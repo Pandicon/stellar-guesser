@@ -1,6 +1,6 @@
 use eframe::egui;
 
-use crate::{files, public_constants, structs::state::windows::settings::ApplicationSettingsSubWindow, Application};
+use crate::{files, structs::state::windows::settings::ApplicationSettingsSubWindow, Application};
 
 impl Application {
     pub fn render_application_settings_window(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
@@ -68,7 +68,7 @@ impl Application {
             ui.text_edit_singleline(&mut self.theme.name);
         });
         if ui.button("Export").clicked() {
-            if let Some(path) = files::get_dir_opt(public_constants::THEMES_FOLDER) {
+            if let Some(path) = files::get_dir_opt(crate::config::THEMES_FOLDER) {
                 #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
                 let save_path_opt: Option<std::path::PathBuf> = {
                     let dialog = rfd::FileDialog::new().add_filter("Theme", &["json"]).set_directory(path);

@@ -3,7 +3,6 @@
 #![allow(clippy::redundant_static_lifetimes)] // Comes from const_gen
 
 use crate::application;
-use crate::public_constants::*;
 
 include!(concat!(env!("OUT_DIR"), "/const_gen.rs"));
 
@@ -32,7 +31,7 @@ pub fn main() {
 
     {
         let default_path = {
-            let mut def_path = directories_next::ProjectDirs::from("", "", DESKTOP_PACKAGE_NAME)
+            let mut def_path = directories_next::ProjectDirs::from("", "", crate::DESKTOP_PACKAGE_NAME)
                 .map(|proj_dirs| proj_dirs.data_dir().to_path_buf())
                 .unwrap_or(".".into());
             def_path.push("save.ron");
