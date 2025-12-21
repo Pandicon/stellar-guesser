@@ -12,7 +12,7 @@ pub mod application;
 pub mod config;
 pub mod entry_point;
 pub mod enums;
-pub mod files;
+pub mod files_handling;
 pub mod game;
 pub mod graphics;
 pub mod input;
@@ -42,5 +42,3 @@ pub const MOBILE: bool = false;
 
 pub static CONFIG: once_cell::sync::Lazy<config::Config> = once_cell::sync::Lazy::new(config::get_config);
 pub static CREDITS: once_cell::sync::Lazy<Vec<sg_credits::Credits>> = once_cell::sync::Lazy::new(sg_credits::get_credits);
-
-include!(concat!(env!("OUT_DIR"), "/const_gen.rs"));

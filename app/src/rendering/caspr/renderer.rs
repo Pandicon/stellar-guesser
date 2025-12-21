@@ -10,15 +10,12 @@ use nalgebra::{Rotation3, Vector3};
 use sg_geometry::{intersections, LineSegment, Rectangle};
 use std::{collections::HashMap, error::Error, f32::consts::PI, fs};
 
-const SKY_OBJECTS_FOLDER: &str = "./sphere/sky-objects";
-const LINES_FOLDER: &str = "./sphere/lines";
-const MARKERS_FOLDER: &str = "./sphere/markers";
-const STAR_NAMES_FOLDER: &str = "./sphere/named-stars";
+const SKY_OBJECTS_FOLDER: &str = "./data/sphere/sky-objects";
+const LINES_FOLDER: &str = "./data/sphere/lines";
+const MARKERS_FOLDER: &str = "./data/sphere/markers";
+const STAR_NAMES_FOLDER: &str = "./data/sphere/named-stars";
 const CONSTELLATION_NAMES: &str = "./data/constellations.csv";
 const ZOOM_CAP: f32 = 100.0;
-
-#[cfg(any(target_os = "android", target_os = "ios"))]
-use crate::{SKY_DATA_FILES, SKY_DATA_LISTS};
 
 pub const MAG_TO_LIGHT_POLLUTION_RAW: [(LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]); 4] = [
     (LightPollution::Default, [Some(stars::MagnitudeToRadius::defaults()[0]), Some(stars::MagnitudeToRadius::defaults()[1])]),
@@ -673,7 +670,6 @@ impl CellestialSphere {
             None
         };
 
-        #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
         let content_folder = [
             ["sky objects", SKY_OBJECTS_FOLDER],
             ["lines", LINES_FOLDER],
@@ -681,7 +677,6 @@ impl CellestialSphere {
             ["star names", STAR_NAMES_FOLDER],
         ];
 
-        #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
         let sky_data_lists = {
             let mut sky_data = Vec::new();
 
@@ -689,73 +684,38 @@ impl CellestialSphere {
                 let id = d[0];
                 let folder = d[1];
                 sky_data.push((id, Vec::new()));
-                let files = fs::read_dir(folder);
-                if let Ok(files) = files {
-                    for file in files.flatten() {
-                        let path = file.path();
-                        let file_name = path.file_name();
-                        if file_name.is_none() {
-                            continue;
-                        }
-                        let file_name = file_name.unwrap().to_str();
-                        if file_name.is_none() {
-                            continue;
-                        }
-                        let file_name = file_name.unwrap().to_string();
-                        let file_content = fs::read_to_string(path);
-                        if let Ok(file_content) = file_content {
-                            #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
-                            sky_data[i].1.push([file_name, file_content.replace("\"", "\\\"")]);
-                        }
+                match crate::files_handling::read_dir_relative(folder) {
+                    Ok(files) => {
+                        let mut files_formatted = files
+                            .iter()
+                            .filter_map(|f| match f.get_name().as_ref() {
+                                Some(file_name) => match f.contents_as_string() {
+                                    Ok(contents) => Some([file_name.clone(), contents]),
+                                    Err(err) => {
+                                        log::error!("Failed to convert contents of file {:?} ({:?}) to string: {err}", f.get_path(), f.get_contents());
+                                        None
+                                    }
+                                },
+                                None => None,
+                            })
+                            .collect();
+                        sky_data[i].1.append(&mut files_formatted);
                     }
+                    Err(err) => log::error!("Failed to read directory {folder:?}: {err}"),
                 }
             }
             sky_data
         };
-        #[cfg(any(target_os = "android", target_os = "ios"))]
-        let sky_data_lists = SKY_DATA_LISTS
-            .iter()
-            .map(|(id, list)| {
-                (
-                    *id,
-                    list.into_iter()
-                        .map(|[file_name, file_content]| [String::from(*file_name), String::from(*file_content)])
-                        .collect::<Vec<[String; 2]>>(),
-                )
-            })
-            .collect::<Vec<(&str, Vec<[String; 2]>)>>();
 
-        let sky_data_lists = sky_data_lists
-            .into_iter()
-            .map(|(id, list)| {
-                (
-                    id,
-                    list.into_iter()
-                        .map(|[file_name, file_content]| [file_name, file_content.replace("\\\"", "\"")])
-                        .collect::<Vec<[String; 2]>>(),
-                )
-            })
-            .collect::<Vec<(&str, Vec<[String; 2]>)>>();
-
-        #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
         let sky_data_files = {
             let mut other_sky_data = Vec::new();
-            if let Ok(file_content) = fs::read_to_string(CONSTELLATION_NAMES) {
-                #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
-                other_sky_data.push([String::from("constellation names"), file_content.replace("\"", "\\\"")])
-            };
+            let file_path = CONSTELLATION_NAMES;
+            match crate::files_handling::read_file_relative(file_path) {
+                Ok(file_info) => other_sky_data.push([String::from("constellation names"), file_info.contents_as_string_or_empty()]),
+                Err(err) => log::error!("Failed to read file {file_path:?}: {err}"),
+            }
             other_sky_data
         };
-        #[cfg(any(target_os = "android", target_os = "ios"))]
-        let sky_data_files = SKY_DATA_FILES
-            .iter()
-            .map(|[file_name, file_content]| [String::from(*file_name), String::from(*file_content)])
-            .collect::<Vec<[String; 2]>>();
-
-        let sky_data_files = sky_data_files
-            .into_iter()
-            .map(|[file_name, file_content]| [file_name, file_content.replace("\\\"", "\"")])
-            .collect::<Vec<[String; 2]>>();
 
         let mut sky_settings = sky_settings::SkySettings::from_raw(&sky_settings::SkySettingsRaw::default());
         if let Some(storage) = storage {

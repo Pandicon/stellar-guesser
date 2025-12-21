@@ -1,6 +1,6 @@
 use eframe::egui;
 
-use crate::{files, structs::state::windows::settings::ApplicationSettingsSubWindow, Application};
+use crate::{structs::state::windows::settings::ApplicationSettingsSubWindow, Application};
 
 impl Application {
     pub fn render_application_settings_window(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
@@ -68,39 +68,44 @@ impl Application {
             ui.text_edit_singleline(&mut self.theme.name);
         });
         if ui.button("Export").clicked() {
-            if let Some(path) = files::get_dir_opt(crate::config::THEMES_FOLDER) {
-                #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
-                let save_path_opt: Option<std::path::PathBuf> = {
-                    let dialog = rfd::FileDialog::new().add_filter("Theme", &["json"]).set_directory(path);
-                    dialog.save_file()
-                };
-                #[cfg(any(target_os = "android", target_os = "ios"))]
-                let save_path_opt: Option<std::path::PathBuf> = {
-                    let mut save_path_intermediate = path;
-                    save_path_intermediate.push(format!("{}--{}.json", &self.theme.name, chrono::Utc::now().timestamp_millis()));
-                    Some(save_path_intermediate)
-                };
-                match save_path_opt {
-                    Some(save_path) => match serde_json::to_string_pretty(&self.theme) {
-                        Ok(theme_to_save) => {
-                            if let Some(dir) = save_path.parent() {
-                                if !dir.exists() {
-                                    if let Err(err) = std::fs::create_dir_all(dir) {
-                                        log::error!("Failed to create the folders for the theme: {err}");
+            match crate::files_handling::get_path_relative(crate::config::THEMES_FOLDER) {
+                Ok(path) => {
+                    #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+                    let save_path_opt: Option<std::path::PathBuf> = {
+                        let dialog = rfd::FileDialog::new().add_filter("Theme", &["json"]).set_directory(path);
+                        dialog.save_file()
+                    };
+                    #[cfg(any(target_os = "android", target_os = "ios"))]
+                    let save_path_opt: Option<std::path::PathBuf> = {
+                        let mut save_path_intermediate = path;
+                        save_path_intermediate.push(format!("{}--{}.json", &self.theme.name, chrono::Utc::now().timestamp_millis()));
+                        Some(save_path_intermediate)
+                    };
+                    match save_path_opt {
+                        Some(save_path) => match serde_json::to_string_pretty(&self.theme) {
+                            Ok(theme_to_save) => {
+                                if let Some(dir) = save_path.parent() {
+                                    if !dir.exists() {
+                                        if let Err(err) = std::fs::create_dir_all(dir) {
+                                            log::error!("Failed to create the folders for the theme: {err}");
+                                        }
                                     }
+                                } else {
+                                    log::warn!("No theme folder: {:?}", save_path);
                                 }
-                            } else {
-                                log::warn!("No theme folder: {:?}", save_path);
+                                if let Err(err) = std::fs::write(save_path, theme_to_save) {
+                                    log::error!("Failed to save the theme: {err}");
+                                } else {
+                                    self.themes.insert(self.theme.name.clone(), self.theme.clone());
+                                }
                             }
-                            if let Err(err) = std::fs::write(save_path, theme_to_save) {
-                                log::error!("Failed to save the theme: {err}");
-                            } else {
-                                self.themes.insert(self.theme.name.clone(), self.theme.clone());
-                            }
-                        }
-                        Err(err) => log::error!("Failed to serialize the theme: {err}"),
-                    },
-                    None => log::info!("Theme saving cancelled by the user"),
+                            Err(err) => log::error!("Failed to serialize the theme: {err}"),
+                        },
+                        None => log::info!("Theme saving cancelled by the user"),
+                    }
+                }
+                Err(err) => {
+                    log::error!("Could not locate the themes folder to save to: {err:?}")
                 }
             }
         }

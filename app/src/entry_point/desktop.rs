@@ -40,16 +40,22 @@ pub fn main() {
         options.persistence_path = Some(default_path);
 
         let icon_data = {
-            match image::open(crate::ICON_PATH) {
-                Ok(dynamic_image) => {
-                    let image = dynamic_image.into_rgba8();
-                    let (width, height) = image.dimensions();
-                    let rgba = image.into_raw();
-                    let icon_data = eframe::egui::viewport::IconData { rgba, width, height };
-                    Some(std::sync::Arc::new(icon_data))
-                }
+            match crate::files_handling::get_path_relative(crate::ICON_PATH) {
+                Ok(icon_path) => match image::open(icon_path) {
+                    Ok(dynamic_image) => {
+                        let image = dynamic_image.into_rgba8();
+                        let (width, height) = image.dimensions();
+                        let rgba = image.into_raw();
+                        let icon_data = eframe::egui::viewport::IconData { rgba, width, height };
+                        Some(std::sync::Arc::new(icon_data))
+                    }
+                    Err(err) => {
+                        log::error!("Failed to open icon path: {:?}", err);
+                        None
+                    }
+                },
                 Err(err) => {
-                    log::error!("Failed to open icon path: {:?}", err);
+                    log::error!("Failed to open icon path: {err}");
                     None
                 }
             }

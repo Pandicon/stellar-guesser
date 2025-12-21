@@ -228,9 +228,12 @@ impl GameHandler {
                 }
             }
         }
-        let question_packs_files = crate::files::load_all_files_folder(crate::config::QUESTION_PACKS_FOLDER);
+        let question_packs_files = crate::files_handling::read_dir_relative(crate::config::QUESTION_PACKS_FOLDER).unwrap_or_else(|err| {
+            log::error!("Failed to read the themes directory: {err:?}");
+            Vec::new()
+        });
         for file in question_packs_files {
-            question_pack_strs.push((file.path, file.content));
+            question_pack_strs.push((Some(file.get_path().to_owned()), file.contents_as_string_or_empty()));
         }
         for (file_path, question_pack_str) in question_pack_strs {
             let spl = question_pack_str.split(QUESTION_PACK_PARTS_DIV).collect::<Vec<&str>>();

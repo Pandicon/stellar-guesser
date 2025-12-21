@@ -357,52 +357,57 @@ impl Application {
                 let export_button = ui.button("Evaluate and export");
                 if export_button.clicked() {
                     let res = self.cellestial_sphere.evaluate_questions_query(&settings_all);
-                    if let Some(path) = crate::files::get_dir_opt(crate::config::QUESTION_PACKS_FOLDER) {
-                        log::debug!("Question pack save path: {:?}", path);
-                        let name = self.state.windows.settings.game_settings.question_pack_new_name.clone();
-                        let pack = crate::game::questions_filter::QuestionPack {
-                            question_objects: res,
-                            query: self.state.windows.settings.game_settings.internal_query.clone(),
-                            description: self.state.windows.settings.game_settings.question_pack_new_description.clone(),
-                            file_path: None,
-                        };
-                        let pack_string = crate::game::questions::question_pack_to_string(&name, &pack);
-                        #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
-                        let save_path_opt: Option<std::path::PathBuf> = {
-                            if !path.exists() {
-                                if let Err(err) = std::fs::create_dir_all(&path) {
-                                    log::error!("Failed to create the question pack folder: {err}");
-                                } else {
-                                    log::debug!("Created the folder for question packs")
-                                }
-                            }
-                            let dialog = rfd::FileDialog::new().add_filter("Question pack", &["txt"]).set_directory(path);
-                            dialog.save_file()
-                        };
-                        #[cfg(any(target_os = "android", target_os = "ios"))]
-                        let save_path_opt: Option<std::path::PathBuf> = {
-                            let mut save_path_intermediate = path;
-                            save_path_intermediate.push(format!("{}--{}.txt", &name, chrono::Utc::now().timestamp_millis()));
-                            Some(save_path_intermediate)
-                        };
-                        match save_path_opt {
-                            Some(save_path) => {
-                                if let Some(dir) = save_path.parent() {
-                                    if !dir.exists() {
-                                        if let Err(err) = std::fs::create_dir_all(dir) {
-                                            log::error!("Failed to create the folders for the question pack: {err}");
-                                        } else {
-                                            log::debug!("Created the folder for question packs")
-                                        }
+                    match crate::files_handling::get_path_relative(crate::config::QUESTION_PACKS_FOLDER) {
+                        Ok(path) => {
+                            log::debug!("Question pack save path: {:?}", path);
+                            let name = self.state.windows.settings.game_settings.question_pack_new_name.clone();
+                            let pack = crate::game::questions_filter::QuestionPack {
+                                question_objects: res,
+                                query: self.state.windows.settings.game_settings.internal_query.clone(),
+                                description: self.state.windows.settings.game_settings.question_pack_new_description.clone(),
+                                file_path: None,
+                            };
+                            let pack_string = crate::game::questions::question_pack_to_string(&name, &pack);
+                            #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+                            let save_path_opt: Option<std::path::PathBuf> = {
+                                if !path.exists() {
+                                    if let Err(err) = std::fs::create_dir_all(&path) {
+                                        log::error!("Failed to create the question pack folder: {err}");
+                                    } else {
+                                        log::debug!("Created the folder for question packs")
                                     }
-                                } else {
-                                    log::warn!("No question pack folder: {:?}", save_path);
                                 }
-                                if let Err(err) = std::fs::write(save_path, pack_string) {
-                                    log::error!("Failed to save the question pack: {err}");
+                                let dialog = rfd::FileDialog::new().add_filter("Question pack", &["txt"]).set_directory(path);
+                                dialog.save_file()
+                            };
+                            #[cfg(any(target_os = "android", target_os = "ios"))]
+                            let save_path_opt: Option<std::path::PathBuf> = {
+                                let mut save_path_intermediate = path;
+                                save_path_intermediate.push(format!("{}--{}.txt", &name, chrono::Utc::now().timestamp_millis()));
+                                Some(save_path_intermediate)
+                            };
+                            match save_path_opt {
+                                Some(save_path) => {
+                                    if let Some(dir) = save_path.parent() {
+                                        if !dir.exists() {
+                                            if let Err(err) = std::fs::create_dir_all(dir) {
+                                                log::error!("Failed to create the folders for the question pack: {err}");
+                                            } else {
+                                                log::debug!("Created the folder for question packs")
+                                            }
+                                        }
+                                    } else {
+                                        log::warn!("No question pack folder: {:?}", save_path);
+                                    }
+                                    if let Err(err) = std::fs::write(save_path, pack_string) {
+                                        log::error!("Failed to save the question pack: {err}");
+                                    }
                                 }
+                                None => log::info!("Question pack saving cancelled by the user"),
                             }
-                            None => log::info!("Question pack saving cancelled by the user"),
+                        }
+                        Err(err) => {
+                            log::error!("Could not locate the question packs folder to save to: {err:?}")
                         }
                     }
                 }
