@@ -4,7 +4,7 @@ use eframe::egui;
 
 use crate::{
     enums::{LightPollution, RendererCategory},
-    renderer::CellestialSphere,
+    rendering::caspr::renderer::CellestialSphere,
     rendering::caspr::{markers::game_markers::GameMarker, stars},
     structs::state::windows::settings::SkySettingsSubWindow,
     Application,

@@ -6,7 +6,7 @@ use crate::rendering::initial_setup;
 use crate::rendering::themes::{self, Theme, ThemesHandler};
 use crate::{server_communication, structs};
 
-use crate::renderer::CellestialSphere;
+use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::structs::{graphics_settings, testing_settings};
 
 use self::frames_handler::FramesHandler;
@@ -143,9 +143,9 @@ impl Application {
         }
         ctx.set_visuals(theme.egui_visuals.clone());
 
-        let mut cellestial_sphere = CellestialSphere::load(cc.storage, &mut theme).unwrap();
+        let (mut cellestial_sphere, question_objects) = CellestialSphere::load(cc.storage, &mut theme).unwrap();
         cellestial_sphere.init();
-        let game_handler = GameHandler::init(&mut cellestial_sphere, cc.storage, first_application_launch);
+        let game_handler = GameHandler::init(&mut cellestial_sphere, question_objects, cc.storage, first_application_launch);
         if game_handler.question_packs.contains_key(&game_handler.active_question_pack) {
             state.windows.settings.game_settings.question_pack_new_name = game_handler.active_question_pack.clone();
         }

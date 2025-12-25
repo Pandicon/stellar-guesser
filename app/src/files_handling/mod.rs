@@ -9,6 +9,7 @@ pub use desktop::*;
 
 use std::path::PathBuf;
 
+#[derive(Clone)]
 pub struct FileInfo {
     name: Option<String>,
     path: std::path::PathBuf,

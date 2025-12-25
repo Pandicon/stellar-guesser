@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 use crate::graphics::parse_colour_option;
 
-use crate::renderer::CellestialSphere;
+use crate::rendering::caspr::renderer::CellestialSphere;
 
 pub mod game_markers;
 pub struct Markers {

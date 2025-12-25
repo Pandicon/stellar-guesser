@@ -1,6 +1,6 @@
 use crate::{
     enums::{LightPollution, RendererCategory, StorageKeys},
-    game::{game_handler::QuestionTrait, QuestionObject, QuestionObjectRaw},
+    game::{QuestionObject, QuestionObjectRaw},
     rendering::themes::Theme,
 };
 use angle::Angle;
@@ -59,9 +59,6 @@ use super::{
 
 use super::constellation::{Constellation, ConstellationRaw};
 
-const _MERIDIAN_CONSTELLATIONS: [&str; 10] = ["cep", "cas", "and", "peg", "pis", "cet", "scl", "phe", "tuc", "oct"];
-const OBJECT_IMAGES_FOLDER: &str = crate::config::OBJECT_IMAGES_ADDON_FOLDER;
-
 pub struct CellestialSphere {
     pub sky_settings: sky_settings::SkySettings,
 
@@ -69,7 +66,6 @@ pub struct CellestialSphere {
     pub lines: HashMap<String, SkyLines>,
     pub deepskies: HashMap<String, Deepskies>,
     pub markers: HashMap<String, Markers>,
-    pub question_objects: Vec<QuestionObject>,
     pub game_markers: GameMarkers,
     pub star_names: HashMap<String, Vec<StarName>>,
     pub constellations: HashMap<String, Constellation>,
@@ -205,469 +201,58 @@ impl CellestialSphere {
         }
     }
 
-    pub fn generate_questions(&self, question_pack: &Vec<(crate::game::questions::QuestionType, Vec<u64>)>) -> Vec<Box<dyn QuestionTrait>> {
-        use rand::seq::SliceRandom;
-
-        let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::new();
-        for (question_type, object_ids) in question_pack {
-            let mut object_ids = object_ids.clone();
-            object_ids.sort();
-            let mut objects = Vec::new();
-            for object_id in object_ids {
-                if let Ok(i) = self.question_objects.binary_search_by(|probe| probe.object_id.cmp(&object_id)) {
-                    objects.push(&self.question_objects[i]);
-                }
-            }
-            objects.shuffle(&mut rand::thread_rng());
-            match *question_type {
-                crate::game::questions::QuestionType::AngularSeparation(small_settings) => {
-                    for i in (0..objects.len()).step_by(2) {
-                        if i + 1 >= objects.len() {
-                            break;
-                        }
-                        questions.push(Box::new(crate::game::questions::angular_separation::Question {
-                            state: Default::default(),
-                            point1: (objects[i].ra, objects[i].dec),
-                            point2: (objects[i + 1].ra, objects[i + 1].dec),
-                            small_settings,
-                        }));
-                    }
-                }
-                crate::game::questions::QuestionType::FindThisObject(small_settings) => {
-                    for object in objects {
-                        let question = crate::game::questions::find_this_object::Question {
-                            small_settings,
-                            ra: object.ra,
-                            dec: object.dec,
-                            state: Default::default(),
-                            name: String::new(),
-                            is_messier: object.messier_number.is_some(),
-                            is_caldwell: object.caldwell_number.is_some(),
-                            is_ngc: object.ngc_number.is_some(),
-                            is_ic: object.ic_number.is_some(),
-                            is_bayer: object.bayer_designation_full.is_some(),
-                            is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
-                            magnitude: object.mag,
-                            object_type: match &object.object_type {
-                                crate::game::ObjectType::Star(star_type) => star_type.display_name(),
-                                crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
-                            },
-                            constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
-                            images: object.images.clone(),
-                        };
-                        if small_settings.ask_bayer {
-                            if let Some(name_full) = &object.bayer_designation_full {
-                                let mut q_2 = question.clone();
-                                q_2.name = name_full.clone();
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_flamsteed {
-                            if let Some(name_full) = &object.flamsteed_designation_full {
-                                let mut q_2 = question.clone();
-                                q_2.name = name_full.clone();
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_messier {
-                            if let Some(name) = object.messier_number {
-                                let mut q_2 = question.clone();
-                                q_2.name = format!("M{name}");
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_caldwell {
-                            if let Some(name) = object.caldwell_number {
-                                let mut q_2 = question.clone();
-                                q_2.name = format!("C{name}");
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_ic {
-                            if let Some(name) = object.ic_number {
-                                let mut q_2 = question.clone();
-                                q_2.name = format!("IC{name}");
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_ngc {
-                            if let Some(name) = object.ngc_number {
-                                let mut q_2 = question.clone();
-                                q_2.name = format!("NGC{name}");
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_hd {
-                            if let Some(name) = object.hd_number {
-                                let mut q_2 = question.clone();
-                                q_2.name = format!("HD{name}");
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_hip {
-                            if let Some(name) = object.hipparcos_number {
-                                let mut q_2 = question.clone();
-                                q_2.name = format!("HIP{name}");
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_proper {
-                            for name_full in &object.proper_names_full {
-                                let mut q_2 = question.clone();
-                                q_2.name = name_full.clone();
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                    }
-                }
-                crate::game::questions::QuestionType::GuessDec(small_settings) => {
-                    for object in objects {
-                        questions.push(Box::new(crate::game::questions::guess_ra_dec::DecQuestion {
-                            ra: object.ra,
-                            dec: object.dec,
-                            state: Default::default(),
-                            small_settings,
-                        }));
-                    }
-                }
-                crate::game::questions::QuestionType::GuessRa(small_settings) => {
-                    for object in objects {
-                        questions.push(Box::new(crate::game::questions::guess_ra_dec::RaQuestion {
-                            ra: object.ra,
-                            dec: object.dec,
-                            state: Default::default(),
-                            small_settings,
-                        }));
-                    }
-                }
-                crate::game::questions::QuestionType::GuessTheMagnitude(small_settings) => {
-                    for object in objects {
-                        if let Some(mag) = object.mag {
-                            questions.push(Box::new(crate::game::questions::guess_the_magnitude::Question {
-                                ra: object.ra,
-                                dec: object.dec,
-                                mag,
-                                state: Default::default(),
-                                small_settings,
-                            }));
-                        }
-                    }
-                }
-                crate::game::questions::QuestionType::MarkMissingObject(small_settings) => {
-                    for object in objects {
-                        let mut possible_names = Vec::new();
-                        if let Some(designation) = &object.bayer_designation_raw {
-                            let names = super::generate_name_combinations(designation, super::SpecificName::None);
-                            possible_names.extend(names);
-                        }
-                        if let Some(designation) = object.caldwell_number {
-                            possible_names.push(format!("C{designation}"));
-                        }
-                        if let Some(designation) = &object.flamsteed_designation_raw {
-                            let names = super::generate_name_combinations(designation, super::SpecificName::None);
-                            possible_names.extend(names);
-                        }
-                        if let Some(designation) = &object.hd_number {
-                            possible_names.push(format!("HD{designation}"));
-                        }
-                        if let Some(designation) = &object.hipparcos_number {
-                            possible_names.push(format!("HIP{designation}"));
-                        }
-                        if let Some(designation) = &object.ic_number {
-                            possible_names.push(format!("IC{designation}"));
-                        }
-                        if let Some(designation) = &object.messier_number {
-                            possible_names.push(format!("M{designation}"));
-                        }
-                        if let Some(designation) = &object.ngc_number {
-                            possible_names.push(format!("NGC{designation}"));
-                        }
-                        for name in &object.proper_names_raw {
-                            let names = super::generate_name_combinations(name, super::SpecificName::None);
-                            possible_names.extend(names);
-                        }
-                        let question = crate::game::questions::mark_missing_object::Question {
-                            small_settings,
-                            ra: object.ra,
-                            dec: object.dec,
-                            state: Default::default(),
-                            possible_names,
-                            is_messier: object.messier_number.is_some(),
-                            is_caldwell: object.caldwell_number.is_some(),
-                            is_ngc: object.ngc_number.is_some(),
-                            is_ic: object.ic_number.is_some(),
-                            is_bayer: object.bayer_designation_full.is_some(),
-                            is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
-                            magnitude: object.mag,
-                            object_type: match &object.object_type {
-                                crate::game::ObjectType::Star(star_type) => star_type.display_name(),
-                                crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
-                            },
-                            constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
-                            images: object.images.clone(),
-                            object_id: object.object_id,
-                        };
-                        questions.push(Box::new(question));
-                    }
-                }
-                crate::game::questions::QuestionType::WhatIsThisObject(small_settings) => {
-                    for object in objects {
-                        let mut possible_names = Vec::new();
-                        if small_settings.accept_bayer {
-                            if let Some(designation) = &object.bayer_designation_raw {
-                                let names = super::generate_name_combinations(designation, super::SpecificName::None);
-                                possible_names.extend(names);
-                            }
-                        }
-                        if small_settings.accept_caldwell {
-                            if let Some(designation) = object.caldwell_number {
-                                possible_names.push(format!("C{designation}"));
-                            }
-                        }
-                        if small_settings.accept_flamsteed {
-                            if let Some(designation) = &object.flamsteed_designation_raw {
-                                let names = super::generate_name_combinations(designation, super::SpecificName::None);
-                                possible_names.extend(names);
-                            }
-                        }
-                        if small_settings.accept_hd {
-                            if let Some(designation) = &object.hd_number {
-                                possible_names.push(format!("HD{designation}"));
-                            }
-                        }
-                        if small_settings.accept_hip {
-                            if let Some(designation) = &object.hipparcos_number {
-                                possible_names.push(format!("HIP{designation}"));
-                            }
-                        }
-                        if small_settings.accept_ic {
-                            if let Some(designation) = &object.ic_number {
-                                possible_names.push(format!("IC{designation}"));
-                            }
-                        }
-                        if small_settings.accept_messier {
-                            if let Some(designation) = &object.messier_number {
-                                possible_names.push(format!("M{designation}"));
-                            }
-                        }
-                        if small_settings.accept_ngc {
-                            if let Some(designation) = &object.ngc_number {
-                                possible_names.push(format!("NGC{designation}"));
-                            }
-                        }
-                        if small_settings.accept_proper {
-                            for name in &object.proper_names_raw {
-                                let names = super::generate_name_combinations(name, super::SpecificName::None);
-                                possible_names.extend(names);
-                            }
-                        }
-                        if !possible_names.is_empty() {
-                            questions.push(Box::new(crate::game::questions::which_object_is_here::Question {
-                                small_settings,
-                                possible_names,
-                                ra: object.ra,
-                                dec: object.dec,
-                                is_messier: object.messier_number.is_some(),
-                                is_caldwell: object.caldwell_number.is_some(),
-                                is_ngc: object.ngc_number.is_some(),
-                                is_ic: object.ic_number.is_some(),
-                                is_bayer: object.bayer_designation_full.is_some(),
-                                images: object.images.clone(),
-                                is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
-                                magnitude: object.mag,
-                                object_type: match &object.object_type {
-                                    crate::game::ObjectType::Star(star_type) => star_type.display_name(),
-                                    crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
-                                },
-                                constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
-                                state: Default::default(),
-                            }));
-                        }
-                    }
-                }
-                crate::game::questions::QuestionType::WhichConstellationIsThisPointIn(small_settings) => {
-                    for object in objects {
-                        questions.push(Box::new(crate::game::questions::which_constellation_is_point_in::Question {
-                            ra: object.ra,
-                            dec: object.dec,
-                            state: Default::default(),
-                            small_settings,
-                        }));
-                    }
-                }
-                crate::game::questions::QuestionType::WhichObjectIsMissing(small_settings) => {
-                    for object in objects {
-                        let mut possible_names = Vec::new();
-                        if small_settings.accept_bayer {
-                            if let Some(designation) = &object.bayer_designation_raw {
-                                let names = super::generate_name_combinations(designation, super::SpecificName::None);
-                                possible_names.extend(names);
-                            }
-                        }
-                        if small_settings.accept_caldwell {
-                            if let Some(designation) = object.caldwell_number {
-                                possible_names.push(format!("C{designation}"));
-                            }
-                        }
-                        if small_settings.accept_flamsteed {
-                            if let Some(designation) = &object.flamsteed_designation_raw {
-                                let names = super::generate_name_combinations(designation, super::SpecificName::None);
-                                possible_names.extend(names);
-                            }
-                        }
-                        if small_settings.accept_hd {
-                            if let Some(designation) = &object.hd_number {
-                                possible_names.push(format!("HD{designation}"));
-                            }
-                        }
-                        if small_settings.accept_hip {
-                            if let Some(designation) = &object.hipparcos_number {
-                                possible_names.push(format!("HIP{designation}"));
-                            }
-                        }
-                        if small_settings.accept_ic {
-                            if let Some(designation) = &object.ic_number {
-                                possible_names.push(format!("IC{designation}"));
-                            }
-                        }
-                        if small_settings.accept_messier {
-                            if let Some(designation) = &object.messier_number {
-                                possible_names.push(format!("M{designation}"));
-                            }
-                        }
-                        if small_settings.accept_ngc {
-                            if let Some(designation) = &object.ngc_number {
-                                possible_names.push(format!("NGC{designation}"));
-                            }
-                        }
-                        if small_settings.accept_proper {
-                            for name in &object.proper_names_raw {
-                                let names = super::generate_name_combinations(name, super::SpecificName::None);
-                                possible_names.extend(names);
-                            }
-                        }
-                        if !possible_names.is_empty() {
-                            questions.push(Box::new(crate::game::questions::which_object_is_missing::Question {
-                                small_settings,
-                                possible_names,
-                                ra: object.ra,
-                                dec: object.dec,
-                                is_messier: object.messier_number.is_some(),
-                                is_caldwell: object.caldwell_number.is_some(),
-                                is_ngc: object.ngc_number.is_some(),
-                                is_ic: object.ic_number.is_some(),
-                                is_bayer: object.bayer_designation_full.is_some(),
-                                images: object.images.clone(),
-                                is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
-                                magnitude: object.mag,
-                                object_type: match &object.object_type {
-                                    crate::game::ObjectType::Star(star_type) => star_type.display_name(),
-                                    crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
-                                },
-                                constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
-                                state: Default::default(),
-                                object_id: object.object_id,
-                            }));
-                        }
-                    }
-                }
-            }
-        }
-        questions
-    }
-
-    pub fn evaluate_questions_query(
-        &self,
-        query: &[(Option<crate::game::questions_filter::parser::Keyword>, crate::game::questions::QuestionType)],
-    ) -> Vec<(crate::game::questions::QuestionType, Vec<u64>)> {
-        let mut answer = Vec::new();
-        for (query, question) in query {
-            let mut objects = Vec::new();
-            if let Some(query) = query {
-                for object in &self.question_objects {
-                    if crate::game::questions_filter::check(query, object) {
-                        objects.push(object.object_id);
-                    }
-                }
-                answer.push((question.clone(), objects));
-            } else {
-                for object in &self.question_objects {
-                    objects.push(object.object_id);
-                }
-                answer.push((question.clone(), objects));
-            }
-        }
-        answer
-    }
-
-    pub fn load(storage: Option<&dyn eframe::Storage>, theme: &mut Theme) -> Result<Self, Box<dyn Error>> {
-        #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
-        let images_addon_dir_opt = {
-            if let Ok(executable_dir) = std::env::current_exe() {
-                let mut images_addon_dir = executable_dir;
-                images_addon_dir.pop();
-                for part in OBJECT_IMAGES_FOLDER.split('/') {
-                    if part == "." {
-                        continue;
-                    }
-                    images_addon_dir.push(part);
-                }
-                Some(images_addon_dir)
-            } else {
-                log::error!("Couldn't load the executable directory and therefore couldn't load the images");
-                None
-            }
-        };
-        #[cfg(target_os = "android")]
-        let images_addon_dir_opt: Option<std::path::PathBuf> = Some(OBJECT_IMAGES_FOLDER.into());
-        let object_images = if let Some(images_addon_dir) = images_addon_dir_opt {
-            match images_addon_dir.try_exists() {
-                Ok(false) | Err(_) => {
-                    log::warn!("The images add-on folder ({:?}) was not found", images_addon_dir);
-                    None
-                }
-                Ok(true) => {
-                    // The images add-on folder does exist
-                    let mut list_dir = images_addon_dir.clone();
-                    list_dir.push("list.csv");
-                    if let Ok(list_file_content) = fs::read_to_string(list_dir) {
-                        let mut objects_images = std::collections::HashMap::new();
-                        #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
-                        let list_file_contents = list_file_content.replace("\"", "\\\"");
-                        let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(list_file_contents.as_bytes());
-                        for object_image_data in reader.deserialize() {
-                            let mut object_image_data: crate::structs::image_info::DeepskyObjectImageInfo = object_image_data?;
-                            let path_raw = &object_image_data.image;
-                            let mut path = images_addon_dir.clone();
-                            path.push("images");
-                            for part in path_raw.split('/') {
-                                if part == "." {
-                                    continue;
-                                }
-                                path.push(part);
-                            }
-                            match path.try_exists() {
-                                Ok(true) => {
-                                    if let Some(path) = path.to_str() {
-                                        let path = path.replace('\\', "/");
-                                        object_image_data.image = format!("file://{path}");
-                                    }
-                                }
-                                Ok(false) | Err(_) => {
-                                    log::warn!("Couldn't find image {} (path checked: {:?})", path_raw, path);
-                                }
-                            }
-                            let entry = objects_images.entry(object_image_data.object_id).or_insert(Vec::new());
-                            entry.push(object_image_data);
-                        }
-                        Some(objects_images)
-                    } else {
+    pub fn load(storage: Option<&dyn eframe::Storage>, theme: &mut Theme) -> Result<(Self, Vec<QuestionObject>), Box<dyn Error>> {
+        let object_images = match crate::files_handling::get_path_relative(crate::config::OBJECT_IMAGES_ADDON_FOLDER) {
+            Ok(images_addon_dir) => {
+                match images_addon_dir.try_exists() {
+                    Ok(false) | Err(_) => {
+                        log::warn!("The images add-on folder ({:?}) was not found", images_addon_dir);
                         None
                     }
+                    Ok(true) => {
+                        // The images add-on folder does exist
+                        let mut list_dir = images_addon_dir.clone();
+                        list_dir.push("list.csv");
+                        if let Ok(list_file_content) = fs::read_to_string(list_dir) {
+                            let mut objects_images = std::collections::HashMap::new();
+                            #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
+                            let list_file_contents = list_file_content.replace("\"", "\\\"");
+                            let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(list_file_contents.as_bytes());
+                            for object_image_data in reader.deserialize() {
+                                let mut object_image_data: crate::structs::image_info::DeepskyObjectImageInfo = object_image_data?;
+                                let path_raw = &object_image_data.image;
+                                let mut path = images_addon_dir.clone();
+                                path.push("images");
+                                for part in path_raw.split('/') {
+                                    if part == "." {
+                                        continue;
+                                    }
+                                    path.push(part);
+                                }
+                                match path.try_exists() {
+                                    Ok(true) => {
+                                        if let Ok(path) = url::Url::from_file_path(path) {
+                                            object_image_data.image = path.as_str().to_owned();
+                                        }
+                                    }
+                                    Ok(false) | Err(_) => {
+                                        log::warn!("Couldn't find image {} (path checked: {:?})", path_raw, path);
+                                    }
+                                }
+                                let entry = objects_images.entry(object_image_data.object_id).or_insert(Vec::new());
+                                entry.push(object_image_data);
+                            }
+                            Some(objects_images)
+                        } else {
+                            None
+                        }
+                    }
                 }
             }
-        } else {
-            None
+            Err(err) => {
+                log::error!("Could not locate the images folder: {err:?}");
+                None
+            }
         };
 
         let content_folder = [
@@ -689,13 +274,7 @@ impl CellestialSphere {
                         let mut files_formatted = files
                             .iter()
                             .filter_map(|f| match f.get_name().as_ref() {
-                                Some(file_name) => match f.contents_as_string() {
-                                    Ok(contents) => Some([file_name.clone(), contents]),
-                                    Err(err) => {
-                                        log::error!("Failed to convert contents of file {:?} ({:?}) to string: {err}", f.get_path(), f.get_contents());
-                                        None
-                                    }
-                                },
+                                Some(file_name) => Some((file_name.clone(), f.to_owned())),
                                 None => None,
                             })
                             .collect();
@@ -711,7 +290,7 @@ impl CellestialSphere {
             let mut other_sky_data = Vec::new();
             let file_path = CONSTELLATION_NAMES;
             match crate::files_handling::read_file_relative(file_path) {
-                Ok(file_info) => other_sky_data.push([String::from("constellation names"), file_info.contents_as_string_or_empty()]),
+                Ok(file_info) => other_sky_data.push((String::from("constellation names"), file_info)),
                 Err(err) => log::error!("Failed to read file {file_path:?}: {err}"),
             }
             other_sky_data
@@ -743,8 +322,8 @@ impl CellestialSphere {
 
         for (id, data) in sky_data_lists {
             if id == "lines" {
-                for [file_name, file_contents] in &data {
-                    let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+                for (file_name, file_info) in data {
+                    let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_info.get_contents());
                     let mut line_colour = None;
                     let mut lines_vec = Vec::new();
                     for line_raw in reader.deserialize() {
@@ -759,21 +338,21 @@ impl CellestialSphere {
                     let line_colour = theme
                         .game_visuals
                         .lines_colours
-                        .get(file_name)
+                        .get(&file_name)
                         .cloned()
                         .unwrap_or(line_colour.unwrap_or(theme.game_visuals.default_colour));
                     lines.insert(
                         file_name.clone(),
                         SkyLines {
                             colour: line_colour,
-                            active: *sky_settings.lines_categories_active.get(file_name).unwrap_or(&true),
+                            active: *sky_settings.lines_categories_active.get(&file_name).unwrap_or(&true),
                             lines: lines_vec,
                         },
                     );
-                    if !sky_settings.lines_categories_active.contains_key(file_name) {
+                    if !sky_settings.lines_categories_active.contains_key(&file_name) {
                         sky_settings.lines_categories_active.insert(file_name.clone(), true);
                     }
-                    if !theme.game_visuals.lines_colours.contains_key(file_name) {
+                    if !theme.game_visuals.lines_colours.contains_key(&file_name) {
                         theme.game_visuals.lines_colours.insert(file_name.clone(), line_colour);
                     }
                 }
@@ -783,8 +362,8 @@ impl CellestialSphere {
                 } else {
                     None
                 };
-                for [file_name, file_contents] in &data {
-                    let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+                for (file_name, file_info) in data {
+                    let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_info.get_contents());
                     let mut deepskies_colour = None;
                     let mut deepskies_vec = Vec::new();
                     for object_raw in reader.deserialize() {
@@ -828,7 +407,7 @@ impl CellestialSphere {
                                 let star = Star::from_raw(star_raw, star_color, override_star_colour);
                                 let entry = catalog.entry(file_name.clone()).or_default();
                                 entry.push(star);
-                                if !sky_settings.stars_categories_active.contains_key(file_name) {
+                                if !sky_settings.stars_categories_active.contains_key(&file_name) {
                                     sky_settings.stars_categories_active.insert(file_name.clone(), true);
                                 }
                             }
@@ -861,28 +440,28 @@ impl CellestialSphere {
                     let deepskies_colour = theme
                         .game_visuals
                         .deepskies_colours
-                        .get(file_name)
+                        .get(&file_name)
                         .cloned()
                         .unwrap_or(deepskies_colour.unwrap_or(theme.game_visuals.default_colour));
                     deepskies.insert(
                         file_name.clone(),
                         Deepskies {
                             colour: deepskies_colour,
-                            active: *sky_settings.deepskies_categories_active.get(file_name).unwrap_or(&true),
+                            active: *sky_settings.deepskies_categories_active.get(&file_name).unwrap_or(&true),
                             deepskies: deepskies_vec,
                         },
                     );
-                    if !sky_settings.deepskies_categories_active.contains_key(file_name) {
+                    if !sky_settings.deepskies_categories_active.contains_key(&file_name) {
                         sky_settings.deepskies_categories_active.insert(file_name.clone(), true);
                     }
-                    if !theme.game_visuals.deepskies_colours.contains_key(file_name) {
+                    if !theme.game_visuals.deepskies_colours.contains_key(&file_name) {
                         theme.game_visuals.deepskies_colours.insert(file_name.clone(), deepskies_colour);
                     }
                 }
             } else if id == "star names" {
                 //TODO: Add linking between stars and their names
-                for [file_name, file_contents] in &data {
-                    let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+                for (file_name, file_contents) in data {
+                    let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.get_contents());
                     for star_name_raw in reader.deserialize() {
                         let star_name_raw: StarNameRaw = star_name_raw?;
                         let star_name = StarName::from_raw(star_name_raw);
@@ -890,7 +469,7 @@ impl CellestialSphere {
                             Some(star_name) => {
                                 let entry = star_names.entry(file_name.clone()).or_default();
                                 entry.push(star_name);
-                                if !sky_settings.star_names_categories_active.contains_key(file_name) {
+                                if !sky_settings.star_names_categories_active.contains_key(&file_name) {
                                     sky_settings.star_names_categories_active.insert(file_name.clone(), true);
                                 }
                             }
@@ -899,8 +478,8 @@ impl CellestialSphere {
                     }
                 }
             } else if id == "markers" {
-                for [file_name, file_contents] in &data {
-                    let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+                for (file_name, file_contents) in data {
+                    let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.get_contents());
                     let mut markers_colour = None;
                     let mut markers_vec = Vec::new();
                     for marker_raw in reader.deserialize() {
@@ -915,31 +494,30 @@ impl CellestialSphere {
                     let marker_colour = theme
                         .game_visuals
                         .markers_colours
-                        .get(file_name)
+                        .get(&file_name)
                         .cloned()
                         .unwrap_or(markers_colour.unwrap_or(theme.game_visuals.default_colour));
                     markers.insert(
                         file_name.clone(),
                         Markers {
                             colour: marker_colour,
-                            active: *sky_settings.markers_categories_active.get(file_name).unwrap_or(&true),
+                            active: *sky_settings.markers_categories_active.get(&file_name).unwrap_or(&true),
                             markers: markers_vec,
                         },
                     );
-                    if !sky_settings.markers_categories_active.contains_key(file_name) {
+                    if !sky_settings.markers_categories_active.contains_key(&file_name) {
                         sky_settings.markers_categories_active.insert(file_name.clone(), true);
                     }
-                    if !theme.game_visuals.markers_colours.contains_key(file_name) {
+                    if !theme.game_visuals.markers_colours.contains_key(&file_name) {
                         theme.game_visuals.markers_colours.insert(file_name.clone(), marker_colour);
                     }
                 }
             }
         }
-        question_objects.sort_by_key(|k| k.object_id);
 
         let mut constellations = HashMap::new();
-        for [id, file_contents] in sky_data_files {
-            let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.as_bytes());
+        for (id, file_contents) in sky_data_files {
+            let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.get_contents());
             if id == "constellation names" {
                 for constellation_raw in reader.deserialize() {
                     let constellation_raw: ConstellationRaw = constellation_raw?;
@@ -960,31 +538,33 @@ impl CellestialSphere {
         let viewport_rect = egui::Rect::from_two_pos(egui::pos2(0.0, 0.0), egui::pos2(0.0, 0.0));
         let zoom = 3.0_f32.sqrt();
         let fov = Self::zoom_to_fov(zoom);
-        Ok(Self {
-            sky_settings,
-            stars: catalog,
-            lines,
-            deepskies,
-            markers,
+        Ok((
+            Self {
+                sky_settings,
+                stars: catalog,
+                lines,
+                deepskies,
+                markers,
+                game_markers: GameMarkers { active: true, markers: Vec::new() },
+                star_names,
+                constellations,
+                zoom,
+                fov,
+                camera_z: Self::fov_to_camera_z(fov),
+                star_renderers: HashMap::new(),
+                line_renderers: HashMap::new(),
+                deepsky_renderers: HashMap::new(),
+                marker_renderers: HashMap::new(),
+
+                light_pollution_place,
+                light_pollution_place_to_mag,
+
+                viewport_rect,
+
+                rotation: Rotation3::new(Vector3::new(0.0, 0.0, 0.0)),
+            },
             question_objects,
-            game_markers: GameMarkers { active: true, markers: Vec::new() },
-            star_names,
-            constellations,
-            zoom,
-            fov,
-            camera_z: Self::fov_to_camera_z(fov),
-            star_renderers: HashMap::new(),
-            line_renderers: HashMap::new(),
-            deepsky_renderers: HashMap::new(),
-            marker_renderers: HashMap::new(),
-
-            light_pollution_place,
-            light_pollution_place_to_mag,
-
-            viewport_rect,
-
-            rotation: Rotation3::new(Vector3::new(0.0, 0.0, 0.0)),
-        })
+        ))
     }
 
     // TODO: Make this always for example halve the FOV

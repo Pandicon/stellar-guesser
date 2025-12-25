@@ -3,7 +3,7 @@ pub mod game_settings;
 pub mod questions;
 pub mod questions_filter;
 
-#[derive(serde::Deserialize, serde::Serialize, Debug)]
+#[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 #[serde(tag = "object_category", content = "object_type")]
 pub enum ObjectType {
     Star(StarType),
@@ -33,7 +33,7 @@ impl ObjectType {
     }
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Debug)]
+#[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub enum StarType {
     Single,
     Double,
@@ -58,7 +58,7 @@ impl StarType {
     }
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Debug)]
+#[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub enum DeepskyType {
     DarkNebula,
     DiffuseNebula,
@@ -120,6 +120,7 @@ pub struct QuestionObjectRaw {
     pub bv: Option<f32>,
 }
 
+#[derive(Clone)]
 pub struct QuestionObject {
     pub object_id: u64,
     pub object_type: ObjectType,

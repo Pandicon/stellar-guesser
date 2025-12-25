@@ -71,11 +71,11 @@ impl Application {
                 self.state.windows.settings.game_settings.query = self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().query.clone();
                 self.state.windows.settings.game_settings.question_pack_new_description = self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().description.clone();
                 let new_questions = self
-                    .cellestial_sphere
+                    .game_handler
                     .generate_questions(&self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().question_objects);
                 self.game_handler.possible_no_of_questions = new_questions.len() as u32;
                 self.game_handler.question_catalog = new_questions;
-                self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
+                self.game_handler.reset_used_questions();
                 self.game_handler.current_question = 0;
                 self.game_handler.stage = crate::enums::GameStage::NotStartedYet;
                 self.game_handler.question_number_text = String::new();
@@ -342,7 +342,7 @@ impl Application {
                     ui.button("Evaluate and create new pack")
                 };
                 if save_button.clicked() {
-                    let res = self.cellestial_sphere.evaluate_questions_query(&settings_all);
+                    let res = self.game_handler.evaluate_questions_query(&settings_all);
                     self.game_handler.question_packs.insert(
                         self.state.windows.settings.game_settings.question_pack_new_name.clone(),
                         crate::game::questions_filter::QuestionPack {
@@ -356,7 +356,7 @@ impl Application {
                 }
                 let export_button = ui.button("Evaluate and export");
                 if export_button.clicked() {
-                    let res = self.cellestial_sphere.evaluate_questions_query(&settings_all);
+                    let res = self.game_handler.evaluate_questions_query(&settings_all);
                     match crate::files_handling::get_path_relative(crate::config::QUESTION_PACKS_FOLDER) {
                         Ok(path) => {
                             log::debug!("Question pack save path: {:?}", path);
@@ -413,13 +413,13 @@ impl Application {
                 }
                 if save_button.clicked() || export_button.clicked() {
                     let new_questions = if let Some(active_pack) = self.game_handler.question_packs.get(&self.game_handler.active_question_pack) {
-                        self.cellestial_sphere.generate_questions(&active_pack.question_objects)
+                        self.game_handler.generate_questions(&active_pack.question_objects)
                     } else {
                         Vec::new()
                     };
                     self.game_handler.possible_no_of_questions = new_questions.len() as u32;
                     self.game_handler.question_catalog = new_questions;
-                    self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
+                    self.game_handler.reset_used_questions();
                     self.game_handler.current_question = 0;
                     self.game_handler.stage = crate::enums::GameStage::NotStartedYet;
                     self.game_handler.question_number_text = String::new();

@@ -1,7 +1,7 @@
 use crate::enums::GameStage;
 use crate::game::game_handler::{self, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::renderer::CellestialSphere;
 use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
+use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
 use angle::{Angle, Deg};
 use eframe::egui;

@@ -59,6 +59,7 @@ sg_game_constellations = { path = "../crates/sg_game_constellations" }
 sg_geometry = { path = "../crates/sg_geometry" }
 const_format = "0.2.35"
 include_dir = "0.7.4"
+url = "2.5.7"
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "0.13.1"

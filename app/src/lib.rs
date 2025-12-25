@@ -3,7 +3,6 @@
 #![allow(clippy::redundant_static_lifetimes)] // Comes from const_gen
 
 pub use application::Application;
-pub use rendering::caspr::renderer;
 
 pub use config::{ANDROID_PACKAGE_NAME, DESKTOP_PACKAGE_NAME};
 pub use entry_point::*;

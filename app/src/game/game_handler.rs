@@ -1,9 +1,12 @@
 use super::{game_settings, questions};
 use crate::{
     enums::{self, GameStage, RendererCategory, StorageKeys},
-    renderer::CellestialSphere,
+    game::QuestionObject,
     rendering::{
-        caspr::markers::game_markers::{GameMarker, GameMarkerType},
+        caspr::{
+            markers::game_markers::{GameMarker, GameMarkerType},
+            renderer::CellestialSphere,
+        },
         themes::Theme,
     },
 };
@@ -77,7 +80,7 @@ pub trait QuestionTrait {
 
     fn should_display_input(&self) -> bool;
 
-    fn start_question(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
+    fn start_question(&mut self, cellestial_sphere: &mut crate::rendering::caspr::renderer::CellestialSphere, theme: &Theme);
 
     fn render_display_question(&self, ui: &mut egui::Ui);
 
@@ -152,6 +155,7 @@ pub struct GameHandler {
     pub current_question: usize,
     pub question_catalog: Vec<Box<dyn QuestionTrait>>,
     pub used_questions: Vec<usize>,
+    pub question_objects: Vec<QuestionObject>,
 
     pub add_marker_on_click: bool,
     pub stage: enums::GameStage,
@@ -199,7 +203,11 @@ impl GameHandler {
         self.question_catalog[self.question_number].render_window(data)
     }
 
-    pub fn init(cellestial_sphere: &mut CellestialSphere, storage: Option<&dyn eframe::Storage>, first_launch: bool) -> Self {
+    pub fn init(cellestial_sphere: &mut CellestialSphere, question_objects: Vec<QuestionObject>, storage: Option<&dyn eframe::Storage>, first_launch: bool) -> Self {
+        let mut question_objects = question_objects;
+        question_objects.sort_by_key(|k| k.object_id);
+        let question_objects = question_objects;
+
         let mut active_constellations = HashMap::new();
         for constellation_abbreviation in cellestial_sphere.constellations.keys() {
             active_constellations.insert(constellation_abbreviation.to_owned(), true);
@@ -280,7 +288,7 @@ impl GameHandler {
             );
         }
         let catalog = if let Some(question_pack) = question_packs.get(&active_question_pack) {
-            cellestial_sphere.generate_questions(&question_pack.question_objects)
+            Self::generate_questions_inner(&question_objects, &question_pack.question_objects)
         } else {
             Vec::new()
         };
@@ -316,6 +324,7 @@ impl GameHandler {
             current_question: 0,
             possible_no_of_questions: catalog.len() as u32,
             question_catalog: catalog,
+            question_objects,
             used_questions: Vec::new(),
             add_marker_on_click: false,
             stage: GameStage::NotStartedYet,
@@ -339,6 +348,31 @@ impl GameHandler {
             question_packs,
         }
     }
+
+    pub fn evaluate_questions_query(
+        &self,
+        query: &[(Option<crate::game::questions_filter::parser::Keyword>, crate::game::questions::QuestionType)],
+    ) -> Vec<(crate::game::questions::QuestionType, Vec<u64>)> {
+        let mut result = Vec::new();
+        for (query, question) in query {
+            let mut objects = Vec::new();
+            if let Some(query) = query {
+                for object in &self.question_objects {
+                    if crate::game::questions_filter::check(query, object) {
+                        objects.push(object.object_id);
+                    }
+                }
+                result.push((question.clone(), objects));
+            } else {
+                for object in &self.question_objects {
+                    objects.push(object.object_id);
+                }
+                result.push((question.clone(), objects));
+            }
+        }
+        result
+    }
+
     pub fn evaluate_score(distance: angle::Deg<f32>) -> u32 {
         if distance < angle::Deg(0.2) {
             3
@@ -351,7 +385,7 @@ impl GameHandler {
         }
     }
 
-    pub fn next_question(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme) {
+    pub fn next_question(&mut self, cellestial_sphere: &mut crate::rendering::caspr::renderer::CellestialSphere, theme: &Theme) {
         self.answer = String::new();
         let mut possible_questions: Vec<usize> = Vec::new();
         for question in 0..self.question_catalog.len() {
@@ -388,7 +422,7 @@ impl GameHandler {
         matches!(self.stage, GameStage::NoMoreQuestions | GameStage::ScoredModeFinished)
     }
 
-    pub fn reset_used_questions(&mut self, _cellestial_sphere: &mut CellestialSphere) {
+    pub fn reset_used_questions(&mut self) {
         self.used_questions = Vec::new();
         self.score = 0;
         self.possible_score = 0;
@@ -446,5 +480,380 @@ impl GameHandler {
 
     pub fn get_possible_score(&self) -> u32 {
         self.possible_score
+    }
+
+    pub fn generate_questions(&self, question_pack: &[(crate::game::questions::QuestionType, Vec<u64>)]) -> Vec<Box<dyn QuestionTrait>> {
+        Self::generate_questions_inner(&self.question_objects, question_pack)
+    }
+
+    fn generate_questions_inner(question_objects: &[QuestionObject], question_pack: &[(crate::game::questions::QuestionType, Vec<u64>)]) -> Vec<Box<dyn QuestionTrait>> {
+        use rand::seq::SliceRandom;
+
+        let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::new();
+        for (question_type, object_ids) in question_pack {
+            let mut object_ids = object_ids.clone();
+            object_ids.sort();
+            let mut objects = Vec::new();
+            for object_id in object_ids {
+                if let Ok(i) = question_objects.binary_search_by(|probe| probe.object_id.cmp(&object_id)) {
+                    objects.push(&question_objects[i]);
+                }
+            }
+            objects.shuffle(&mut rand::thread_rng());
+            match *question_type {
+                crate::game::questions::QuestionType::AngularSeparation(small_settings) => {
+                    for i in (0..objects.len()).step_by(2) {
+                        if i + 1 >= objects.len() {
+                            break;
+                        }
+                        questions.push(Box::new(crate::game::questions::angular_separation::Question {
+                            state: Default::default(),
+                            point1: (objects[i].ra, objects[i].dec),
+                            point2: (objects[i + 1].ra, objects[i + 1].dec),
+                            small_settings,
+                        }));
+                    }
+                }
+                crate::game::questions::QuestionType::FindThisObject(small_settings) => {
+                    for object in objects {
+                        let question = crate::game::questions::find_this_object::Question {
+                            small_settings,
+                            ra: object.ra,
+                            dec: object.dec,
+                            state: Default::default(),
+                            name: String::new(),
+                            is_messier: object.messier_number.is_some(),
+                            is_caldwell: object.caldwell_number.is_some(),
+                            is_ngc: object.ngc_number.is_some(),
+                            is_ic: object.ic_number.is_some(),
+                            is_bayer: object.bayer_designation_full.is_some(),
+                            is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
+                            magnitude: object.mag,
+                            object_type: match &object.object_type {
+                                crate::game::ObjectType::Star(star_type) => star_type.display_name(),
+                                crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
+                            },
+                            constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
+                            images: object.images.clone(),
+                        };
+                        if small_settings.ask_bayer {
+                            if let Some(name_full) = &object.bayer_designation_full {
+                                let mut q_2 = question.clone();
+                                q_2.name = name_full.clone();
+                                questions.push(Box::new(q_2));
+                            }
+                        }
+                        if small_settings.ask_flamsteed {
+                            if let Some(name_full) = &object.flamsteed_designation_full {
+                                let mut q_2 = question.clone();
+                                q_2.name = name_full.clone();
+                                questions.push(Box::new(q_2));
+                            }
+                        }
+                        if small_settings.ask_messier {
+                            if let Some(name) = object.messier_number {
+                                let mut q_2 = question.clone();
+                                q_2.name = format!("M{name}");
+                                questions.push(Box::new(q_2));
+                            }
+                        }
+                        if small_settings.ask_caldwell {
+                            if let Some(name) = object.caldwell_number {
+                                let mut q_2 = question.clone();
+                                q_2.name = format!("C{name}");
+                                questions.push(Box::new(q_2));
+                            }
+                        }
+                        if small_settings.ask_ic {
+                            if let Some(name) = object.ic_number {
+                                let mut q_2 = question.clone();
+                                q_2.name = format!("IC{name}");
+                                questions.push(Box::new(q_2));
+                            }
+                        }
+                        if small_settings.ask_ngc {
+                            if let Some(name) = object.ngc_number {
+                                let mut q_2 = question.clone();
+                                q_2.name = format!("NGC{name}");
+                                questions.push(Box::new(q_2));
+                            }
+                        }
+                        if small_settings.ask_hd {
+                            if let Some(name) = object.hd_number {
+                                let mut q_2 = question.clone();
+                                q_2.name = format!("HD{name}");
+                                questions.push(Box::new(q_2));
+                            }
+                        }
+                        if small_settings.ask_hip {
+                            if let Some(name) = object.hipparcos_number {
+                                let mut q_2 = question.clone();
+                                q_2.name = format!("HIP{name}");
+                                questions.push(Box::new(q_2));
+                            }
+                        }
+                        if small_settings.ask_proper {
+                            for name_full in &object.proper_names_full {
+                                let mut q_2 = question.clone();
+                                q_2.name = name_full.clone();
+                                questions.push(Box::new(q_2));
+                            }
+                        }
+                    }
+                }
+                crate::game::questions::QuestionType::GuessDec(small_settings) => {
+                    for object in objects {
+                        questions.push(Box::new(crate::game::questions::guess_ra_dec::DecQuestion {
+                            ra: object.ra,
+                            dec: object.dec,
+                            state: Default::default(),
+                            small_settings,
+                        }));
+                    }
+                }
+                crate::game::questions::QuestionType::GuessRa(small_settings) => {
+                    for object in objects {
+                        questions.push(Box::new(crate::game::questions::guess_ra_dec::RaQuestion {
+                            ra: object.ra,
+                            dec: object.dec,
+                            state: Default::default(),
+                            small_settings,
+                        }));
+                    }
+                }
+                crate::game::questions::QuestionType::GuessTheMagnitude(small_settings) => {
+                    for object in objects {
+                        if let Some(mag) = object.mag {
+                            questions.push(Box::new(crate::game::questions::guess_the_magnitude::Question {
+                                ra: object.ra,
+                                dec: object.dec,
+                                mag,
+                                state: Default::default(),
+                                small_settings,
+                            }));
+                        }
+                    }
+                }
+                crate::game::questions::QuestionType::MarkMissingObject(small_settings) => {
+                    for object in objects {
+                        let mut possible_names = Vec::new();
+                        if let Some(designation) = &object.bayer_designation_raw {
+                            let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
+                            possible_names.extend(names);
+                        }
+                        if let Some(designation) = object.caldwell_number {
+                            possible_names.push(format!("C{designation}"));
+                        }
+                        if let Some(designation) = &object.flamsteed_designation_raw {
+                            let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
+                            possible_names.extend(names);
+                        }
+                        if let Some(designation) = &object.hd_number {
+                            possible_names.push(format!("HD{designation}"));
+                        }
+                        if let Some(designation) = &object.hipparcos_number {
+                            possible_names.push(format!("HIP{designation}"));
+                        }
+                        if let Some(designation) = &object.ic_number {
+                            possible_names.push(format!("IC{designation}"));
+                        }
+                        if let Some(designation) = &object.messier_number {
+                            possible_names.push(format!("M{designation}"));
+                        }
+                        if let Some(designation) = &object.ngc_number {
+                            possible_names.push(format!("NGC{designation}"));
+                        }
+                        for name in &object.proper_names_raw {
+                            let names = crate::rendering::caspr::generate_name_combinations(name, crate::rendering::caspr::SpecificName::None);
+                            possible_names.extend(names);
+                        }
+                        let question = crate::game::questions::mark_missing_object::Question {
+                            small_settings,
+                            ra: object.ra,
+                            dec: object.dec,
+                            state: Default::default(),
+                            possible_names,
+                            is_messier: object.messier_number.is_some(),
+                            is_caldwell: object.caldwell_number.is_some(),
+                            is_ngc: object.ngc_number.is_some(),
+                            is_ic: object.ic_number.is_some(),
+                            is_bayer: object.bayer_designation_full.is_some(),
+                            is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
+                            magnitude: object.mag,
+                            object_type: match &object.object_type {
+                                crate::game::ObjectType::Star(star_type) => star_type.display_name(),
+                                crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
+                            },
+                            constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
+                            images: object.images.clone(),
+                            object_id: object.object_id,
+                        };
+                        questions.push(Box::new(question));
+                    }
+                }
+                crate::game::questions::QuestionType::WhatIsThisObject(small_settings) => {
+                    for object in objects {
+                        let mut possible_names = Vec::new();
+                        if small_settings.accept_bayer {
+                            if let Some(designation) = &object.bayer_designation_raw {
+                                let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
+                                possible_names.extend(names);
+                            }
+                        }
+                        if small_settings.accept_caldwell {
+                            if let Some(designation) = object.caldwell_number {
+                                possible_names.push(format!("C{designation}"));
+                            }
+                        }
+                        if small_settings.accept_flamsteed {
+                            if let Some(designation) = &object.flamsteed_designation_raw {
+                                let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
+                                possible_names.extend(names);
+                            }
+                        }
+                        if small_settings.accept_hd {
+                            if let Some(designation) = &object.hd_number {
+                                possible_names.push(format!("HD{designation}"));
+                            }
+                        }
+                        if small_settings.accept_hip {
+                            if let Some(designation) = &object.hipparcos_number {
+                                possible_names.push(format!("HIP{designation}"));
+                            }
+                        }
+                        if small_settings.accept_ic {
+                            if let Some(designation) = &object.ic_number {
+                                possible_names.push(format!("IC{designation}"));
+                            }
+                        }
+                        if small_settings.accept_messier {
+                            if let Some(designation) = &object.messier_number {
+                                possible_names.push(format!("M{designation}"));
+                            }
+                        }
+                        if small_settings.accept_ngc {
+                            if let Some(designation) = &object.ngc_number {
+                                possible_names.push(format!("NGC{designation}"));
+                            }
+                        }
+                        if small_settings.accept_proper {
+                            for name in &object.proper_names_raw {
+                                let names = crate::rendering::caspr::generate_name_combinations(name, crate::rendering::caspr::SpecificName::None);
+                                possible_names.extend(names);
+                            }
+                        }
+                        if !possible_names.is_empty() {
+                            questions.push(Box::new(crate::game::questions::which_object_is_here::Question {
+                                small_settings,
+                                possible_names,
+                                ra: object.ra,
+                                dec: object.dec,
+                                is_messier: object.messier_number.is_some(),
+                                is_caldwell: object.caldwell_number.is_some(),
+                                is_ngc: object.ngc_number.is_some(),
+                                is_ic: object.ic_number.is_some(),
+                                is_bayer: object.bayer_designation_full.is_some(),
+                                images: object.images.clone(),
+                                is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
+                                magnitude: object.mag,
+                                object_type: match &object.object_type {
+                                    crate::game::ObjectType::Star(star_type) => star_type.display_name(),
+                                    crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
+                                },
+                                constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
+                                state: Default::default(),
+                            }));
+                        }
+                    }
+                }
+                crate::game::questions::QuestionType::WhichConstellationIsThisPointIn(small_settings) => {
+                    for object in objects {
+                        questions.push(Box::new(crate::game::questions::which_constellation_is_point_in::Question {
+                            ra: object.ra,
+                            dec: object.dec,
+                            state: Default::default(),
+                            small_settings,
+                        }));
+                    }
+                }
+                crate::game::questions::QuestionType::WhichObjectIsMissing(small_settings) => {
+                    for object in objects {
+                        let mut possible_names = Vec::new();
+                        if small_settings.accept_bayer {
+                            if let Some(designation) = &object.bayer_designation_raw {
+                                let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
+                                possible_names.extend(names);
+                            }
+                        }
+                        if small_settings.accept_caldwell {
+                            if let Some(designation) = object.caldwell_number {
+                                possible_names.push(format!("C{designation}"));
+                            }
+                        }
+                        if small_settings.accept_flamsteed {
+                            if let Some(designation) = &object.flamsteed_designation_raw {
+                                let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
+                                possible_names.extend(names);
+                            }
+                        }
+                        if small_settings.accept_hd {
+                            if let Some(designation) = &object.hd_number {
+                                possible_names.push(format!("HD{designation}"));
+                            }
+                        }
+                        if small_settings.accept_hip {
+                            if let Some(designation) = &object.hipparcos_number {
+                                possible_names.push(format!("HIP{designation}"));
+                            }
+                        }
+                        if small_settings.accept_ic {
+                            if let Some(designation) = &object.ic_number {
+                                possible_names.push(format!("IC{designation}"));
+                            }
+                        }
+                        if small_settings.accept_messier {
+                            if let Some(designation) = &object.messier_number {
+                                possible_names.push(format!("M{designation}"));
+                            }
+                        }
+                        if small_settings.accept_ngc {
+                            if let Some(designation) = &object.ngc_number {
+                                possible_names.push(format!("NGC{designation}"));
+                            }
+                        }
+                        if small_settings.accept_proper {
+                            for name in &object.proper_names_raw {
+                                let names = crate::rendering::caspr::generate_name_combinations(name, crate::rendering::caspr::SpecificName::None);
+                                possible_names.extend(names);
+                            }
+                        }
+                        if !possible_names.is_empty() {
+                            questions.push(Box::new(crate::game::questions::which_object_is_missing::Question {
+                                small_settings,
+                                possible_names,
+                                ra: object.ra,
+                                dec: object.dec,
+                                is_messier: object.messier_number.is_some(),
+                                is_caldwell: object.caldwell_number.is_some(),
+                                is_ngc: object.ngc_number.is_some(),
+                                is_ic: object.ic_number.is_some(),
+                                is_bayer: object.bayer_designation_full.is_some(),
+                                images: object.images.clone(),
+                                is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
+                                magnitude: object.mag,
+                                object_type: match &object.object_type {
+                                    crate::game::ObjectType::Star(star_type) => star_type.display_name(),
+                                    crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
+                                },
+                                constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
+                                state: Default::default(),
+                                object_id: object.object_id,
+                            }));
+                        }
+                    }
+                }
+            }
+        }
+        questions
     }
 }
