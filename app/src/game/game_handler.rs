@@ -502,355 +502,40 @@ impl GameHandler {
             objects.shuffle(&mut rand::thread_rng());
             match *question_type {
                 crate::game::questions::QuestionType::AngularSeparation(small_settings) => {
-                    for i in (0..objects.len()).step_by(2) {
-                        if i + 1 >= objects.len() {
-                            break;
-                        }
-                        questions.push(Box::new(crate::game::questions::angular_separation::Question {
-                            state: Default::default(),
-                            point1: (objects[i].ra, objects[i].dec),
-                            point2: (objects[i + 1].ra, objects[i + 1].dec),
-                            small_settings,
-                        }));
-                    }
+                    let mut qs = crate::game::questions::angular_separation::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
                 }
                 crate::game::questions::QuestionType::FindThisObject(small_settings) => {
-                    for object in objects {
-                        let question = crate::game::questions::find_this_object::Question {
-                            small_settings,
-                            ra: object.ra,
-                            dec: object.dec,
-                            state: Default::default(),
-                            name: String::new(),
-                            is_messier: object.messier_number.is_some(),
-                            is_caldwell: object.caldwell_number.is_some(),
-                            is_ngc: object.ngc_number.is_some(),
-                            is_ic: object.ic_number.is_some(),
-                            is_bayer: object.bayer_designation_full.is_some(),
-                            is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
-                            magnitude: object.mag,
-                            object_type: match &object.object_type {
-                                crate::game::ObjectType::Star(star_type) => star_type.display_name(),
-                                crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
-                            },
-                            constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
-                            images: object.images.clone(),
-                        };
-                        if small_settings.ask_bayer {
-                            if let Some(name_full) = &object.bayer_designation_full {
-                                let mut q_2 = question.clone();
-                                q_2.name = name_full.clone();
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_flamsteed {
-                            if let Some(name_full) = &object.flamsteed_designation_full {
-                                let mut q_2 = question.clone();
-                                q_2.name = name_full.clone();
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_messier {
-                            if let Some(name) = object.messier_number {
-                                let mut q_2 = question.clone();
-                                q_2.name = format!("M{name}");
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_caldwell {
-                            if let Some(name) = object.caldwell_number {
-                                let mut q_2 = question.clone();
-                                q_2.name = format!("C{name}");
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_ic {
-                            if let Some(name) = object.ic_number {
-                                let mut q_2 = question.clone();
-                                q_2.name = format!("IC{name}");
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_ngc {
-                            if let Some(name) = object.ngc_number {
-                                let mut q_2 = question.clone();
-                                q_2.name = format!("NGC{name}");
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_hd {
-                            if let Some(name) = object.hd_number {
-                                let mut q_2 = question.clone();
-                                q_2.name = format!("HD{name}");
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_hip {
-                            if let Some(name) = object.hipparcos_number {
-                                let mut q_2 = question.clone();
-                                q_2.name = format!("HIP{name}");
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                        if small_settings.ask_proper {
-                            for name_full in &object.proper_names_full {
-                                let mut q_2 = question.clone();
-                                q_2.name = name_full.clone();
-                                questions.push(Box::new(q_2));
-                            }
-                        }
-                    }
+                    let mut qs = crate::game::questions::find_this_object::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
                 }
                 crate::game::questions::QuestionType::GuessDec(small_settings) => {
-                    for object in objects {
-                        questions.push(Box::new(crate::game::questions::guess_ra_dec::DecQuestion {
-                            ra: object.ra,
-                            dec: object.dec,
-                            state: Default::default(),
-                            small_settings,
-                        }));
-                    }
+                    let mut qs = crate::game::questions::guess_ra_dec::generate_dec_questions(&objects, small_settings);
+                    questions.append(&mut qs);
                 }
                 crate::game::questions::QuestionType::GuessRa(small_settings) => {
-                    for object in objects {
-                        questions.push(Box::new(crate::game::questions::guess_ra_dec::RaQuestion {
-                            ra: object.ra,
-                            dec: object.dec,
-                            state: Default::default(),
-                            small_settings,
-                        }));
-                    }
+                    let mut qs = crate::game::questions::guess_ra_dec::generate_ra_questions(&objects, small_settings);
+                    questions.append(&mut qs);
                 }
                 crate::game::questions::QuestionType::GuessTheMagnitude(small_settings) => {
-                    for object in objects {
-                        if let Some(mag) = object.mag {
-                            questions.push(Box::new(crate::game::questions::guess_the_magnitude::Question {
-                                ra: object.ra,
-                                dec: object.dec,
-                                mag,
-                                state: Default::default(),
-                                small_settings,
-                            }));
-                        }
-                    }
+                    let mut qs = crate::game::questions::guess_the_magnitude::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
                 }
                 crate::game::questions::QuestionType::MarkMissingObject(small_settings) => {
-                    for object in objects {
-                        let mut possible_names = Vec::new();
-                        if let Some(designation) = &object.bayer_designation_raw {
-                            let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
-                            possible_names.extend(names);
-                        }
-                        if let Some(designation) = object.caldwell_number {
-                            possible_names.push(format!("C{designation}"));
-                        }
-                        if let Some(designation) = &object.flamsteed_designation_raw {
-                            let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
-                            possible_names.extend(names);
-                        }
-                        if let Some(designation) = &object.hd_number {
-                            possible_names.push(format!("HD{designation}"));
-                        }
-                        if let Some(designation) = &object.hipparcos_number {
-                            possible_names.push(format!("HIP{designation}"));
-                        }
-                        if let Some(designation) = &object.ic_number {
-                            possible_names.push(format!("IC{designation}"));
-                        }
-                        if let Some(designation) = &object.messier_number {
-                            possible_names.push(format!("M{designation}"));
-                        }
-                        if let Some(designation) = &object.ngc_number {
-                            possible_names.push(format!("NGC{designation}"));
-                        }
-                        for name in &object.proper_names_raw {
-                            let names = crate::rendering::caspr::generate_name_combinations(name, crate::rendering::caspr::SpecificName::None);
-                            possible_names.extend(names);
-                        }
-                        let question = crate::game::questions::mark_missing_object::Question {
-                            small_settings,
-                            ra: object.ra,
-                            dec: object.dec,
-                            state: Default::default(),
-                            possible_names,
-                            is_messier: object.messier_number.is_some(),
-                            is_caldwell: object.caldwell_number.is_some(),
-                            is_ngc: object.ngc_number.is_some(),
-                            is_ic: object.ic_number.is_some(),
-                            is_bayer: object.bayer_designation_full.is_some(),
-                            is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
-                            magnitude: object.mag,
-                            object_type: match &object.object_type {
-                                crate::game::ObjectType::Star(star_type) => star_type.display_name(),
-                                crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
-                            },
-                            constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
-                            images: object.images.clone(),
-                            object_id: object.object_id,
-                        };
-                        questions.push(Box::new(question));
-                    }
+                    let mut qs = crate::game::questions::mark_missing_object::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
                 }
                 crate::game::questions::QuestionType::WhatIsThisObject(small_settings) => {
-                    for object in objects {
-                        let mut possible_names = Vec::new();
-                        if small_settings.accept_bayer {
-                            if let Some(designation) = &object.bayer_designation_raw {
-                                let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
-                                possible_names.extend(names);
-                            }
-                        }
-                        if small_settings.accept_caldwell {
-                            if let Some(designation) = object.caldwell_number {
-                                possible_names.push(format!("C{designation}"));
-                            }
-                        }
-                        if small_settings.accept_flamsteed {
-                            if let Some(designation) = &object.flamsteed_designation_raw {
-                                let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
-                                possible_names.extend(names);
-                            }
-                        }
-                        if small_settings.accept_hd {
-                            if let Some(designation) = &object.hd_number {
-                                possible_names.push(format!("HD{designation}"));
-                            }
-                        }
-                        if small_settings.accept_hip {
-                            if let Some(designation) = &object.hipparcos_number {
-                                possible_names.push(format!("HIP{designation}"));
-                            }
-                        }
-                        if small_settings.accept_ic {
-                            if let Some(designation) = &object.ic_number {
-                                possible_names.push(format!("IC{designation}"));
-                            }
-                        }
-                        if small_settings.accept_messier {
-                            if let Some(designation) = &object.messier_number {
-                                possible_names.push(format!("M{designation}"));
-                            }
-                        }
-                        if small_settings.accept_ngc {
-                            if let Some(designation) = &object.ngc_number {
-                                possible_names.push(format!("NGC{designation}"));
-                            }
-                        }
-                        if small_settings.accept_proper {
-                            for name in &object.proper_names_raw {
-                                let names = crate::rendering::caspr::generate_name_combinations(name, crate::rendering::caspr::SpecificName::None);
-                                possible_names.extend(names);
-                            }
-                        }
-                        if !possible_names.is_empty() {
-                            questions.push(Box::new(crate::game::questions::which_object_is_here::Question {
-                                small_settings,
-                                possible_names,
-                                ra: object.ra,
-                                dec: object.dec,
-                                is_messier: object.messier_number.is_some(),
-                                is_caldwell: object.caldwell_number.is_some(),
-                                is_ngc: object.ngc_number.is_some(),
-                                is_ic: object.ic_number.is_some(),
-                                is_bayer: object.bayer_designation_full.is_some(),
-                                images: object.images.clone(),
-                                is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
-                                magnitude: object.mag,
-                                object_type: match &object.object_type {
-                                    crate::game::ObjectType::Star(star_type) => star_type.display_name(),
-                                    crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
-                                },
-                                constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
-                                state: Default::default(),
-                            }));
-                        }
-                    }
+                    let mut qs = crate::game::questions::which_object_is_here::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
                 }
                 crate::game::questions::QuestionType::WhichConstellationIsThisPointIn(small_settings) => {
-                    for object in objects {
-                        questions.push(Box::new(crate::game::questions::which_constellation_is_point_in::Question {
-                            ra: object.ra,
-                            dec: object.dec,
-                            state: Default::default(),
-                            small_settings,
-                        }));
-                    }
+                    let mut qs = crate::game::questions::which_constellation_is_point_in::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
                 }
                 crate::game::questions::QuestionType::WhichObjectIsMissing(small_settings) => {
-                    for object in objects {
-                        let mut possible_names = Vec::new();
-                        if small_settings.accept_bayer {
-                            if let Some(designation) = &object.bayer_designation_raw {
-                                let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
-                                possible_names.extend(names);
-                            }
-                        }
-                        if small_settings.accept_caldwell {
-                            if let Some(designation) = object.caldwell_number {
-                                possible_names.push(format!("C{designation}"));
-                            }
-                        }
-                        if small_settings.accept_flamsteed {
-                            if let Some(designation) = &object.flamsteed_designation_raw {
-                                let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
-                                possible_names.extend(names);
-                            }
-                        }
-                        if small_settings.accept_hd {
-                            if let Some(designation) = &object.hd_number {
-                                possible_names.push(format!("HD{designation}"));
-                            }
-                        }
-                        if small_settings.accept_hip {
-                            if let Some(designation) = &object.hipparcos_number {
-                                possible_names.push(format!("HIP{designation}"));
-                            }
-                        }
-                        if small_settings.accept_ic {
-                            if let Some(designation) = &object.ic_number {
-                                possible_names.push(format!("IC{designation}"));
-                            }
-                        }
-                        if small_settings.accept_messier {
-                            if let Some(designation) = &object.messier_number {
-                                possible_names.push(format!("M{designation}"));
-                            }
-                        }
-                        if small_settings.accept_ngc {
-                            if let Some(designation) = &object.ngc_number {
-                                possible_names.push(format!("NGC{designation}"));
-                            }
-                        }
-                        if small_settings.accept_proper {
-                            for name in &object.proper_names_raw {
-                                let names = crate::rendering::caspr::generate_name_combinations(name, crate::rendering::caspr::SpecificName::None);
-                                possible_names.extend(names);
-                            }
-                        }
-                        if !possible_names.is_empty() {
-                            questions.push(Box::new(crate::game::questions::which_object_is_missing::Question {
-                                small_settings,
-                                possible_names,
-                                ra: object.ra,
-                                dec: object.dec,
-                                is_messier: object.messier_number.is_some(),
-                                is_caldwell: object.caldwell_number.is_some(),
-                                is_ngc: object.ngc_number.is_some(),
-                                is_ic: object.ic_number.is_some(),
-                                is_bayer: object.bayer_designation_full.is_some(),
-                                images: object.images.clone(),
-                                is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
-                                magnitude: object.mag,
-                                object_type: match &object.object_type {
-                                    crate::game::ObjectType::Star(star_type) => star_type.display_name(),
-                                    crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
-                                },
-                                constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
-                                state: Default::default(),
-                                object_id: object.object_id,
-                            }));
-                        }
-                    }
+                    let mut qs = crate::game::questions::which_object_is_missing::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
                 }
             }
         }

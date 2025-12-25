@@ -213,3 +213,19 @@ impl crate::game::game_handler::QuestionTrait for Question {
         Box::new(self.clone())
     }
 }
+
+pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
+    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+    for object in objects {
+        if let Some(mag) = object.mag {
+            questions.push(Box::new(Question {
+                ra: object.ra,
+                dec: object.dec,
+                mag,
+                state: Default::default(),
+                small_settings,
+            }));
+        }
+    }
+    questions
+}

@@ -210,3 +210,19 @@ impl crate::game::game_handler::QuestionTrait for Question {
         Box::new(self.clone())
     }
 }
+
+pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
+    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len() / 2);
+    for i in (0..objects.len()).step_by(2) {
+        if i + 1 >= objects.len() {
+            break;
+        }
+        questions.push(Box::new(Question {
+            state: Default::default(),
+            point1: (objects[i].ra, objects[i].dec),
+            point2: (objects[i + 1].ra, objects[i + 1].dec),
+            small_settings,
+        }));
+    }
+    questions
+}

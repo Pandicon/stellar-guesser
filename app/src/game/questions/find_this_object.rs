@@ -300,3 +300,93 @@ impl crate::game::game_handler::QuestionTrait for Question {
         Box::new(self.clone())
     }
 }
+
+pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
+    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+    for object in objects {
+        let question = Question {
+            small_settings,
+            ra: object.ra,
+            dec: object.dec,
+            state: Default::default(),
+            name: String::new(),
+            is_messier: object.messier_number.is_some(),
+            is_caldwell: object.caldwell_number.is_some(),
+            is_ngc: object.ngc_number.is_some(),
+            is_ic: object.ic_number.is_some(),
+            is_bayer: object.bayer_designation_full.is_some(),
+            is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
+            magnitude: object.mag,
+            object_type: match &object.object_type {
+                crate::game::ObjectType::Star(star_type) => star_type.display_name(),
+                crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
+            },
+            constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
+            images: object.images.clone(),
+        };
+        if small_settings.ask_bayer {
+            if let Some(name_full) = &object.bayer_designation_full {
+                let mut q_2 = question.clone();
+                q_2.name = name_full.clone();
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_flamsteed {
+            if let Some(name_full) = &object.flamsteed_designation_full {
+                let mut q_2 = question.clone();
+                q_2.name = name_full.clone();
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_messier {
+            if let Some(name) = object.messier_number {
+                let mut q_2 = question.clone();
+                q_2.name = format!("M{name}");
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_caldwell {
+            if let Some(name) = object.caldwell_number {
+                let mut q_2 = question.clone();
+                q_2.name = format!("C{name}");
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_ic {
+            if let Some(name) = object.ic_number {
+                let mut q_2 = question.clone();
+                q_2.name = format!("IC{name}");
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_ngc {
+            if let Some(name) = object.ngc_number {
+                let mut q_2 = question.clone();
+                q_2.name = format!("NGC{name}");
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_hd {
+            if let Some(name) = object.hd_number {
+                let mut q_2 = question.clone();
+                q_2.name = format!("HD{name}");
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_hip {
+            if let Some(name) = object.hipparcos_number {
+                let mut q_2 = question.clone();
+                q_2.name = format!("HIP{name}");
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_proper {
+            for name_full in &object.proper_names_full {
+                let mut q_2 = question.clone();
+                q_2.name = name_full.clone();
+                questions.push(Box::new(q_2));
+            }
+        }
+    }
+    questions
+}

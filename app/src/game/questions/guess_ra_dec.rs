@@ -207,6 +207,19 @@ impl crate::game::game_handler::QuestionTrait for RaQuestion {
     }
 }
 
+pub fn generate_ra_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
+    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+    for object in objects {
+        questions.push(Box::new(RaQuestion {
+            ra: object.ra,
+            dec: object.dec,
+            state: Default::default(),
+            small_settings,
+        }));
+    }
+    questions
+}
+
 #[derive(Clone)]
 pub struct DecQuestion {
     pub dec: angle::Deg<f32>,
@@ -374,4 +387,17 @@ impl crate::game::game_handler::QuestionTrait for DecQuestion {
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(self.clone())
     }
+}
+
+pub fn generate_dec_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
+    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+    for object in objects {
+        questions.push(Box::new(DecQuestion {
+            ra: object.ra,
+            dec: object.dec,
+            state: Default::default(),
+            small_settings,
+        }));
+    }
+    questions
 }
