@@ -267,7 +267,7 @@ impl Application {
     pub fn apply_theme(&mut self, ctx: &egui::Context, theme: Theme) {
         self.theme = theme;
         let mut deepskies_to_reinit = Vec::new();
-        for (name, deepskies) in &mut self.cellestial_sphere.deepskies {
+        for (name, deepskies) in &mut self.sky.deepskies {
             match self.theme.game_visuals.deepskies_colours.get(name) {
                 Some(colour) => {
                     deepskies.colour = *colour;
@@ -281,10 +281,10 @@ impl Application {
             }
         }
         for name in deepskies_to_reinit {
-            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Deepskies, &name);
+            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Deepskies, &name);
         }
         let mut lines_to_reinit = Vec::new();
-        for (name, lines) in &mut self.cellestial_sphere.lines {
+        for (name, lines) in &mut self.sky.lines {
             match self.theme.game_visuals.lines_colours.get(name) {
                 Some(colour) => {
                     lines.colour = *colour;
@@ -298,10 +298,10 @@ impl Application {
             }
         }
         for name in lines_to_reinit {
-            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Lines, &name);
+            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Lines, &name);
         }
         let mut markers_to_reinit = Vec::new();
-        for (name, markers) in &mut self.cellestial_sphere.markers {
+        for (name, markers) in &mut self.sky.markers {
             match self.theme.game_visuals.markers_colours.get(name) {
                 Some(colour) => {
                     markers.colour = *colour;
@@ -315,7 +315,7 @@ impl Application {
             }
         }
         for name in markers_to_reinit {
-            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, &name);
+            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, &name);
         }
         ctx.set_visuals(self.theme.egui_visuals.clone());
     }

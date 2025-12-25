@@ -3,6 +3,7 @@ use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
+use crate::sky;
 use crate::sky::markers::game_markers;
 use angle::Deg;
 use eframe::egui;
@@ -122,6 +123,7 @@ impl Question {
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {
                     cellestial_sphere: data.cellestial_sphere,
+                    sky: data.sky,
                     theme: data.theme,
                     game_stage: data.game_stage,
                     score: data.score,
@@ -180,7 +182,7 @@ impl Question {
             self.possible_names.join(", "),
             self.object_type
         );
-        data.cellestial_sphere.game_markers.markers.push(game_markers::GameMarker::new(
+        data.sky.game_markers.markers.push(game_markers::GameMarker::new(
             game_markers::GameMarkerType::CorrectAnswer,
             self.ra,
             self.dec,
@@ -193,9 +195,9 @@ impl Question {
         if self.small_settings.rotate_to_answer {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             data.cellestial_sphere.look_at_point(&final_vector);
-            data.cellestial_sphere.init_renderers();
+            data.cellestial_sphere.init_renderers(&data.sky);
         } else {
-            data.cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, "game");
+            data.cellestial_sphere.init_single_renderer_group(&data.sky, RendererCategory::Markers, "game");
         }
         *data.possible_score += 1;
         if !self.small_settings.replay_incorrect || correct {
@@ -228,7 +230,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             GameStage::Checked => {
                 *data.start_next_question = true;
                 data.cellestial_sphere.enable_single_renderer(self.object_id);
-                data.cellestial_sphere.game_markers.markers = Vec::new();
+                data.sky.game_markers.markers = Vec::new();
             }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
@@ -280,7 +282,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, _sky: &mut sky::Sky, _theme: &Theme) {
         self.state = Default::default();
         cellestial_sphere.disable_single_renderer(self.object_id);
     }

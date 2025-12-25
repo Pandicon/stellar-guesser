@@ -17,6 +17,7 @@ pub const QUESTION_PACK_QUESTIONS_PARTS_DIV: &str = "&|&";
 
 pub struct QuestionWindowData<'a> {
     pub cellestial_sphere: &'a mut CellestialSphere,
+    pub sky: &'a mut sky::Sky,
     pub theme: &'a Theme,
     pub game_question_opened: &'a mut bool,
     pub request_input_focus: &'a mut bool,
@@ -37,6 +38,7 @@ pub struct QuestionWindowData<'a> {
 
 pub struct QuestionCheckingData<'a> {
     pub cellestial_sphere: &'a mut CellestialSphere,
+    pub sky: &'a mut sky::Sky,
     pub theme: &'a Theme,
     pub game_stage: &'a mut GameStage,
     pub score: &'a mut u32,
@@ -75,7 +77,7 @@ pub trait QuestionTrait {
 
     fn should_display_input(&self) -> bool;
 
-    fn start_question(&mut self, cellestial_sphere: &mut crate::rendering::caspr::renderer::CellestialSphere, theme: &Theme);
+    fn start_question(&mut self, cellestial_sphere: &mut crate::rendering::caspr::renderer::CellestialSphere, sky: &mut sky::Sky, theme: &Theme);
 
     fn render_display_question(&self, ui: &mut egui::Ui);
 
@@ -198,13 +200,13 @@ impl GameHandler {
         self.question_catalog[self.question_number].render_window(data)
     }
 
-    pub fn init(cellestial_sphere: &mut CellestialSphere, question_objects: Vec<QuestionObject>, storage: Option<&dyn eframe::Storage>, first_launch: bool) -> Self {
+    pub fn init(sky: &sky::Sky, question_objects: Vec<QuestionObject>, storage: Option<&dyn eframe::Storage>, first_launch: bool) -> Self {
         let mut question_objects = question_objects;
         question_objects.sort_by_key(|k| k.object_id);
         let question_objects = question_objects;
 
         let mut active_constellations = HashMap::new();
-        for constellation_abbreviation in cellestial_sphere.constellations.keys() {
+        for constellation_abbreviation in sky.constellations.keys() {
             active_constellations.insert(constellation_abbreviation.to_owned(), true);
         }
         if let Some(storage) = storage {
@@ -313,7 +315,7 @@ impl GameHandler {
             }
         }
         let constellation_groups_settings =
-            sg_game_constellations::GameConstellations::load_from_storage(storage, &cellestial_sphere.constellations.values().map(|con| con.abbreviation.clone()).collect::<Vec<String>>());
+            sg_game_constellations::GameConstellations::load_from_storage(storage, &sky.constellations.values().map(|con| con.abbreviation.clone()).collect::<Vec<String>>());
 
         Self {
             current_question: 0,
@@ -380,7 +382,7 @@ impl GameHandler {
         }
     }
 
-    pub fn next_question(&mut self, cellestial_sphere: &mut crate::rendering::caspr::renderer::CellestialSphere, theme: &Theme) {
+    pub fn next_question(&mut self, cellestial_sphere: &mut crate::rendering::caspr::renderer::CellestialSphere, sky: &mut sky::Sky, theme: &Theme) {
         self.answer = String::new();
         let mut possible_questions: Vec<usize> = Vec::new();
         for question in 0..self.question_catalog.len() {
@@ -402,9 +404,9 @@ impl GameHandler {
             );
 
             self.add_marker_on_click = self.question_catalog[self.current_question].add_marker_on_click();
-            self.question_catalog[self.current_question].start_question(cellestial_sphere, theme);
+            self.question_catalog[self.current_question].start_question(cellestial_sphere, sky, theme);
             self.request_input_focus = true;
-            cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, "game");
+            cellestial_sphere.init_single_renderer_group(&sky, RendererCategory::Markers, "game");
             self.stage = GameStage::Guessing;
         }
     }

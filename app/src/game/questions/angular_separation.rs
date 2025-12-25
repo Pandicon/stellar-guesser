@@ -2,6 +2,7 @@ use crate::enums::GameStage;
 use crate::game::game_handler::{self, QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
+use crate::sky;
 use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
 use eframe::egui;
@@ -62,6 +63,7 @@ impl Question {
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {
                     cellestial_sphere: data.cellestial_sphere,
+                    sky: data.sky,
                     theme: data.theme,
                     game_stage: data.game_stage,
                     score: data.score,
@@ -183,11 +185,11 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, theme: &Theme) {
         self.state = Default::default();
         let (ra1, dec1) = self.point1;
         let (ra2, dec2) = self.point2;
-        cellestial_sphere.game_markers.markers = vec![
+        sky.game_markers.markers = vec![
             game_markers::GameMarker::new(game_markers::GameMarkerType::Task, ra1, dec1, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
             game_markers::GameMarker::new(game_markers::GameMarkerType::Task, ra2, dec2, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
         ];
@@ -197,7 +199,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             if (end_1 + end_2).magnitude_squared() > 10e-4 {
                 let final_vector = (end_1 + end_2).normalize();
                 cellestial_sphere.look_at_point(&final_vector);
-                cellestial_sphere.init_renderers();
+                cellestial_sphere.init_renderers(&sky);
             }
         }
     }

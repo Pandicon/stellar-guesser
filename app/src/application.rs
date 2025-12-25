@@ -4,7 +4,7 @@ use crate::enums::ScreenWidth;
 use crate::rendering::caspr::sky_settings;
 use crate::rendering::initial_setup;
 use crate::rendering::themes::{self, Theme, ThemesHandler};
-use crate::{server_communication, structs};
+use crate::{server_communication, sky, structs};
 
 use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::structs::{graphics_settings, testing_settings};
@@ -27,6 +27,7 @@ pub struct Application {
     pub state: state::State,
 
     pub cellestial_sphere: CellestialSphere,
+    pub sky: sky::Sky,
     pub frames_handler: FramesHandler,
     pub game_handler: game_handler::GameHandler,
 
@@ -143,9 +144,11 @@ impl Application {
         }
         ctx.set_visuals(theme.egui_visuals.clone());
 
-        let (mut cellestial_sphere, question_objects) = CellestialSphere::load(cc.storage, &mut theme).unwrap();
-        cellestial_sphere.init();
-        let game_handler = GameHandler::init(&mut cellestial_sphere, question_objects, cc.storage, first_application_launch);
+        let mut cellestial_sphere = CellestialSphere::load(cc.storage);
+        let (mut sky, question_objects) = sky::Sky::load(&mut theme, &mut cellestial_sphere.sky_settings).unwrap();
+        cellestial_sphere.init(&mut sky);
+
+        let game_handler = GameHandler::init(&sky, question_objects, cc.storage, first_application_launch);
         if game_handler.question_packs.contains_key(&game_handler.active_question_pack) {
             state.windows.settings.game_settings.question_pack_new_name = game_handler.active_question_pack.clone();
         }
@@ -155,6 +158,7 @@ impl Application {
 
             game_handler,
             cellestial_sphere,
+            sky,
             frames_handler: FramesHandler::default(),
 
             graphics_settings,
@@ -211,6 +215,7 @@ impl eframe::App for Application {
         if self.game_handler.switch_to_next_part {
             let data = game_handler::QuestionCheckingData {
                 cellestial_sphere: &mut self.cellestial_sphere,
+                sky: &mut self.sky,
                 theme: &self.theme,
                 game_stage: &mut self.game_handler.stage,
                 score: &mut self.game_handler.score,
@@ -228,7 +233,7 @@ impl eframe::App for Application {
             self.game_handler.switch_to_next_part = false;
         }
         if self.game_handler.switch_to_next_question {
-            self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
+            self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme);
             self.game_handler.switch_to_next_question = false;
         }
 

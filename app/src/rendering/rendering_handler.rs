@@ -7,7 +7,7 @@ impl Application {
         if viewport_rect != self.cellestial_sphere.viewport_rect {
             log::debug!("Viewport rect changed: {:?} -> {:?}", self.cellestial_sphere.viewport_rect, viewport_rect);
             self.cellestial_sphere.viewport_rect = viewport_rect;
-            self.cellestial_sphere.init_renderers();
+            self.cellestial_sphere.init_renderers(&self.sky);
         }
         initial_setup::render_initial_setup(self, ctx, viewport_rect);
 

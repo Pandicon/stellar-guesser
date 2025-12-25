@@ -87,23 +87,23 @@ fn render_left_controls(app: &mut crate::application::Application, ui: &mut egui
         app.frames_handler.get_no_of_analysed_frames(),
         if app.frames_handler.get_no_of_analysed_frames() != 1 { "s" } else { "" }
     ));
-    let prev_light_pollution: LightPollution = app.cellestial_sphere.light_pollution_place;
+    let prev_light_pollution: LightPollution = app.sky.light_pollution_place;
     ui.horizontal(|ui| {
         ui.label("Light pollution level: ")
             .on_hover_text("These settings are made to reflect how the sky looks in different locations for a person with an average eyesight.");
         egui::ComboBox::from_id_salt("Light pollution level: ")
-            .selected_text(format!("{}", app.cellestial_sphere.light_pollution_place))
+            .selected_text(format!("{}", app.sky.light_pollution_place))
             .show_ui(ui, |ui| {
                 ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
                 for val in LightPollution::variants() {
-                    ui.selectable_value(&mut app.cellestial_sphere.light_pollution_place, val, format!("{val}"))
+                    ui.selectable_value(&mut app.sky.light_pollution_place, val, format!("{val}"))
                         .on_hover_text(LightPollution::explanation(&val));
                 }
             });
     });
-    if prev_light_pollution != app.cellestial_sphere.light_pollution_place {
-        let settings = app.cellestial_sphere.light_pollution_place_to_mag_settings(&app.cellestial_sphere.light_pollution_place);
+    if prev_light_pollution != app.sky.light_pollution_place {
+        let settings = app.sky.light_pollution_place_to_mag_settings(&app.sky.light_pollution_place, &app.cellestial_sphere.sky_settings);
         app.cellestial_sphere.sky_settings.mag_to_radius_settings[app.cellestial_sphere.sky_settings.mag_to_radius_id] = settings;
-        app.cellestial_sphere.reinit_renderer_category(crate::enums::RendererCategory::Stars);
+        app.cellestial_sphere.reinit_renderer_category(&app.sky, crate::enums::RendererCategory::Stars);
     }
 }

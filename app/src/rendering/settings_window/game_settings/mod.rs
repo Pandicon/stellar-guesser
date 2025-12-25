@@ -36,7 +36,7 @@ impl Application {
             }
             GameSettingsSubWindow::Constellations => {
                 let mut abbrev_to_name = std::collections::HashMap::new();
-                for constellation in self.cellestial_sphere.constellations.values() {
+                for constellation in self.sky.constellations.values() {
                     abbrev_to_name.insert(constellation.abbreviation.clone(), constellation.possible_names[1].clone());
                 }
                 sg_game_constellations::ui::render_constellations_settings_subwindow(
@@ -50,8 +50,8 @@ impl Application {
         };
         if tolerance_changed && self.game_handler.show_tolerance_marker() {
             let markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions, &self.theme);
-            self.cellestial_sphere.game_markers.markers = markers;
-            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, "game");
+            self.sky.game_markers.markers = markers;
+            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, "game");
         }
     }
 }

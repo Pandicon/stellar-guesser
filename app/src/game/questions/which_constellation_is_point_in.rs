@@ -3,6 +3,7 @@ use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
+use crate::sky;
 use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
 use eframe::egui;
@@ -61,6 +62,7 @@ impl Question {
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {
                     cellestial_sphere: data.cellestial_sphere,
+                    sky: data.sky,
                     theme: data.theme,
                     game_stage: data.game_stage,
                     score: data.score,
@@ -93,10 +95,10 @@ impl Question {
     }
 
     fn check_answer(&mut self, data: QuestionCheckingData) {
-        let possible_abbrevs = data.cellestial_sphere.determine_constellation((self.ra.to_rad(), self.dec.to_rad()));
+        let possible_abbrevs = data.sky.determine_constellation((self.ra.to_rad(), self.dec.to_rad()));
         let mut possible_constellation_names = Vec::new();
         for abbrev in possible_abbrevs {
-            if let Some(constellation) = data.cellestial_sphere.constellations.get(&abbrev) {
+            if let Some(constellation) = data.sky.constellations.get(&abbrev) {
                 possible_constellation_names.extend(constellation.possible_names.iter().map(|name| name.replace(' ', "").to_lowercase()));
             };
         }
@@ -175,9 +177,9 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, theme: &Theme) {
         self.state = Default::default();
-        cellestial_sphere.game_markers.markers = vec![game_markers::GameMarker::new(
+        sky.game_markers.markers = vec![game_markers::GameMarker::new(
             game_markers::GameMarkerType::Task,
             self.ra,
             self.dec,
@@ -190,7 +192,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             cellestial_sphere.look_at_point(&final_vector);
-            cellestial_sphere.init_renderers();
+            cellestial_sphere.init_renderers(&sky);
         }
     }
 

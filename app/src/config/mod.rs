@@ -20,6 +20,12 @@ pub const LOGGING_FILTER_LEVEL: log::LevelFilter = log::LevelFilter::Warn;
 pub const ANDROID_PACKAGE_NAME: &str = "com.github.noreply.users.stellar_guesser";
 pub const DESKTOP_PACKAGE_NAME: &str = "stellar_guesser";
 
+pub const SKY_OBJECTS_FOLDER: &str = "./data/sphere/sky-objects";
+pub const LINES_FOLDER: &str = "./data/sphere/lines";
+pub const MARKERS_FOLDER: &str = "./data/sphere/markers";
+pub const STAR_NAMES_FOLDER: &str = "./data/sphere/named-stars";
+pub const CONSTELLATION_NAMES: &str = "./data/constellations.csv";
+
 #[derive(serde::Deserialize)]
 pub struct Config {
     pub content_server_url: String,
