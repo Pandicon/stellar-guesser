@@ -17,6 +17,7 @@ pub mod graphics;
 pub mod input;
 pub mod rendering;
 pub mod server_communication;
+pub mod sky;
 pub mod structs;
 
 pub const MINIMUM_CIRCLE_RADIUS_TO_RENDER: f32 = 0.5;

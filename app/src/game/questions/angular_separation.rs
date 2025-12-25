@@ -1,8 +1,8 @@
 use crate::enums::GameStage;
 use crate::game::game_handler::{self, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
+use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
 use eframe::egui;
 
@@ -188,8 +188,8 @@ impl crate::game::game_handler::QuestionTrait for Question {
         let (ra1, dec1) = self.point1;
         let (ra2, dec2) = self.point2;
         cellestial_sphere.game_markers.markers = vec![
-            GameMarker::new(GameMarkerType::Task, ra1, dec1, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
-            GameMarker::new(GameMarkerType::Task, ra2, dec2, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
+            game_markers::GameMarker::new(game_markers::GameMarkerType::Task, ra1, dec1, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
+            game_markers::GameMarker::new(game_markers::GameMarkerType::Task, ra2, dec2, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
         ];
         if self.small_settings.rotate_to_midpoint {
             let end_1 = sg_geometry::get_point_vector(ra1, dec1, &nalgebra::Matrix3::<f32>::identity());

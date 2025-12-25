@@ -1,9 +1,9 @@
 use crate::enums::{GameStage, RendererCategory};
 use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
+use crate::sky::markers::game_markers;
 use angle::Deg;
 use eframe::egui;
 use rand::Rng;
@@ -180,8 +180,8 @@ impl Question {
             self.possible_names.join(", "),
             self.object_type
         );
-        data.cellestial_sphere.game_markers.markers.push(GameMarker::new(
-            GameMarkerType::CorrectAnswer,
+        data.cellestial_sphere.game_markers.markers.push(game_markers::GameMarker::new(
+            game_markers::GameMarkerType::CorrectAnswer,
             self.ra,
             self.dec,
             2.0,

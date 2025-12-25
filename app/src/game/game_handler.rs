@@ -2,13 +2,8 @@ use super::{game_settings, questions};
 use crate::{
     enums::{self, GameStage, RendererCategory, StorageKeys},
     game::QuestionObject,
-    rendering::{
-        caspr::{
-            markers::game_markers::{GameMarker, GameMarkerType},
-            renderer::CellestialSphere,
-        },
-        themes::Theme,
-    },
+    rendering::{caspr::renderer::CellestialSphere, themes::Theme},
+    sky,
 };
 use angle::Angle;
 use eframe::egui;
@@ -449,11 +444,11 @@ impl GameHandler {
         self.question_catalog[self.current_question].allow_multiple_player_markers()
     }
 
-    pub fn generate_player_markers(&self, marker_positions: &Vec<[angle::Rad<f32>; 2]>, theme: &Theme) -> Vec<GameMarker> {
+    pub fn generate_player_markers(&self, marker_positions: &Vec<[angle::Rad<f32>; 2]>, theme: &Theme) -> Vec<sky::markers::game_markers::GameMarker> {
         let mut markers = Vec::new();
         for &[dec, ra] in marker_positions {
-            markers.push(GameMarker::new(
-                GameMarkerType::Exact,
+            markers.push(sky::markers::game_markers::GameMarker::new(
+                sky::markers::game_markers::GameMarkerType::Exact,
                 ra.to_deg(),
                 dec.to_deg(),
                 2.0,
@@ -463,8 +458,8 @@ impl GameHandler {
                 &theme.game_visuals.game_markers_colours,
             ));
             if self.show_tolerance_marker() {
-                markers.push(GameMarker::new(
-                    GameMarkerType::Tolerance,
+                markers.push(sky::markers::game_markers::GameMarker::new(
+                    sky::markers::game_markers::GameMarkerType::Tolerance,
                     ra.to_deg(),
                     dec.to_deg(),
                     2.0,

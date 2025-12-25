@@ -1,7 +1,8 @@
 use crate::{
     enums::{LightPollution, RendererCategory, StorageKeys},
     game::{QuestionObject, QuestionObjectRaw},
-    rendering::themes::Theme,
+    rendering::{caspr, themes::Theme},
+    sky,
 };
 use angle::Angle;
 use eframe::egui::{self, Align2, FontFamily, FontId};
@@ -17,68 +18,60 @@ const STAR_NAMES_FOLDER: &str = "./data/sphere/named-stars";
 const CONSTELLATION_NAMES: &str = "./data/constellations.csv";
 const ZOOM_CAP: f32 = 100.0;
 
-pub const MAG_TO_LIGHT_POLLUTION_RAW: [(LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]); 4] = [
-    (LightPollution::Default, [Some(stars::MagnitudeToRadius::defaults()[0]), Some(stars::MagnitudeToRadius::defaults()[1])]),
+pub const MAG_TO_LIGHT_POLLUTION_RAW: [(LightPollution, [Option<sky::star::MagnitudeToRadius>; sky::star::MAGNITUDE_TO_RADIUS_OPTIONS]); 4] = [
+    (
+        LightPollution::Default,
+        [Some(sky::star::MagnitudeToRadius::defaults()[0]), Some(sky::star::MagnitudeToRadius::defaults()[1])],
+    ),
     (
         LightPollution::PragueDark,
         [
-            Some(stars::MagnitudeToRadius::Linear { mag_scale: 1.0, mag_offset: 4.3 }),
-            Some(stars::MagnitudeToRadius::Exponential { r_0: 2.3, n: 3.5, o: 0.21 }),
+            Some(sky::star::MagnitudeToRadius::Linear { mag_scale: 1.0, mag_offset: 4.3 }),
+            Some(sky::star::MagnitudeToRadius::Exponential { r_0: 2.3, n: 3.5, o: 0.21 }),
         ],
     ),
     (
         LightPollution::Prague,
         [
-            Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.75, mag_offset: 3.75 }),
-            Some(stars::MagnitudeToRadius::Exponential { r_0: 1.4, n: 3.5, o: 0.21 }),
+            Some(sky::star::MagnitudeToRadius::Linear { mag_scale: 0.75, mag_offset: 3.75 }),
+            Some(sky::star::MagnitudeToRadius::Exponential { r_0: 1.4, n: 3.5, o: 0.21 }),
         ],
     ),
     (
         LightPollution::AverageVillage,
         [
-            Some(stars::MagnitudeToRadius::Linear { mag_scale: 0.7, mag_offset: 5.7 }),
-            Some(stars::MagnitudeToRadius::Exponential { r_0: 2.6, n: 3.0, o: 0.17 }),
+            Some(sky::star::MagnitudeToRadius::Linear { mag_scale: 0.7, mag_offset: 5.7 }),
+            Some(sky::star::MagnitudeToRadius::Exponential { r_0: 2.6, n: 3.0, o: 0.17 }),
         ],
     ),
 ];
 
 // use geometry::{cast_onto_sphere, project_point};
 
-use super::markers::{Marker, MarkerRaw, MarkerRenderer, Markers};
+use super::deepsky;
 use super::sky_settings;
-use super::star_names::{StarName, StarNameRaw};
-use super::stars::{Star, StarRaw, StarRenderer};
-use super::{
-    deepsky::{Deepskies, Deepsky, DeepskyRaw, DeepskyRenderer},
-    markers::game_markers::GameMarkers,
-};
-use super::{
-    lines::{LineRenderer, SkyLine, SkyLineRaw, SkyLines},
-    stars,
-};
-
-use super::constellation::{Constellation, ConstellationRaw};
+use super::stars::StarRenderer;
 
 pub struct CellestialSphere {
     pub sky_settings: sky_settings::SkySettings,
 
-    pub stars: HashMap<String, Vec<Star>>,
-    pub lines: HashMap<String, SkyLines>,
-    pub deepskies: HashMap<String, Deepskies>,
-    pub markers: HashMap<String, Markers>,
-    pub game_markers: GameMarkers,
-    pub star_names: HashMap<String, Vec<StarName>>,
-    pub constellations: HashMap<String, Constellation>,
+    pub stars: HashMap<String, Vec<sky::star::Star>>,
+    pub lines: HashMap<String, sky::lines::SkyLines>,
+    pub deepskies: HashMap<String, sky::deepsky::Deepskies>,
+    pub markers: HashMap<String, sky::markers::Markers>,
+    pub game_markers: sky::markers::game_markers::GameMarkers,
+    pub star_names: HashMap<String, Vec<sky::star_names::StarName>>,
+    pub constellations: HashMap<String, sky::constellation::Constellation>,
     pub zoom: f32,
     pub fov: f32,
     pub camera_z: f32,
     star_renderers: HashMap<String, Vec<StarRenderer>>,
-    line_renderers: HashMap<String, Vec<LineRenderer>>,
-    deepsky_renderers: HashMap<String, Vec<DeepskyRenderer>>,
-    marker_renderers: HashMap<String, Vec<MarkerRenderer>>,
+    line_renderers: HashMap<String, Vec<caspr::lines::LineRenderer>>,
+    deepsky_renderers: HashMap<String, Vec<deepsky::DeepskyRenderer>>,
+    marker_renderers: HashMap<String, Vec<caspr::markers::MarkerRenderer>>,
 
     pub light_pollution_place: LightPollution,
-    pub light_pollution_place_to_mag: HashMap<LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]>,
+    pub light_pollution_place_to_mag: HashMap<LightPollution, [Option<sky::star::MagnitudeToRadius>; sky::star::MAGNITUDE_TO_RADIUS_OPTIONS]>,
 
     pub viewport_rect: egui::Rect,
 
@@ -307,16 +300,16 @@ impl CellestialSphere {
         }
 
         let star_color = egui::epaint::Color32::WHITE;
-        let mut catalog: HashMap<String, Vec<Star>> = HashMap::new();
+        let mut catalog: HashMap<String, Vec<sky::star::Star>> = HashMap::new();
 
-        let mut lines: HashMap<String, SkyLines> = HashMap::new();
+        let mut lines: HashMap<String, sky::lines::SkyLines> = HashMap::new();
 
-        let mut deepskies: HashMap<String, Deepskies> = HashMap::new();
+        let mut deepskies: HashMap<String, sky::deepsky::Deepskies> = HashMap::new();
         let objects_images = object_images.unwrap_or(std::collections::HashMap::new());
 
-        let mut star_names: HashMap<String, Vec<StarName>> = HashMap::new();
+        let mut star_names: HashMap<String, Vec<sky::star_names::StarName>> = HashMap::new();
 
-        let mut markers: HashMap<String, Markers> = HashMap::new();
+        let mut markers: HashMap<String, sky::markers::Markers> = HashMap::new();
 
         let mut question_objects = Vec::new();
 
@@ -327,8 +320,8 @@ impl CellestialSphere {
                     let mut line_colour = None;
                     let mut lines_vec = Vec::new();
                     for line_raw in reader.deserialize() {
-                        let line_raw: SkyLineRaw = line_raw?;
-                        let (line, colour) = SkyLine::from_raw(line_raw);
+                        let line_raw: sky::lines::SkyLineRaw = line_raw?;
+                        let (line, colour) = sky::lines::SkyLine::from_raw(line_raw);
                         if line_colour.is_none() {
                             line_colour = colour;
                         }
@@ -343,7 +336,7 @@ impl CellestialSphere {
                         .unwrap_or(line_colour.unwrap_or(theme.game_visuals.default_colour));
                     lines.insert(
                         file_name.clone(),
-                        SkyLines {
+                        sky::lines::SkyLines {
                             colour: line_colour,
                             active: *sky_settings.lines_categories_active.get(&file_name).unwrap_or(&true),
                             lines: lines_vec,
@@ -394,7 +387,7 @@ impl CellestialSphere {
                                     log::error!("No magnitude found for star with object id {}", object.object_id);
                                     continue;
                                 }
-                                let star_raw = StarRaw {
+                                let star_raw = sky::star::StarRaw {
                                     object_id: object.object_id,
                                     ra: object.ra,
                                     dec: object.dec,
@@ -404,7 +397,7 @@ impl CellestialSphere {
                                     bv: object.bv,
                                     constellations,
                                 };
-                                let star = Star::from_raw(star_raw, star_color, override_star_colour);
+                                let star = sky::star::Star::from_raw(star_raw, star_color, override_star_colour);
                                 let entry = catalog.entry(file_name.clone()).or_default();
                                 entry.push(star);
                                 if !sky_settings.stars_categories_active.contains_key(&file_name) {
@@ -412,7 +405,7 @@ impl CellestialSphere {
                                 }
                             }
                             crate::game::ObjectType::Deepsky(inner) => {
-                                let deepsky_raw = DeepskyRaw {
+                                let deepsky_raw = sky::deepsky::DeepskyRaw {
                                     object_id: object.object_id,
                                     names: Some(names),
                                     messier: object.messier_number,
@@ -427,7 +420,7 @@ impl CellestialSphere {
                                     distance: object.distance.unwrap_or(-1.0),
                                     colour: object.colour.clone(),
                                 };
-                                let (deepsky, colour) = Deepsky::from_raw(deepsky_raw, object.images.clone());
+                                let (deepsky, colour) = sky::deepsky::Deepsky::from_raw(deepsky_raw, object.images.clone());
                                 if deepskies_colour.is_none() {
                                     deepskies_colour = colour;
                                 }
@@ -445,7 +438,7 @@ impl CellestialSphere {
                         .unwrap_or(deepskies_colour.unwrap_or(theme.game_visuals.default_colour));
                     deepskies.insert(
                         file_name.clone(),
-                        Deepskies {
+                        sky::deepsky::Deepskies {
                             colour: deepskies_colour,
                             active: *sky_settings.deepskies_categories_active.get(&file_name).unwrap_or(&true),
                             deepskies: deepskies_vec,
@@ -463,8 +456,8 @@ impl CellestialSphere {
                 for (file_name, file_contents) in data {
                     let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.get_contents());
                     for star_name_raw in reader.deserialize() {
-                        let star_name_raw: StarNameRaw = star_name_raw?;
-                        let star_name = StarName::from_raw(star_name_raw);
+                        let star_name_raw: sky::star_names::StarNameRaw = star_name_raw?;
+                        let star_name = sky::star_names::StarName::from_raw(star_name_raw);
                         match star_name {
                             Some(star_name) => {
                                 let entry = star_names.entry(file_name.clone()).or_default();
@@ -483,8 +476,8 @@ impl CellestialSphere {
                     let mut markers_colour = None;
                     let mut markers_vec = Vec::new();
                     for marker_raw in reader.deserialize() {
-                        let marker_raw: MarkerRaw = marker_raw?;
-                        let (marker, colour) = Marker::from_raw(marker_raw);
+                        let marker_raw: sky::markers::MarkerRaw = marker_raw?;
+                        let (marker, colour) = sky::markers::Marker::from_raw(marker_raw);
                         if markers_colour.is_none() {
                             markers_colour = colour;
                         }
@@ -499,7 +492,7 @@ impl CellestialSphere {
                         .unwrap_or(markers_colour.unwrap_or(theme.game_visuals.default_colour));
                     markers.insert(
                         file_name.clone(),
-                        Markers {
+                        sky::markers::Markers {
                             colour: marker_colour,
                             active: *sky_settings.markers_categories_active.get(&file_name).unwrap_or(&true),
                             markers: markers_vec,
@@ -520,14 +513,14 @@ impl CellestialSphere {
             let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(file_contents.get_contents());
             if id == "constellation names" {
                 for constellation_raw in reader.deserialize() {
-                    let constellation_raw: ConstellationRaw = constellation_raw?;
-                    let (constellation, abbreviation) = Constellation::from_raw(constellation_raw)?;
+                    let constellation_raw: sky::constellation::ConstellationRaw = constellation_raw?;
+                    let (constellation, abbreviation) = sky::constellation::Constellation::from_raw(constellation_raw)?;
                     constellations.insert(abbreviation.to_lowercase(), constellation);
                 }
             }
         }
 
-        let mut light_pollution_place_to_mag: HashMap<LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]> =
+        let mut light_pollution_place_to_mag: HashMap<LightPollution, [Option<sky::star::MagnitudeToRadius>; sky::star::MAGNITUDE_TO_RADIUS_OPTIONS]> =
             HashMap::with_capacity(MAG_TO_LIGHT_POLLUTION_RAW.len());
         for &(place, settings) in &MAG_TO_LIGHT_POLLUTION_RAW {
             light_pollution_place_to_mag.insert(place, settings);
@@ -545,7 +538,7 @@ impl CellestialSphere {
                 lines,
                 deepskies,
                 markers,
-                game_markers: GameMarkers { active: true, markers: Vec::new() },
+                game_markers: sky::markers::game_markers::GameMarkers { active: true, markers: Vec::new() },
                 star_names,
                 constellations,
                 zoom,
@@ -960,8 +953,8 @@ impl CellestialSphere {
     }
 
     pub fn mag_settings_to_light_pollution_place(
-        radius_settings: stars::MagnitudeToRadius,
-        light_pollution_place_to_mag: &HashMap<LightPollution, [Option<stars::MagnitudeToRadius>; stars::MAGNITUDE_TO_RADIUS_OPTIONS]>,
+        radius_settings: sky::star::MagnitudeToRadius,
+        light_pollution_place_to_mag: &HashMap<LightPollution, [Option<sky::star::MagnitudeToRadius>; sky::star::MAGNITUDE_TO_RADIUS_OPTIONS]>,
     ) -> LightPollution {
         for (&place, &settings) in light_pollution_place_to_mag {
             for setting in settings.into_iter().flatten() {
@@ -973,7 +966,7 @@ impl CellestialSphere {
         LightPollution::NoSpecific
     }
 
-    pub fn light_pollution_place_to_mag_settings(&self, place: &LightPollution) -> stars::MagnitudeToRadius {
+    pub fn light_pollution_place_to_mag_settings(&self, place: &LightPollution) -> sky::star::MagnitudeToRadius {
         if let Some(settings) = self.light_pollution_place_to_mag.get(place) {
             if let Some(setting) = settings[self.sky_settings.mag_to_radius_id] {
                 return setting;

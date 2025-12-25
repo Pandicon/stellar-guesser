@@ -1,9 +1,9 @@
 use crate::enums::GameStage;
 use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
+use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
 use eframe::egui;
 
@@ -177,8 +177,8 @@ impl crate::game::game_handler::QuestionTrait for Question {
 
     fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
         self.state = Default::default();
-        cellestial_sphere.game_markers.markers = vec![GameMarker::new(
-            GameMarkerType::Task,
+        cellestial_sphere.game_markers.markers = vec![game_markers::GameMarker::new(
+            game_markers::GameMarkerType::Task,
             self.ra,
             self.dec,
             2.0,

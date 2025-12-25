@@ -1,9 +1,9 @@
 use crate::enums::{GameStage, RendererCategory};
 use crate::game::game_handler;
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
 use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
+use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
 use eframe::egui;
 use rand::Rng;
@@ -175,8 +175,8 @@ impl Question {
             if self.is_bayer || self.is_starname { "circle" } else { "cross" },
             self.object_type
         );
-        markers.push(GameMarker::new(
-            GameMarkerType::CorrectAnswer,
+        markers.push(game_markers::GameMarker::new(
+            game_markers::GameMarkerType::CorrectAnswer,
             self.ra,
             self.dec,
             2.0,

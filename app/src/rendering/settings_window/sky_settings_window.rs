@@ -5,7 +5,7 @@ use eframe::egui;
 use crate::{
     enums::{LightPollution, RendererCategory},
     rendering::caspr::renderer::CellestialSphere,
-    rendering::caspr::{markers::game_markers::GameMarker, stars},
+    sky,
     structs::state::windows::settings::SkySettingsSubWindow,
     Application,
 };
@@ -177,7 +177,7 @@ impl Application {
         }
 
         match &mut self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id] {
-            stars::MagnitudeToRadius::Linear { mag_scale, mag_offset } => {
+            sky::star::MagnitudeToRadius::Linear { mag_scale, mag_offset } => {
                 let prev_mag_offset = *mag_offset;
                 let prev_mag_scale = *mag_scale;
                 ui.horizontal_wrapped(|ui| ui.label("The following two values affect the size of the stars via the following formula: radius = mag_scale * (mag_offset - magnitude)"));
@@ -197,7 +197,7 @@ impl Application {
                     reinit_stars = true;
                 }
             }
-            stars::MagnitudeToRadius::Exponential { r_0, n, o } => {
+            sky::star::MagnitudeToRadius::Exponential { r_0, n, o } => {
                 let prev_r0 = *r_0;
                 let prev_n = *n;
                 let prev_o = *o;
@@ -337,7 +337,7 @@ impl Application {
         });
         if game_markers_changed {
             for marker in self.cellestial_sphere.game_markers.markers.iter_mut() {
-                marker.colour = GameMarker::get_colour(marker.marker_type, &self.theme.game_visuals.game_markers_colours);
+                marker.colour = sky::markers::game_markers::GameMarker::get_colour(marker.marker_type, &self.theme.game_visuals.game_markers_colours);
             }
             self.cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, "game");
         }
