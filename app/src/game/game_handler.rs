@@ -1,11 +1,9 @@
 use super::{game_settings, questions};
 use crate::{
     enums::{self, GameStage, RendererCategory, StorageKeys},
-    renderer::CellestialSphere,
-    rendering::{
-        caspr::markers::game_markers::{GameMarker, GameMarkerType},
-        themes::Theme,
-    },
+    game::QuestionObject,
+    rendering::{caspr::renderer::CellestialSphere, themes::Theme},
+    sky,
 };
 use angle::Angle;
 use eframe::egui;
@@ -19,6 +17,7 @@ pub const QUESTION_PACK_QUESTIONS_PARTS_DIV: &str = "&|&";
 
 pub struct QuestionWindowData<'a> {
     pub cellestial_sphere: &'a mut CellestialSphere,
+    pub sky: &'a mut sky::Sky,
     pub theme: &'a Theme,
     pub game_question_opened: &'a mut bool,
     pub request_input_focus: &'a mut bool,
@@ -39,6 +38,7 @@ pub struct QuestionWindowData<'a> {
 
 pub struct QuestionCheckingData<'a> {
     pub cellestial_sphere: &'a mut CellestialSphere,
+    pub sky: &'a mut sky::Sky,
     pub theme: &'a Theme,
     pub game_stage: &'a mut GameStage,
     pub score: &'a mut u32,
@@ -77,7 +77,7 @@ pub trait QuestionTrait {
 
     fn should_display_input(&self) -> bool;
 
-    fn start_question(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
+    fn start_question(&mut self, cellestial_sphere: &mut crate::rendering::caspr::renderer::CellestialSphere, sky: &mut sky::Sky, theme: &Theme);
 
     fn render_display_question(&self, ui: &mut egui::Ui);
 
@@ -152,6 +152,7 @@ pub struct GameHandler {
     pub current_question: usize,
     pub question_catalog: Vec<Box<dyn QuestionTrait>>,
     pub used_questions: Vec<usize>,
+    pub question_objects: Vec<QuestionObject>,
 
     pub add_marker_on_click: bool,
     pub stage: enums::GameStage,
@@ -199,9 +200,13 @@ impl GameHandler {
         self.question_catalog[self.question_number].render_window(data)
     }
 
-    pub fn init(cellestial_sphere: &mut CellestialSphere, storage: Option<&dyn eframe::Storage>, first_launch: bool) -> Self {
+    pub fn init(sky: &sky::Sky, question_objects: Vec<QuestionObject>, storage: Option<&dyn eframe::Storage>, first_launch: bool) -> Self {
+        let mut question_objects = question_objects;
+        question_objects.sort_by_key(|k| k.object_id);
+        let question_objects = question_objects;
+
         let mut active_constellations = HashMap::new();
-        for constellation_abbreviation in cellestial_sphere.constellations.keys() {
+        for constellation_abbreviation in sky.constellations.keys() {
             active_constellations.insert(constellation_abbreviation.to_owned(), true);
         }
         if let Some(storage) = storage {
@@ -228,9 +233,12 @@ impl GameHandler {
                 }
             }
         }
-        let question_packs_files = crate::files::load_all_files_folder(crate::public_constants::QUESTION_PACKS_FOLDER);
+        let question_packs_files = crate::files_handling::read_dir_relative(crate::config::QUESTION_PACKS_FOLDER).unwrap_or_else(|err| {
+            log::error!("Failed to read the themes directory: {err:?}");
+            Vec::new()
+        });
         for file in question_packs_files {
-            question_pack_strs.push((file.path, file.content));
+            question_pack_strs.push((Some(file.get_path().to_owned()), file.contents_as_string_or_empty()));
         }
         for (file_path, question_pack_str) in question_pack_strs {
             let spl = question_pack_str.split(QUESTION_PACK_PARTS_DIV).collect::<Vec<&str>>();
@@ -277,7 +285,7 @@ impl GameHandler {
             );
         }
         let catalog = if let Some(question_pack) = question_packs.get(&active_question_pack) {
-            cellestial_sphere.generate_questions(&question_pack.question_objects)
+            Self::generate_questions_inner(&question_objects, &question_pack.question_objects)
         } else {
             Vec::new()
         };
@@ -307,12 +315,13 @@ impl GameHandler {
             }
         }
         let constellation_groups_settings =
-            sg_game_constellations::GameConstellations::load_from_storage(storage, &cellestial_sphere.constellations.values().map(|con| con.abbreviation.clone()).collect::<Vec<String>>());
+            sg_game_constellations::GameConstellations::load_from_storage(storage, &sky.constellations.values().map(|con| con.abbreviation.clone()).collect::<Vec<String>>());
 
         Self {
             current_question: 0,
             possible_no_of_questions: catalog.len() as u32,
             question_catalog: catalog,
+            question_objects,
             used_questions: Vec::new(),
             add_marker_on_click: false,
             stage: GameStage::NotStartedYet,
@@ -336,6 +345,31 @@ impl GameHandler {
             question_packs,
         }
     }
+
+    pub fn evaluate_questions_query(
+        &self,
+        query: &[(Option<crate::game::questions_filter::parser::Keyword>, crate::game::questions::QuestionType)],
+    ) -> Vec<(crate::game::questions::QuestionType, Vec<u64>)> {
+        let mut result = Vec::new();
+        for (query, question) in query {
+            let mut objects = Vec::new();
+            if let Some(query) = query {
+                for object in &self.question_objects {
+                    if crate::game::questions_filter::check(query, object) {
+                        objects.push(object.object_id);
+                    }
+                }
+                result.push((question.clone(), objects));
+            } else {
+                for object in &self.question_objects {
+                    objects.push(object.object_id);
+                }
+                result.push((question.clone(), objects));
+            }
+        }
+        result
+    }
+
     pub fn evaluate_score(distance: angle::Deg<f32>) -> u32 {
         if distance < angle::Deg(0.2) {
             3
@@ -348,7 +382,7 @@ impl GameHandler {
         }
     }
 
-    pub fn next_question(&mut self, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme) {
+    pub fn next_question(&mut self, cellestial_sphere: &mut crate::rendering::caspr::renderer::CellestialSphere, sky: &mut sky::Sky, theme: &Theme) {
         self.answer = String::new();
         let mut possible_questions: Vec<usize> = Vec::new();
         for question in 0..self.question_catalog.len() {
@@ -370,9 +404,9 @@ impl GameHandler {
             );
 
             self.add_marker_on_click = self.question_catalog[self.current_question].add_marker_on_click();
-            self.question_catalog[self.current_question].start_question(cellestial_sphere, theme);
+            self.question_catalog[self.current_question].start_question(cellestial_sphere, sky, theme);
             self.request_input_focus = true;
-            cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, "game");
+            cellestial_sphere.init_single_renderer_group(sky, RendererCategory::Markers, "game");
             self.stage = GameStage::Guessing;
         }
     }
@@ -385,7 +419,7 @@ impl GameHandler {
         matches!(self.stage, GameStage::NoMoreQuestions | GameStage::ScoredModeFinished)
     }
 
-    pub fn reset_used_questions(&mut self, _cellestial_sphere: &mut CellestialSphere) {
+    pub fn reset_used_questions(&mut self) {
         self.used_questions = Vec::new();
         self.score = 0;
         self.possible_score = 0;
@@ -412,11 +446,11 @@ impl GameHandler {
         self.question_catalog[self.current_question].allow_multiple_player_markers()
     }
 
-    pub fn generate_player_markers(&self, marker_positions: &Vec<[angle::Rad<f32>; 2]>, theme: &Theme) -> Vec<GameMarker> {
+    pub fn generate_player_markers(&self, marker_positions: &Vec<[angle::Rad<f32>; 2]>, theme: &Theme) -> Vec<sky::markers::game_markers::GameMarker> {
         let mut markers = Vec::new();
         for &[dec, ra] in marker_positions {
-            markers.push(GameMarker::new(
-                GameMarkerType::Exact,
+            markers.push(sky::markers::game_markers::GameMarker::new(
+                sky::markers::game_markers::GameMarkerType::Exact,
                 ra.to_deg(),
                 dec.to_deg(),
                 2.0,
@@ -426,8 +460,8 @@ impl GameHandler {
                 &theme.game_visuals.game_markers_colours,
             ));
             if self.show_tolerance_marker() {
-                markers.push(GameMarker::new(
-                    GameMarkerType::Tolerance,
+                markers.push(sky::markers::game_markers::GameMarker::new(
+                    sky::markers::game_markers::GameMarkerType::Tolerance,
                     ra.to_deg(),
                     dec.to_deg(),
                     2.0,
@@ -443,5 +477,65 @@ impl GameHandler {
 
     pub fn get_possible_score(&self) -> u32 {
         self.possible_score
+    }
+
+    pub fn generate_questions(&self, question_pack: &[(crate::game::questions::QuestionType, Vec<u64>)]) -> Vec<Box<dyn QuestionTrait>> {
+        Self::generate_questions_inner(&self.question_objects, question_pack)
+    }
+
+    fn generate_questions_inner(question_objects: &[QuestionObject], question_pack: &[(crate::game::questions::QuestionType, Vec<u64>)]) -> Vec<Box<dyn QuestionTrait>> {
+        use rand::seq::SliceRandom;
+
+        let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::new();
+        for (question_type, object_ids) in question_pack {
+            let mut object_ids = object_ids.clone();
+            object_ids.sort();
+            let mut objects = Vec::new();
+            for object_id in object_ids {
+                if let Ok(i) = question_objects.binary_search_by(|probe| probe.object_id.cmp(&object_id)) {
+                    objects.push(&question_objects[i]);
+                }
+            }
+            objects.shuffle(&mut rand::thread_rng());
+            match *question_type {
+                crate::game::questions::QuestionType::AngularSeparation(small_settings) => {
+                    let mut qs = crate::game::questions::angular_separation::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
+                }
+                crate::game::questions::QuestionType::FindThisObject(small_settings) => {
+                    let mut qs = crate::game::questions::find_this_object::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
+                }
+                crate::game::questions::QuestionType::GuessDec(small_settings) => {
+                    let mut qs = crate::game::questions::guess_ra_dec::generate_dec_questions(&objects, small_settings);
+                    questions.append(&mut qs);
+                }
+                crate::game::questions::QuestionType::GuessRa(small_settings) => {
+                    let mut qs = crate::game::questions::guess_ra_dec::generate_ra_questions(&objects, small_settings);
+                    questions.append(&mut qs);
+                }
+                crate::game::questions::QuestionType::GuessTheMagnitude(small_settings) => {
+                    let mut qs = crate::game::questions::guess_the_magnitude::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
+                }
+                crate::game::questions::QuestionType::MarkMissingObject(small_settings) => {
+                    let mut qs = crate::game::questions::mark_missing_object::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
+                }
+                crate::game::questions::QuestionType::WhatIsThisObject(small_settings) => {
+                    let mut qs = crate::game::questions::which_object_is_here::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
+                }
+                crate::game::questions::QuestionType::WhichConstellationIsThisPointIn(small_settings) => {
+                    let mut qs = crate::game::questions::which_constellation_is_point_in::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
+                }
+                crate::game::questions::QuestionType::WhichObjectIsMissing(small_settings) => {
+                    let mut qs = crate::game::questions::which_object_is_missing::generate_questions(&objects, small_settings);
+                    questions.append(&mut qs);
+                }
+            }
+        }
+        questions
     }
 }

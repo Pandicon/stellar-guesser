@@ -12,7 +12,7 @@ impl Application {
                     .selected_text(self.testing_settings.highlight_stars_in_constellation.to_string())
                     .show_ui(ui, |ui: &mut egui::Ui| {
                         ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                        let mut keys = self.cellestial_sphere.constellations.keys().map(|k| k.to_lowercase()).collect::<Vec<String>>();
+                        let mut keys = self.sky.constellations.keys().map(|k| k.to_lowercase()).collect::<Vec<String>>();
                         keys.sort();
                         for key in keys {
                             ui.selectable_value(&mut self.testing_settings.highlight_stars_in_constellation, key.clone(), &key);
@@ -20,9 +20,9 @@ impl Application {
                     });
             });
             if prev_selected_constellation != self.testing_settings.highlight_stars_in_constellation {
-                match self.cellestial_sphere.constellations.get(&self.testing_settings.highlight_stars_in_constellation) {
+                match self.sky.constellations.get(&self.testing_settings.highlight_stars_in_constellation) {
                     Some(constellation) => {
-                        for category in self.cellestial_sphere.stars.values_mut() {
+                        for category in self.sky.stars.values_mut() {
                             println!("Stars in category: {:?}", category.len());
                             'stars: for star in category {
                                 // println!("{} {}", star.ra, star.dec);
@@ -61,7 +61,7 @@ impl Application {
                     .selected_text(self.testing_settings.highlight_stars_in_constellation_precomputed.to_string())
                     .show_ui(ui, |ui: &mut egui::Ui| {
                         ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                        let mut keys = self.cellestial_sphere.constellations.keys().map(|k| k.to_lowercase()).collect::<Vec<String>>();
+                        let mut keys = self.sky.constellations.keys().map(|k| k.to_lowercase()).collect::<Vec<String>>();
                         keys.sort();
                         for key in keys {
                             ui.selectable_value(&mut self.testing_settings.highlight_stars_in_constellation_precomputed, key.clone(), &key);
@@ -70,7 +70,7 @@ impl Application {
             });
 
             if prev_selected_constellation != self.testing_settings.highlight_stars_in_constellation_precomputed {
-                for category in self.cellestial_sphere.stars.values_mut() {
+                for category in self.sky.stars.values_mut() {
                     println!("Stars in category: {:?}", category.len());
                     for star in category {
                         if star

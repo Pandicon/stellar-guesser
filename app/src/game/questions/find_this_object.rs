@@ -1,9 +1,10 @@
 use crate::enums::{GameStage, RendererCategory};
 use crate::game::game_handler;
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::renderer::CellestialSphere;
-use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
+use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
+use crate::sky;
+use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
 use eframe::egui;
 use rand::Rng;
@@ -116,6 +117,7 @@ impl Question {
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {
                     cellestial_sphere: data.cellestial_sphere,
+                    sky: data.sky,
                     theme: data.theme,
                     game_stage: data.game_stage,
                     score: data.score,
@@ -155,7 +157,7 @@ impl Question {
 
     fn check_answer(&mut self, data: QuestionCheckingData) {
         *data.add_marker_on_click = false;
-        let markers = &mut data.cellestial_sphere.game_markers.markers;
+        let markers = &mut data.sky.game_markers.markers;
         let mut correct = false;
         if !self.images.is_empty() {
             self.state.answer_image = Some(self.images[rand::thread_rng().gen_range(0..self.images.len())].clone());
@@ -192,8 +194,8 @@ impl Question {
             if self.is_bayer || self.is_starname { "circle" } else { "cross" },
             self.object_type
         );
-        markers.push(GameMarker::new(
-            GameMarkerType::CorrectAnswer,
+        markers.push(game_markers::GameMarker::new(
+            game_markers::GameMarkerType::CorrectAnswer,
             self.ra,
             self.dec,
             2.0,
@@ -210,9 +212,9 @@ impl Question {
         if self.small_settings.rotate_to_answer {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             data.cellestial_sphere.look_at_point(&final_vector);
-            data.cellestial_sphere.init_renderers();
+            data.cellestial_sphere.init_renderers(data.sky);
         } else {
-            data.cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, "game");
+            data.cellestial_sphere.init_single_renderer_group(data.sky, RendererCategory::Markers, "game");
         }
         *data.game_stage = GameStage::Checked;
     }
@@ -236,7 +238,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             }
             GameStage::Checked => {
                 *data.start_next_question = true;
-                data.cellestial_sphere.game_markers.markers = Vec::new();
+                data.sky.game_markers.markers = Vec::new();
             }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
@@ -287,9 +289,9 @@ impl crate::game::game_handler::QuestionTrait for Question {
         false
     }
 
-    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
+    fn start_question(&mut self, _cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, _theme: &Theme) {
         self.state = Default::default();
-        cellestial_sphere.game_markers.markers = Vec::new();
+        sky.game_markers.markers = Vec::new();
     }
 
     fn render_display_question(&self, ui: &mut egui::Ui) {
@@ -299,4 +301,94 @@ impl crate::game::game_handler::QuestionTrait for Question {
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(self.clone())
     }
+}
+
+pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
+    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+    for object in objects {
+        let question = Question {
+            small_settings,
+            ra: object.ra,
+            dec: object.dec,
+            state: Default::default(),
+            name: String::new(),
+            is_messier: object.messier_number.is_some(),
+            is_caldwell: object.caldwell_number.is_some(),
+            is_ngc: object.ngc_number.is_some(),
+            is_ic: object.ic_number.is_some(),
+            is_bayer: object.bayer_designation_full.is_some(),
+            is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
+            magnitude: object.mag,
+            object_type: match &object.object_type {
+                crate::game::ObjectType::Star(star_type) => star_type.display_name(),
+                crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
+            },
+            constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
+            images: object.images.clone(),
+        };
+        if small_settings.ask_bayer {
+            if let Some(name_full) = &object.bayer_designation_full {
+                let mut q_2 = question.clone();
+                q_2.name = name_full.clone();
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_flamsteed {
+            if let Some(name_full) = &object.flamsteed_designation_full {
+                let mut q_2 = question.clone();
+                q_2.name = name_full.clone();
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_messier {
+            if let Some(name) = object.messier_number {
+                let mut q_2 = question.clone();
+                q_2.name = format!("M{name}");
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_caldwell {
+            if let Some(name) = object.caldwell_number {
+                let mut q_2 = question.clone();
+                q_2.name = format!("C{name}");
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_ic {
+            if let Some(name) = object.ic_number {
+                let mut q_2 = question.clone();
+                q_2.name = format!("IC{name}");
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_ngc {
+            if let Some(name) = object.ngc_number {
+                let mut q_2 = question.clone();
+                q_2.name = format!("NGC{name}");
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_hd {
+            if let Some(name) = object.hd_number {
+                let mut q_2 = question.clone();
+                q_2.name = format!("HD{name}");
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_hip {
+            if let Some(name) = object.hipparcos_number {
+                let mut q_2 = question.clone();
+                q_2.name = format!("HIP{name}");
+                questions.push(Box::new(q_2));
+            }
+        }
+        if small_settings.ask_proper {
+            for name_full in &object.proper_names_full {
+                let mut q_2 = question.clone();
+                q_2.name = name_full.clone();
+                questions.push(Box::new(q_2));
+            }
+        }
+    }
+    questions
 }

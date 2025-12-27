@@ -1,11 +1,13 @@
 use angle::Angle;
 use noise::{MultiFractal, NoiseFn};
 
+use crate::sky;
+
 // The physical model is as follows:
 // Each layer of clouds absorbs a set fraction of light from each star, so the received flux is F ~ F_0 * exp(-number of layers).
 // However, the change in magnitude is m - m_0 ~ -log(F / F_0) = -log(exp(-number of layers)) = number of layers.
 // So the decrease in magnitude is linear in the thickness of the cloud (roughly).
-pub fn apply_dimming(stars: &mut std::collections::HashMap<String, Vec<super::stars::Star>>, settings: &CloudSettings) {
+pub fn apply_dimming(stars: &mut std::collections::HashMap<String, Vec<sky::star::Star>>, settings: &CloudSettings) {
     let seed = (chrono::Utc::now().timestamp().abs() % (u32::MAX as i64)) as u32;
     let cloud_generator: noise::Billow<noise::SuperSimplex> = noise::Billow::new(seed).set_octaves(settings.iterations);
     let mut generated_decreases = std::collections::HashMap::<[u32; 2], f32>::new();
@@ -42,7 +44,7 @@ pub fn apply_dimming(stars: &mut std::collections::HashMap<String, Vec<super::st
     }
 }
 
-pub fn disable(stars: &mut std::collections::HashMap<String, Vec<super::stars::Star>>) {
+pub fn disable(stars: &mut std::collections::HashMap<String, Vec<sky::star::Star>>) {
     for star_set in stars.values_mut() {
         for star in star_set {
             star.magnitude_offset = 0.0;
