@@ -39,10 +39,10 @@ pub struct Application {
     pub authors: String,
     pub version: structs::version_information::VersionInformation,
 
-    pub last_state_save: std::time::Instant,
-    pub last_state_save_to_disk: std::time::Instant,
-    pub state_save_interval: std::time::Duration,
-    pub state_save_to_disk_interval: std::time::Duration,
+    pub last_state_save: web_time::Instant,
+    pub last_state_save_to_disk: web_time::Instant,
+    pub state_save_interval: web_time::Duration,
+    pub state_save_to_disk_interval: web_time::Duration,
 
     pub screen_width: ScreenWidth,
 
@@ -52,6 +52,7 @@ pub struct Application {
 
     pub testing_mode: bool,
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub onscreen_keyboard: egui_keyboard::Keyboard,
 
     pub initial_setup_stage: initial_setup::InitialSetupStage,
@@ -169,10 +170,10 @@ impl Application {
             authors,
             version: structs::version_information::VersionInformation::only_current(version),
 
-            last_state_save: std::time::Instant::now(),
-            last_state_save_to_disk: std::time::Instant::now(),
-            state_save_interval: std::time::Duration::from_secs(5),
-            state_save_to_disk_interval: std::time::Duration::from_secs(60),
+            last_state_save: web_time::Instant::now(),
+            last_state_save_to_disk: web_time::Instant::now(),
+            state_save_interval: web_time::Duration::from_secs(5),
+            state_save_to_disk_interval: web_time::Duration::from_secs(60),
 
             screen_width: ScreenWidth::from_width(ctx.screen_rect().size().x),
 
@@ -182,6 +183,7 @@ impl Application {
 
             testing_mode,
 
+            #[cfg(not(target_arch = "wasm32"))]
             onscreen_keyboard: egui_keyboard::Keyboard::new(['⬆', '⇧'], '⌫'),
 
             initial_setup_stage,
@@ -201,6 +203,7 @@ impl Application {
 impl eframe::App for Application {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if self.input.settings.display_onscreen_keyboard {
+            #[cfg(not(target_arch = "wasm32"))]
             self.onscreen_keyboard.pump_events(ctx);
         }
         #[cfg(any(target_os = "ios", target_os = "android"))]
@@ -239,6 +242,7 @@ impl eframe::App for Application {
 
         let input_field_has_focus = ctx.wants_keyboard_input();
         if self.input.settings.display_onscreen_keyboard {
+            #[cfg(not(target_arch = "wasm32"))]
             self.onscreen_keyboard.show(ctx);
         } else {
             // Toggle software keyboard

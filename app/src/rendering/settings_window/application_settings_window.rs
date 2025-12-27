@@ -70,6 +70,7 @@ impl Application {
         if ui.button("Export").clicked() {
             match crate::files_handling::get_path_relative(crate::config::THEMES_FOLDER) {
                 Ok(path) => {
+                    log::debug!("Theme save path: {:?}", path);
                     #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
                     let save_path_opt: Option<std::path::PathBuf> = {
                         let dialog = rfd::FileDialog::new().add_filter("Theme", &["json"]).set_directory(path);
@@ -80,6 +81,11 @@ impl Application {
                         let mut save_path_intermediate = path;
                         save_path_intermediate.push(format!("{}--{}.json", &self.theme.name, chrono::Utc::now().timestamp_millis()));
                         Some(save_path_intermediate)
+                    };
+                    #[cfg(target_arch = "wasm32")]
+                    let save_path_opt: Option<std::path::PathBuf> = {
+                        log::info!("Can not export files on web.");
+                        None
                     };
                     match save_path_opt {
                         Some(save_path) => match serde_json::to_string_pretty(&self.theme) {

@@ -386,6 +386,11 @@ impl Application {
                                 save_path_intermediate.push(format!("{}--{}.txt", &name, chrono::Utc::now().timestamp_millis()));
                                 Some(save_path_intermediate)
                             };
+                            #[cfg(target_arch = "wasm32")]
+                            let save_path_opt: Option<std::path::PathBuf> = {
+                                log::info!("Can not export files on web.");
+                                None
+                            };
                             match save_path_opt {
                                 Some(save_path) => {
                                     if let Some(dir) = save_path.parent() {

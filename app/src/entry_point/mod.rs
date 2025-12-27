@@ -6,6 +6,10 @@ pub use android::*;
 mod desktop;
 #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 pub use desktop::*;
+#[cfg(target_arch = "wasm32")]
+mod web;
+#[cfg(target_arch = "wasm32")]
+pub use web::*;
 
 fn generate_authors() -> String {
     let mut authors_split = crate::AUTHORS.split(':').collect::<Vec<&str>>();

@@ -34,10 +34,14 @@ pub const PLATFORM: &str = "android";
 pub const PLATFORM: &str = "windows";
 #[cfg(target_os = "linux")]
 pub const PLATFORM: &str = "linux";
+#[cfg(target_arch = "wasm32")]
+pub const PLATFORM: &str = "web";
 
 #[cfg(target_os = "android")]
 pub const MOBILE: bool = true;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
+pub const MOBILE: bool = false;
+#[cfg(target_arch = "wasm32")]
 pub const MOBILE: bool = false;
 
 pub static CONFIG: once_cell::sync::Lazy<config::Config> = once_cell::sync::Lazy::new(config::get_config);
