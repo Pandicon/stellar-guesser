@@ -61,6 +61,9 @@ pub struct Application {
 impl Application {
     pub fn new(cc: &eframe::CreationContext<'_>, authors: String, version: String) -> Self {
         let ctx = &cc.egui_ctx;
+        ctx.options_mut(|o| {
+            o.theme_preference = egui::ThemePreference::Dark;
+        });
         egui_extras::install_image_loaders(ctx);
 
         let testing_mode = std::env::var("TESTING").unwrap_or_default().to_lowercase() == *"true";
