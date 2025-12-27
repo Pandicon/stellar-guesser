@@ -29,55 +29,37 @@ pub struct Sky {
 
 impl Sky {
     pub fn load(theme: &mut crate::rendering::themes::Theme, sky_rendering_settings: &mut caspr::sky_settings::SkySettings) -> Result<(Self, Vec<crate::game::QuestionObject>), Box<dyn Error>> {
-        let object_images = match crate::files_handling::get_path_relative(crate::config::OBJECT_IMAGES_ADDON_FOLDER) {
-            Ok(images_addon_dir) => {
-                match images_addon_dir.try_exists() {
-                    Ok(false) | Err(_) => {
-                        log::warn!("The images add-on folder ({:?}) was not found", images_addon_dir);
-                        None
-                    }
-                    Ok(true) => {
-                        // The images add-on folder does exist
-                        let mut list_dir = images_addon_dir.clone();
-                        list_dir.push("list.csv");
-                        if let Ok(list_file_content) = std::fs::read_to_string(list_dir) {
-                            let mut objects_images = std::collections::HashMap::new();
-                            #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
-                            let list_file_contents = list_file_content.replace("\"", "\\\"");
-                            let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(list_file_contents.as_bytes());
-                            for object_image_data in reader.deserialize() {
-                                let mut object_image_data: crate::structs::image_info::DeepskyObjectImageInfo = object_image_data?;
-                                let path_raw = &object_image_data.image;
-                                let mut path = images_addon_dir.clone();
-                                path.push("images");
-                                for part in path_raw.split('/') {
-                                    if part == "." {
-                                        continue;
-                                    }
-                                    path.push(part);
-                                }
-                                match path.try_exists() {
-                                    Ok(true) => {
-                                        if let Ok(path) = url::Url::from_file_path(path) {
-                                            object_image_data.image = path.as_str().to_owned();
-                                        }
-                                    }
-                                    Ok(false) | Err(_) => {
-                                        log::warn!("Couldn't find image {} (path checked: {:?})", path_raw, path);
-                                    }
-                                }
+        let list_file_path = format!("{}/./list.csv", crate::config::OBJECT_IMAGES_ADDON_FOLDER);
+        let object_images = match crate::files_handling::read_file_relative(&list_file_path) {
+            Ok(list_file) => {
+                let mut objects_images = std::collections::HashMap::new();
+                let mut reader = csv::ReaderBuilder::new().delimiter(b',').from_reader(list_file.get_contents());
+                for object_image_data in reader.deserialize() {
+                    let mut object_image_data: crate::structs::image_info::DeepskyObjectImageInfo = match object_image_data {
+                        Ok(oid) => oid,
+                        Err(err) => {
+                            log::error!("Could not read object image data: {err}");
+                            continue;
+                        }
+                    };
+                    let image_path = format!("{}/./images/{}", crate::config::OBJECT_IMAGES_ADDON_FOLDER, object_image_data.image);
+                    match crate::files_handling::read_file_relative(&image_path) {
+                        Ok(data) => {
+                            if let Ok(path) = url::Url::from_file_path(data.get_path()) {
+                                object_image_data.image = path.as_str().to_owned();
                                 let entry = objects_images.entry(object_image_data.object_id).or_insert(Vec::new());
                                 entry.push(object_image_data);
                             }
-                            Some(objects_images)
-                        } else {
-                            None
+                        }
+                        Err(err) => {
+                            log::error!("Could not read image at {image_path}: {err}")
                         }
                     }
                 }
+                Some(objects_images)
             }
             Err(err) => {
-                log::error!("Could not locate the images folder: {err:?}");
+                log::error!("Could not find the image list file at {list_file_path}: {err}");
                 None
             }
         };
