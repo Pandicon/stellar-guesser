@@ -241,7 +241,7 @@ impl CellestialSphere {
         if self.sky_settings.cloud_settings.enabled {
             crate::rendering::caspr::clouds::apply_dimming(&mut sky.stars, &self.sky_settings.cloud_settings);
         }
-        self.init_renderers(&sky);
+        self.init_renderers(sky);
     }
 
     /// Preserves disabled renderers - will reinitialise them, but will also keep them disabled

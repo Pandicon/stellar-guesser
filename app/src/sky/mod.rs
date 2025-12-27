@@ -80,13 +80,7 @@ impl Sky {
                 sky_data.push((id, Vec::new()));
                 match files_handling::read_dir_relative(folder) {
                     Ok(files) => {
-                        let mut files_formatted = files
-                            .iter()
-                            .filter_map(|f| match f.get_name().as_ref() {
-                                Some(file_name) => Some((file_name.clone(), f.to_owned())),
-                                None => None,
-                            })
-                            .collect();
+                        let mut files_formatted = files.iter().filter_map(|f| f.get_name().as_ref().map(|file_name| (file_name.clone(), f.to_owned()))).collect();
                         sky_data[i].1.append(&mut files_formatted);
                     }
                     Err(err) => log::error!("Failed to read directory {folder:?}: {err}"),
