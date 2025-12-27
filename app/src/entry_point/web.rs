@@ -14,10 +14,8 @@ fn main() {
     eframe::WebLogger::init(crate::config::LOGGING_FILTER_LEVEL).ok();
 
     let web_options = eframe::WebOptions::default();
-    log::warn!("AAAA");
 
     wasm_bindgen_futures::spawn_local(async {
-        log::warn!("BBBB");
         let document = web_sys::window().expect("No window").document().expect("No document");
 
         let canvas = document
@@ -26,6 +24,7 @@ fn main() {
             .dyn_into::<web_sys::HtmlCanvasElement>()
             .expect("the_canvas_id was not a HtmlCanvasElement");
 
+        log::debug!("Starting application");
         let start_result = eframe::WebRunner::new()
             .start(
                 canvas,
@@ -38,7 +37,7 @@ fn main() {
         if let Some(loading_text) = document.get_element_by_id("loading_text") {
             match start_result {
                 Ok(_) => {
-                    log::warn!("Removing loading text");
+                    log::debug!("Removing loading text");
                     loading_text.remove();
                 }
                 Err(e) => {
