@@ -2,19 +2,14 @@ use eframe::egui;
 
 use crate::Application;
 
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize, Default)]
 pub enum InitialSetupStage {
     Finished,
     Keyboard,
     Community,
     Credits,
+    #[default]
     Introduction,
-}
-
-impl Default for InitialSetupStage {
-    fn default() -> Self {
-        Self::Introduction
-    }
 }
 
 pub fn render_initial_setup(app: &mut Application, ctx: &egui::Context, available_rect: egui::Rect) {
