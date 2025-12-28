@@ -54,7 +54,7 @@ impl Sky {
                                 #[cfg(target_arch = "wasm32")]
                                 {
                                     match data.get_path().to_str() {
-                                        Some(p) => url::Url::parse(p).or_else(|_| Err(())),
+                                        Some(p) => url::Url::parse(p).map_err(|_| ()),
                                         None => Err(()),
                                     }
                                 }

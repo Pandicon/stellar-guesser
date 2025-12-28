@@ -12,7 +12,7 @@ fn read_file_embedded(raw_path: impl Into<std::path::PathBuf>) -> Result<crate::
         match EMBEDDED_DATA.get_file(embedded_key) {
             Some(file) => {
                 let contents = file.contents().to_vec();
-                let name = clean_path.file_name().map(|n| n.to_str()).flatten().map(|c| c.to_owned());
+                let name = clean_path.file_name().and_then(|n| n.to_str()).map(|c| c.to_owned());
                 Ok(super::FileInfo {
                     name,
                     path: clean_path.into(),
