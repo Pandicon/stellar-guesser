@@ -8,7 +8,7 @@ use eframe::egui::{self, Align2, FontFamily, FontId};
 use egui::epaint::Color32;
 use nalgebra::{Rotation3, Vector3};
 use sg_geometry::{intersections, LineSegment, Rectangle};
-use std::{collections::HashMap, f32::consts::PI};
+use std::collections::HashMap;
 
 const ZOOM_CAP: f32 = 100.0;
 
@@ -49,7 +49,7 @@ use super::stars::StarRenderer;
 pub struct CellestialSphere {
     pub sky_settings: sky_settings::SkySettings,
     pub zoom: f32,
-    pub fov: f32,
+    pub fov: angle::Rad<f32>,
     pub camera_z: f32,
     star_renderers: HashMap<String, Vec<StarRenderer>>,
     line_renderers: HashMap<String, Vec<caspr::lines::LineRenderer>>,
@@ -64,7 +64,7 @@ pub struct CellestialSphere {
 impl CellestialSphere {
     //Renders a circle based on its current normal (does NOT account for the rotation of the sphere)
     pub fn render_circle(&self, normal: &Vector3<f32>, radius: f32, color: egui::epaint::Color32, painter: &egui::Painter) {
-        let (projected_point, is_within_bounds) = sg_geometry::project_point(normal, angle::Deg(self.fov).to_rad(), self.viewport_rect);
+        let (projected_point, is_within_bounds) = sg_geometry::project_point(normal, self.fov, self.viewport_rect);
 
         if is_within_bounds {
             painter.circle_filled(projected_point, radius, color);
@@ -72,8 +72,8 @@ impl CellestialSphere {
     }
 
     pub fn render_line(&self, start: &Vector3<f32>, end: &Vector3<f32>, colour: Color32, width: f32, painter: &egui::Painter) {
-        let (start_point, is_start_within_bounds) = sg_geometry::project_point(start, angle::Deg(self.fov).to_rad(), self.viewport_rect);
-        let (end_point, is_end_within_bounds) = sg_geometry::project_point(end, angle::Deg(self.fov).to_rad(), self.viewport_rect);
+        let (start_point, is_start_within_bounds) = sg_geometry::project_point(start, self.fov, self.viewport_rect);
+        let (end_point, is_end_within_bounds) = sg_geometry::project_point(end, self.fov, self.viewport_rect);
 
         let screen_rect = Rectangle::from(self.viewport_rect);
 
@@ -105,12 +105,12 @@ impl CellestialSphere {
         painter: &egui::Painter,
         label: Option<String>,
     ) {
-        let (centre_point, is_centre_within_bounds) = sg_geometry::project_point(centre_vector, angle::Deg(self.fov).to_rad(), self.viewport_rect);
+        let (centre_point, is_centre_within_bounds) = sg_geometry::project_point(centre_vector, self.fov, self.viewport_rect);
         if !is_centre_within_bounds {
             return;
         }
         let size = if let Some(other_point_vec) = other_vector {
-            let (other_point, _) = sg_geometry::project_point(other_point_vec, angle::Deg(self.fov).to_rad(), self.viewport_rect);
+            let (other_point, _) = sg_geometry::project_point(other_point_vec, self.fov, self.viewport_rect);
             let vec_to = other_point - centre_point;
             vec_to.length()
         } else if let Some(pixel_size) = pixel_size {
@@ -228,12 +228,12 @@ impl CellestialSphere {
         self.zoom
     }
 
-    pub fn zoom_to_fov(zoom: f32) -> f32 {
-        4.0 * (1.0 / zoom).atan() / PI * 180.0
+    pub fn zoom_to_fov(zoom: f32) -> angle::Rad<f32> {
+        angle::Rad(4.0 * (1.0 / zoom).atan())
     }
 
-    pub fn fov_to_camera_z(fov_deg: f32) -> f32 {
-        ((fov_deg / 180.0 * PI) / 2.0).cos()
+    pub fn fov_to_camera_z(fov_deg: angle::Rad<f32>) -> f32 {
+        (fov_deg / 2.0).cos()
     }
 
     pub fn init(&mut self, sky: &mut sky::Sky) {
@@ -470,7 +470,7 @@ impl CellestialSphere {
                                 star.get_renderer(
                                     self.rotation.matrix(),
                                     self.sky_settings.mag_to_radius_settings[self.sky_settings.mag_to_radius_id],
-                                    angle::Deg(self.fov),
+                                    self.fov.to_deg(),
                                     self.zoom,
                                     self.viewport_rect,
                                 )
@@ -588,7 +588,7 @@ impl CellestialSphere {
     }*/
 
     pub fn project_screen_pos(&self, screen_pos: egui::Pos2) -> Vector3<f32> {
-        sg_geometry::cast_onto_sphere(&self.viewport_rect, &screen_pos, self.rotation, angle::Deg(self.fov).to_rad())
+        sg_geometry::cast_onto_sphere(&self.viewport_rect, &screen_pos, self.rotation, self.fov)
     }
 
     pub fn rotate_between_points(&mut self, initial_pos: &Vector3<f32>, final_pos: &Vector3<f32>) -> Option<()> {
