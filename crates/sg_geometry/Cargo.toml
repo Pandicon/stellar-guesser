@@ -9,3 +9,6 @@ egui = { workspace = true }
 nalgebra = { workspace = true }
 rand = { workspace = true }
 spherical_geometry = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }

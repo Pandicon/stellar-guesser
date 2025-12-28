@@ -45,28 +45,37 @@ pub fn render_initial_setup(app: &mut Application, ctx: &egui::Context, availabl
             });
         }
         InitialSetupStage::Keyboard => {
-            let modal = egui::Modal::new(egui::Id::new("Onboarding - Keyboard setup"));
-            let modal_area = modal.area.anchor(egui::Align2::CENTER_TOP, [0.0, top_offset]).order(egui::Order::Middle);
-            modal.area(modal_area).show(ctx, |ui| {
-                ui.set_width(modal_width);
-                ui.set_max_height(modal_height);
-                ui.heading("Onboarding - Keyboard setup");
-                egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
-                    app.render_application_settings_input_subwindow(ui);
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                let modal = egui::Modal::new(egui::Id::new("Onboarding - Keyboard setup"));
+                let modal_area = modal.area.anchor(egui::Align2::CENTER_TOP, [0.0, top_offset]).order(egui::Order::Middle);
+                modal.area(modal_area).show(ctx, |ui| {
+                    ui.set_width(modal_width);
+                    ui.set_max_height(modal_height);
+                    ui.heading("Onboarding - Keyboard setup");
+                    egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
+                        app.render_application_settings_input_subwindow(ui);
+                    });
+                    egui::Sides::new().show(
+                        ui,
+                        |_ui| {},
+                        |ui| {
+                            if ui.button("Next").clicked() {
+                                app.initial_setup_stage = InitialSetupStage::Community;
+                            }
+                            if ui.button("Back").clicked() {
+                                app.initial_setup_stage = InitialSetupStage::Introduction;
+                            }
+                        },
+                    );
                 });
-                egui::Sides::new().show(
-                    ui,
-                    |_ui| {},
-                    |ui| {
-                        if ui.button("Next").clicked() {
-                            app.initial_setup_stage = InitialSetupStage::Community;
-                        }
-                        if ui.button("Back").clicked() {
-                            app.initial_setup_stage = InitialSetupStage::Introduction;
-                        }
-                    },
-                );
-            });
+            }
+
+            #[cfg(target_arch = "wasm32")]
+            {
+                // Skip keyboard setup on web
+                app.initial_setup_stage = InitialSetupStage::Community;
+            }
         }
         InitialSetupStage::Community => {
             let modal = egui::Modal::new(egui::Id::new("Onboarding - Community"));

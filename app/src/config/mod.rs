@@ -6,6 +6,10 @@ pub use android::*;
 mod desktop;
 #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 pub use desktop::*;
+#[cfg(target_arch = "wasm32")]
+mod web;
+#[cfg(target_arch = "wasm32")]
+pub use web::*;
 
 #[cfg(debug_assertions)]
 pub const ENABLE_UPDATES_CHECKS: bool = true;

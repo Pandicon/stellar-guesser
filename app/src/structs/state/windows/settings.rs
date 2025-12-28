@@ -99,7 +99,10 @@ pub struct ApplicationSettingsWindowState {
 impl Default for ApplicationSettingsWindowState {
     fn default() -> Self {
         Self {
+            #[cfg(not(target_arch = "wasm32"))]
             subwindow: ApplicationSettingsSubWindow::Input,
+            #[cfg(target_arch = "wasm32")]
+            subwindow: ApplicationSettingsSubWindow::Theme,
             test_input: String::new(),
         }
     }

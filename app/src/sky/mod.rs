@@ -45,7 +45,21 @@ impl Sky {
                     let image_path = format!("{}/./images/{}", crate::config::OBJECT_IMAGES_ADDON_FOLDER, object_image_data.image);
                     match crate::files_handling::read_file_relative(&image_path) {
                         Ok(data) => {
-                            if let Ok(path) = url::Url::from_file_path(data.get_path()) {
+                            let url_result = {
+                                #[cfg(not(target_arch = "wasm32"))]
+                                {
+                                    url::Url::from_file_path(data.get_path())
+                                }
+
+                                #[cfg(target_arch = "wasm32")]
+                                {
+                                    match data.get_path().to_str() {
+                                        Some(p) => url::Url::parse(p).map_err(|_| ()),
+                                        None => Err(()),
+                                    }
+                                }
+                            };
+                            if let Ok(path) = url_result {
                                 object_image_data.image = path.as_str().to_owned();
                                 let entry = objects_images.entry(object_image_data.object_id).or_insert(Vec::new());
                                 entry.push(object_image_data);

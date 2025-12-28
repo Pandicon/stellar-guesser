@@ -23,6 +23,8 @@ node_modules/
 /builds
 stellar-guesser.zip
 
+dist/
+
 addons/object-images/
 
 # cargo-mobile2
