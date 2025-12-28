@@ -1,3 +1,4 @@
+pub mod camera;
 pub mod clouds;
 pub mod deepsky;
 pub mod lines;

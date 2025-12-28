@@ -1,4 +1,5 @@
 use crate::{enums::LightPollution, Application};
+use angle::Angle;
 use eframe::egui;
 
 impl Application {
@@ -7,7 +8,7 @@ impl Application {
             .show(ctx, |ui| {
                 egui::menu::bar(ui, |ui| {
                     ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                        ui.label(format!("FOV: {:.3}°", self.cellestial_sphere.fov));
+                        ui.label(format!("FOV: {:.3}°", self.cellestial_sphere.camera.fov.to_deg().value()));
                         if !self.screen_width.very_narrow() {
                             render_left_controls(self, ui);
                         }

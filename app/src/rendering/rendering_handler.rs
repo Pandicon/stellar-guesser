@@ -4,10 +4,10 @@ use eframe::egui;
 impl Application {
     pub fn render(&mut self, ctx: &egui::Context) -> bool {
         let viewport_rect = ctx.input(|i| i.screen_rect());
-        if viewport_rect != self.cellestial_sphere.viewport_rect {
-            log::debug!("Viewport rect changed: {:?} -> {:?}", self.cellestial_sphere.viewport_rect, viewport_rect);
-            self.cellestial_sphere.viewport_rect = viewport_rect;
-            self.cellestial_sphere.init_renderers(&self.sky);
+        if viewport_rect != self.cellestial_sphere.camera.viewport_rect {
+            log::debug!("Viewport rect changed: {:?} -> {:?}", self.cellestial_sphere.camera.viewport_rect, viewport_rect);
+            self.cellestial_sphere.camera.viewport_rect = viewport_rect;
+            self.cellestial_sphere.camera.changed_viewport_rect = true;
         }
         initial_setup::render_initial_setup(self, ctx, viewport_rect);
 
@@ -56,8 +56,7 @@ impl Application {
         }
         let central_panel_response = egui::CentralPanel::default()
             .show(ctx, |ui| {
-                self.cellestial_sphere.viewport_rect = viewport_rect;
-
+                self.cellestial_sphere.prepare_render(&self.sky);
                 let painter = ui.painter();
                 self.cellestial_sphere.render_sky(painter);
             })

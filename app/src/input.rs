@@ -51,22 +51,21 @@ impl Application {
                 }
             }
         }
-        let reinitialise_stars = if cursor_within_central_panel { self.cellestial_sphere.zoom(self.input.zoom) } else { false };
+        self.cellestial_sphere.zoom(self.input.zoom);
 
         let pointer_position: Pos2 = match self.input.pointer_position {
             PointerPosition::OnScreen(position) => position,
             PointerPosition::OffScreen => return,
         };
-        let all_reinitialised = if cursor_within_central_panel {
-            let mut all_reinitialised = false;
+        if cursor_within_central_panel {
             if self.game_handler.add_marker_on_click && self.input.primary_released && !self.input.primary_dragging_last_frame {
                 /*let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
                 let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);*/
-                let marker_pos = self.cellestial_sphere.projection.cast_onto_sphere_dec_ra(
-                    &self.cellestial_sphere.viewport_rect,
+                let marker_pos = self.cellestial_sphere.camera.projection.cast_onto_sphere_dec_ra(
+                    &self.cellestial_sphere.camera.viewport_rect,
                     &pointer_position,
-                    self.cellestial_sphere.rotation,
-                    self.cellestial_sphere.fov.to_rad(),
+                    self.cellestial_sphere.camera.rotation,
+                    self.cellestial_sphere.camera.fov.to_rad(),
                 );
                 if self.game_handler.allow_multiple_player_marker() {
                     self.game_handler.guess_marker_positions.push(marker_pos);
@@ -84,15 +83,7 @@ impl Application {
                 // Some rotation this frame
 
                 self.cellestial_sphere.rotate_between_points(&initial_vector, &final_vector);
-                self.cellestial_sphere.init_renderers(&self.sky);
-                all_reinitialised = true;
             }
-            all_reinitialised
-        } else {
-            false
-        };
-        if !all_reinitialised && reinitialise_stars {
-            self.cellestial_sphere.reinit_renderer_category(&self.sky, RendererCategory::Stars);
         }
     }
 }

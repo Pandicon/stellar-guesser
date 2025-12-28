@@ -212,7 +212,6 @@ impl Question {
         if self.small_settings.rotate_to_answer {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             data.cellestial_sphere.look_at_point(&final_vector);
-            data.cellestial_sphere.init_renderers(data.sky);
         } else {
             data.cellestial_sphere.init_single_renderer_group(data.sky, RendererCategory::Markers, "game");
         }

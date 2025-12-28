@@ -199,7 +199,6 @@ impl crate::game::game_handler::QuestionTrait for Question {
             if (end_1 + end_2).magnitude_squared() > 10e-4 {
                 let final_vector = (end_1 + end_2).normalize();
                 cellestial_sphere.look_at_point(&final_vector);
-                cellestial_sphere.init_renderers(sky);
             }
         }
     }
