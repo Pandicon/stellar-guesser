@@ -1,3 +1,4 @@
+use angle::Angle;
 use eframe::egui;
 use egui::epaint::Color32;
 use nalgebra::Matrix3;
@@ -37,12 +38,12 @@ pub struct StarRaw {
 }
 
 impl Star {
-    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, magnitude_to_radius_function: MagnitudeToRadius, fov: angle::Deg<f32>, zoom: f32, viewport_rect: egui::Rect) -> stars::StarRenderer {
+    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, magnitude_to_radius_function: MagnitudeToRadius, fov: angle::Deg<f32>, _zoom: f32, viewport_rect: egui::Rect) -> stars::StarRenderer {
         let colour = if let Some(col) = self.override_colour { col } else { self.default_colour };
         let radius = stars::StarRenderer::magnitude_to_radius(magnitude_to_radius_function, self.vmag + self.magnitude_offset, fov);
         let (projected_point, is_within_bounds) = if stars::StarRenderer::radius_enough_to_render(radius) {
             let vec = sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix);
-            sg_geometry::project_point(&vec, zoom, viewport_rect)
+            sg_geometry::project_point(&vec, fov.to_rad(), viewport_rect)
         } else {
             // It will not be rendered anyway, so why bother calculating the values
             (egui::pos2(0.0, 0.0), false)

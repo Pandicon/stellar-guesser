@@ -1,3 +1,4 @@
+use angle::Angle;
 use eframe::egui;
 use egui::epaint::Pos2;
 use serde::{Deserialize, Serialize};
@@ -65,7 +66,7 @@ impl Application {
                     &self.cellestial_sphere.viewport_rect,
                     &pointer_position,
                     self.cellestial_sphere.rotation,
-                    self.cellestial_sphere.get_zoom(),
+                    angle::Deg(self.cellestial_sphere.fov).to_rad(),
                 );
                 if self.game_handler.allow_multiple_player_marker() {
                     self.game_handler.guess_marker_positions.push(marker_pos);
