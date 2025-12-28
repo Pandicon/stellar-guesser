@@ -315,7 +315,7 @@ impl GameHandler {
             }
         }
         let constellation_groups_settings =
-            sg_game_constellations::GameConstellations::load_from_storage(storage, &sky.constellations.values().map(|con| con.abbreviation.clone()).collect::<Vec<String>>());
+            sg_game_constellations::GameConstellations::load_from_storage(storage, &sky.constellations.values().map(|con| con.abbreviation.clone()).collect::<Vec<String>>(), first_launch);
 
         Self {
             current_question: 0,

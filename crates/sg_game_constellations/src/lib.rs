@@ -13,60 +13,64 @@ pub struct GameConstellations {
 }
 
 impl GameConstellations {
-    pub fn load_from_storage(storage: Option<&dyn eframe::Storage>, constellations: &Vec<String>) -> Self {
+    pub fn load_from_storage(storage: Option<&dyn eframe::Storage>, constellations: &Vec<String>, first_launch: bool) -> Self {
         let mut active_constellations = HashMap::new();
         let mut constellation_groups = HashMap::new();
         let mut all_active = HashMap::new();
         for constellation in constellations {
             all_active.insert(constellation.to_owned(), true);
         }
-        if let Some(storage) = storage {
-            for constellation in constellations {
-                active_constellations.insert(constellation.to_owned(), false);
-            }
-            if let Some(active_constellations_str) = storage.get_string(CONSTELLATIONS_STORAGE_KEY) {
-                if !active_constellations_str.is_empty() {
-                    let constellations_save = active_constellations_str.split(CONSTELLATIONS_SEPARATOR);
-                    for constellation_raw in constellations_save {
-                        let constellation = if let Some(constellation) = constellations.iter().find(|s| s.to_lowercase() == constellation_raw.to_lowercase()) {
-                            constellation.to_string()
-                        } else {
-                            log::warn!("Unknown constellation found within the active constellations: {constellation_raw}");
-                            continue;
-                        };
-                        active_constellations.insert(constellation, true);
-                    }
+        if !first_launch {
+            if let Some(storage) = storage {
+                for constellation in constellations {
+                    active_constellations.insert(constellation.to_owned(), false);
                 }
-            }
-
-            if let Some(groups_str) = storage.get_string(GROUPS_STORAGE_KEY) {
-                if !groups_str.is_empty() {
-                    let groups = groups_str.split(GROUPS_SEPARATOR).collect::<Vec<&str>>();
-                    for group_raw in &groups {
-                        let mut group_spl = group_raw.split(CONSTELLATIONS_SEPARATOR);
-                        let group_name = group_spl.next();
-                        if group_name.is_none() {
-                            log::warn!("An empty constellation group was found");
-                            continue;
-                        }
-                        let group_name = group_name.unwrap();
-
-                        let mut active = HashMap::new();
-                        for constellation in constellations {
-                            active.insert(constellation.to_owned(), false);
-                        }
-                        for constellation_raw in group_spl {
+                if let Some(active_constellations_str) = storage.get_string(CONSTELLATIONS_STORAGE_KEY) {
+                    if !active_constellations_str.is_empty() {
+                        let constellations_save = active_constellations_str.split(CONSTELLATIONS_SEPARATOR);
+                        for constellation_raw in constellations_save {
                             let constellation = if let Some(constellation) = constellations.iter().find(|s| s.to_lowercase() == constellation_raw.to_lowercase()) {
                                 constellation.to_string()
                             } else {
-                                log::warn!("Unknown constellation found in a group: {constellation_raw}");
+                                log::warn!("Unknown constellation found within the active constellations: {constellation_raw}");
                                 continue;
                             };
-                            active.insert(constellation, true);
+                            active_constellations.insert(constellation, true);
                         }
-                        constellation_groups.insert(group_name.to_string(), active);
                     }
                 }
+
+                if let Some(groups_str) = storage.get_string(GROUPS_STORAGE_KEY) {
+                    if !groups_str.is_empty() {
+                        let groups = groups_str.split(GROUPS_SEPARATOR).collect::<Vec<&str>>();
+                        for group_raw in &groups {
+                            let mut group_spl = group_raw.split(CONSTELLATIONS_SEPARATOR);
+                            let group_name = group_spl.next();
+                            if group_name.is_none() {
+                                log::warn!("An empty constellation group was found");
+                                continue;
+                            }
+                            let group_name = group_name.unwrap();
+
+                            let mut active = HashMap::new();
+                            for constellation in constellations {
+                                active.insert(constellation.to_owned(), false);
+                            }
+                            for constellation_raw in group_spl {
+                                let constellation = if let Some(constellation) = constellations.iter().find(|s| s.to_lowercase() == constellation_raw.to_lowercase()) {
+                                    constellation.to_string()
+                                } else {
+                                    log::warn!("Unknown constellation found in a group: {constellation_raw}");
+                                    continue;
+                                };
+                                active.insert(constellation, true);
+                            }
+                            constellation_groups.insert(group_name.to_string(), active);
+                        }
+                    }
+                }
+            } else {
+                active_constellations = all_active.clone();
             }
         } else {
             active_constellations = all_active.clone();
