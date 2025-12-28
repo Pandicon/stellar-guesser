@@ -62,7 +62,7 @@ impl Application {
             if self.game_handler.add_marker_on_click && self.input.primary_released && !self.input.primary_dragging_last_frame {
                 /*let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
                 let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);*/
-                let marker_pos = sg_geometry::cast_onto_sphere_dec_ra(
+                let marker_pos = self.cellestial_sphere.projection.cast_onto_sphere_dec_ra(
                     &self.cellestial_sphere.viewport_rect,
                     &pointer_position,
                     self.cellestial_sphere.rotation,
