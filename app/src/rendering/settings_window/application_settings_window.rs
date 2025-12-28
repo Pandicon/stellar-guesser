@@ -5,6 +5,7 @@ use crate::{structs::state::windows::settings::ApplicationSettingsSubWindow, App
 impl Application {
     pub fn render_application_settings_window(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
+            #[cfg(not(target_arch = "wasm32"))]
             ui.selectable_value(
                 &mut self.state.windows.settings.application_settings.subwindow,
                 ApplicationSettingsSubWindow::Input,
