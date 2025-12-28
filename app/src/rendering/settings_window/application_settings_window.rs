@@ -69,51 +69,28 @@ impl Application {
             ui.text_edit_singleline(&mut self.theme.name);
         });
         if ui.button("Export").clicked() {
-            match crate::files_handling::get_path_relative(crate::config::THEMES_FOLDER) {
-                Ok(path) => {
-                    log::debug!("Theme save path: {:?}", path);
+            match serde_json::to_string_pretty(&self.theme) {
+                Ok(theme_to_save) => {
                     #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
-                    let save_path_opt: Option<std::path::PathBuf> = {
-                        let dialog = rfd::FileDialog::new().add_filter("Theme", &["json"]).set_directory(path);
-                        dialog.save_file()
-                    };
+                    let default_file_name: String = format!("{}.json", &self.theme.name);
                     #[cfg(any(target_os = "android", target_os = "ios"))]
-                    let save_path_opt: Option<std::path::PathBuf> = {
-                        let mut save_path_intermediate = path;
-                        save_path_intermediate.push(format!("{}--{}.json", &self.theme.name, chrono::Utc::now().timestamp_millis()));
-                        Some(save_path_intermediate)
-                    };
+                    let default_file_name: String = format!("{}--{}.json", &self.theme.name, chrono::Utc::now().timestamp_millis());
                     #[cfg(target_arch = "wasm32")]
-                    let save_path_opt: Option<std::path::PathBuf> = {
-                        log::info!("Can not export files on web.");
-                        None
-                    };
-                    match save_path_opt {
-                        Some(save_path) => match serde_json::to_string_pretty(&self.theme) {
-                            Ok(theme_to_save) => {
-                                if let Some(dir) = save_path.parent() {
-                                    if !dir.exists() {
-                                        if let Err(err) = std::fs::create_dir_all(dir) {
-                                            log::error!("Failed to create the folders for the theme: {err}");
-                                        }
-                                    }
-                                } else {
-                                    log::warn!("No theme folder: {:?}", save_path);
-                                }
-                                if let Err(err) = std::fs::write(save_path, theme_to_save) {
-                                    log::error!("Failed to save the theme: {err}");
-                                } else {
+                    let default_file_name: String = format!("{}--{}.json", &self.theme.name, chrono::Utc::now().timestamp_millis());
+                    match crate::files_handling::save_file_by_user_relative_base_path(crate::config::THEMES_FOLDER, &default_file_name, theme_to_save, "Theme", &["json"]) {
+                        Ok(v) => match v {
+                            Some(v) => match v {
+                                Ok(_) => {
                                     self.themes.insert(self.theme.name.clone(), self.theme.clone());
                                 }
-                            }
-                            Err(err) => log::error!("Failed to serialize the theme: {err}"),
+                                Err(err) => log::error!("Failed to save the theme: {err}"),
+                            },
+                            None => log::debug!("Theme saving cancelled by user"),
                         },
-                        None => log::info!("Theme saving cancelled by the user"),
+                        Err(err) => log::error!("Failed to save the theme: {err}"),
                     }
                 }
-                Err(err) => {
-                    log::error!("Could not locate the themes folder to save to: {err:?}")
-                }
+                Err(err) => log::error!("Failed to serialize the theme: {err}"),
             }
         }
     }

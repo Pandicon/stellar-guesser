@@ -95,3 +95,30 @@ pub fn read_dir_relative(relative_path: impl Into<std::path::PathBuf>) -> Result
 pub fn get_path_relative(relative_path: impl Into<std::path::PathBuf>) -> Result<std::path::PathBuf, std::io::Error> {
     Ok(super::get_path_relative_inner(crate::config::BASE_PATH, relative_path))
 }
+
+pub fn save_file_by_user(_base_path: impl Into<std::path::PathBuf>, default_file_name: &str, contents: String, _filter_name: &str, _extensions: &[&str]) -> Option<Result<(), std::io::Error>> {
+    let default_file_name = default_file_name.to_string();
+    wasm_bindgen_futures::spawn_local(async move {
+        let file_handle = rfd::AsyncFileDialog::new().set_file_name(default_file_name).save_file().await;
+
+        if let Some(handle) = file_handle {
+            if let Err(err) = handle.write(contents.as_bytes()).await {
+                log::error!("Failed to save file: {}", err);
+            } else {
+                log::info!("File saved successfully!");
+            }
+        }
+    });
+    // Assume it is saved...
+    Some(Ok(()))
+}
+
+pub fn save_file_by_user_relative_base_path(
+    relative_base_path: impl Into<std::path::PathBuf>,
+    default_file_name: &str,
+    contents: String,
+    filter_name: &str,
+    extensions: &[&str],
+) -> Result<Option<Result<(), std::io::Error>>, std::io::Error> {
+    crate::files_handling::get_path_relative(relative_base_path).map(|base_path| save_file_by_user(base_path, default_file_name, contents, filter_name, extensions))
+}
