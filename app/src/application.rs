@@ -204,7 +204,7 @@ impl Application {
 }
 
 impl eframe::App for Application {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         if self.input.settings.display_onscreen_keyboard {
             #[cfg(not(target_arch = "wasm32"))]
             self.onscreen_keyboard.pump_events(ctx);
@@ -214,7 +214,7 @@ impl eframe::App for Application {
         ctx.input_mut(|i| i.events.push(egui::Event::Text(self.input.text_from_keys.clone())));
         self.frames_handler.update_started();
         self.screen_width = ScreenWidth::from_width(ctx.screen_rect().size().x);
-        let cursor_within_central_panel = self.render(ctx);
+        let cursor_within_central_panel = self.render(ctx, frame);
         self.handle_input(cursor_within_central_panel, ctx);
         self.receive_threads_messages();
         self.toasts.show(ctx);

@@ -2,6 +2,7 @@ pub const VIEWPORT_OFFSET: f32 = 10.0;
 
 mod stereographic;
 
+#[derive(Clone, Copy)]
 pub enum Projection {
     Stereographic,
 }

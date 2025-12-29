@@ -3,18 +3,26 @@ use angle::Angle;
 fn stereographic_scale(fov_full: angle::Rad<f32>, viewport: &egui::Rect) -> f32 {
     let r = viewport.width().min(viewport.height()) * 0.5; // R in pixels
     let theta_max = fov_full * 0.5; // half-angle
-    let s = r / ((theta_max / 2.0).tan()); // scale factor
-    s
+    r / ((theta_max / 2.0).tan())
 }
 
 pub fn stereographic_matrix(fov_full: angle::Rad<f32>, viewport: &egui::Rect) -> nalgebra::Matrix4<f32> {
     let s = stereographic_scale(fov_full, viewport);
 
-    // Some parameters for z buffers, will ignore for now
-    let a = 0.0_f32;
-    let b = 0.0_f32;
+    let far = 1000.0;
+    let near = 0.1;
+    let a = (far + near) / (far - near);
+    let b = -(2.0 * far * near) / (far - near);
 
-    nalgebra::Matrix4::new(s, 0.0, 0.0, 0.0, 0.0, s, 0.0, 0.0, 0.0, 0.0, a, b, 0.0, 0.0, 1.0, 1.0)
+    #[rustfmt::skip]
+    let m = nalgebra::Matrix4::new(
+          s, 0.0, 0.0, 0.0,
+        0.0,   s, 0.0, 0.0,
+        0.0, 0.0,   a,   b,
+        0.0, 0.0, 1.0, 1.0
+    );
+
+    m
 }
 
 pub fn cast_onto_sphere(viewport_rect: &egui::Rect, screen_position: &egui::Pos2, rotation: nalgebra::Rotation3<f32>, fov_full: angle::Rad<f32>) -> nalgebra::Vector3<f32> {

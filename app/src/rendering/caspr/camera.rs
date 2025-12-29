@@ -1,3 +1,4 @@
+#[derive(Copy, Clone)]
 pub struct Camera {
     pub zoom: f32,
     pub fov: angle::Rad<f32>,
@@ -8,6 +9,7 @@ pub struct Camera {
 
     pub viewport_rect: eframe::egui::Rect,
 
+    pub changed: bool,
     pub changed_fov: bool,
     pub changed_rotation: bool,
     pub changed_projection: bool,

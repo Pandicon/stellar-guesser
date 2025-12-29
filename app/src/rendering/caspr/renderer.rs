@@ -144,14 +144,20 @@ impl CellestialSphere {
         } else if self.camera.changed_fov {
             self.reinit_renderer_category(sky, RendererCategory::Stars);
         }
-        self.camera.changed_fov = false;
-        self.camera.changed_projection = false;
-        self.camera.changed_rotation = false;
-        self.camera.changed_viewport_rect = false;
+        self.camera.changed = self.camera.changed_fov || self.camera.changed_projection || self.camera.changed_rotation || self.camera.changed_viewport_rect;
     }
 
     // Renders the entire sphere view
-    pub fn render_sky(&self, painter: &egui::Painter) {
+    pub fn render_sky(&self, painter: &egui::Painter, frame: &mut eframe::Frame) {
+        let target_format = frame.wgpu_render_state().map(|state| state.target_format).unwrap_or(wgpu::TextureFormat::Bgra8Unorm);
+        painter.add(eframe::egui_wgpu::Callback::new_paint_callback(
+            self.camera.viewport_rect,
+            caspr::clouds::renderer::CloudsCallback {
+                camera_data: self.camera,
+                clouds_settings: self.sky_settings.cloud_settings,
+                target_format,
+            },
+        ));
         for line_renderers in self.line_renderers.values() {
             for line_renderer in line_renderers {
                 line_renderer.render(self, painter);
@@ -182,6 +188,14 @@ impl CellestialSphere {
                 }
             }
         }
+    }
+
+    pub fn after_render(&mut self) {
+        self.camera.changed = false;
+        self.camera.changed_fov = false;
+        self.camera.changed_projection = false;
+        self.camera.changed_rotation = false;
+        self.camera.changed_viewport_rect = false;
     }
 
     pub fn load(storage: Option<&dyn eframe::Storage>) -> Self {
@@ -215,6 +229,7 @@ impl CellestialSphere {
 
                 viewport_rect,
 
+                changed: false,
                 changed_fov: false,
                 changed_projection: false,
                 changed_rotation: false,

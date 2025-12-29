@@ -3,6 +3,8 @@ use noise::{MultiFractal, NoiseFn};
 
 use crate::sky;
 
+pub mod renderer;
+
 // The physical model is as follows:
 // Each layer of clouds absorbs a set fraction of light from each star, so the received flux is F ~ F_0 * exp(-number of layers).
 // However, the change in magnitude is m - m_0 ~ -log(F / F_0) = -log(exp(-number of layers)) = number of layers.

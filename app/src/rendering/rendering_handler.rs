@@ -2,13 +2,8 @@ use crate::{rendering::initial_setup, Application};
 use eframe::egui;
 
 impl Application {
-    pub fn render(&mut self, ctx: &egui::Context) -> bool {
+    pub fn render(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) -> bool {
         let viewport_rect = ctx.input(|i| i.screen_rect());
-        if viewport_rect != self.cellestial_sphere.camera.viewport_rect {
-            log::debug!("Viewport rect changed: {:?} -> {:?}", self.cellestial_sphere.camera.viewport_rect, viewport_rect);
-            self.cellestial_sphere.camera.viewport_rect = viewport_rect;
-            self.cellestial_sphere.camera.changed_viewport_rect = true;
-        }
         initial_setup::render_initial_setup(self, ctx, viewport_rect);
 
         let mut window_rectangles = Vec::new();
@@ -56,9 +51,16 @@ impl Application {
         }
         let central_panel_response = egui::CentralPanel::default()
             .show(ctx, |ui| {
+                let rect = ui.available_rect_before_wrap();
+                if rect != self.cellestial_sphere.camera.viewport_rect {
+                    log::debug!("Viewport rect changed: {:?} -> {:?}", self.cellestial_sphere.camera.viewport_rect, rect);
+                    self.cellestial_sphere.camera.viewport_rect = rect;
+                    self.cellestial_sphere.camera.changed_viewport_rect = true;
+                }
                 self.cellestial_sphere.prepare_render(&self.sky);
                 let painter = ui.painter();
-                self.cellestial_sphere.render_sky(painter);
+                self.cellestial_sphere.render_sky(painter, frame);
+                self.cellestial_sphere.after_render();
             })
             .response
             .interact(egui::Sense::click_and_drag());
