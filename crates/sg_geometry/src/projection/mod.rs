@@ -48,9 +48,10 @@ impl Projection {
         };
         match projected_raw {
             Some(point_coordinates) => {
-                let rect_size = nalgebra::Vector2::new(viewport_rect.max[0] - viewport_rect.min[0], viewport_rect.max[1] - viewport_rect.min[1]);
-
-                let final_coordinates = egui::Pos2::new(point_coordinates[0] + rect_size[0] / 2.0, point_coordinates[1] + rect_size[1] / 2.0);
+                let final_coordinates = egui::Pos2::new(
+                    point_coordinates[0] + viewport_rect.width() / 2.0 + viewport_rect.left(),
+                    point_coordinates[1] + viewport_rect.height() / 2.0 + viewport_rect.top(),
+                );
 
                 (
                     final_coordinates,
