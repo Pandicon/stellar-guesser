@@ -49,7 +49,10 @@ impl Application {
                 [response.response.rect.left(), response.response.rect.bottom()],
             ]);
         }
+        let mut panel_frame = egui::Frame::central_panel(&ctx.style());
+        panel_frame.inner_margin = egui::Margin::same(0);
         let central_panel_response = egui::CentralPanel::default()
+            .frame(panel_frame)
             .show(ctx, |ui| {
                 let rect = ui.available_rect_before_wrap();
                 if rect != self.cellestial_sphere.camera.viewport_rect {
