@@ -78,7 +78,7 @@ impl CellestialSphere {
 
         // Neither the starting point nor the ending point is visible AND either of them is behind the camera
         // This avoids lines from the part of the sky that is behind us (north pole when looking at the south pole) being drawn over the screen
-        if !(is_start_within_bounds || is_end_within_bounds) && (modified_camera_z < start.z || modified_camera_z < end.z) {
+        if !(is_start_within_bounds || is_end_within_bounds) && (modified_camera_z > start.z || modified_camera_z > end.z) {
             return;
         }
         // Neither the starting point nor the ending point is behind the camera OR either of them is on the screen (out of the FOV cone, but within the screen rectangle) -> the line should be drawn
