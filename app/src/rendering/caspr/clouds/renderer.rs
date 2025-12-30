@@ -1,4 +1,5 @@
 use eframe::{egui, wgpu};
+use noise::NoiseFn;
 use wgpu::util::DeviceExt;
 
 use crate::rendering::caspr;
@@ -217,22 +218,62 @@ impl CloudsRenderer {
         vec![caspr::textures::rectangle::Rectangle::<u8>::new(size, size, vec![0; (size * size) as usize]); 6]
     }
 
-    pub fn generate_texture_data(size: u32) -> [caspr::textures::rectangle::Rectangle<u8>; 6] {
-        // Generate colors for 6 faces
-        let colors: [[u8; 1]; 6] = [[255], [150], [120], [80], [50], [20]];
+    pub fn generate_texture_data(
+        size: u32,
+        cloud_generator: &noise::Billow<noise::SuperSimplex>,
+        settings: &caspr::clouds::CloudSettings,
+    ) -> ([caspr::textures::rectangle::Rectangle<u8>; 6], f32, f32) {
+        let indices: [u8; 6] = [0, 1, 2, 3, 4, 5];
 
-        let texture_data = colors.map(|colour| {
+        let texture_data_raw = indices.map(|face_index| {
+            log::debug!("Generating clouds face {}/6", face_index + 1);
             let mut data = Vec::with_capacity(size as usize);
-            for _y in 0..size {
+            for y in 0..size {
                 let mut row = Vec::with_capacity(size as usize);
-                for _x in 0..(size) {
-                    row.extend_from_slice(&colour);
+                for x in 0..(size) {
+                    let direction = caspr::textures::cubemap::Cubemap::<u8>::pixel_to_sphere_dir(face_index, x, y, size, size);
+                    let val = cloud_generator.get([direction.x as f64, direction.y as f64, direction.z as f64]) as f32;
+                    row.push(val);
                 }
                 data.push(row);
             }
-            caspr::textures::rectangle::Rectangle::<u8>::new(size, size, data.into_iter().flatten().collect())
+            data
         });
-        texture_data
+        let mut all_values: Vec<f32> = texture_data_raw.clone().map(|grid| grid.into_iter().flatten().collect::<Vec<f32>>()).into_iter().flatten().collect();
+        // Puts NaNs last, but that is not an issue
+        // Source: https://users.rust-lang.org/t/sorting-a-vec-of-f32-without-ever-panic/37540/2 (https://web.archive.org/web/20250404080805/https://users.rust-lang.org/t/sorting-a-vec-of-f32-without-ever-panic/37540)
+        log::debug!("Sorting cloud values");
+        all_values.sort_by(|a, b| match a.partial_cmp(b) {
+            Some(ord) => ord,
+            None => match (a.is_nan(), b.is_nan()) {
+                (true, true) => std::cmp::Ordering::Equal,
+                (true, _) => std::cmp::Ordering::Greater,
+                (_, true) => std::cmp::Ordering::Less,
+                (_, _) => std::cmp::Ordering::Equal, // should never happen
+            },
+        });
+        log::debug!("Sorted cloud values");
+        let decrease_offset = all_values[(((all_values.len() - 1) as f32) * (1.0 - settings.coverage)).floor() as usize]; // This offset ensures that the chosen (via the coverage setting) part of the sky is covered
+        let multi = settings.thickness / (all_values[all_values.len() - 1] - decrease_offset); // This multiplier ensures that the maximum decrease is the one chosen via the `thickness` setting
+        (
+            texture_data_raw.map(|data_vec| {
+                caspr::textures::rectangle::Rectangle::<u8>::new(
+                    size,
+                    size,
+                    data_vec
+                        .into_iter()
+                        .flatten()
+                        .map(|val| {
+                            let decrease = (multi * (val - decrease_offset)).max(0.0);
+                            let opacity = decrease / settings.opaque_thickness;
+                            (opacity * 255.0).round().clamp(0.0, 255.0) as u8
+                        })
+                        .collect(),
+                )
+            }),
+            decrease_offset,
+            multi,
+        )
     }
 
     fn create_cubemap_texture(device: &wgpu::Device, width: u32, height: u32, mip_level_count: u32) -> wgpu::Texture {
