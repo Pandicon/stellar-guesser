@@ -340,8 +340,31 @@ impl eframe::egui_wgpu::CallbackTrait for CloudsCallback {
         }
         let renderer: &CloudsRenderer = resources.get().unwrap();
 
-        let viewport = info.clip_rect_in_pixels();
-        render_pass.set_viewport(viewport.left_px as f32, viewport.top_px as f32, viewport.width_px as f32, viewport.height_px as f32, 0.0, 1.0);
+        let (viewport_x, viewport_y, viewport_w, viewport_h) = {
+            let viewport = info.viewport_in_pixels();
+
+            let physical_left = viewport.left_px as f32;
+            let physical_top = viewport.top_px as f32;
+            let physical_width = viewport.width_px as f32;
+            let physical_height = viewport.height_px as f32;
+
+            /*let pixels_per_point = info.pixels_per_point;
+            let logical_rect = self.camera_data.viewport_rect;
+
+            let viewport_x = logical_rect.left() * pixels_per_point;
+            let viewport_y = logical_rect.top() * pixels_per_point;
+            let viewport_w = logical_rect.width() * pixels_per_point;
+            let viewport_h = logical_rect.height() * pixels_per_point;
+
+            if viewport_w > physical_width || viewport_h > physical_height {
+                (physical_left, physical_top, physical_width, physical_height)
+            } else {
+                (viewport_x, viewport_y, viewport_w, viewport_h)
+            }*/
+            (physical_left, physical_top, physical_width, physical_height)
+        };
+
+        render_pass.set_viewport(viewport_x, viewport_y, viewport_w, viewport_h, 0.0, 1.0);
 
         render_pass.set_pipeline(&renderer.pipeline);
         render_pass.set_bind_group(0, &renderer.bind_group, &[]);
