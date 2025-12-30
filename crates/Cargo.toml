@@ -5,7 +5,7 @@ resolver = "2"
 
 [workspace.dependencies]
 angle = "0.5.0"
-eframe = "0.31"
+eframe = { version = "0.31", default-features = false }
 egui = "0.31"
 log = "0.4.14"
 nalgebra = { version = "0.33.0", default-features = false, features = ["std"] }
