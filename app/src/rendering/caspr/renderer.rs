@@ -149,7 +149,7 @@ impl CellestialSphere {
 
     // Renders the entire sphere view
     pub fn render_sky(&self, painter: &egui::Painter, frame: &mut eframe::Frame) {
-        let target_format = frame.wgpu_render_state().map(|state| state.target_format).unwrap_or(wgpu::TextureFormat::Bgra8Unorm);
+        let target_format = frame.wgpu_render_state().map(|state| state.target_format).unwrap_or(eframe::wgpu::TextureFormat::Bgra8Unorm);
         painter.add(eframe::egui_wgpu::Callback::new_paint_callback(
             self.camera.viewport_rect,
             caspr::clouds::renderer::CloudsCallback {

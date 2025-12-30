@@ -1,4 +1,4 @@
-use eframe::egui;
+use eframe::{egui, wgpu};
 use wgpu::util::DeviceExt;
 
 use crate::rendering::caspr;
@@ -26,7 +26,7 @@ impl Uniforms {
             rotation_3[(0, 0)], rotation_3[(0, 1)], rotation_3[(0, 2)], 0.0,
             rotation_3[(1, 0)], rotation_3[(1, 1)], rotation_3[(1, 2)], 0.0,
             rotation_3[(2, 0)], rotation_3[(2, 1)], rotation_3[(2, 2)], 0.0,
-            0.0, 0.0, 0.0, 1.0,
+                           0.0,                0.0,                0.0, 1.0,
         );
         let mvp_matrix = camera_data.projection.get_projection_matrix(camera_data.fov, camera_data.viewport_rect) * rotation_4;
 
@@ -172,7 +172,7 @@ impl CloudsRenderer {
                 entry_point: Some("fs_main"),
                 targets: &[Some(wgpu::ColorTargetState {
                     format: target_format,
-                    blend: Some(wgpu::BlendState::REPLACE),
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
                 compilation_options: Default::default(),
@@ -200,18 +200,24 @@ impl CloudsRenderer {
     fn generate_texture_data(size: u32) -> Vec<Vec<u8>> {
         // Generate colors for 6 faces
         let colors = [
-            [255, 0, 0, 255],   // +X (Red)
+            /*[255, 0, 0, 255],   // +X (Red)
             [0, 255, 0, 255],   // -X (Green)
             [0, 0, 255, 255],   // +Y (Blue)
             [255, 255, 0, 255], // -Y (Yellow)
             [0, 255, 255, 255], // +Z (Cyan)
-            [255, 0, 255, 255], // -Z (Magenta)
+            [255, 0, 255, 255], // -Z (Magenta)*/
+            [255],
+            [150],
+            [120],
+            [80],
+            [50],
+            [20],
         ];
 
         let texture_data = colors
             .iter()
             .map(|colour| {
-                let mut data = Vec::with_capacity((size * size * 4) as usize);
+                let mut data = Vec::with_capacity((size * size) as usize);
                 for _ in 0..(size * size) {
                     data.extend_from_slice(colour);
                 }
@@ -234,7 +240,7 @@ impl CloudsRenderer {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8Unorm,
+            format: wgpu::TextureFormat::R8Unorm,
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
             view_formats: &[],
         })
@@ -252,7 +258,7 @@ impl CloudsRenderer {
                 data,
                 wgpu::TexelCopyBufferLayout {
                     offset: 0,
-                    bytes_per_row: Some(4 * size),
+                    bytes_per_row: Some(size),
                     rows_per_image: Some(size),
                 },
                 wgpu::Extent3d {

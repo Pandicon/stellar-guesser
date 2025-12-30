@@ -8,6 +8,7 @@ struct SolveResult {
 // Given x, y, m, find z, w such that m*(wx, wy, z, w) = (x', y', z', 1) such that (x', y', z') has length of 1
 fn solve_zw(x: f32, y: f32, m: mat4x4<f32>) -> SolveResult {
     var out: SolveResult;
+    out.normal = vec3<f32>(1.0, 0.0, 0.0);
 
     // m[0] = col0, m[1] = col1, m[2] = col2, m[3] = col3
     let c0 = m[0]; // m00, m10, m20, m30
@@ -137,9 +138,10 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let x = in.ndc.x;
     let y = in.ndc.y;
     let output = solve_zw(x, y, uniforms.inv_mvps);
+    let sample = textureSample(t_cube, s_cube, output.normal);
     if(!output.valid) {
         // Should never happen
         return vec4<f32>(0.0, 0.0, 0.0, 1.0);
     }
-    return textureSample(t_cube, s_cube, output.normal);
+    return vec4<f32>(vec3<f32>(sample.r), 0.5);
 }

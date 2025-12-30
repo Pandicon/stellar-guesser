@@ -8,6 +8,10 @@ pub enum Projection {
 }
 
 impl Projection {
+    /// Returns a projection matrix that takes a rotated point on a unit sphere and projects it to (x, y) screen coordinates. (0, 0) is the centre of the screen, +y points up and +x points left
+    ///
+    /// * fov_full - the angle needed to cover the whole FOV
+    /// * viewport - the viewport to project onto
     pub fn get_projection_matrix(&self, fov_full: angle::Rad<f32>, viewport: egui::Rect) -> nalgebra::Matrix4<f32> {
         match *self {
             Self::Stereographic => stereographic::stereographic_matrix(fov_full, &viewport),
