@@ -10,11 +10,11 @@ pub mod renderer;
 // However, the change in magnitude is m - m_0 ~ -log(F / F_0) = -log(exp(-number of layers)) = number of layers.
 // So the decrease in magnitude is linear in the thickness of the cloud (roughly).
 pub fn apply_dimming(sky: &mut sky::Sky, cellestial_sphere: &mut caspr::renderer::CellestialSphere) {
-    let texture_size = 1024;
-    let texture_data = renderer::CloudsRenderer::generate_texture_data(texture_size);
+    let texture_size = 8192;
+    let texture_data_faces = renderer::CloudsRenderer::generate_texture_data(texture_size);
     cellestial_sphere.textures.clouds_texture_to_upload = Some(caspr::textures::cubemap::Cubemap::<u8> {
         texture_size,
-        texture_data,
+        texture_data: texture_data_faces,
         changed: true,
     });
 

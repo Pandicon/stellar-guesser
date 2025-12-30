@@ -1,4 +1,5 @@
 pub mod cubemap;
+pub mod rectangle;
 
 #[derive(Default)]
 pub struct Textures {

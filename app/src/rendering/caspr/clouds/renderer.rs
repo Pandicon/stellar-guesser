@@ -84,8 +84,8 @@ impl CloudsRenderer {
 
         let texture_size = 256;
         let texture_data = Self::generate_default_filler_texture_data(texture_size);
-        let texture = Self::create_cubemap_texture(device, texture_size);
-        Self::write_cubemap_texture(queue, &texture, &texture_data, texture_size);
+        let texture = Self::create_cubemap_texture(device, texture_size, texture_size, texture_data[0].mip_map_count());
+        Self::write_cubemap_texture(queue, &texture, &texture_data);
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor {
             dimension: Some(wgpu::TextureViewDimension::Cube),
             ..Default::default()
@@ -213,38 +213,39 @@ impl CloudsRenderer {
         })
     }
 
-    fn generate_default_filler_texture_data(size: u32) -> Vec<Vec<u8>> {
-        vec![vec![0; (size * size) as usize]; 6]
+    fn generate_default_filler_texture_data(size: u32) -> Vec<caspr::textures::rectangle::Rectangle<u8>> {
+        vec![caspr::textures::rectangle::Rectangle::<u8>::new(size, size, vec![0; (size * size) as usize]); 6]
     }
 
-    pub fn generate_texture_data(size: u32) -> Vec<Vec<u8>> {
+    pub fn generate_texture_data(size: u32) -> [caspr::textures::rectangle::Rectangle<u8>; 6] {
         // Generate colors for 6 faces
-        let colors = [[255], [150], [120], [80], [50], [20]];
+        let colors: [[u8; 1]; 6] = [[255], [150], [120], [80], [50], [20]];
 
-        let texture_data = colors
-            .iter()
-            .map(|colour| {
-                let mut data = Vec::with_capacity((size * size) as usize);
-                for _ in 0..(size * size) {
-                    data.extend_from_slice(colour);
+        let texture_data = colors.map(|colour| {
+            let mut data = Vec::with_capacity(size as usize);
+            for _y in 0..size {
+                let mut row = Vec::with_capacity(size as usize);
+                for _x in 0..(size) {
+                    row.extend_from_slice(&colour);
                 }
-                data
-            })
-            .collect();
+                data.push(row);
+            }
+            caspr::textures::rectangle::Rectangle::<u8>::new(size, size, data.into_iter().flatten().collect())
+        });
         texture_data
     }
 
-    fn create_cubemap_texture(device: &wgpu::Device, size: u32) -> wgpu::Texture {
+    fn create_cubemap_texture(device: &wgpu::Device, width: u32, height: u32, mip_level_count: u32) -> wgpu::Texture {
         let texture_size = wgpu::Extent3d {
-            width: size,
-            height: size,
+            width,
+            height,
             depth_or_array_layers: 6,
         };
 
         device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Clouds cubemap"),
             size: texture_size,
-            mip_level_count: 1,
+            mip_level_count,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::R8Unorm,
@@ -253,9 +254,9 @@ impl CloudsRenderer {
         })
     }
 
-    fn update_texture(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, texture_data: &[Vec<u8>], size: u32) {
-        let texture = Self::create_cubemap_texture(device, size);
-        Self::write_cubemap_texture(queue, &texture, texture_data, size);
+    fn update_texture(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, texture_data: &[caspr::textures::rectangle::Rectangle<u8>], size: u32, mip_map_count: u32) {
+        let texture = Self::create_cubemap_texture(device, size, size, mip_map_count);
+        Self::write_cubemap_texture(queue, &texture, texture_data);
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor {
             dimension: Some(wgpu::TextureViewDimension::Cube),
             ..Default::default()
@@ -264,27 +265,31 @@ impl CloudsRenderer {
         self.bind_group = bind_group;
     }
 
-    fn write_cubemap_texture(queue: &wgpu::Queue, texture: &wgpu::Texture, texture_data: &[Vec<u8>], size: u32) {
-        texture_data.iter().enumerate().for_each(|(layer, data)| {
-            queue.write_texture(
-                wgpu::TexelCopyTextureInfo {
-                    texture,
-                    mip_level: 0,
-                    origin: wgpu::Origin3d { x: 0, y: 0, z: layer as u32 },
-                    aspect: wgpu::TextureAspect::All,
-                },
-                data,
-                wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(size),
-                    rows_per_image: Some(size),
-                },
-                wgpu::Extent3d {
-                    width: size,
-                    height: size,
-                    depth_or_array_layers: 1,
-                },
-            );
+    fn write_cubemap_texture(queue: &wgpu::Queue, texture: &wgpu::Texture, texture_data: &[caspr::textures::rectangle::Rectangle<u8>]) {
+        texture_data.into_iter().enumerate().for_each(|(layer, texture_data)| {
+            let texture_data = texture_data.clone();
+            let mipmaps = texture_data.generate_mipmaps();
+            mipmaps.into_iter().enumerate().for_each(|(mip_level, rect)| {
+                queue.write_texture(
+                    wgpu::TexelCopyTextureInfo {
+                        texture,
+                        mip_level: mip_level as u32,
+                        origin: wgpu::Origin3d { x: 0, y: 0, z: layer as u32 },
+                        aspect: wgpu::TextureAspect::All,
+                    },
+                    &rect.data,
+                    wgpu::TexelCopyBufferLayout {
+                        offset: 0,
+                        bytes_per_row: Some(rect.width),
+                        rows_per_image: Some(rect.height),
+                    },
+                    wgpu::Extent3d {
+                        width: rect.width,
+                        height: rect.height,
+                        depth_or_array_layers: 1,
+                    },
+                );
+            });
         });
     }
 
@@ -322,7 +327,7 @@ impl eframe::egui_wgpu::CallbackTrait for CloudsCallback {
         }
         if let Some(texture_info) = &self.clouds_texture_to_upload {
             if texture_info.changed {
-                renderer.update_texture(device, queue, &texture_info.texture_data, texture_info.texture_size);
+                renderer.update_texture(device, queue, &texture_info.texture_data, texture_info.texture_size, texture_info.texture_data[0].mip_map_count());
             }
         }
 
