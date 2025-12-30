@@ -6,6 +6,7 @@ pub mod markers;
 pub mod renderer;
 pub mod sky_settings;
 pub mod stars;
+mod textures;
 
 pub enum SpecificName {
     /// Gives back all name combinations

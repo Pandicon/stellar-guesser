@@ -66,8 +66,11 @@ impl Uniforms {
 
 pub struct CloudsRenderer {
     pipeline: wgpu::RenderPipeline,
+    bind_group_layout: wgpu::BindGroupLayout,
     bind_group: wgpu::BindGroup,
     uniform_buffer: wgpu::Buffer,
+
+    sampler: wgpu::Sampler,
 
     uniforms: Uniforms,
 }
@@ -79,8 +82,8 @@ impl CloudsRenderer {
 
         let uniform_buffer = uniforms.get_uniform_buffer(Some("Clouds uniform buffer"), device);
 
-        let texture_size = 1024;
-        let texture_data = Self::generate_texture_data(texture_size);
+        let texture_size = 256;
+        let texture_data = Self::generate_default_filler_texture_data(texture_size);
         let texture = Self::create_cubemap_texture(device, texture_size);
         Self::write_cubemap_texture(queue, &texture, &texture_data, texture_size);
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor {
@@ -133,24 +136,7 @@ impl CloudsRenderer {
             ],
         });
 
-        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Clouds bind group"),
-            layout: &bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: uniform_buffer.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::TextureView(&texture_view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::Sampler(&sampler),
-                },
-            ],
-        });
+        let bind_group = Self::create_bind_group(&bind_group_layout, &device, &texture_view, &uniform_buffer, &sampler);
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Clouds pipeline layout"),
@@ -190,29 +176,50 @@ impl CloudsRenderer {
 
         Self {
             pipeline,
+            bind_group_layout,
             bind_group,
             uniform_buffer,
+
+            sampler,
 
             uniforms,
         }
     }
 
-    fn generate_texture_data(size: u32) -> Vec<Vec<u8>> {
+    fn create_bind_group(
+        bind_group_layout: &wgpu::BindGroupLayout,
+        device: &wgpu::Device,
+        texture_view: &wgpu::TextureView,
+        uniform_buffer: &wgpu::Buffer,
+        sampler: &wgpu::Sampler,
+    ) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Clouds bind group"),
+            layout: bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: uniform_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&texture_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Sampler(&sampler),
+                },
+            ],
+        })
+    }
+
+    fn generate_default_filler_texture_data(size: u32) -> Vec<Vec<u8>> {
+        vec![vec![0; (size * size) as usize]; 6]
+    }
+
+    pub fn generate_texture_data(size: u32) -> Vec<Vec<u8>> {
         // Generate colors for 6 faces
-        let colors = [
-            /*[255, 0, 0, 255],   // +X (Red)
-            [0, 255, 0, 255],   // -X (Green)
-            [0, 0, 255, 255],   // +Y (Blue)
-            [255, 255, 0, 255], // -Y (Yellow)
-            [0, 255, 255, 255], // +Z (Cyan)
-            [255, 0, 255, 255], // -Z (Magenta)*/
-            [255],
-            [150],
-            [120],
-            [80],
-            [50],
-            [20],
-        ];
+        let colors = [[255], [150], [120], [80], [50], [20]];
 
         let texture_data = colors
             .iter()
@@ -244,6 +251,17 @@ impl CloudsRenderer {
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
             view_formats: &[],
         })
+    }
+
+    fn update_texture(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, texture_data: &[Vec<u8>], size: u32) {
+        let texture = Self::create_cubemap_texture(device, size);
+        Self::write_cubemap_texture(queue, &texture, texture_data, size);
+        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor {
+            dimension: Some(wgpu::TextureViewDimension::Cube),
+            ..Default::default()
+        });
+        let bind_group = Self::create_bind_group(&self.bind_group_layout, device, &texture_view, &self.uniform_buffer, &self.sampler);
+        self.bind_group = bind_group;
     }
 
     fn write_cubemap_texture(queue: &wgpu::Queue, texture: &wgpu::Texture, texture_data: &[Vec<u8>], size: u32) {
@@ -280,7 +298,10 @@ impl CloudsRenderer {
 pub struct CloudsCallback {
     pub camera_data: caspr::camera::Camera,
     pub clouds_settings: caspr::clouds::CloudSettings,
+    pub clouds_texture_to_upload: Option<caspr::textures::cubemap::Cubemap<u8>>,
     pub target_format: wgpu::TextureFormat,
+
+    pub render: bool,
 }
 
 impl eframe::egui_wgpu::CallbackTrait for CloudsCallback {
@@ -299,11 +320,19 @@ impl eframe::egui_wgpu::CallbackTrait for CloudsCallback {
         if self.camera_data.changed {
             renderer.update_uniform_buffer(queue, &self.camera_data, &self.clouds_settings);
         }
+        if let Some(texture_info) = &self.clouds_texture_to_upload {
+            if texture_info.changed {
+                renderer.update_texture(device, queue, &texture_info.texture_data, texture_info.texture_size);
+            }
+        }
 
         Vec::new()
     }
 
     fn paint(&self, info: egui::PaintCallbackInfo, render_pass: &mut wgpu::RenderPass<'static>, resources: &eframe::egui_wgpu::CallbackResources) {
+        if !self.render {
+            return;
+        }
         let renderer: &CloudsRenderer = resources.get().unwrap();
 
         let viewport = info.clip_rect_in_pixels();

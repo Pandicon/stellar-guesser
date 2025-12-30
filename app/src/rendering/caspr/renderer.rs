@@ -54,6 +54,8 @@ pub struct CellestialSphere {
     marker_renderers: HashMap<String, Vec<caspr::markers::MarkerRenderer>>,
 
     pub camera: caspr::camera::Camera,
+
+    pub textures: caspr::textures::Textures,
 }
 
 impl CellestialSphere {
@@ -155,7 +157,10 @@ impl CellestialSphere {
             caspr::clouds::renderer::CloudsCallback {
                 camera_data: self.camera,
                 clouds_settings: self.sky_settings.cloud_settings,
+                clouds_texture_to_upload: self.textures.clouds_texture_to_upload.clone(),
                 target_format,
+
+                render: true,
             },
         ));
         for line_renderers in self.line_renderers.values() {
@@ -196,6 +201,8 @@ impl CellestialSphere {
         self.camera.changed_projection = false;
         self.camera.changed_rotation = false;
         self.camera.changed_viewport_rect = false;
+
+        self.textures.clouds_texture_to_upload = None;
     }
 
     pub fn load(storage: Option<&dyn eframe::Storage>) -> Self {
@@ -235,6 +242,8 @@ impl CellestialSphere {
                 changed_rotation: false,
                 changed_viewport_rect: false,
             },
+
+            textures: caspr::textures::Textures::default(),
         }
     }
 
@@ -270,7 +279,7 @@ impl CellestialSphere {
         let settings = sky.light_pollution_place_to_mag_settings(&sky.light_pollution_place, &self.sky_settings);
         self.sky_settings.mag_to_radius_settings[self.sky_settings.mag_to_radius_id] = settings;
         if self.sky_settings.cloud_settings.enabled {
-            crate::rendering::caspr::clouds::apply_dimming(&mut sky.stars, &self.sky_settings.cloud_settings);
+            crate::rendering::caspr::clouds::apply_dimming(sky, self);
         }
         self.init_renderers(sky);
     }

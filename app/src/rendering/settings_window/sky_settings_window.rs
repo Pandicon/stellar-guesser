@@ -110,7 +110,7 @@ impl Application {
                     || previous_iterations != self.cellestial_sphere.sky_settings.cloud_settings.iterations))
         {
             if self.cellestial_sphere.sky_settings.cloud_settings.enabled {
-                crate::rendering::caspr::clouds::apply_dimming(&mut self.sky.stars, &self.cellestial_sphere.sky_settings.cloud_settings);
+                crate::rendering::caspr::clouds::apply_dimming(&mut self.sky, &mut self.cellestial_sphere);
             } else {
                 crate::rendering::caspr::clouds::disable(&mut self.sky.stars);
             }

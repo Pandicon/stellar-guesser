@@ -1,7 +1,7 @@
 use angle::Angle;
 use noise::{MultiFractal, NoiseFn};
 
-use crate::sky;
+use crate::{rendering::caspr, sky};
 
 pub mod renderer;
 
@@ -9,12 +9,21 @@ pub mod renderer;
 // Each layer of clouds absorbs a set fraction of light from each star, so the received flux is F ~ F_0 * exp(-number of layers).
 // However, the change in magnitude is m - m_0 ~ -log(F / F_0) = -log(exp(-number of layers)) = number of layers.
 // So the decrease in magnitude is linear in the thickness of the cloud (roughly).
-pub fn apply_dimming(stars: &mut std::collections::HashMap<String, Vec<sky::star::Star>>, settings: &CloudSettings) {
+pub fn apply_dimming(sky: &mut sky::Sky, cellestial_sphere: &mut caspr::renderer::CellestialSphere) {
+    let texture_size = 1024;
+    let texture_data = renderer::CloudsRenderer::generate_texture_data(texture_size);
+    cellestial_sphere.textures.clouds_texture_to_upload = Some(caspr::textures::cubemap::Cubemap::<u8> {
+        texture_size,
+        texture_data,
+        changed: true,
+    });
+
+    let settings = &cellestial_sphere.sky_settings.cloud_settings;
     let seed = (chrono::Utc::now().timestamp().abs() % (u32::MAX as i64)) as u32;
     let cloud_generator: noise::Billow<noise::SuperSimplex> = noise::Billow::new(seed).set_octaves(settings.iterations);
     let mut generated_decreases = std::collections::HashMap::<[u32; 2], f32>::new();
     let mut decreases = Vec::new();
-    for star_set in stars.values_mut() {
+    for star_set in sky.stars.values_mut() {
         for star in star_set {
             let coordinates = spherical_geometry::SphericalPoint::ra_dec_to_cartesian(*star.ra.to_rad().as_value(), *star.dec.to_rad().as_value());
             let decrease = cloud_generator.get([coordinates.x as f64, coordinates.y as f64, coordinates.z as f64]) as f32;
@@ -36,7 +45,7 @@ pub fn apply_dimming(stars: &mut std::collections::HashMap<String, Vec<sky::star
     let decrease_offset = decreases[(((decreases.len() - 1) as f32) * (1.0 - settings.coverage)).floor() as usize]; // This offset ensures that the chosen (via the coverage setting) part of the sky is covered
     let multi = settings.thickness / (decreases[decreases.len() - 1] - decrease_offset); // This multiplier ensures that the maximum decrease is the one chosen via the `thickness` setting
 
-    for star_set in stars.values_mut() {
+    for star_set in sky.stars.values_mut() {
         for star in star_set {
             if let Some(decrease_raw) = generated_decreases.get(&[star.ra.as_value().to_bits(), star.dec.as_value().to_bits()]) {
                 let decrease = (multi * (decrease_raw - decrease_offset)).max(0.0);

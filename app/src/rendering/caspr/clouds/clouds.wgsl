@@ -143,5 +143,5 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         // Should never happen
         return vec4<f32>(0.0, 0.0, 0.0, 1.0);
     }
-    return vec4<f32>(vec3<f32>(sample.r), 0.5);
+    return vec4<f32>(uniforms.colour.rgb, sample.r);
 }
