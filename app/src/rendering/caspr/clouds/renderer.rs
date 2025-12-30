@@ -348,19 +348,6 @@ impl eframe::egui_wgpu::CallbackTrait for CloudsCallback {
             let physical_width = viewport.width_px as f32;
             let physical_height = viewport.height_px as f32;
 
-            /*let pixels_per_point = info.pixels_per_point;
-            let logical_rect = self.camera_data.viewport_rect;
-
-            let viewport_x = logical_rect.left() * pixels_per_point;
-            let viewport_y = logical_rect.top() * pixels_per_point;
-            let viewport_w = logical_rect.width() * pixels_per_point;
-            let viewport_h = logical_rect.height() * pixels_per_point;
-
-            if viewport_w > physical_width || viewport_h > physical_height {
-                (physical_left, physical_top, physical_width, physical_height)
-            } else {
-                (viewport_x, viewport_y, viewport_w, viewport_h)
-            }*/
             (physical_left, physical_top, physical_width, physical_height)
         };
 
