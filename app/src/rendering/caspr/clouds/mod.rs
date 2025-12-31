@@ -1,4 +1,5 @@
 use angle::Angle;
+use eframe::egui;
 use noise::{MultiFractal, NoiseFn};
 
 use crate::{rendering::caspr, sky};
@@ -14,7 +15,7 @@ pub fn apply_dimming(sky: &mut sky::Sky, cellestial_sphere: &mut caspr::renderer
     let seed = (chrono::Utc::now().timestamp().abs() % (u32::MAX as i64)) as u32;
     let cloud_generator: noise::Billow<noise::SuperSimplex> = noise::Billow::new(seed).set_octaves(settings.iterations);
 
-    let texture_size = 512;
+    let texture_size = (90.0 / cellestial_sphere.sky_settings.cloud_settings.resolution.value()).floor() as u32;
     let (texture_data_faces, decrease_offset, multi) = renderer::CloudsRenderer::generate_texture_data(texture_size, &cloud_generator, settings);
     cellestial_sphere.textures.clouds_texture_to_upload = Some(caspr::textures::cubemap::Cubemap::<u8> {
         texture_size,
@@ -41,6 +42,17 @@ pub fn disable(stars: &mut std::collections::HashMap<String, Vec<sky::star::Star
     }
 }
 
+#[derive(Clone, Copy)]
+struct CloudSettingsChangesState {
+    colour_changed: bool,
+}
+
+impl Default for CloudSettingsChangesState {
+    fn default() -> Self {
+        Self { colour_changed: false }
+    }
+}
+
 #[derive(serde::Deserialize, serde::Serialize, Clone, Copy)]
 pub struct CloudSettings {
     pub coverage: f32,
@@ -51,6 +63,11 @@ pub struct CloudSettings {
 
     pub render: bool,
     pub opaque_thickness: f32,
+    pub resolution: angle::Deg<f32>,
+    colour: egui::Color32,
+
+    #[serde(skip)]
+    changes_state: CloudSettingsChangesState,
 }
 
 impl Default for CloudSettings {
@@ -58,12 +75,16 @@ impl Default for CloudSettings {
         Self {
             coverage: 0.5,
             thickness: 4.0,
-            iterations: 16,
+            iterations: 8,
             enabled: false,
             recalculate_on_change: false,
 
             render: false,
             opaque_thickness: 4.0,
+            resolution: angle::Deg(0.5),
+            colour: egui::Color32::from_rgb(77, 77, 77),
+
+            changes_state: Default::default(),
         }
     }
 }
@@ -74,8 +95,26 @@ impl CloudSettings {
         if self.thickness < 0.0 {
             self.thickness = 0.0;
         }
+        if self.opaque_thickness < 0.0 {
+            self.opaque_thickness = 0.0;
+        }
         if self.iterations < 1 {
             self.iterations = 1;
         }
+    }
+
+    pub fn set_colour(&mut self, colour: egui::Color32) {
+        if self.colour != colour {
+            self.colour = colour;
+            self.changes_state.colour_changed = true;
+        }
+    }
+
+    pub fn get_colour(&self) -> egui::Color32 {
+        self.colour
+    }
+
+    pub fn reset_changes_state(&mut self) {
+        self.changes_state = CloudSettingsChangesState::default();
     }
 }

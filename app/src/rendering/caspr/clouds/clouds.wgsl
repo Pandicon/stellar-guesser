@@ -139,9 +139,10 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let y = in.ndc.y;
     let output = solve_zw(x, y, uniforms.inv_mvps);
     let sample = textureSample(t_cube, s_cube, output.normal);
+    let thickness = sample.r;
     if(!output.valid) {
         // Should never happen
         return vec4<f32>(0.0, 0.0, 0.0, 1.0);
     }
-    return vec4<f32>(uniforms.colour.rgb, sample.r);
+    return vec4<f32>(uniforms.colour.rgb, thickness * uniforms.colour.a);
 }

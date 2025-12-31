@@ -160,7 +160,7 @@ impl CellestialSphere {
                 clouds_texture_to_upload: self.textures.clouds_texture_to_upload.clone(),
                 target_format,
 
-                render: true,
+                render: self.sky_settings.cloud_settings.enabled && self.sky_settings.cloud_settings.render,
             },
         ));
         for line_renderers in self.line_renderers.values() {
@@ -203,6 +203,8 @@ impl CellestialSphere {
         self.camera.changed_viewport_rect = false;
 
         self.textures.clouds_texture_to_upload = None;
+
+        self.sky_settings.cloud_settings.reset_changes_state();
     }
 
     pub fn load(storage: Option<&dyn eframe::Storage>) -> Self {

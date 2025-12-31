@@ -68,7 +68,7 @@ impl Application {
             .response
             .interact(egui::Sense::click_and_drag());
         let top_panel_hovered = self.render_top_panel(ctx);
-        log::debug!("Top panel hovered: {top_panel_hovered}");
+        // log::debug!("Top panel hovered: {top_panel_hovered}");
         // The central panel is hovered and the top panel is not
         central_panel_response.contains_pointer() && !top_panel_hovered
     }

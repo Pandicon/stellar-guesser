@@ -20,7 +20,7 @@ impl Uniforms {
         })
     }
 
-    pub fn from_camera_and_settings(camera_data: &caspr::camera::Camera, _clouds_settings: &caspr::clouds::CloudSettings) -> Self {
+    pub fn from_camera_and_settings(camera_data: &caspr::camera::Camera, clouds_settings: &caspr::clouds::CloudSettings) -> Self {
         let rotation_3: &nalgebra::Matrix<f32, nalgebra::Const<3>, nalgebra::Const<3>, nalgebra::ArrayStorage<f32, 3, 3>> = camera_data.rotation.matrix();
         #[rustfmt::skip]
         let rotation_4 = nalgebra::Matrix4::new(
@@ -60,7 +60,7 @@ impl Uniforms {
 
         Self {
             mvp_matrix: inv_matrix_columns,
-            colour: [0.3, 0.3, 0.3, 1.0],
+            colour: [clouds_settings.colour.r(), clouds_settings.colour.g(), clouds_settings.colour.b(), clouds_settings.colour.a()].map(|c| (c as f32) / 255.0),
         }
     }
 }
@@ -363,11 +363,13 @@ impl eframe::egui_wgpu::CallbackTrait for CloudsCallback {
             .entry::<CloudsRenderer>()
             .or_insert_with(|| CloudsRenderer::new(device, queue, self.target_format, &self.camera_data, &self.clouds_settings));
 
-        if self.camera_data.changed {
+        if self.camera_data.changed || self.clouds_settings.changes_state.colour_changed {
+            log::debug!("Uploading changed clouds uniform buffer.");
             renderer.update_uniform_buffer(queue, &self.camera_data, &self.clouds_settings);
         }
         if let Some(texture_info) = &self.clouds_texture_to_upload {
             if texture_info.changed {
+                log::debug!("Uploading changed clouds texture.");
                 renderer.update_texture(device, queue, &texture_info.texture_data, texture_info.texture_size, texture_info.texture_data[0].mip_map_count());
             }
         }
