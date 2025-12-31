@@ -21,7 +21,7 @@ impl Uniforms {
     }
 
     pub fn from_camera_and_settings(camera_data: &caspr::camera::Camera, clouds_settings: &caspr::clouds::CloudSettings) -> Self {
-        let rotation_3: &nalgebra::Matrix<f32, nalgebra::Const<3>, nalgebra::Const<3>, nalgebra::ArrayStorage<f32, 3, 3>> = camera_data.rotation.matrix();
+        let rotation_3: &nalgebra::Matrix<f32, nalgebra::Const<3>, nalgebra::Const<3>, nalgebra::ArrayStorage<f32, 3, 3>> = camera_data.get_rotation().matrix();
         #[rustfmt::skip]
         let rotation_4 = nalgebra::Matrix4::new(
             rotation_3[(0, 0)], rotation_3[(0, 1)], rotation_3[(0, 2)], 0.0,
@@ -29,10 +29,10 @@ impl Uniforms {
             rotation_3[(2, 0)], rotation_3[(2, 1)], rotation_3[(2, 2)], 0.0,
                            0.0,                0.0,                0.0, 1.0,
         );
-        let mvp_matrix = camera_data.projection.get_projection_matrix(camera_data.fov, camera_data.viewport_rect) * rotation_4;
+        let mvp_matrix = camera_data.get_projection().get_projection_matrix(*camera_data.get_fov(), camera_data.get_viewport_rect()) * rotation_4;
 
-        let width = camera_data.viewport_rect.width();
-        let height = camera_data.viewport_rect.height();
+        let width = camera_data.get_viewport_rect().width();
+        let height = camera_data.get_viewport_rect().height();
         // Matrix Logic:
         // x_ndc = (x_pixel / width) * 2
         // y_ndc = (y_pixel / height) * -2
@@ -363,7 +363,7 @@ impl eframe::egui_wgpu::CallbackTrait for CloudsCallback {
             .entry::<CloudsRenderer>()
             .or_insert_with(|| CloudsRenderer::new(device, queue, self.target_format, &self.camera_data, &self.clouds_settings));
 
-        if self.camera_data.changed || self.clouds_settings.changes_state.colour_changed {
+        if self.camera_data.get_changes_state().changed || self.clouds_settings.changes_state.colour_changed {
             log::debug!("Uploading changed clouds uniform buffer.");
             renderer.update_uniform_buffer(queue, &self.camera_data, &self.clouds_settings);
         }

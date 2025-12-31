@@ -61,7 +61,7 @@ pub struct CellestialSphere {
 impl CellestialSphere {
     //Renders a circle based on its current normal (does NOT account for the rotation of the sphere)
     pub fn render_circle(&self, normal: &Vector3<f32>, radius: f32, color: egui::epaint::Color32, painter: &egui::Painter) {
-        let (projected_point, is_within_bounds) = self.camera.projection.project_point(normal, self.camera.fov, self.camera.viewport_rect);
+        let (projected_point, is_within_bounds) = self.camera.get_projection().project_point(normal, *self.camera.get_fov(), self.camera.get_viewport_rect());
 
         if is_within_bounds {
             painter.circle_filled(projected_point, radius, color);
@@ -69,14 +69,14 @@ impl CellestialSphere {
     }
 
     pub fn render_line(&self, start: &Vector3<f32>, end: &Vector3<f32>, colour: Color32, width: f32, painter: &egui::Painter) {
-        let (start_point, is_start_within_bounds) = self.camera.projection.project_point(start, self.camera.fov, self.camera.viewport_rect);
-        let (end_point, is_end_within_bounds) = self.camera.projection.project_point(end, self.camera.fov, self.camera.viewport_rect);
+        let (start_point, is_start_within_bounds) = self.camera.get_projection().project_point(start, *self.camera.get_fov(), self.camera.get_viewport_rect());
+        let (end_point, is_end_within_bounds) = self.camera.get_projection().project_point(end, *self.camera.get_fov(), self.camera.get_viewport_rect());
 
-        let screen_rect = Rectangle::from(self.camera.viewport_rect);
+        let screen_rect = Rectangle::from(*self.camera.get_viewport_rect());
 
         // Allow the whole half sphere or what is within the FOV (whichever is greater)
         // This gets rid of lines on the other half of the sphere while also not removing lines that should be visible at large zooms
-        let modified_camera_z = self.camera.camera_z.max(0.0);
+        let modified_camera_z = self.camera.get_camera_z().max(0.0);
 
         // Neither the starting point nor the ending point is visible AND either of them is behind the camera
         // This avoids lines from the part of the sky that is behind us (north pole when looking at the south pole) being drawn over the screen
@@ -102,12 +102,12 @@ impl CellestialSphere {
         painter: &egui::Painter,
         label: Option<String>,
     ) {
-        let (centre_point, is_centre_within_bounds) = self.camera.projection.project_point(centre_vector, self.camera.fov, self.camera.viewport_rect);
+        let (centre_point, is_centre_within_bounds) = self.camera.get_projection().project_point(centre_vector, *self.camera.get_fov(), self.camera.get_viewport_rect());
         if !is_centre_within_bounds {
             return;
         }
         let size = if let Some(other_point_vec) = other_vector {
-            let (other_point, _) = self.camera.projection.project_point(other_point_vec, self.camera.fov, self.camera.viewport_rect);
+            let (other_point, _) = self.camera.get_projection().project_point(other_point_vec, *self.camera.get_fov(), self.camera.get_viewport_rect());
             let vec_to = other_point - centre_point;
             vec_to.length()
         } else if let Some(pixel_size) = pixel_size {
@@ -141,19 +141,18 @@ impl CellestialSphere {
     }
 
     pub fn prepare_render(&mut self, sky: &sky::Sky) {
-        if self.camera.changed_rotation || self.camera.changed_projection || self.camera.changed_viewport_rect {
+        if self.camera.get_changes_state().changed_rotation || self.camera.get_changes_state().changed_projection || self.camera.get_changes_state().changed_viewport_rect {
             self.init_renderers(sky);
-        } else if self.camera.changed_fov {
+        } else if self.camera.get_changes_state().changed_fov {
             self.reinit_renderer_category(sky, RendererCategory::Stars);
         }
-        self.camera.changed = self.camera.changed_fov || self.camera.changed_projection || self.camera.changed_rotation || self.camera.changed_viewport_rect;
     }
 
     // Renders the entire sphere view
     pub fn render_sky(&self, painter: &egui::Painter, frame: &mut eframe::Frame) {
         let target_format = frame.wgpu_render_state().map(|state| state.target_format).unwrap_or(eframe::wgpu::TextureFormat::Bgra8Unorm);
         painter.add(eframe::egui_wgpu::Callback::new_paint_callback(
-            self.camera.viewport_rect,
+            *self.camera.get_viewport_rect(),
             caspr::clouds::renderer::CloudsCallback {
                 camera_data: self.camera,
                 clouds_settings: self.sky_settings.cloud_settings,
@@ -196,11 +195,7 @@ impl CellestialSphere {
     }
 
     pub fn after_render(&mut self) {
-        self.camera.changed = false;
-        self.camera.changed_fov = false;
-        self.camera.changed_projection = false;
-        self.camera.changed_rotation = false;
-        self.camera.changed_viewport_rect = false;
+        self.camera.reset_changes_state();
 
         self.textures.clouds_texture_to_upload = None;
 
@@ -219,8 +214,7 @@ impl CellestialSphere {
         }
 
         let viewport_rect = egui::Rect::from_two_pos(egui::pos2(0.0, 0.0), egui::pos2(0.0, 0.0));
-        let zoom = 3.0_f32.sqrt();
-        let fov = Self::zoom_to_fov(zoom);
+        let fov = angle::Deg(120.0).to_rad();
         Self {
             sky_settings,
             star_renderers: HashMap::new(),
@@ -228,22 +222,7 @@ impl CellestialSphere {
             deepsky_renderers: HashMap::new(),
             marker_renderers: HashMap::new(),
 
-            camera: caspr::camera::Camera {
-                zoom,
-                fov,
-                camera_z: Self::fov_to_camera_z(fov),
-
-                rotation: Rotation3::new(Vector3::new(0.0, 0.0, 0.0)),
-                projection: sg_geometry::projection::Projection::Stereographic,
-
-                viewport_rect,
-
-                changed: false,
-                changed_fov: false,
-                changed_projection: false,
-                changed_rotation: false,
-                changed_viewport_rect: false,
-            },
+            camera: caspr::camera::Camera::new_with_fov(fov, sg_geometry::projection::Projection::Stereographic, Rotation3::new(Vector3::new(0.0, 0.0, 0.0)), viewport_rect),
 
             textures: caspr::textures::Textures::default(),
         }
@@ -254,19 +233,19 @@ impl CellestialSphere {
         if velocity == 0.0 {
             return;
         }
-        let future_zoom = self.camera.zoom + velocity * self.camera.zoom;
+        let future_zoom = self.camera.get_zoom() + velocity * self.camera.get_zoom();
         //A check is needed since negative zoom breaks everything
         if ZOOM_CAP > future_zoom && future_zoom > 0.0 {
-            self.camera.zoom = future_zoom;
-            self.camera.fov = Self::zoom_to_fov(self.camera.zoom);
-            self.camera.camera_z = Self::fov_to_camera_z(self.camera.fov);
-
-            self.camera.changed_fov = true;
+            self.camera.set_zoom(future_zoom);
         }
     }
 
     pub fn get_zoom(&self) -> f32 {
-        self.camera.zoom
+        *self.camera.get_zoom()
+    }
+
+    pub fn fov_to_zoom(fov: angle::Rad<f32>) -> f32 {
+        1.0 / ((fov / 4.0).tan())
     }
 
     pub fn zoom_to_fov(zoom: f32) -> angle::Rad<f32> {
@@ -509,11 +488,11 @@ impl CellestialSphere {
                             .iter()
                             .map(|star| {
                                 star.get_renderer(
-                                    &self.camera.projection,
-                                    self.camera.rotation.matrix(),
+                                    self.camera.get_projection(),
+                                    self.camera.get_rotation().matrix(),
                                     self.sky_settings.mag_to_radius_settings[self.sky_settings.mag_to_radius_id],
-                                    self.camera.fov.to_deg(),
-                                    self.camera.viewport_rect,
+                                    self.camera.get_fov().to_deg(),
+                                    self.camera.get_viewport_rect(),
                                 )
                             })
                             .collect(),
@@ -524,7 +503,7 @@ impl CellestialSphere {
                 if let Some(lines) = sky.lines.get(name) {
                     self.line_renderers.insert(
                         name.to_string(),
-                        lines.lines.iter().map(|line| line.get_renderer(self.camera.rotation.matrix(), lines.colour)).collect(),
+                        lines.lines.iter().map(|line| line.get_renderer(self.camera.get_rotation().matrix(), lines.colour)).collect(),
                     );
                 }
             }
@@ -544,7 +523,7 @@ impl CellestialSphere {
                             .deepskies
                             .iter()
                             .map(|deepsky| {
-                                let mut renderer = deepsky.get_renderer(self.camera.rotation.matrix(), deepskies.colour);
+                                let mut renderer = deepsky.get_renderer(self.camera.get_rotation().matrix(), deepskies.colour);
                                 if disabled_renderers.contains(&deepsky.object_id) {
                                     renderer.disabled = true;
                                 }
@@ -558,12 +537,16 @@ impl CellestialSphere {
                 if name == "game" {
                     self.marker_renderers.insert(
                         name.to_string(),
-                        sky.game_markers.markers.iter().filter_map(|marker| marker.get_renderer(self.camera.rotation.matrix())).collect(),
+                        sky.game_markers.markers.iter().filter_map(|marker| marker.get_renderer(self.camera.get_rotation().matrix())).collect(),
                     );
                 } else if let Some(markers) = sky.markers.get(name) {
                     self.marker_renderers.insert(
                         name.to_string(),
-                        markers.markers.iter().filter_map(|marker| marker.get_renderer(self.camera.rotation.matrix(), markers.colour)).collect(),
+                        markers
+                            .markers
+                            .iter()
+                            .filter_map(|marker| marker.get_renderer(self.camera.get_rotation().matrix(), markers.colour))
+                            .collect(),
                     );
                 }
             }
@@ -631,7 +614,9 @@ impl CellestialSphere {
     }*/
 
     pub fn project_screen_pos(&self, screen_pos: egui::Pos2) -> Vector3<f32> {
-        self.camera.projection.cast_onto_sphere(&self.camera.viewport_rect, &screen_pos, self.camera.rotation, self.camera.fov)
+        self.camera
+            .get_projection()
+            .cast_onto_sphere(&self.camera.get_viewport_rect(), &screen_pos, *self.camera.get_rotation(), *self.camera.get_fov())
     }
 
     pub fn rotate_between_points(&mut self, initial_pos: &Vector3<f32>, final_pos: &Vector3<f32>) -> Option<()> {
@@ -642,8 +627,8 @@ impl CellestialSphere {
             if rotation_matrix.matrix()[0].is_nan() {
                 return None;
             }
-            self.camera.rotation *= rotation_matrix;
-            self.camera.changed_rotation = true;
+            let old_rotation = *self.camera.get_rotation();
+            self.camera.set_rotation(old_rotation * rotation_matrix);
         } else {
             return None;
         }
@@ -659,8 +644,7 @@ impl CellestialSphere {
         if rotation_matrix.matrix()[0].is_nan() {
             return None;
         }
-        self.camera.rotation = rotation_matrix;
-        self.camera.changed_rotation = true;
+        self.camera.set_rotation(rotation_matrix);
         Some(())
     }
 }

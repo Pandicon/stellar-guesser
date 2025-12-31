@@ -61,11 +61,11 @@ impl Application {
             if self.game_handler.add_marker_on_click && self.input.primary_released && !self.input.primary_dragging_last_frame {
                 /*let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
                 let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);*/
-                let marker_pos = self.cellestial_sphere.camera.projection.cast_onto_sphere_dec_ra(
-                    &self.cellestial_sphere.camera.viewport_rect,
+                let marker_pos = self.cellestial_sphere.camera.get_projection().cast_onto_sphere_dec_ra(
+                    self.cellestial_sphere.camera.get_viewport_rect(),
                     &pointer_position,
-                    self.cellestial_sphere.camera.rotation,
-                    self.cellestial_sphere.camera.fov.to_rad(),
+                    *self.cellestial_sphere.camera.get_rotation(),
+                    self.cellestial_sphere.camera.get_fov().to_rad(),
                 );
                 if self.game_handler.allow_multiple_player_marker() {
                     self.game_handler.guess_marker_positions.push(marker_pos);

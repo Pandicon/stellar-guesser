@@ -115,6 +115,6 @@ impl CloudSettings {
     }
 
     pub fn reset_changes_state(&mut self) {
-        self.changes_state = CloudSettingsChangesState::default();
+        self.changes_state = Default::default();
     }
 }

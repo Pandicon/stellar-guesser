@@ -44,7 +44,7 @@ impl Star {
         rotation_matrix: &Matrix3<f32>,
         magnitude_to_radius_function: MagnitudeToRadius,
         fov: angle::Deg<f32>,
-        viewport_rect: egui::Rect,
+        viewport_rect: &egui::Rect,
     ) -> stars::StarRenderer {
         let colour = if let Some(col) = self.override_colour { col } else { self.default_colour };
         let radius = stars::StarRenderer::magnitude_to_radius(magnitude_to_radius_function, self.vmag + self.magnitude_offset, fov);

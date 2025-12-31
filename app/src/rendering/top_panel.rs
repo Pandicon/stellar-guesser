@@ -8,7 +8,7 @@ impl Application {
             .show(ctx, |ui| {
                 egui::menu::bar(ui, |ui| {
                     ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                        ui.label(format!("FOV: {:.3}°", self.cellestial_sphere.camera.fov.to_deg().value()));
+                        ui.label(format!("FOV: {:.3}°", self.cellestial_sphere.camera.get_fov().to_deg().value()));
                         if !self.screen_width.very_narrow() {
                             render_left_controls(self, ui);
                         }

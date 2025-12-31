@@ -2,7 +2,7 @@ pub const VIEWPORT_OFFSET: f32 = 10.0;
 
 mod stereographic;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Projection {
     Stereographic,
 }
@@ -12,9 +12,9 @@ impl Projection {
     ///
     /// * fov_full - the angle needed to cover the whole FOV
     /// * viewport - the viewport to project onto
-    pub fn get_projection_matrix(&self, fov_full: angle::Rad<f32>, viewport: egui::Rect) -> nalgebra::Matrix4<f32> {
+    pub fn get_projection_matrix(&self, fov_full: angle::Rad<f32>, viewport: &egui::Rect) -> nalgebra::Matrix4<f32> {
         match *self {
-            Self::Stereographic => stereographic::stereographic_matrix(fov_full, &viewport),
+            Self::Stereographic => stereographic::stereographic_matrix(fov_full, viewport),
         }
     }
 
@@ -42,7 +42,7 @@ impl Projection {
         [dec, ra]
     }
 
-    pub fn project_point(&self, vector: &nalgebra::Vector3<f32>, fov_full: angle::Rad<f32>, viewport_rect: egui::Rect) -> (egui::Pos2, bool) {
+    pub fn project_point(&self, vector: &nalgebra::Vector3<f32>, fov_full: angle::Rad<f32>, viewport_rect: &egui::Rect) -> (egui::Pos2, bool) {
         let projected_raw = match *self {
             Self::Stereographic => stereographic::project_point_raw(vector, fov_full, viewport_rect),
         };

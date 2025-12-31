@@ -54,8 +54,8 @@ pub fn cast_onto_sphere_plane_position(rotation: nalgebra::Rotation3<f32>, full_
     rotation.inverse() * world_position
 }
 
-pub fn project_point_raw(vector: &nalgebra::Vector3<f32>, fov_full: angle::Rad<f32>, viewport_rect: egui::Rect) -> Option<egui::Pos2> {
-    let proj = stereographic_matrix(fov_full, &viewport_rect);
+pub fn project_point_raw(vector: &nalgebra::Vector3<f32>, fov_full: angle::Rad<f32>, viewport_rect: &egui::Rect) -> Option<egui::Pos2> {
+    let proj = stereographic_matrix(fov_full, viewport_rect);
     let v4 = nalgebra::Vector4::new(vector.x, vector.y, vector.z, 1.0);
     let clip = proj * v4;
 

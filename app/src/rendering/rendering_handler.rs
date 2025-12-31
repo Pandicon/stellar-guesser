@@ -55,10 +55,9 @@ impl Application {
             .frame(panel_frame)
             .show(ctx, |ui| {
                 let rect = ui.available_rect_before_wrap();
-                if rect != self.cellestial_sphere.camera.viewport_rect {
-                    log::debug!("Viewport rect changed: {:?} -> {:?}", self.cellestial_sphere.camera.viewport_rect, rect);
-                    self.cellestial_sphere.camera.viewport_rect = rect;
-                    self.cellestial_sphere.camera.changed_viewport_rect = true;
+                if rect != *self.cellestial_sphere.camera.get_viewport_rect() {
+                    log::debug!("Viewport rect changed: {:?} -> {:?}", self.cellestial_sphere.camera.get_viewport_rect(), rect);
+                    self.cellestial_sphere.camera.set_viewport_rect(rect);
                 }
                 self.cellestial_sphere.prepare_render(&self.sky);
                 let painter = ui.painter();
