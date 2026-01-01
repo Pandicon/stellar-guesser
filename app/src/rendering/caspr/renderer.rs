@@ -21,21 +21,21 @@ pub const MAG_TO_LIGHT_POLLUTION_RAW: [(LightPollution, [Option<sky::star::Magni
         LightPollution::PragueDark,
         [
             Some(sky::star::MagnitudeToRadius::Linear { mag_scale: 1.0, mag_offset: 4.3 }),
-            Some(sky::star::MagnitudeToRadius::Exponential { r_0: 2.3, n: 3.5, o: 0.21 }),
+            Some(sky::star::MagnitudeToRadius::Exponential { r_0: 2.23, n: 2.0, o: 0.21 }),
         ],
     ),
     (
         LightPollution::Prague,
         [
             Some(sky::star::MagnitudeToRadius::Linear { mag_scale: 0.75, mag_offset: 3.75 }),
-            Some(sky::star::MagnitudeToRadius::Exponential { r_0: 1.4, n: 3.5, o: 0.21 }),
+            Some(sky::star::MagnitudeToRadius::Exponential { r_0: 1.3, n: 2.0, o: 0.21 }),
         ],
     ),
     (
         LightPollution::AverageVillage,
         [
             Some(sky::star::MagnitudeToRadius::Linear { mag_scale: 0.7, mag_offset: 5.7 }),
-            Some(sky::star::MagnitudeToRadius::Exponential { r_0: 2.6, n: 3.0, o: 0.17 }),
+            Some(sky::star::MagnitudeToRadius::Exponential { r_0: 2.2, n: 2.0, o: 0.17 }),
         ],
     ),
 ];
