@@ -54,6 +54,7 @@ impl Default for CloudSettingsChangesState {
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Copy)]
+#[serde(default)]
 pub struct CloudSettings {
     pub coverage: f32,
     pub thickness: f32,
