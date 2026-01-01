@@ -47,6 +47,7 @@ struct CloudSettingsChangesState {
     colour_changed: bool,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for CloudSettingsChangesState {
     fn default() -> Self {
         Self { colour_changed: false }

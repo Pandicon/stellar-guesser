@@ -616,7 +616,7 @@ impl CellestialSphere {
     pub fn project_screen_pos(&self, screen_pos: egui::Pos2) -> Vector3<f32> {
         self.camera
             .get_projection()
-            .cast_onto_sphere(&self.camera.get_viewport_rect(), &screen_pos, *self.camera.get_rotation(), *self.camera.get_fov())
+            .cast_onto_sphere(self.camera.get_viewport_rect(), &screen_pos, *self.camera.get_rotation(), *self.camera.get_fov())
     }
 
     pub fn rotate_between_points(&mut self, initial_pos: &Vector3<f32>, final_pos: &Vector3<f32>) -> Option<()> {

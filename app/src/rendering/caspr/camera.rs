@@ -123,6 +123,7 @@ pub struct CameraChangesState {
     pub changed_viewport_rect: bool,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for CameraChangesState {
     fn default() -> Self {
         Self {

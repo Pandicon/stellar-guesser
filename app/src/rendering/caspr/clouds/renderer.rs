@@ -137,7 +137,7 @@ impl CloudsRenderer {
             ],
         });
 
-        let bind_group = Self::create_bind_group(&bind_group_layout, &device, &texture_view, &uniform_buffer, &sampler);
+        let bind_group = Self::create_bind_group(&bind_group_layout, device, &texture_view, &uniform_buffer, &sampler);
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Clouds pipeline layout"),
@@ -204,11 +204,11 @@ impl CloudsRenderer {
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::TextureView(&texture_view),
+                    resource: wgpu::BindingResource::TextureView(texture_view),
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: wgpu::BindingResource::Sampler(&sampler),
+                    resource: wgpu::BindingResource::Sampler(sampler),
                 },
             ],
         })
@@ -307,7 +307,7 @@ impl CloudsRenderer {
     }
 
     fn write_cubemap_texture(queue: &wgpu::Queue, texture: &wgpu::Texture, texture_data: &[caspr::textures::rectangle::Rectangle<u8>]) {
-        texture_data.into_iter().enumerate().for_each(|(layer, texture_data)| {
+        texture_data.iter().enumerate().for_each(|(layer, texture_data)| {
             let texture_data = texture_data.clone();
             let mipmaps = texture_data.generate_mipmaps();
             mipmaps.into_iter().enumerate().for_each(|(mip_level, rect)| {
