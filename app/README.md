@@ -1,7 +1,6 @@
 # Stellar Guesser
 
 ## Building
-The application source code is in the `app` folder, so all commands are relative to that folder unles stated otherwise.
 ### Windows
 To build this for Windows, simply run `cargo build` or `cargo build --release`.
 
