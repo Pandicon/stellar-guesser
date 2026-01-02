@@ -196,7 +196,6 @@ impl crate::game::game_handler::QuestionTrait for RaQuestion {
         if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             cellestial_sphere.look_at_point(&final_vector);
-            cellestial_sphere.init_renderers(sky);
         }
     }
 
@@ -379,7 +378,6 @@ impl crate::game::game_handler::QuestionTrait for DecQuestion {
         if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             cellestial_sphere.look_at_point(&final_vector);
-            cellestial_sphere.init_renderers(sky);
         }
     }
 

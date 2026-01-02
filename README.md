@@ -3,20 +3,26 @@ Stellar Guesser was developed as a tool for learning the night sky in a game-lik
 Regarding olympiad preparation, the application covers the vast majority of the factual knowledge required for the practical rounds at the IOAA – sky map, planetarium, and telescopes. Of course, there is more to those rounds than just knowing a lot of information, for example being able to point a telescope and some tasks being more focused on measurements. However, being able to find your way around the night sky is usually crucial, or at least very helpful.
 
 ## Screenshots
-<figure>
-    <img src="./media/guess_the_messier.png"
-         alt="Guess the object screen">
-    <figcaption>A game screen asking the player to identify the marked object</figcaption>
-</figure>
-
-<figure>
-    <img src="./media/no_clouds.png"
-         alt="A screen with no cloud coverage">
-    <figcaption>A game screen with no cloud coverage</figcaption>
-</figure>
-
-<figure>
-    <img src="./media/with_clouds.png"
-         alt="A screen with part of the stars obscured by clouds">
-    <figcaption>A game screen with part of stars obscured by stars</figcaption>
-</figure>
+<table>
+  <tr>
+    <td align="center">
+      <img src="./media/guess_the_messier.png" alt="A game screen asking the player to identify the marked object">
+      <br/>
+      <sub>A game screen asking the player to identify the marked object</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./media/no_clouds.png" alt="A game screen with no cloud coverage">
+      <br/>
+      <sub>A game screen with no cloud coverage</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./media/with_clouds.png" alt="A game screen with part of stars obscured by clouds">
+      <br/>
+      <sub>A game screen with part of stars obscured by clouds</sub>
+    </td>
+  </tr>
+</table>

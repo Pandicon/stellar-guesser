@@ -2,14 +2,65 @@ use eframe::egui;
 
 use crate::Application;
 
-#[derive(serde::Deserialize, serde::Serialize, Default)]
+#[derive(serde::Deserialize, serde::Serialize, Default, PartialEq, Eq)]
 pub enum InitialSetupStage {
     Finished,
+    #[cfg(not(target_arch = "wasm32"))]
     Keyboard,
     Community,
     Credits,
     #[default]
     Introduction,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl InitialSetupStage {
+    pub fn next(&self) -> Option<Self> {
+        match *self {
+            Self::Introduction => Some(Self::Keyboard),
+            Self::Keyboard => Some(Self::Community),
+            Self::Community => Some(Self::Credits),
+            Self::Credits => Some(Self::Finished),
+            Self::Finished => None,
+        }
+    }
+
+    pub fn previous(&self) -> Option<Self> {
+        match *self {
+            Self::Introduction => None,
+            Self::Keyboard => Some(Self::Introduction),
+            Self::Community => Some(Self::Keyboard),
+            Self::Credits => Some(Self::Community),
+            Self::Finished => Some(Self::Credits),
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+impl InitialSetupStage {
+    pub fn next(&self) -> Option<Self> {
+        match *self {
+            Self::Introduction => Some(Self::Community),
+            Self::Community => Some(Self::Credits),
+            Self::Credits => Some(Self::Finished),
+            Self::Finished => None,
+        }
+    }
+
+    pub fn previous(&self) -> Option<Self> {
+        match *self {
+            Self::Introduction => None,
+            Self::Community => Some(Self::Introduction),
+            Self::Credits => Some(Self::Community),
+            Self::Finished => Some(Self::Credits),
+        }
+    }
+}
+
+impl InitialSetupStage {
+    pub fn will_next_finish(&self) -> bool {
+        self.next() == Some(Self::Finished)
+    }
 }
 
 pub fn render_initial_setup(app: &mut Application, ctx: &egui::Context, available_rect: egui::Rect) {
@@ -37,45 +88,45 @@ pub fn render_initial_setup(app: &mut Application, ctx: &egui::Context, availabl
                     ui,
                     |_ui| {},
                     |ui| {
-                        if ui.button("Next").clicked() {
-                            app.initial_setup_stage = InitialSetupStage::Keyboard;
+                        if let Some(next_stage) = app.initial_setup_stage.next() {
+                            let button_text = if app.initial_setup_stage.will_next_finish() {"Finish"} else {"Next"};
+                            if ui.button(button_text).clicked() {
+                                app.initial_setup_stage = next_stage;
+                            }
                         }
                     },
                 );
             });
         }
+        #[cfg(not(target_arch = "wasm32"))]
         InitialSetupStage::Keyboard => {
-            #[cfg(not(target_arch = "wasm32"))]
-            {
-                let modal = egui::Modal::new(egui::Id::new("Onboarding - Keyboard setup"));
-                let modal_area = modal.area.anchor(egui::Align2::CENTER_TOP, [0.0, top_offset]).order(egui::Order::Middle);
-                modal.area(modal_area).show(ctx, |ui| {
-                    ui.set_width(modal_width);
-                    ui.set_max_height(modal_height);
-                    ui.heading("Onboarding - Keyboard setup");
-                    egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
-                        app.render_application_settings_input_subwindow(ui);
-                    });
-                    egui::Sides::new().show(
-                        ui,
-                        |_ui| {},
-                        |ui| {
-                            if ui.button("Next").clicked() {
-                                app.initial_setup_stage = InitialSetupStage::Community;
-                            }
-                            if ui.button("Back").clicked() {
-                                app.initial_setup_stage = InitialSetupStage::Introduction;
-                            }
-                        },
-                    );
+            let modal = egui::Modal::new(egui::Id::new("Onboarding - Keyboard setup"));
+            let modal_area = modal.area.anchor(egui::Align2::CENTER_TOP, [0.0, top_offset]).order(egui::Order::Middle);
+            modal.area(modal_area).show(ctx, |ui| {
+                ui.set_width(modal_width);
+                ui.set_max_height(modal_height);
+                ui.heading("Onboarding - Keyboard setup");
+                egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
+                    app.render_application_settings_input_subwindow(ui);
                 });
-            }
-
-            #[cfg(target_arch = "wasm32")]
-            {
-                // Skip keyboard setup on web
-                app.initial_setup_stage = InitialSetupStage::Community;
-            }
+                egui::Sides::new().show(
+                    ui,
+                    |_ui| {},
+                    |ui| {
+                        if let Some(next_stage) = app.initial_setup_stage.next() {
+                            let button_text = if app.initial_setup_stage.will_next_finish() { "Finish" } else { "Next" };
+                            if ui.button(button_text).clicked() {
+                                app.initial_setup_stage = next_stage;
+                            }
+                        }
+                        if let Some(previous_stage) = app.initial_setup_stage.previous() {
+                            if ui.button("Back").clicked() {
+                                app.initial_setup_stage = previous_stage;
+                            }
+                        }
+                    },
+                );
+            });
         }
         InitialSetupStage::Community => {
             let modal = egui::Modal::new(egui::Id::new("Onboarding - Community"));
@@ -91,11 +142,16 @@ pub fn render_initial_setup(app: &mut Application, ctx: &egui::Context, availabl
                     ui,
                     |_ui| {},
                     |ui| {
-                        if ui.button("Next").clicked() {
-                            app.initial_setup_stage = InitialSetupStage::Credits;
+                        if let Some(next_stage) = app.initial_setup_stage.next() {
+                            let button_text = if app.initial_setup_stage.will_next_finish() { "Finish" } else { "Next" };
+                            if ui.button(button_text).clicked() {
+                                app.initial_setup_stage = next_stage;
+                            }
                         }
-                        if ui.button("Back").clicked() {
-                            app.initial_setup_stage = InitialSetupStage::Keyboard;
+                        if let Some(previous_stage) = app.initial_setup_stage.previous() {
+                            if ui.button("Back").clicked() {
+                                app.initial_setup_stage = previous_stage;
+                            }
                         }
                     },
                 );
@@ -113,11 +169,16 @@ pub fn render_initial_setup(app: &mut Application, ctx: &egui::Context, availabl
                     ui,
                     |_ui| {},
                     |ui| {
-                        if ui.button("Finish").clicked() {
-                            app.initial_setup_stage = InitialSetupStage::Finished;
+                        if let Some(next_stage) = app.initial_setup_stage.next() {
+                            let button_text = if app.initial_setup_stage.will_next_finish() { "Finish" } else { "Next" };
+                            if ui.button(button_text).clicked() {
+                                app.initial_setup_stage = next_stage;
+                            }
                         }
-                        if ui.button("Back").clicked() {
-                            app.initial_setup_stage = InitialSetupStage::Community;
+                        if let Some(previous_stage) = app.initial_setup_stage.previous() {
+                            if ui.button("Back").clicked() {
+                                app.initial_setup_stage = previous_stage;
+                            }
                         }
                     },
                 );

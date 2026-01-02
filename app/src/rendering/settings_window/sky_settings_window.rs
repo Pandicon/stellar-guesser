@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use angle::Angle;
 use eframe::egui;
 
 use crate::{
@@ -71,7 +72,9 @@ impl Application {
         let previous_enabled = self.cellestial_sphere.sky_settings.cloud_settings.enabled;
         let previous_coverage = self.cellestial_sphere.sky_settings.cloud_settings.coverage;
         let previous_thickness = self.cellestial_sphere.sky_settings.cloud_settings.thickness;
+        let previous_opaque_thickness = self.cellestial_sphere.sky_settings.cloud_settings.opaque_thickness;
         let previous_iterations = self.cellestial_sphere.sky_settings.cloud_settings.iterations;
+        let previous_resolution = self.cellestial_sphere.sky_settings.cloud_settings.resolution;
         ui.label("Cloudiness")
             .on_hover_text("These settings dictate what the maximum increase in magnitude (decrease in brightness) should be due to clouds and how the clouds should look like");
 
@@ -81,7 +84,11 @@ impl Application {
         });
         ui.horizontal(|ui| {
             ui.add(egui::Checkbox::without_text(&mut self.cellestial_sphere.sky_settings.cloud_settings.enabled));
-            ui.label("Enabled").on_hover_text("Should there be any clouds?");
+            ui.label("Enabled").on_hover_text("Should there be any clouds dimming the stars?");
+        });
+        ui.horizontal(|ui| {
+            ui.add(egui::Checkbox::without_text(&mut self.cellestial_sphere.sky_settings.cloud_settings.render));
+            ui.label("Render").on_hover_text("Should the clouds be rendered?");
         });
         ui.horizontal(|ui| {
             ui.add(egui::DragValue::new(&mut self.cellestial_sphere.sky_settings.cloud_settings.coverage).speed(0.02));
@@ -93,9 +100,28 @@ impl Application {
             ui.label("Thickness");
         });
         ui.horizontal(|ui| {
+            ui.add(egui::DragValue::new(&mut self.cellestial_sphere.sky_settings.cloud_settings.opaque_thickness).speed(0.1))
+                .on_hover_text("At what thickness should the clouds be rendered as fully opaque?");
+            ui.label("Opaque thickness");
+        });
+        ui.horizontal(|ui| {
+            let mut colour = self.cellestial_sphere.sky_settings.cloud_settings.get_colour();
+            ui.color_edit_button_srgba(&mut colour)
+                .on_hover_text("What colour should the clouds be? Non-opaque regions will also have this colour but will be partially see-through.");
+            self.cellestial_sphere.sky_settings.cloud_settings.set_colour(colour);
+            ui.label("Opaque colour");
+        });
+        ui.horizontal(|ui| {
             ui.add(egui::DragValue::new(&mut self.cellestial_sphere.sky_settings.cloud_settings.iterations).speed(0.1))
                 .on_hover_text("How detailed should the clouds be? Higher values lead to more structured clouds (1 corresponds to essentially blobs on the sky, 8 and higher actually look like clouds) but at the cost of longer computation times.");
             ui.label("Level of detail");
+        });
+        ui.horizontal(|ui| {
+            let mut deg = self.cellestial_sphere.sky_settings.cloud_settings.resolution.value();
+            ui.add(egui::DragValue::new(&mut deg).speed(0.01).range(0.0001..=5.0))
+                .on_hover_text("What should the resolution of the clouds be? A value of 1° means that a square of roughly 1°x1° will have a single thickness value. (However, transitions between those squares will be smooth)");
+            ui.label("Rendering resolution");
+            self.cellestial_sphere.sky_settings.cloud_settings.resolution = angle::Deg(deg);
         });
 
         let recalculate = ui.button("Apply settings").clicked();
@@ -107,10 +133,12 @@ impl Application {
                 && (previous_enabled != self.cellestial_sphere.sky_settings.cloud_settings.enabled
                     || previous_coverage != self.cellestial_sphere.sky_settings.cloud_settings.coverage
                     || previous_thickness != self.cellestial_sphere.sky_settings.cloud_settings.thickness
-                    || previous_iterations != self.cellestial_sphere.sky_settings.cloud_settings.iterations))
+                    || previous_opaque_thickness != self.cellestial_sphere.sky_settings.cloud_settings.opaque_thickness
+                    || previous_iterations != self.cellestial_sphere.sky_settings.cloud_settings.iterations
+                    || previous_resolution != self.cellestial_sphere.sky_settings.cloud_settings.resolution))
         {
             if self.cellestial_sphere.sky_settings.cloud_settings.enabled {
-                crate::rendering::caspr::clouds::apply_dimming(&mut self.sky.stars, &self.cellestial_sphere.sky_settings.cloud_settings);
+                crate::rendering::caspr::clouds::apply_dimming(&mut self.sky, &mut self.cellestial_sphere);
             } else {
                 crate::rendering::caspr::clouds::disable(&mut self.sky.stars);
             }

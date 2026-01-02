@@ -31,6 +31,8 @@ eframe = { version = "0.31", default-features = false, features = [
 	"default_fonts",
 	"persistence",
 	"android-native-activity",
+	"x11",
+	"wayland"
 ] }
 egui_extras = { version = "0.31", features = ["all_loaders", "image"] }
 egui-notify = "0.19" # It depends on egui itself, so the version of egui used by this app and by egui-notify have to match
@@ -54,6 +56,7 @@ sg_geometry = { path = "../crates/sg_geometry" }
 const_format = "0.2.35"
 include_dir = "0.7.4"
 url = "2.5.7"
+bytemuck = "1.24.0"
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "0.13.1"
@@ -83,6 +86,7 @@ tokio = { version = "1.35.0", features = ["macros", "rt", "sync", "time"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 web-sys = "0.3"
+wgpu = { version = "24.0", features = ["webgl"] }
 
 [build-dependencies]
 chrono = "0.4.26"

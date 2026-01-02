@@ -1,3 +1,4 @@
+use angle::Angle;
 use eframe::egui;
 use egui::epaint::Color32;
 use nalgebra::Matrix3;
@@ -37,12 +38,19 @@ pub struct StarRaw {
 }
 
 impl Star {
-    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, magnitude_to_radius_function: MagnitudeToRadius, fov: angle::Deg<f32>, zoom: f32, viewport_rect: egui::Rect) -> stars::StarRenderer {
+    pub fn get_renderer(
+        &self,
+        projection: &sg_geometry::projection::Projection,
+        rotation_matrix: &Matrix3<f32>,
+        magnitude_to_radius_function: MagnitudeToRadius,
+        fov: angle::Deg<f32>,
+        viewport_rect: &egui::Rect,
+    ) -> stars::StarRenderer {
         let colour = if let Some(col) = self.override_colour { col } else { self.default_colour };
         let radius = stars::StarRenderer::magnitude_to_radius(magnitude_to_radius_function, self.vmag + self.magnitude_offset, fov);
         let (projected_point, is_within_bounds) = if stars::StarRenderer::radius_enough_to_render(radius) {
             let vec = sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix);
-            sg_geometry::project_point(&vec, zoom, viewport_rect)
+            projection.project_point(&vec, fov.to_rad(), viewport_rect)
         } else {
             // It will not be rendered anyway, so why bother calculating the values
             (egui::pos2(0.0, 0.0), false)
@@ -128,7 +136,7 @@ pub enum MagnitudeToRadius {
 
 impl MagnitudeToRadius {
     pub const fn defaults() -> [Self; MAGNITUDE_TO_RADIUS_OPTIONS] {
-        [Self::Linear { mag_scale: 0.5, mag_offset: 6.0 }, Self::Exponential { r_0: 3.2, n: 3.0, o: 0.17 }]
+        [Self::Linear { mag_scale: 0.5, mag_offset: 6.0 }, Self::Exponential { r_0: 3.2, n: 2.1, o: 0.17 }]
     }
 
     pub fn name(&self) -> &'static str {
