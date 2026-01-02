@@ -11,8 +11,8 @@ android {
         applicationId = "com.github.noreply.users.stellar_guesser"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1.0"
     }
     sourceSets.getByName("main") {
         // Vulkan validation layers
