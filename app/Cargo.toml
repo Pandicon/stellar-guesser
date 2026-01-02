@@ -31,6 +31,8 @@ eframe = { version = "0.31", default-features = false, features = [
 	"default_fonts",
 	"persistence",
 	"android-native-activity",
+	"x11",
+	"wayland"
 ] }
 egui_extras = { version = "0.31", features = ["all_loaders", "image"] }
 egui-notify = "0.19" # It depends on egui itself, so the version of egui used by this app and by egui-notify have to match
