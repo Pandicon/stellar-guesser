@@ -1,8 +1,12 @@
 # Stellar Guesser
 
 ## Building
+The application source code is in the `app` folder, so all commands are relative to that folder unles stated otherwise.
 ### Windows
 To build this for Windows, simply run `cargo build` or `cargo build --release`.
+
+### Web
+To build for web, you will need to use [Trunk](https://trunkrs.dev/). Install it with `cargo install --locked trunk`. To build, run `trunk build` or `trunk build --release`. The files will be placed in the `dist` folder from where they can be served for example with Python (`python -m http.server 8080 --bind 127.0.0.1`). Alternatively, to build and serve, use `trunk serve` or `trunk serve --release`.
 
 ### Android
 To build this for Android, you have to have `cargo-mobile` installed, along with the required Android tools. To set up `cargo-mobile`, follow the steps in this [guide](https://hackmd.io/XIcEwk4GSxy8APZhSa0UnA). Then run `cargo android apk build` to build the debug universal apk.
