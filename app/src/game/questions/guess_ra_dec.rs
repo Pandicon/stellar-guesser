@@ -1,9 +1,10 @@
 use crate::enums::GameStage;
 use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::renderer::CellestialSphere;
-use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
+use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
+use crate::sky;
+use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
 use eframe::egui;
 
@@ -61,6 +62,7 @@ impl RaQuestion {
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {
                     cellestial_sphere: data.cellestial_sphere,
+                    sky: data.sky,
                     theme: data.theme,
                     game_stage: data.game_stage,
                     score: data.score,
@@ -179,10 +181,10 @@ impl crate::game::game_handler::QuestionTrait for RaQuestion {
         true
     }
 
-    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, theme: &Theme) {
         self.state = Default::default();
-        cellestial_sphere.game_markers.markers = vec![GameMarker::new(
-            GameMarkerType::Task,
+        sky.game_markers.markers = vec![game_markers::GameMarker::new(
+            game_markers::GameMarkerType::Task,
             self.ra,
             self.dec,
             2.0,
@@ -194,7 +196,6 @@ impl crate::game::game_handler::QuestionTrait for RaQuestion {
         if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             cellestial_sphere.look_at_point(&final_vector);
-            cellestial_sphere.init_renderers();
         }
     }
 
@@ -205,6 +206,19 @@ impl crate::game::game_handler::QuestionTrait for RaQuestion {
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(self.clone())
     }
+}
+
+pub fn generate_ra_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
+    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+    for object in objects {
+        questions.push(Box::new(RaQuestion {
+            ra: object.ra,
+            dec: object.dec,
+            state: Default::default(),
+            small_settings,
+        }));
+    }
+    questions
 }
 
 #[derive(Clone)]
@@ -230,6 +244,7 @@ impl DecQuestion {
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {
                     cellestial_sphere: data.cellestial_sphere,
+                    sky: data.sky,
                     theme: data.theme,
                     game_stage: data.game_stage,
                     score: data.score,
@@ -348,10 +363,10 @@ impl crate::game::game_handler::QuestionTrait for DecQuestion {
         true
     }
 
-    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, theme: &Theme) {
         self.state = Default::default();
-        cellestial_sphere.game_markers.markers = vec![GameMarker::new(
-            GameMarkerType::Task,
+        sky.game_markers.markers = vec![game_markers::GameMarker::new(
+            game_markers::GameMarkerType::Task,
             self.ra,
             self.dec,
             2.0,
@@ -363,7 +378,6 @@ impl crate::game::game_handler::QuestionTrait for DecQuestion {
         if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             cellestial_sphere.look_at_point(&final_vector);
-            cellestial_sphere.init_renderers();
         }
     }
 
@@ -374,4 +388,17 @@ impl crate::game::game_handler::QuestionTrait for DecQuestion {
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(self.clone())
     }
+}
+
+pub fn generate_dec_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
+    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+    for object in objects {
+        questions.push(Box::new(DecQuestion {
+            ra: object.ra,
+            dec: object.dec,
+            state: Default::default(),
+            small_settings,
+        }));
+    }
+    questions
 }

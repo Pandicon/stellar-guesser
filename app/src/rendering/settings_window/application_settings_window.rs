@@ -1,10 +1,11 @@
 use eframe::egui;
 
-use crate::{files, public_constants, structs::state::windows::settings::ApplicationSettingsSubWindow, Application};
+use crate::{structs::state::windows::settings::ApplicationSettingsSubWindow, Application};
 
 impl Application {
     pub fn render_application_settings_window(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
+            #[cfg(not(target_arch = "wasm32"))]
             ui.selectable_value(
                 &mut self.state.windows.settings.application_settings.subwindow,
                 ApplicationSettingsSubWindow::Input,
@@ -68,40 +69,28 @@ impl Application {
             ui.text_edit_singleline(&mut self.theme.name);
         });
         if ui.button("Export").clicked() {
-            if let Some(path) = files::get_dir_opt(public_constants::THEMES_FOLDER) {
-                #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
-                let save_path_opt: Option<std::path::PathBuf> = {
-                    let dialog = rfd::FileDialog::new().add_filter("Theme", &["json"]).set_directory(path);
-                    dialog.save_file()
-                };
-                #[cfg(any(target_os = "android", target_os = "ios"))]
-                let save_path_opt: Option<std::path::PathBuf> = {
-                    let mut save_path_intermediate = path;
-                    save_path_intermediate.push(format!("{}--{}.json", &self.theme.name, chrono::Local::now().timestamp_millis()));
-                    Some(save_path_intermediate)
-                };
-                match save_path_opt {
-                    Some(save_path) => match serde_json::to_string_pretty(&self.theme) {
-                        Ok(theme_to_save) => {
-                            if let Some(dir) = save_path.parent() {
-                                if !dir.exists() {
-                                    if let Err(err) = std::fs::create_dir_all(dir) {
-                                        log::error!("Failed to create the folders for the theme: {err}");
-                                    }
+            match serde_json::to_string_pretty(&self.theme) {
+                Ok(theme_to_save) => {
+                    #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+                    let default_file_name: String = format!("{}.json", &self.theme.name);
+                    #[cfg(any(target_os = "android", target_os = "ios"))]
+                    let default_file_name: String = format!("{}--{}.json", &self.theme.name, chrono::Utc::now().timestamp_millis());
+                    #[cfg(target_arch = "wasm32")]
+                    let default_file_name: String = format!("{}--{}.json", &self.theme.name, chrono::Utc::now().timestamp_millis());
+                    match crate::files_handling::save_file_by_user_relative_base_path(crate::config::THEMES_FOLDER, &default_file_name, theme_to_save, "Theme", &["json"]) {
+                        Ok(v) => match v {
+                            Some(v) => match v {
+                                Ok(_) => {
+                                    self.themes.insert(self.theme.name.clone(), self.theme.clone());
                                 }
-                            } else {
-                                log::warn!("No theme folder: {:?}", save_path);
-                            }
-                            if let Err(err) = std::fs::write(save_path, theme_to_save) {
-                                log::error!("Failed to save the theme: {err}");
-                            } else {
-                                self.themes.insert(self.theme.name.clone(), self.theme.clone());
-                            }
-                        }
-                        Err(err) => log::error!("Failed to serialize the theme: {err}"),
-                    },
-                    None => log::info!("Theme saving cancelled by the user"),
+                                Err(err) => log::error!("Failed to save the theme: {err}"),
+                            },
+                            None => log::debug!("Theme saving cancelled by user"),
+                        },
+                        Err(err) => log::error!("Failed to save the theme: {err}"),
+                    }
                 }
+                Err(err) => log::error!("Failed to serialize the theme: {err}"),
             }
         }
     }

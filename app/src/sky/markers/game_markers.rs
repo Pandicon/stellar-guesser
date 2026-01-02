@@ -2,9 +2,10 @@ use eframe::egui;
 use egui::Color32;
 use nalgebra::Matrix3;
 
+use crate::rendering::caspr;
 use crate::rendering::themes::GameMarkersColours;
 
-use super::{Marker, MarkerRenderer};
+use super::Marker;
 
 pub struct GameMarkers {
     pub active: bool,
@@ -73,7 +74,7 @@ impl GameMarker {
         }
     }
 
-    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>) -> Option<MarkerRenderer> {
+    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>) -> Option<caspr::markers::MarkerRenderer> {
         if self.angular_radius.is_none() && self.pixel_radius.is_none() && self.angular_width.is_none() && self.pixel_width.is_none() {
             return None;
         }
@@ -100,7 +101,7 @@ impl GameMarker {
                 )
             })
         };
-        Some(MarkerRenderer::new(
+        Some(caspr::markers::MarkerRenderer::new(
             sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix),
             other_vec,
             &self.to_general_marker(),

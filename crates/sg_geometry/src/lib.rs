@@ -1,14 +1,14 @@
 use angle::Angle;
 use egui::Pos2;
-use nalgebra::{Matrix3, Vector2, Vector3};
+use nalgebra::{Matrix3, Vector3};
 use rand::{rngs::ThreadRng, Rng};
 use spherical_geometry::SphericalPoint;
 use std::f32::consts::PI;
 
 pub mod intersections;
+pub mod projection;
 
 // const POLYGONLIMIT: f32 = 180.0;
-const VIEWPORT_OFFSET: f32 = 10.0;
 
 #[derive(Clone, Copy)]
 pub struct LineSegment {
@@ -77,54 +77,9 @@ pub fn is_in_rect<T: PartialOrd>(point: [T; 2], rect: [[T; 2]; 2]) -> bool {
 }
 
 pub fn get_point_vector(ra: angle::Deg<f32>, dec: angle::Deg<f32>, rotation_matrix: &Matrix3<f32>) -> Vector3<f32> {
-    let (ra_s, ra_c) = (-(ra.to_rad().value() as f64)).sin_cos();
+    let (ra_s, ra_c) = (ra.to_rad().value() as f64).sin_cos();
     let (de_s, de_c) = (std::f64::consts::PI / 2.0 - (dec.to_rad().value() as f64)).sin_cos();
     rotation_matrix * Vector3::new((de_s * ra_c) as f32, (de_s * ra_s) as f32, (de_c) as f32)
-}
-
-pub fn project_point(vector: &Vector3<f32>, zoom: f32, viewport_rect: egui::Rect) -> (egui::Pos2, bool) {
-    let scale_factor = 1.0 - vector[2];
-
-    let rect_size = Vector2::new(viewport_rect.max[0] - viewport_rect.min[0], viewport_rect.max[1] - viewport_rect.min[1]);
-
-    let screen_ratio = 2.0 / (rect_size[0] * rect_size[0] + rect_size[1] * rect_size[1]).sqrt();
-
-    let point_coordinates = Vector2::new(vector[0] * zoom / scale_factor, vector[1] * zoom / scale_factor);
-
-    let final_coordinates = egui::Pos2::new(point_coordinates[0] / screen_ratio + rect_size[0] / 2.0, point_coordinates[1] / screen_ratio + rect_size[1] / 2.0);
-
-    (
-        final_coordinates,
-        is_in_rect(
-            final_coordinates.into(),
-            [
-                [viewport_rect.min[0] - VIEWPORT_OFFSET, viewport_rect.min[1] - VIEWPORT_OFFSET],
-                [viewport_rect.max[0] + VIEWPORT_OFFSET, viewport_rect.max[1] + VIEWPORT_OFFSET],
-            ],
-        ),
-    )
-}
-
-//something is broken over here and I have no idea what it is...
-pub fn cast_onto_sphere(viewport_rect: &egui::Rect, screen_position: &egui::Pos2, rotation: nalgebra::Rotation3<f32>, zoom: f32) -> Vector3<f32> {
-    let rect_size = Vector2::new(viewport_rect.max[0] - viewport_rect.min[0], viewport_rect.max[1] - viewport_rect.min[1]);
-
-    let screen_ratio = 2.0 / (rect_size[0] * rect_size[0] + rect_size[1] * rect_size[1]).sqrt();
-
-    let plane_coordinates = Vector2::new((screen_position[0] - rect_size[0] / 2.0) * screen_ratio, (screen_position[1] - rect_size[1] / 2.0) * screen_ratio);
-
-    cast_onto_sphere_plane_position(rotation, zoom, plane_coordinates)
-}
-
-pub fn cast_onto_sphere_plane_position(rotation: nalgebra::Rotation3<f32>, zoom: f32, plane_coordinates: Vector2<f32>) -> Vector3<f32> {
-    let scaling_factor = zoom * zoom + plane_coordinates[0] * plane_coordinates[0] + plane_coordinates[1] * plane_coordinates[1];
-
-    rotation.matrix().try_inverse().expect("FUCK")
-        * Vector3::new(
-            2.0 * zoom * zoom * plane_coordinates[0] / scaling_factor,
-            2.0 * zoom * zoom * plane_coordinates[1] / scaling_factor,
-            -(zoom * zoom - plane_coordinates[0] * plane_coordinates[0] - plane_coordinates[1] * plane_coordinates[1]) * zoom / (scaling_factor),
-        )
 }
 
 /** Returns a (dec, ra) pair (both in radians) */
@@ -138,17 +93,13 @@ pub fn cartesian_to_spherical(vector: Vector3<f32>) -> (angle::Rad<f32>, angle::
     let dec = sin_dec.atan2(cos_dec);
     (PI / 2.0 - dec, -ra)*/
     let dec = PI / 2.0 - vector.normalize()[2].acos();
-    let mut ra = -(vector[1].atan2(vector[0]));
+    let mut ra = vector[1].atan2(vector[0]);
     if ra < 0.0 {
         ra += 2.0 * PI;
     }
     (angle::Rad(dec), angle::Rad(ra))
 }
-pub fn cast_onto_sphere_dec_ra(viewport_rect: &egui::Rect, screen_position: &egui::Pos2, rotation: nalgebra::Rotation3<f32>, zoom: f32) -> [angle::Rad<f32>; 2] {
-    let sphere_position = cast_onto_sphere(viewport_rect, screen_position, rotation, zoom);
-    let (dec, ra) = cartesian_to_spherical(sphere_position);
-    [dec, ra]
-}
+
 /**
  * initial_position: (ra, dec) both in radians
  * final_position: (ra, dec) both in radians

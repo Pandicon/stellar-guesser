@@ -1,9 +1,10 @@
 use crate::enums::{GameStage, RendererCategory};
 use crate::game::game_handler;
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::renderer::CellestialSphere;
-use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
+use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
+use crate::sky;
+use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
 use eframe::egui;
 use rand::Rng;
@@ -98,6 +99,7 @@ impl Question {
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {
                     cellestial_sphere: data.cellestial_sphere,
+                    sky: data.sky,
                     theme: data.theme,
                     game_stage: data.game_stage,
                     score: data.score,
@@ -137,7 +139,7 @@ impl Question {
 
     fn check_answer(&mut self, data: QuestionCheckingData) {
         *data.add_marker_on_click = false;
-        let markers = &mut data.cellestial_sphere.game_markers.markers;
+        let markers = &mut data.sky.game_markers.markers;
         let mut correct = false;
         if !self.images.is_empty() {
             self.state.answer_image = Some(self.images[rand::thread_rng().gen_range(0..self.images.len())].clone());
@@ -175,8 +177,8 @@ impl Question {
             if self.is_bayer || self.is_starname { "circle" } else { "cross" },
             self.object_type
         );
-        markers.push(GameMarker::new(
-            GameMarkerType::CorrectAnswer,
+        markers.push(game_markers::GameMarker::new(
+            game_markers::GameMarkerType::CorrectAnswer,
             self.ra,
             self.dec,
             2.0,
@@ -193,9 +195,8 @@ impl Question {
         if self.small_settings.rotate_to_answer {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             data.cellestial_sphere.look_at_point(&final_vector);
-            data.cellestial_sphere.init_renderers();
         } else {
-            data.cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, "game");
+            data.cellestial_sphere.init_single_renderer_group(data.sky, RendererCategory::Markers, "game");
         }
         *data.game_stage = GameStage::Checked;
     }
@@ -271,9 +272,9 @@ impl crate::game::game_handler::QuestionTrait for Question {
         false
     }
 
-    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, _theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, _theme: &Theme) {
         self.state = Default::default();
-        cellestial_sphere.game_markers.markers = Vec::new();
+        sky.game_markers.markers = Vec::new();
         cellestial_sphere.disable_single_renderer(self.object_id);
     }
 
@@ -284,4 +285,64 @@ impl crate::game::game_handler::QuestionTrait for Question {
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(self.clone())
     }
+}
+
+pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
+    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+    for object in objects {
+        let mut possible_names = Vec::new();
+        if let Some(designation) = &object.bayer_designation_raw {
+            let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
+            possible_names.extend(names);
+        }
+        if let Some(designation) = object.caldwell_number {
+            possible_names.push(format!("C{designation}"));
+        }
+        if let Some(designation) = &object.flamsteed_designation_raw {
+            let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
+            possible_names.extend(names);
+        }
+        if let Some(designation) = &object.hd_number {
+            possible_names.push(format!("HD{designation}"));
+        }
+        if let Some(designation) = &object.hipparcos_number {
+            possible_names.push(format!("HIP{designation}"));
+        }
+        if let Some(designation) = &object.ic_number {
+            possible_names.push(format!("IC{designation}"));
+        }
+        if let Some(designation) = &object.messier_number {
+            possible_names.push(format!("M{designation}"));
+        }
+        if let Some(designation) = &object.ngc_number {
+            possible_names.push(format!("NGC{designation}"));
+        }
+        for name in &object.proper_names_raw {
+            let names = crate::rendering::caspr::generate_name_combinations(name, crate::rendering::caspr::SpecificName::None);
+            possible_names.extend(names);
+        }
+        let question = Question {
+            small_settings,
+            ra: object.ra,
+            dec: object.dec,
+            state: Default::default(),
+            possible_names,
+            is_messier: object.messier_number.is_some(),
+            is_caldwell: object.caldwell_number.is_some(),
+            is_ngc: object.ngc_number.is_some(),
+            is_ic: object.ic_number.is_some(),
+            is_bayer: object.bayer_designation_full.is_some(),
+            is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
+            magnitude: object.mag,
+            object_type: match &object.object_type {
+                crate::game::ObjectType::Star(star_type) => star_type.display_name(),
+                crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
+            },
+            constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
+            images: object.images.clone(),
+            object_id: object.object_id,
+        };
+        questions.push(Box::new(question));
+    }
+    questions
 }

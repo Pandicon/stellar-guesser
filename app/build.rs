@@ -2,12 +2,6 @@ use chrono::{Datelike, Timelike, Utc};
 use const_gen::*;
 use std::{env, fs, path::Path};
 
-const SKY_OBJECTS_FOLDER: &str = "./sphere/sky-objects";
-const LINES_FOLDER: &str = "./sphere/lines";
-const MARKERS_FOLDER: &str = "./sphere/markers";
-const STAR_NAMES_FOLDER: &str = "./sphere/named-stars";
-const CONSTELLATION_NAMES: &str = "./data/constellations.csv";
-
 fn zero_nothing(num: i64) -> String {
     String::from(if num < 10 { "0" } else { "" })
 }
@@ -27,55 +21,21 @@ fn main() {
         format!("{}", curr_time.timestamp_millis()),
     ];
 
-    let target_os = std::env::var_os("CARGO_CFG_TARGET_OS").unwrap_or("_".into());
+    let _target_os = std::env::var_os("CARGO_CFG_TARGET_OS").unwrap_or("_".into());
     let _target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
-    let mut const_declarations_intermediate = if target_os == "android" || target_os == "ios" {
-        let content_folder = [
-            ["sky objects", SKY_OBJECTS_FOLDER],
-            ["lines", LINES_FOLDER],
-            ["markers", MARKERS_FOLDER],
-            ["star names", STAR_NAMES_FOLDER],
-        ];
-        let mut sky_data = Vec::new();
-
-        for (i, d) in content_folder.iter().enumerate() {
-            let id = d[0];
-            let folder = d[1];
-            sky_data.push((id, Vec::new()));
-            let files = fs::read_dir(folder);
-            if let Ok(files) = files {
-                for file in files.flatten() {
-                    let path = file.path();
-                    let file_name = path.file_name();
-                    if file_name.is_none() {
-                        continue;
-                    }
-                    let file_name = file_name.unwrap().to_str();
-                    if file_name.is_none() {
-                        continue;
-                    }
-                    let file_name = file_name.unwrap().to_string();
-                    let file_content = fs::read_to_string(path);
-                    if let Ok(file_content) = file_content {
-                        #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
-                        sky_data[i].1.push([file_name, file_content.replace("\"", "\\\"")]);
-                    }
-                }
-            }
-        }
-        let mut other_sky_data = Vec::new();
-        if let Ok(file_content) = fs::read_to_string(CONSTELLATION_NAMES) {
-            #[allow(clippy::single_char_pattern)] // No idea why, but `"\""` works while `'"'` does not
-            other_sky_data.push([String::from("constellation names"), file_content.replace("\"", "\\\"")])
-        };
-
-        vec![const_declaration!(pub SKY_DATA_LISTS = sky_data), const_declaration!(pub SKY_DATA_FILES = other_sky_data)]
-    } else {
-        vec![]
-    };
-    const_declarations_intermediate.push(const_declaration!(pub BUILD_DATE = date));
-    const_declarations_intermediate.push(const_declaration!(pub BUILD_PROFILE = std::env::var("PROFILE").expect("The 'PROFILE' environment variable is missing")));
+    let const_declarations_intermediate = [
+        const_declaration!(pub BUILD_DATE = date),
+        const_declaration!(pub BUILD_PROFILE = std::env::var("PROFILE").expect("The 'PROFILE' environment variable is missing")),
+    ];
     fs::write(dest_path, const_declarations_intermediate.join("\n")).expect("Failed to save the const declarations");
+
+    {
+        let folder_to_embed = "data";
+        let out_dir = env::var_os("OUT_DIR").unwrap();
+        let dest_path = Path::new(&out_dir).join("embedded_loader.rs");
+        let code = format!("pub static EMBEDDED_DATA: include_dir::Dir = include_dir::include_dir!(\"$CARGO_MANIFEST_DIR/{}\");", folder_to_embed);
+        fs::write(&dest_path, code).unwrap();
+    }
 
     if std::env::var_os("CARGO_CFG_WINDOWS").is_some() {
         let mut res = winres::WindowsResource::new();

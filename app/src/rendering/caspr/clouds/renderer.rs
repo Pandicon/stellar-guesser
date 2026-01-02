@@ -1,0 +1,403 @@
+use eframe::{egui, wgpu};
+use noise::NoiseFn;
+use wgpu::util::DeviceExt;
+
+use crate::rendering::caspr;
+
+#[repr(C)]
+#[derive(bytemuck::Pod, bytemuck::Zeroable, Copy, Clone)]
+struct Uniforms {
+    mvp_matrix: [[f32; 4]; 4],
+    colour: [f32; 4],
+}
+
+impl Uniforms {
+    pub fn get_uniform_buffer(self, label: Option<&str>, device: &wgpu::Device) -> wgpu::Buffer {
+        device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label,
+            contents: bytemuck::cast_slice(&[self]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        })
+    }
+
+    pub fn from_camera_and_settings(camera_data: &caspr::camera::Camera, clouds_settings: &caspr::clouds::CloudSettings) -> Self {
+        let rotation_3: &nalgebra::Matrix<f32, nalgebra::Const<3>, nalgebra::Const<3>, nalgebra::ArrayStorage<f32, 3, 3>> = camera_data.get_rotation().matrix();
+        #[rustfmt::skip]
+        let rotation_4 = nalgebra::Matrix4::new(
+            rotation_3[(0, 0)], rotation_3[(0, 1)], rotation_3[(0, 2)], 0.0,
+            rotation_3[(1, 0)], rotation_3[(1, 1)], rotation_3[(1, 2)], 0.0,
+            rotation_3[(2, 0)], rotation_3[(2, 1)], rotation_3[(2, 2)], 0.0,
+                           0.0,                0.0,                0.0, 1.0,
+        );
+        let mvp_matrix = camera_data.get_projection().get_projection_matrix(*camera_data.get_fov(), camera_data.get_viewport_rect()) * rotation_4;
+
+        let width = camera_data.get_viewport_rect().width();
+        let height = camera_data.get_viewport_rect().height();
+        // Matrix Logic:
+        // x_ndc = (x_pixel / width) * 2
+        // y_ndc = (y_pixel / height) * -2
+        // y = 0 is at the top (https://gpuweb.github.io/gpuweb/#coordinate-systems), so have to flip it (since egui takes y=0 at the bottom)
+        #[rustfmt::skip]
+        let screen_to_ndc = nalgebra::Matrix4::new(
+            2.0 / width,  0.0,           0.0,  0.0,
+            0.0,         -2.0 / height,  0.0,  0.0,
+            0.0,          0.0,           1.0,  0.0,
+            0.0,          0.0,           0.0,  1.0,
+        );
+
+        let position_to_ndc = screen_to_ndc * mvp_matrix;
+
+        let ndc_to_position = position_to_ndc.try_inverse().unwrap_or_else(|| {
+            log::error!("Failed to invert the position_to_ndc matrix in clouds renderer, matrix is {:?}", position_to_ndc);
+            nalgebra::Matrix4::identity()
+        });
+        let inv_matrix_columns: [[f32; 4]; 4] = [
+            ndc_to_position.column(0).into(),
+            ndc_to_position.column(1).into(),
+            ndc_to_position.column(2).into(),
+            ndc_to_position.column(3).into(),
+        ];
+
+        Self {
+            mvp_matrix: inv_matrix_columns,
+            colour: [clouds_settings.colour.r(), clouds_settings.colour.g(), clouds_settings.colour.b(), clouds_settings.colour.a()].map(|c| (c as f32) / 255.0),
+        }
+    }
+}
+
+pub struct CloudsRenderer {
+    pipeline: wgpu::RenderPipeline,
+    bind_group_layout: wgpu::BindGroupLayout,
+    bind_group: wgpu::BindGroup,
+    uniform_buffer: wgpu::Buffer,
+
+    sampler: wgpu::Sampler,
+
+    uniforms: Uniforms,
+}
+
+impl CloudsRenderer {
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, target_format: wgpu::TextureFormat, camera_data: &caspr::camera::Camera, clouds_settings: &caspr::clouds::CloudSettings) -> Self {
+        let uniforms = Uniforms::from_camera_and_settings(camera_data, clouds_settings);
+        let shader = device.create_shader_module(wgpu::include_wgsl!("./clouds.wgsl"));
+
+        let uniform_buffer = uniforms.get_uniform_buffer(Some("Clouds uniform buffer"), device);
+
+        let texture_size = 256;
+        let texture_data = Self::generate_default_filler_texture_data(texture_size);
+        let texture = Self::create_cubemap_texture(device, texture_size, texture_size, texture_data[0].mip_map_count());
+        Self::write_cubemap_texture(queue, &texture, &texture_data);
+        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor {
+            dimension: Some(wgpu::TextureViewDimension::Cube),
+            ..Default::default()
+        });
+
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::FilterMode::Linear,
+            ..Default::default()
+        });
+
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Clouds bind group layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    // Uniforms
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    // Texture
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::Cube,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    // Sampler
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
+
+        let bind_group = Self::create_bind_group(&bind_group_layout, device, &texture_view, &uniform_buffer, &sampler);
+
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Clouds pipeline layout"),
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
+
+        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Clouds pipeline"),
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"),
+                buffers: &[],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: target_format,
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: Default::default(),
+            }),
+            depth_stencil: None, // Basically does not check the Z buffer
+            primitive: wgpu::PrimitiveState {
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Back),
+                ..Default::default()
+            },
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
+
+        Self {
+            pipeline,
+            bind_group_layout,
+            bind_group,
+            uniform_buffer,
+
+            sampler,
+
+            uniforms,
+        }
+    }
+
+    fn create_bind_group(
+        bind_group_layout: &wgpu::BindGroupLayout,
+        device: &wgpu::Device,
+        texture_view: &wgpu::TextureView,
+        uniform_buffer: &wgpu::Buffer,
+        sampler: &wgpu::Sampler,
+    ) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Clouds bind group"),
+            layout: bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: uniform_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(texture_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Sampler(sampler),
+                },
+            ],
+        })
+    }
+
+    fn generate_default_filler_texture_data(size: u32) -> Vec<caspr::textures::rectangle::Rectangle<u8>> {
+        vec![caspr::textures::rectangle::Rectangle::<u8>::new(size, size, vec![0; (size * size) as usize]); 6]
+    }
+
+    pub fn generate_texture_data(
+        size: u32,
+        cloud_generator: &noise::Billow<noise::SuperSimplex>,
+        settings: &caspr::clouds::CloudSettings,
+    ) -> ([caspr::textures::rectangle::Rectangle<u8>; 6], f32, f32) {
+        let indices: [u8; 6] = [0, 1, 2, 3, 4, 5];
+
+        let texture_data_raw = indices.map(|face_index| {
+            log::debug!("Generating clouds face {}/6", face_index + 1);
+            let mut data = Vec::with_capacity(size as usize);
+            for y in 0..size {
+                let mut row = Vec::with_capacity(size as usize);
+                for x in 0..(size) {
+                    let direction = caspr::textures::cubemap::Cubemap::<u8>::pixel_to_sphere_dir(face_index, x, y, size, size);
+                    let val = cloud_generator.get([direction.x as f64, direction.y as f64, direction.z as f64]) as f32;
+                    row.push(val);
+                }
+                data.push(row);
+            }
+            data
+        });
+        let mut all_values: Vec<f32> = texture_data_raw.clone().map(|grid| grid.into_iter().flatten().collect::<Vec<f32>>()).into_iter().flatten().collect();
+        // Puts NaNs last, but that is not an issue
+        // Source: https://users.rust-lang.org/t/sorting-a-vec-of-f32-without-ever-panic/37540/2 (https://web.archive.org/web/20250404080805/https://users.rust-lang.org/t/sorting-a-vec-of-f32-without-ever-panic/37540)
+        log::debug!("Sorting cloud values");
+        all_values.sort_by(|a, b| match a.partial_cmp(b) {
+            Some(ord) => ord,
+            None => match (a.is_nan(), b.is_nan()) {
+                (true, true) => std::cmp::Ordering::Equal,
+                (true, _) => std::cmp::Ordering::Greater,
+                (_, true) => std::cmp::Ordering::Less,
+                (_, _) => std::cmp::Ordering::Equal, // should never happen
+            },
+        });
+        log::debug!("Sorted cloud values");
+        let decrease_offset = all_values[(((all_values.len() - 1) as f32) * (1.0 - settings.coverage)).floor() as usize]; // This offset ensures that the chosen (via the coverage setting) part of the sky is covered
+        let multi = settings.thickness / (all_values[all_values.len() - 1] - decrease_offset); // This multiplier ensures that the maximum decrease is the one chosen via the `thickness` setting
+        (
+            texture_data_raw.map(|data_vec| {
+                caspr::textures::rectangle::Rectangle::<u8>::new(
+                    size,
+                    size,
+                    data_vec
+                        .into_iter()
+                        .flatten()
+                        .map(|val| {
+                            let decrease = (multi * (val - decrease_offset)).max(0.0);
+                            let opacity = decrease / settings.opaque_thickness;
+                            (opacity * 255.0).round().clamp(0.0, 255.0) as u8
+                        })
+                        .collect(),
+                )
+            }),
+            decrease_offset,
+            multi,
+        )
+    }
+
+    fn create_cubemap_texture(device: &wgpu::Device, width: u32, height: u32, mip_level_count: u32) -> wgpu::Texture {
+        let texture_size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 6,
+        };
+
+        device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Clouds cubemap"),
+            size: texture_size,
+            mip_level_count,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::R8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        })
+    }
+
+    fn update_texture(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, texture_data: &[caspr::textures::rectangle::Rectangle<u8>], size: u32, mip_map_count: u32) {
+        let texture = Self::create_cubemap_texture(device, size, size, mip_map_count);
+        Self::write_cubemap_texture(queue, &texture, texture_data);
+        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor {
+            dimension: Some(wgpu::TextureViewDimension::Cube),
+            ..Default::default()
+        });
+        let bind_group = Self::create_bind_group(&self.bind_group_layout, device, &texture_view, &self.uniform_buffer, &self.sampler);
+        self.bind_group = bind_group;
+    }
+
+    fn write_cubemap_texture(queue: &wgpu::Queue, texture: &wgpu::Texture, texture_data: &[caspr::textures::rectangle::Rectangle<u8>]) {
+        texture_data.iter().enumerate().for_each(|(layer, texture_data)| {
+            let texture_data = texture_data.clone();
+            let mipmaps = texture_data.generate_mipmaps();
+            mipmaps.into_iter().enumerate().for_each(|(mip_level, rect)| {
+                queue.write_texture(
+                    wgpu::TexelCopyTextureInfo {
+                        texture,
+                        mip_level: mip_level as u32,
+                        origin: wgpu::Origin3d { x: 0, y: 0, z: layer as u32 },
+                        aspect: wgpu::TextureAspect::All,
+                    },
+                    &rect.data,
+                    wgpu::TexelCopyBufferLayout {
+                        offset: 0,
+                        bytes_per_row: Some(rect.width),
+                        rows_per_image: Some(rect.height),
+                    },
+                    wgpu::Extent3d {
+                        width: rect.width,
+                        height: rect.height,
+                        depth_or_array_layers: 1,
+                    },
+                );
+            });
+        });
+    }
+
+    pub fn update_uniform_buffer(&mut self, queue: &wgpu::Queue, camera_data: &caspr::camera::Camera, clouds_settings: &caspr::clouds::CloudSettings) {
+        let uniforms = Uniforms::from_camera_and_settings(camera_data, clouds_settings);
+        self.uniforms = uniforms;
+        queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[self.uniforms]));
+    }
+}
+
+pub struct CloudsCallback {
+    pub camera_data: caspr::camera::Camera,
+    pub clouds_settings: caspr::clouds::CloudSettings,
+    pub clouds_texture_to_upload: Option<caspr::textures::cubemap::Cubemap<u8>>,
+    pub target_format: wgpu::TextureFormat,
+
+    pub render: bool,
+}
+
+impl eframe::egui_wgpu::CallbackTrait for CloudsCallback {
+    fn prepare(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        _screen_descriptor: &eframe::egui_wgpu::ScreenDescriptor,
+        _encoder: &mut wgpu::CommandEncoder,
+        resources: &mut eframe::egui_wgpu::CallbackResources,
+    ) -> Vec<wgpu::CommandBuffer> {
+        let renderer = resources
+            .entry::<CloudsRenderer>()
+            .or_insert_with(|| CloudsRenderer::new(device, queue, self.target_format, &self.camera_data, &self.clouds_settings));
+
+        if self.camera_data.get_changes_state().changed || self.clouds_settings.changes_state.colour_changed {
+            log::debug!("Uploading changed clouds uniform buffer.");
+            renderer.update_uniform_buffer(queue, &self.camera_data, &self.clouds_settings);
+        }
+        if let Some(texture_info) = &self.clouds_texture_to_upload {
+            if texture_info.changed {
+                log::debug!("Uploading changed clouds texture.");
+                renderer.update_texture(device, queue, &texture_info.texture_data, texture_info.texture_size, texture_info.texture_data[0].mip_map_count());
+            }
+        }
+
+        Vec::new()
+    }
+
+    fn paint(&self, info: egui::PaintCallbackInfo, render_pass: &mut wgpu::RenderPass<'static>, resources: &eframe::egui_wgpu::CallbackResources) {
+        if !self.render {
+            return;
+        }
+        let renderer: &CloudsRenderer = resources.get().unwrap();
+
+        let (viewport_x, viewport_y, viewport_w, viewport_h) = {
+            let viewport = info.viewport_in_pixels();
+
+            let physical_left = viewport.left_px as f32;
+            let physical_top = viewport.top_px as f32;
+            let physical_width = viewport.width_px as f32;
+            let physical_height = viewport.height_px as f32;
+
+            (physical_left, physical_top, physical_width, physical_height)
+        };
+
+        render_pass.set_viewport(viewport_x, viewport_y, viewport_w, viewport_h, 0.0, 1.0);
+
+        render_pass.set_pipeline(&renderer.pipeline);
+        render_pass.set_bind_group(0, &renderer.bind_group, &[]);
+        render_pass.draw(0..3, 0..1);
+    }
+}

@@ -4,9 +4,9 @@ use crate::enums::ScreenWidth;
 use crate::rendering::caspr::sky_settings;
 use crate::rendering::initial_setup;
 use crate::rendering::themes::{self, Theme, ThemesHandler};
-use crate::{files, public_constants, server_communication, structs};
+use crate::{server_communication, sky, structs};
 
-use crate::renderer::CellestialSphere;
+use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::structs::{graphics_settings, testing_settings};
 
 use self::frames_handler::FramesHandler;
@@ -26,9 +26,8 @@ pub struct Application {
     pub input: input::Input,
     pub state: state::State,
 
-    pub frame_timestamp: i64,
-    pub frame_timestamp_ms: i64,
     pub cellestial_sphere: CellestialSphere,
+    pub sky: sky::Sky,
     pub frames_handler: FramesHandler,
     pub game_handler: game_handler::GameHandler,
 
@@ -40,10 +39,10 @@ pub struct Application {
     pub authors: String,
     pub version: structs::version_information::VersionInformation,
 
-    pub last_state_save: std::time::Instant,
-    pub last_state_save_to_disk: std::time::Instant,
-    pub state_save_interval: std::time::Duration,
-    pub state_save_to_disk_interval: std::time::Duration,
+    pub last_state_save: web_time::Instant,
+    pub last_state_save_to_disk: web_time::Instant,
+    pub state_save_interval: web_time::Duration,
+    pub state_save_to_disk_interval: web_time::Duration,
 
     pub screen_width: ScreenWidth,
 
@@ -53,6 +52,7 @@ pub struct Application {
 
     pub testing_mode: bool,
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub onscreen_keyboard: egui_keyboard::Keyboard,
 
     pub initial_setup_stage: initial_setup::InitialSetupStage,
@@ -61,15 +61,21 @@ pub struct Application {
 impl Application {
     pub fn new(cc: &eframe::CreationContext<'_>, authors: String, version: String) -> Self {
         let ctx = &cc.egui_ctx;
+        ctx.options_mut(|o| {
+            o.theme_preference = egui::ThemePreference::Dark;
+        });
         egui_extras::install_image_loaders(ctx);
 
         let testing_mode = std::env::var("TESTING").unwrap_or_default().to_lowercase() == *"true";
 
         let mut themes = themes::default_themes();
-        let themes_files = files::load_all_files_folder(public_constants::THEMES_FOLDER);
+        let themes_files = crate::files_handling::read_dir_relative(crate::config::THEMES_FOLDER).unwrap_or_else(|err| {
+            log::error!("Failed to read the themes directory: {err:?}");
+            Vec::new()
+        });
         for file in themes_files {
-            if let Err(err) = themes.add_theme_str(&file.content) {
-                log::error!("Failed to load a theme (from file {}): {err}", file.name);
+            if let Err(err) = themes.add_theme_str(&file.contents_as_string_or_empty()) {
+                log::error!("Failed to load a theme (from file {:?}): {err}", file.get_path());
             }
         }
 
@@ -142,9 +148,11 @@ impl Application {
         }
         ctx.set_visuals(theme.egui_visuals.clone());
 
-        let mut cellestial_sphere = CellestialSphere::load(cc.storage, &mut theme).unwrap();
-        cellestial_sphere.init();
-        let game_handler = GameHandler::init(&mut cellestial_sphere, cc.storage, first_application_launch);
+        let mut cellestial_sphere = CellestialSphere::load(cc.storage);
+        let (mut sky, question_objects) = sky::Sky::load(&mut theme, &mut cellestial_sphere.sky_settings).unwrap();
+        cellestial_sphere.init(&mut sky);
+
+        let game_handler = GameHandler::init(&sky, question_objects, cc.storage, first_application_launch);
         if game_handler.question_packs.contains_key(&game_handler.active_question_pack) {
             state.windows.settings.game_settings.question_pack_new_name = game_handler.active_question_pack.clone();
         }
@@ -152,10 +160,9 @@ impl Application {
             input,
             state,
 
-            frame_timestamp: timestamp,
-            frame_timestamp_ms: chrono::Utc::now().timestamp_millis(),
             game_handler,
             cellestial_sphere,
+            sky,
             frames_handler: FramesHandler::default(),
 
             graphics_settings,
@@ -166,10 +173,10 @@ impl Application {
             authors,
             version: structs::version_information::VersionInformation::only_current(version),
 
-            last_state_save: std::time::Instant::now(),
-            last_state_save_to_disk: std::time::Instant::now(),
-            state_save_interval: std::time::Duration::from_secs(5),
-            state_save_to_disk_interval: std::time::Duration::from_secs(60),
+            last_state_save: web_time::Instant::now(),
+            last_state_save_to_disk: web_time::Instant::now(),
+            state_save_interval: web_time::Duration::from_secs(5),
+            state_save_to_disk_interval: web_time::Duration::from_secs(60),
 
             screen_width: ScreenWidth::from_width(ctx.screen_rect().size().x),
 
@@ -179,6 +186,7 @@ impl Application {
 
             testing_mode,
 
+            #[cfg(not(target_arch = "wasm32"))]
             onscreen_keyboard: egui_keyboard::Keyboard::new(['⬆', '⇧'], '⌫'),
 
             initial_setup_stage,
@@ -196,25 +204,24 @@ impl Application {
 }
 
 impl eframe::App for Application {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         if self.input.settings.display_onscreen_keyboard {
+            #[cfg(not(target_arch = "wasm32"))]
             self.onscreen_keyboard.pump_events(ctx);
         }
         #[cfg(any(target_os = "ios", target_os = "android"))]
         // Push the input text restored from key presses to events as a Text event so that input fields take it in by themselves
         ctx.input_mut(|i| i.events.push(egui::Event::Text(self.input.text_from_keys.clone())));
-        self.frames_handler.current_frame.timestamp_ns = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
-        self.frame_timestamp = chrono::Utc::now().timestamp();
+        self.frames_handler.update_started();
         self.screen_width = ScreenWidth::from_width(ctx.screen_rect().size().x);
-        let cursor_within_central_panel = self.render(ctx);
+        let cursor_within_central_panel = self.render(ctx, frame);
         self.handle_input(cursor_within_central_panel, ctx);
         self.receive_threads_messages();
         self.toasts.show(ctx);
-        self.frames_handler.handle();
-        self.frames_handler.last_frame = chrono::Local::now().timestamp_nanos_opt().expect("Date out of bounds.");
         if self.game_handler.switch_to_next_part {
             let data = game_handler::QuestionCheckingData {
                 cellestial_sphere: &mut self.cellestial_sphere,
+                sky: &mut self.sky,
                 theme: &self.theme,
                 game_stage: &mut self.game_handler.stage,
                 score: &mut self.game_handler.score,
@@ -232,12 +239,13 @@ impl eframe::App for Application {
             self.game_handler.switch_to_next_part = false;
         }
         if self.game_handler.switch_to_next_question {
-            self.game_handler.next_question(&mut self.cellestial_sphere, &self.theme);
+            self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme);
             self.game_handler.switch_to_next_question = false;
         }
 
         let input_field_has_focus = ctx.wants_keyboard_input();
         if self.input.settings.display_onscreen_keyboard {
+            #[cfg(not(target_arch = "wasm32"))]
             self.onscreen_keyboard.show(ctx);
         } else {
             // Toggle software keyboard
@@ -252,13 +260,15 @@ impl eframe::App for Application {
         }
         self.input.input_field_had_focus_last_frame = input_field_has_focus;
 
+        self.frames_handler.update_ended();
+
         ctx.request_repaint();
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         storage.set_string(
             StorageKeys::TimeSpent.as_ref(),
-            (self.state.time_spent_start + (self.frame_timestamp - self.state.start_timestamp)).to_string(),
+            (self.state.time_spent_start + (self.frames_handler.get_current_frame_timestamp() - self.state.start_timestamp)).to_string(),
         );
 
         match serde_json::to_string(&self.game_handler.questions_settings) {

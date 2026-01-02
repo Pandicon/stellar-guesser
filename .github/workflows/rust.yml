@@ -63,6 +63,27 @@ jobs:
               working-directory: app
               run: cargo clippy --all-targets --all-features -- -D warnings
 
+    clippy-app-web:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      app/target
+                  key: ${{ runner.os }}-cargo-app-web-${{ hashFiles('app/Cargo.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-cargo-app-web-            
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+                  targets: wasm32-unknown-unknown
+            - name: Run Clippy (app on web)
+              working-directory: app
+              run: cargo clippy --target wasm32-unknown-unknown --all-features -- -D warnings
+
     clippy-crates:
         runs-on: ubuntu-latest
         steps:
@@ -82,6 +103,27 @@ jobs:
             - name: Run Clippy (crates)
               working-directory: crates
               run: cargo clippy --all-targets --all-features -- -D warnings
+
+    clippy-crates-web:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      crates/target
+                  key: ${{ runner.os }}-cargo-crates-clippy-web-${{ hashFiles('crates/**/Cargo.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-cargo-crates-clippy-web-
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+                  targets: wasm32-unknown-unknown
+            - name: Run Clippy (crates on web)
+              working-directory: crates
+              run: cargo clippy --target wasm32-unknown-unknown --all-features -- -D warnings
 
     fmt-app:
         runs-on: ubuntu-latest

@@ -14,7 +14,7 @@ impl Application {
         );
         if ui.button("Reset questions").clicked() {
             self.game_handler.stage = GameStage::NotStartedYet;
-            self.game_handler.reset_used_questions(&mut self.cellestial_sphere);
+            self.game_handler.reset_used_questions();
 
             // Remove all game markers from the screen
             self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Markers, "game");

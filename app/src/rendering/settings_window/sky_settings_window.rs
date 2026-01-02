@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
+use angle::Angle;
 use eframe::egui;
 
 use crate::{
     enums::{LightPollution, RendererCategory},
-    renderer::CellestialSphere,
-    rendering::caspr::{markers::game_markers::GameMarker, stars},
+    sky,
     structs::state::windows::settings::SkySettingsSubWindow,
     Application,
 };
@@ -52,27 +52,29 @@ impl Application {
     }
 
     pub fn render_sky_settings_general_subwindow(&mut self, ui: &mut egui::Ui) {
-        let prev_light_pollution = self.cellestial_sphere.light_pollution_place;
+        let prev_light_pollution = self.sky.light_pollution_place;
         ui.label("Light pollution level: ")
             .on_hover_text("These settings are made to reflect how the sky looks in different locations for a person with an average eyesight.");
         egui::ComboBox::from_id_salt("Light pollution level: ")
-            .selected_text(format!("{}", self.cellestial_sphere.light_pollution_place))
+            .selected_text(format!("{}", self.sky.light_pollution_place))
             .show_ui(ui, |ui| {
                 ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
                 for val in LightPollution::variants() {
-                    ui.selectable_value(&mut self.cellestial_sphere.light_pollution_place, val, format!("{val}"))
+                    ui.selectable_value(&mut self.sky.light_pollution_place, val, format!("{val}"))
                         .on_hover_text(LightPollution::explanation(&val));
                 }
             });
-        if prev_light_pollution != self.cellestial_sphere.light_pollution_place {
-            let settings = self.cellestial_sphere.light_pollution_place_to_mag_settings(&self.cellestial_sphere.light_pollution_place);
+        if prev_light_pollution != self.sky.light_pollution_place {
+            let settings = self.sky.light_pollution_place_to_mag_settings(&self.sky.light_pollution_place, &self.cellestial_sphere.sky_settings);
             self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id] = settings;
         }
         ui.separator();
         let previous_enabled = self.cellestial_sphere.sky_settings.cloud_settings.enabled;
         let previous_coverage = self.cellestial_sphere.sky_settings.cloud_settings.coverage;
         let previous_thickness = self.cellestial_sphere.sky_settings.cloud_settings.thickness;
+        let previous_opaque_thickness = self.cellestial_sphere.sky_settings.cloud_settings.opaque_thickness;
         let previous_iterations = self.cellestial_sphere.sky_settings.cloud_settings.iterations;
+        let previous_resolution = self.cellestial_sphere.sky_settings.cloud_settings.resolution;
         ui.label("Cloudiness")
             .on_hover_text("These settings dictate what the maximum increase in magnitude (decrease in brightness) should be due to clouds and how the clouds should look like");
 
@@ -82,7 +84,11 @@ impl Application {
         });
         ui.horizontal(|ui| {
             ui.add(egui::Checkbox::without_text(&mut self.cellestial_sphere.sky_settings.cloud_settings.enabled));
-            ui.label("Enabled").on_hover_text("Should there be any clouds?");
+            ui.label("Enabled").on_hover_text("Should there be any clouds dimming the stars?");
+        });
+        ui.horizontal(|ui| {
+            ui.add(egui::Checkbox::without_text(&mut self.cellestial_sphere.sky_settings.cloud_settings.render));
+            ui.label("Render").on_hover_text("Should the clouds be rendered?");
         });
         ui.horizontal(|ui| {
             ui.add(egui::DragValue::new(&mut self.cellestial_sphere.sky_settings.cloud_settings.coverage).speed(0.02));
@@ -94,9 +100,28 @@ impl Application {
             ui.label("Thickness");
         });
         ui.horizontal(|ui| {
+            ui.add(egui::DragValue::new(&mut self.cellestial_sphere.sky_settings.cloud_settings.opaque_thickness).speed(0.1))
+                .on_hover_text("At what thickness should the clouds be rendered as fully opaque?");
+            ui.label("Opaque thickness");
+        });
+        ui.horizontal(|ui| {
+            let mut colour = self.cellestial_sphere.sky_settings.cloud_settings.get_colour();
+            ui.color_edit_button_srgba(&mut colour)
+                .on_hover_text("What colour should the clouds be? Non-opaque regions will also have this colour but will be partially see-through.");
+            self.cellestial_sphere.sky_settings.cloud_settings.set_colour(colour);
+            ui.label("Opaque colour");
+        });
+        ui.horizontal(|ui| {
             ui.add(egui::DragValue::new(&mut self.cellestial_sphere.sky_settings.cloud_settings.iterations).speed(0.1))
                 .on_hover_text("How detailed should the clouds be? Higher values lead to more structured clouds (1 corresponds to essentially blobs on the sky, 8 and higher actually look like clouds) but at the cost of longer computation times.");
             ui.label("Level of detail");
+        });
+        ui.horizontal(|ui| {
+            let mut deg = self.cellestial_sphere.sky_settings.cloud_settings.resolution.value();
+            ui.add(egui::DragValue::new(&mut deg).speed(0.01).range(0.0001..=5.0))
+                .on_hover_text("What should the resolution of the clouds be? A value of 1° means that a square of roughly 1°x1° will have a single thickness value. (However, transitions between those squares will be smooth)");
+            ui.label("Rendering resolution");
+            self.cellestial_sphere.sky_settings.cloud_settings.resolution = angle::Deg(deg);
         });
 
         let recalculate = ui.button("Apply settings").clicked();
@@ -108,16 +133,18 @@ impl Application {
                 && (previous_enabled != self.cellestial_sphere.sky_settings.cloud_settings.enabled
                     || previous_coverage != self.cellestial_sphere.sky_settings.cloud_settings.coverage
                     || previous_thickness != self.cellestial_sphere.sky_settings.cloud_settings.thickness
-                    || previous_iterations != self.cellestial_sphere.sky_settings.cloud_settings.iterations))
+                    || previous_opaque_thickness != self.cellestial_sphere.sky_settings.cloud_settings.opaque_thickness
+                    || previous_iterations != self.cellestial_sphere.sky_settings.cloud_settings.iterations
+                    || previous_resolution != self.cellestial_sphere.sky_settings.cloud_settings.resolution))
         {
             if self.cellestial_sphere.sky_settings.cloud_settings.enabled {
-                crate::rendering::caspr::clouds::apply_dimming(&mut self.cellestial_sphere.stars, &self.cellestial_sphere.sky_settings.cloud_settings);
+                crate::rendering::caspr::clouds::apply_dimming(&mut self.sky, &mut self.cellestial_sphere);
             } else {
-                crate::rendering::caspr::clouds::disable(&mut self.cellestial_sphere.stars);
+                crate::rendering::caspr::clouds::disable(&mut self.sky.stars);
             }
-            let keys = self.cellestial_sphere.stars.keys().cloned().collect::<Vec<String>>();
+            let keys = self.sky.stars.keys().cloned().collect::<Vec<String>>();
             for star_set_name in keys {
-                self.cellestial_sphere.init_single_renderer_group(RendererCategory::Stars, &star_set_name);
+                self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Stars, &star_set_name);
             }
         }
     }
@@ -139,14 +166,14 @@ impl Application {
             } else {
                 None
             };
-            for star_set in self.cellestial_sphere.stars.values_mut() {
+            for star_set in self.sky.stars.values_mut() {
                 for star in star_set {
                     star.override_colour = colour;
                 }
             }
-            let keys = self.cellestial_sphere.stars.keys().cloned().collect::<Vec<String>>();
+            let keys = self.sky.stars.keys().cloned().collect::<Vec<String>>();
             for star_set_name in keys {
-                self.cellestial_sphere.init_single_renderer_group(RendererCategory::Stars, &star_set_name);
+                self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Stars, &star_set_name);
             }
         }
 
@@ -168,16 +195,16 @@ impl Application {
                 });
         });
         if prev_mag_to_rad_fn_id != self.cellestial_sphere.sky_settings.mag_to_radius_id {
-            let place = CellestialSphere::mag_settings_to_light_pollution_place(
+            let place = sky::Sky::mag_settings_to_light_pollution_place(
                 self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id],
-                &self.cellestial_sphere.light_pollution_place_to_mag,
+                &self.sky.light_pollution_place_to_mag,
             );
-            self.cellestial_sphere.light_pollution_place = place;
+            self.sky.light_pollution_place = place;
             reinit_stars = true;
         }
 
         match &mut self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id] {
-            stars::MagnitudeToRadius::Linear { mag_scale, mag_offset } => {
+            sky::star::MagnitudeToRadius::Linear { mag_scale, mag_offset } => {
                 let prev_mag_offset = *mag_offset;
                 let prev_mag_scale = *mag_scale;
                 ui.horizontal_wrapped(|ui| ui.label("The following two values affect the size of the stars via the following formula: radius = mag_scale * (mag_offset - magnitude)"));
@@ -190,14 +217,14 @@ impl Application {
                     ui.label("Magnitude scale (mag_scale)");
                 });
                 if prev_mag_offset != *mag_offset || prev_mag_scale != *mag_scale {
-                    self.cellestial_sphere.light_pollution_place = CellestialSphere::mag_settings_to_light_pollution_place(
+                    self.sky.light_pollution_place = sky::Sky::mag_settings_to_light_pollution_place(
                         self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id],
-                        &self.cellestial_sphere.light_pollution_place_to_mag,
+                        &self.sky.light_pollution_place_to_mag,
                     );
                     reinit_stars = true;
                 }
             }
-            stars::MagnitudeToRadius::Exponential { r_0, n, o } => {
+            sky::star::MagnitudeToRadius::Exponential { r_0, n, o } => {
                 let prev_r0 = *r_0;
                 let prev_n = *n;
                 let prev_o = *o;
@@ -218,9 +245,9 @@ impl Application {
                     ui.label("o (how much does the size change (proportionally) when changing the magnitude");
                 });
                 if prev_r0 != *r_0 || prev_n != *n || prev_o != *o {
-                    self.cellestial_sphere.light_pollution_place = CellestialSphere::mag_settings_to_light_pollution_place(
+                    self.sky.light_pollution_place = sky::Sky::mag_settings_to_light_pollution_place(
                         self.cellestial_sphere.sky_settings.mag_to_radius_settings[self.cellestial_sphere.sky_settings.mag_to_radius_id],
-                        &self.cellestial_sphere.light_pollution_place_to_mag,
+                        &self.sky.light_pollution_place_to_mag,
                     );
                     reinit_stars = true;
                 }
@@ -240,13 +267,13 @@ impl Application {
         }
 
         for name in &newly_active_star_groups {
-            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Stars, name);
+            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Stars, name);
         }
         for name in &newly_inactive_star_groups {
             self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Stars, name);
         }
         if reinit_stars {
-            self.cellestial_sphere.reinit_renderer_category(RendererCategory::Stars);
+            self.cellestial_sphere.reinit_renderer_category(&self.sky, RendererCategory::Stars);
         }
     }
 
@@ -261,7 +288,7 @@ impl Application {
 
         let mut deepsky_groups_to_init = HashSet::new();
         let mut deepsky_groups_to_deinit = HashSet::new();
-        for (name, deepskies_set) in &mut self.cellestial_sphere.deepskies {
+        for (name, deepskies_set) in &mut self.sky.deepskies {
             ui.heading(name);
             if ui.checkbox(&mut deepskies_set.active, format!("Render deepsky objects from the {name} file")).changed() {
                 if deepskies_set.active {
@@ -280,7 +307,7 @@ impl Application {
             self.theme.game_visuals.deepskies_colours.insert(name.clone(), deepskies_set.colour);
         }
         for name in &deepsky_groups_to_init {
-            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Deepskies, name);
+            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Deepskies, name);
         }
         for name in &deepsky_groups_to_deinit {
             self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Deepskies, name);
@@ -290,7 +317,7 @@ impl Application {
     pub fn render_sky_settings_lines_subwindow(&mut self, ui: &mut egui::Ui) {
         let mut line_groups_to_init = HashSet::new();
         let mut line_groups_to_deinit = HashSet::new();
-        for (name, lines_set) in &mut self.cellestial_sphere.lines {
+        for (name, lines_set) in &mut self.sky.lines {
             ui.heading(name);
             if ui.checkbox(&mut lines_set.active, format!("Render lines from the {name} file")).changed() {
                 if lines_set.active {
@@ -309,7 +336,7 @@ impl Application {
             self.theme.game_visuals.lines_colours.insert(name.clone(), lines_set.colour);
         }
         for name in &line_groups_to_init {
-            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Lines, name);
+            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Lines, name);
         }
         for name in &line_groups_to_deinit {
             self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Lines, name);
@@ -336,15 +363,15 @@ impl Application {
             game_markers_changed |= ui.color_edit_button_srgba(&mut self.theme.game_visuals.game_markers_colours.correct_answer).changed();
         });
         if game_markers_changed {
-            for marker in self.cellestial_sphere.game_markers.markers.iter_mut() {
-                marker.colour = GameMarker::get_colour(marker.marker_type, &self.theme.game_visuals.game_markers_colours);
+            for marker in self.sky.game_markers.markers.iter_mut() {
+                marker.colour = sky::markers::game_markers::GameMarker::get_colour(marker.marker_type, &self.theme.game_visuals.game_markers_colours);
             }
-            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, "game");
+            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, "game");
         }
         ui.separator();
         let mut marker_groups_to_init = HashSet::new();
         let mut marker_groups_to_deinit = HashSet::new();
-        for (name, markers_set) in &mut self.cellestial_sphere.markers {
+        for (name, markers_set) in &mut self.sky.markers {
             ui.heading(name);
             if ui.checkbox(&mut markers_set.active, format!("Render markers from the {name} file")).changed() {
                 if markers_set.active {
@@ -363,7 +390,7 @@ impl Application {
             self.theme.game_visuals.markers_colours.insert(name.clone(), markers_set.colour);
         }
         for name in &marker_groups_to_init {
-            self.cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, name);
+            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, name);
         }
         for name in &marker_groups_to_deinit {
             self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Markers, name);

@@ -1,4 +1,4 @@
-use crate::rendering::caspr::stars;
+use crate::sky;
 use std::collections::HashMap;
 
 const SEPARATOR: &str = "|";
@@ -10,7 +10,7 @@ pub struct SkySettings {
     pub markers_categories_active: HashMap<String, bool>,
     pub star_names_categories_active: HashMap<String, bool>,
     pub mag_to_radius_id: usize,
-    pub mag_to_radius_settings: [stars::MagnitudeToRadius; 2],
+    pub mag_to_radius_settings: [sky::star::MagnitudeToRadius; 2],
     pub deepsky_render_mag_decrease: f32,
     pub render_labels: bool,
     pub cloud_settings: crate::rendering::caspr::clouds::CloudSettings,
@@ -24,7 +24,7 @@ impl SkySettings {
             deepskies_categories_active: string_to_partial_hash_map(&sky_settings.deepsky_files_to_not_render),
             markers_categories_active: string_to_partial_hash_map(&sky_settings.markers_files_to_not_render),
             star_names_categories_active: string_to_partial_hash_map(&sky_settings.star_names_files_to_not_use),
-            mag_to_radius_id: sky_settings.mag_to_radius_id.min(crate::rendering::caspr::stars::MAGNITUDE_TO_RADIUS_OPTIONS - 1),
+            mag_to_radius_id: sky_settings.mag_to_radius_id.min(sky::star::MAGNITUDE_TO_RADIUS_OPTIONS - 1),
             mag_to_radius_settings: sky_settings.mag_to_radius_settings,
             deepsky_render_mag_decrease: sky_settings.deepsky_render_mag_decrease,
             render_labels: sky_settings.render_labels,
@@ -42,7 +42,7 @@ pub struct SkySettingsRaw {
     pub markers_files_to_not_render: String,
     pub star_names_files_to_not_use: String,
     pub mag_to_radius_id: usize,
-    pub mag_to_radius_settings: [stars::MagnitudeToRadius; 2],
+    pub mag_to_radius_settings: [sky::star::MagnitudeToRadius; 2],
     pub deepsky_render_mag_decrease: f32,
     pub render_labels: bool,
     pub cloud_settings: crate::rendering::caspr::clouds::CloudSettings,
@@ -56,8 +56,8 @@ impl Default for SkySettingsRaw {
             deepsky_files_to_not_render: String::new(),
             markers_files_to_not_render: String::new(),
             star_names_files_to_not_use: String::new(),
-            mag_to_radius_id: 1.min(crate::rendering::caspr::stars::MAGNITUDE_TO_RADIUS_OPTIONS - 1),
-            mag_to_radius_settings: stars::MagnitudeToRadius::defaults(),
+            mag_to_radius_id: 1.min(sky::star::MAGNITUDE_TO_RADIUS_OPTIONS - 1),
+            mag_to_radius_settings: sky::star::MagnitudeToRadius::defaults(),
             deepsky_render_mag_decrease: 0.0,
             render_labels: false,
             cloud_settings: crate::rendering::caspr::clouds::CloudSettings::default(),

@@ -1,3 +1,4 @@
+use angle::Angle;
 use eframe::egui;
 use egui::epaint::Pos2;
 use serde::{Deserialize, Serialize};
@@ -28,6 +29,7 @@ impl Application {
                                 if (self.game_handler.stage == GameStage::Guessing && !self.game_handler.should_display_input()) || self.game_handler.stage == GameStage::Checked {
                                     self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(QuestionCheckingData {
                                         cellestial_sphere: &mut self.cellestial_sphere,
+                                        sky: &mut self.sky,
                                         theme: &self.theme,
                                         game_stage: &mut self.game_handler.stage,
                                         score: &mut self.game_handler.score,
@@ -49,22 +51,21 @@ impl Application {
                 }
             }
         }
-        let reinitialise_stars = if cursor_within_central_panel { self.cellestial_sphere.zoom(self.input.zoom) } else { false };
+        self.cellestial_sphere.zoom(self.input.zoom);
 
         let pointer_position: Pos2 = match self.input.pointer_position {
             PointerPosition::OnScreen(position) => position,
             PointerPosition::OffScreen => return,
         };
-        let all_reinitialised = if cursor_within_central_panel {
-            let mut all_reinitialised = false;
+        if cursor_within_central_panel {
             if self.game_handler.add_marker_on_click && self.input.primary_released && !self.input.primary_dragging_last_frame {
                 /*let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
                 let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);*/
-                let marker_pos = sg_geometry::cast_onto_sphere_dec_ra(
-                    &self.cellestial_sphere.viewport_rect,
+                let marker_pos = self.cellestial_sphere.camera.get_projection().cast_onto_sphere_dec_ra(
+                    self.cellestial_sphere.camera.get_viewport_rect(),
                     &pointer_position,
-                    self.cellestial_sphere.rotation,
-                    self.cellestial_sphere.get_zoom(),
+                    *self.cellestial_sphere.camera.get_rotation(),
+                    self.cellestial_sphere.camera.get_fov().to_rad(),
                 );
                 if self.game_handler.allow_multiple_player_marker() {
                     self.game_handler.guess_marker_positions.push(marker_pos);
@@ -72,8 +73,8 @@ impl Application {
                     self.game_handler.guess_marker_positions = vec![marker_pos];
                 }
                 let new_markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions, &self.theme);
-                self.cellestial_sphere.game_markers.markers = new_markers; // vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.game_handler.show_circle_marker(), false)];
-                self.cellestial_sphere.init_single_renderer_group(RendererCategory::Markers, "game");
+                self.sky.game_markers.markers = new_markers; // vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.game_handler.show_circle_marker(), false)];
+                self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, "game");
             }
             let initial_vector = self.cellestial_sphere.project_screen_pos(pointer_position - self.input.dragged);
             let final_vector = self.cellestial_sphere.project_screen_pos(pointer_position);
@@ -82,15 +83,7 @@ impl Application {
                 // Some rotation this frame
 
                 self.cellestial_sphere.rotate_between_points(&initial_vector, &final_vector);
-                self.cellestial_sphere.init_renderers();
-                all_reinitialised = true;
             }
-            all_reinitialised
-        } else {
-            false
-        };
-        if !all_reinitialised && reinitialise_stars {
-            self.cellestial_sphere.reinit_renderer_category(RendererCategory::Stars);
         }
     }
 }

@@ -6,3 +6,7 @@ edition = "2021"
 [dependencies]
 eframe = { workspace = true }
 log = { workspace = true }
+
+[features]
+# Only to satisfy the compiler in the GitHub CI environment
+ci-tests = ["eframe/wgpu", "eframe/x11", "eframe/wayland"]

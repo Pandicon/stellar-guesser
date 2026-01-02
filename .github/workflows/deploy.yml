@@ -1,0 +1,42 @@
+name: Deploy to Github pages
+
+on:
+  push:
+    branches:
+      - stable
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: app
+
+      - name: Install Trunk
+        run: |
+          wget -qO- https://github.com/trunk-rs/trunk/releases/latest/download/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+          sudo mv trunk /usr/local/bin/
+
+      - name: Build with Trunk
+        working-directory: app
+        run: trunk build --release --public-url /play/
+
+      - name: Deploy to the github pages repository
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          token: ${{ secrets.DEPLOY_TOKEN }}
+          repository-name: stellarguesser/stellarguesser.github.io
+          branch: main
+          folder: app/dist
+          target-folder: play
+          clean: false
+          single-commit: false

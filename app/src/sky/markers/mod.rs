@@ -1,11 +1,11 @@
 use eframe::egui;
 use egui::epaint::Color32;
-use nalgebra::{Matrix3, Vector3};
+use nalgebra::Matrix3;
 use serde::Deserialize;
 
 use crate::graphics::parse_colour_option;
 
-use crate::renderer::CellestialSphere;
+use crate::rendering::caspr;
 
 pub mod game_markers;
 pub struct Markers {
@@ -39,7 +39,7 @@ pub struct MarkerRaw {
 }
 
 impl Marker {
-    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, colour: Color32) -> Option<MarkerRenderer> {
+    pub fn get_renderer(&self, rotation_matrix: &Matrix3<f32>, colour: Color32) -> Option<caspr::markers::MarkerRenderer> {
         if self.angular_radius.is_none() && self.pixel_radius.is_none() && self.angular_width.is_none() && self.pixel_width.is_none() {
             return None;
         }
@@ -66,7 +66,12 @@ impl Marker {
                 )
             })
         };
-        Some(MarkerRenderer::new(sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix), other_vec, self, colour))
+        Some(caspr::markers::MarkerRenderer::new(
+            sg_geometry::get_point_vector(self.ra, self.dec, rotation_matrix),
+            other_vec,
+            self,
+            colour,
+        ))
     }
 
     pub fn from_raw(raw_marker: MarkerRaw) -> (Self, Option<Color32>) {
@@ -120,48 +125,5 @@ impl Marker {
             angular_width: angular_width.map(angle::Deg),
             pixel_width,
         }
-    }
-}
-
-pub struct MarkerRenderer {
-    pub unit_vector: Vector3<f32>,
-    pub unit_vector_other_point: Option<Vector3<f32>>,
-    pub colour: Color32,
-    pub line_width: f32,
-    pub angular_radius: Option<angle::Deg<f32>>,
-    pub pixel_radius: Option<f32>,
-    pub angular_width: Option<angle::Deg<f32>>,
-    pub pixel_width: Option<f32>,
-    pub circle: bool,
-    pub label: Option<String>,
-}
-
-impl MarkerRenderer {
-    pub fn new(vector: Vector3<f32>, vector_other_point: Option<Vector3<f32>>, marker: &Marker, colour: Color32) -> Self {
-        Self {
-            unit_vector: vector,
-            unit_vector_other_point: vector_other_point,
-            colour,
-            line_width: marker.line_width,
-            angular_radius: marker.angular_radius,
-            pixel_radius: marker.pixel_radius,
-            angular_width: marker.angular_width,
-            pixel_width: marker.pixel_width,
-            circle: marker.angular_radius.is_some() || marker.pixel_radius.is_some(),
-            label: marker.label.map(|a| a.iter().collect()),
-        }
-    }
-
-    pub fn render(&self, cellestial_sphere: &CellestialSphere, painter: &egui::Painter) {
-        cellestial_sphere.render_marker(
-            &self.unit_vector,
-            &self.unit_vector_other_point,
-            self.circle,
-            if self.circle { self.pixel_radius } else { self.pixel_width },
-            self.colour,
-            self.line_width,
-            painter,
-            self.label.clone(),
-        )
     }
 }

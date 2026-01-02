@@ -1,7 +1,7 @@
 [package]
 authors = ["Pandicon <70060103+Pandicon@users.noreply.github.com>", "matym1"]
 name = "stellar-guesser"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 resolver = "2"
 
@@ -22,7 +22,7 @@ app-theme-parent = "Theme.MaterialComponents.DayNight.DarkActionBar"
 
 [dependencies]
 angle = "0.5.0"
-chrono = "0.4"
+chrono = { version = "0.4", features = ["wasmbind"] }
 csv = "1.2.2"
 directories-next = "2.0.0"
 dotenvy = "0.15.7"
@@ -31,6 +31,8 @@ eframe = { version = "0.31", default-features = false, features = [
 	"default_fonts",
 	"persistence",
 	"android-native-activity",
+	"x11",
+	"wayland"
 ] }
 egui_extras = { version = "0.31", features = ["all_loaders", "image"] }
 egui-notify = "0.19" # It depends on egui itself, so the version of egui used by this app and by egui-notify have to match
@@ -42,30 +44,49 @@ once_cell = "1.20.0"
 pollster = "0.3"
 rand = "0.8.5"
 regex = "1.11.1"
-reqwest = { version = "0.12.7", default-features = false, features = [
-	"json",
-	"rustls-tls",
-] }
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
-tokio = { version = "1.35.0", features = ["macros", "rt-multi-thread"] }
+web-time = "1.1"
 winit = "0.30"
 spherical_geometry = { version = "0.4.1", features = ["serde"] }
-
-egui_keyboard = { git = "https://github.com/Pandicon/egui_keyboard", branch = "main" }
 
 sg_credits = { path = "../crates/sg_credits" }
 sg_game_constellations = { path = "../crates/sg_game_constellations" }
 sg_geometry = { path = "../crates/sg_geometry" }
+const_format = "0.2.35"
+include_dir = "0.7.4"
+url = "2.5.7"
+bytemuck = "1.24.0"
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "0.13.1"
 jni = "0.19"
 ndk-context = "0.1"
 
-[target.'cfg(not(target_os = "android"))'.dependencies]
+[target.'cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))'.dependencies]
 env_logger = "0.11"
 rfd = "0.14.1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+egui_keyboard = { git = "https://github.com/Pandicon/egui_keyboard", branch = "main" }
+reqwest = { version = "0.12.7", default-features = false, features = [
+	"json",
+	"rustls-tls",
+] }
+tokio = { version = "1.35.0", features = ["macros", "rt-multi-thread"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1"
+getrandom = { version = "0.2", features = ["js"] }
+reqwest = { version = "0.12.7", default-features = false, features = [
+	"json",
+] }
+rfd = "0.14.1"
+tokio = { version = "1.35.0", features = ["macros", "rt", "sync", "time"] }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = "0.3"
+wgpu = { version = "24.0", features = ["webgl"] }
 
 [build-dependencies]
 chrono = "0.4.26"

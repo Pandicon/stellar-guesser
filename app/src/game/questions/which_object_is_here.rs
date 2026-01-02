@@ -1,9 +1,10 @@
 use crate::enums::GameStage;
 use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::renderer::CellestialSphere;
-use crate::rendering::caspr::markers::game_markers::{GameMarker, GameMarkerType};
+use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
+use crate::sky;
+use crate::sky::markers::game_markers;
 use angle::Deg;
 use eframe::egui;
 use rand::Rng;
@@ -121,6 +122,7 @@ impl Question {
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {
                     cellestial_sphere: data.cellestial_sphere,
+                    sky: data.sky,
                     theme: data.theme,
                     game_stage: data.game_stage,
                     score: data.score,
@@ -259,11 +261,11 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, theme: &Theme) {
         self.state = Default::default();
-        cellestial_sphere.game_markers.markers = if self.is_bayer || self.is_starname {
-            vec![GameMarker::new(
-                GameMarkerType::Task,
+        sky.game_markers.markers = if self.is_bayer || self.is_starname {
+            vec![game_markers::GameMarker::new(
+                game_markers::GameMarkerType::Task,
                 self.ra,
                 self.dec,
                 2.0,
@@ -273,8 +275,8 @@ impl crate::game::game_handler::QuestionTrait for Question {
                 &theme.game_visuals.game_markers_colours,
             )]
         } else {
-            vec![GameMarker::new(
-                GameMarkerType::Task,
+            vec![game_markers::GameMarker::new(
+                game_markers::GameMarkerType::Task,
                 self.ra,
                 self.dec,
                 2.0,
@@ -287,7 +289,6 @@ impl crate::game::game_handler::QuestionTrait for Question {
         if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             cellestial_sphere.look_at_point(&final_vector);
-            cellestial_sphere.init_renderers();
         }
     }
 
@@ -327,4 +328,82 @@ impl crate::game::game_handler::QuestionTrait for Question {
     fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(self.clone())
     }
+}
+
+pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
+    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+    for object in objects {
+        let mut possible_names = Vec::new();
+        if small_settings.accept_bayer {
+            if let Some(designation) = &object.bayer_designation_raw {
+                let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
+                possible_names.extend(names);
+            }
+        }
+        if small_settings.accept_caldwell {
+            if let Some(designation) = object.caldwell_number {
+                possible_names.push(format!("C{designation}"));
+            }
+        }
+        if small_settings.accept_flamsteed {
+            if let Some(designation) = &object.flamsteed_designation_raw {
+                let names = crate::rendering::caspr::generate_name_combinations(designation, crate::rendering::caspr::SpecificName::None);
+                possible_names.extend(names);
+            }
+        }
+        if small_settings.accept_hd {
+            if let Some(designation) = &object.hd_number {
+                possible_names.push(format!("HD{designation}"));
+            }
+        }
+        if small_settings.accept_hip {
+            if let Some(designation) = &object.hipparcos_number {
+                possible_names.push(format!("HIP{designation}"));
+            }
+        }
+        if small_settings.accept_ic {
+            if let Some(designation) = &object.ic_number {
+                possible_names.push(format!("IC{designation}"));
+            }
+        }
+        if small_settings.accept_messier {
+            if let Some(designation) = &object.messier_number {
+                possible_names.push(format!("M{designation}"));
+            }
+        }
+        if small_settings.accept_ngc {
+            if let Some(designation) = &object.ngc_number {
+                possible_names.push(format!("NGC{designation}"));
+            }
+        }
+        if small_settings.accept_proper {
+            for name in &object.proper_names_raw {
+                let names = crate::rendering::caspr::generate_name_combinations(name, crate::rendering::caspr::SpecificName::None);
+                possible_names.extend(names);
+            }
+        }
+        if !possible_names.is_empty() {
+            questions.push(Box::new(Question {
+                small_settings,
+                possible_names,
+                ra: object.ra,
+                dec: object.dec,
+                is_messier: object.messier_number.is_some(),
+                is_caldwell: object.caldwell_number.is_some(),
+                is_ngc: object.ngc_number.is_some(),
+                is_ic: object.ic_number.is_some(),
+                is_bayer: object.bayer_designation_full.is_some(),
+                images: object.images.clone(),
+                is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
+                magnitude: object.mag,
+                object_type: match &object.object_type {
+                    crate::game::ObjectType::Star(star_type) => star_type.display_name(),
+                    crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
+                },
+                constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
+                state: Default::default(),
+            }));
+        }
+    }
+    questions
 }

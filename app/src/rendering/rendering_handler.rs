@@ -2,13 +2,8 @@ use crate::{rendering::initial_setup, Application};
 use eframe::egui;
 
 impl Application {
-    pub fn render(&mut self, ctx: &egui::Context) -> bool {
+    pub fn render(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) -> bool {
         let viewport_rect = ctx.input(|i| i.screen_rect());
-        if viewport_rect != self.cellestial_sphere.viewport_rect {
-            log::debug!("Viewport rect changed: {:?} -> {:?}", self.cellestial_sphere.viewport_rect, viewport_rect);
-            self.cellestial_sphere.viewport_rect = viewport_rect;
-            self.cellestial_sphere.init_renderers();
-        }
         initial_setup::render_initial_setup(self, ctx, viewport_rect);
 
         let mut window_rectangles = Vec::new();
@@ -54,17 +49,25 @@ impl Application {
                 [response.response.rect.left(), response.response.rect.bottom()],
             ]);
         }
+        let mut panel_frame = egui::Frame::central_panel(&ctx.style());
+        panel_frame.inner_margin = egui::Margin::same(0);
         let central_panel_response = egui::CentralPanel::default()
+            .frame(panel_frame)
             .show(ctx, |ui| {
-                self.cellestial_sphere.viewport_rect = viewport_rect;
-
+                let rect = ui.available_rect_before_wrap();
+                if rect != *self.cellestial_sphere.camera.get_viewport_rect() {
+                    log::debug!("Viewport rect changed: {:?} -> {:?}", self.cellestial_sphere.camera.get_viewport_rect(), rect);
+                    self.cellestial_sphere.camera.set_viewport_rect(rect);
+                }
+                self.cellestial_sphere.prepare_render(&self.sky);
                 let painter = ui.painter();
-                self.cellestial_sphere.render_sky(painter);
+                self.cellestial_sphere.render_sky(painter, frame);
+                self.cellestial_sphere.after_render();
             })
             .response
             .interact(egui::Sense::click_and_drag());
         let top_panel_hovered = self.render_top_panel(ctx);
-        log::debug!("Top panel hovered: {top_panel_hovered}");
+        // log::debug!("Top panel hovered: {top_panel_hovered}");
         // The central panel is hovered and the top panel is not
         central_panel_response.contains_pointer() && !top_panel_hovered
     }

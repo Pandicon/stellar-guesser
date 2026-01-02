@@ -4,6 +4,9 @@
 ### Windows
 To build this for Windows, simply run `cargo build` or `cargo build --release`.
 
+### Web
+To build for web, you will need to use [Trunk](https://trunkrs.dev/). Install it with `cargo install --locked trunk`. To build, run `trunk build` or `trunk build --release`. The files will be placed in the `dist` folder from where they can be served for example with Python (`python -m http.server 8080 --bind 127.0.0.1`). Alternatively, to build and serve, use `trunk serve` or `trunk serve --release`.
+
 ### Android
 To build this for Android, you have to have `cargo-mobile` installed, along with the required Android tools. To set up `cargo-mobile`, follow the steps in this [guide](https://hackmd.io/XIcEwk4GSxy8APZhSa0UnA). Then run `cargo android apk build` to build the debug universal apk.
 You will also need to have a reasonable version of Android SDK installed (can be done via Android Studio), as of September 2025 that is v35 and/or v34 (see [#62](/../../issues/62)). Along with that you should install Java 17 (Kotlin and Gradle do not support newer versions) from the [Oracle website](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html). Then set the `JAVA_HOME` environment variable to the location of the JDK (on Windows it is usually `C:\Program Files\Java\jdk-<version>`, you can see it during installation). Ensure you do not have a newer version installed at all and that there are no newer folders in the Java folder, else it may fall back to that (even if only an empty folder exists, for example having an empty `C:\Program Files\Java\jdk-24` folder next to `C:\Program Files\Java\jdk-17.0.2` did not work for me).
