@@ -26,7 +26,7 @@ impl Rectangle<u8> {
     }
 
     fn mip_map_count_inner(width: u32, height: u32, acc: u32) -> u32 {
-        if width.min(height) <= 1 || width % 2 != 0 || height % 2 != 0 {
+        if width.min(height) <= 1 || !width.is_multiple_of(2) || !height.is_multiple_of(2) {
             return acc + 1;
         }
         Self::mip_map_count_inner(width / 2, height / 2, acc + 1)
@@ -39,7 +39,7 @@ impl Rectangle<u8> {
     }
 
     fn generate_mipmaps_inner(self, acc: &mut Vec<Self>) {
-        if self.width.min(self.height) <= 1 || self.width % 2 != 0 || self.height % 2 != 0 {
+        if self.width.min(self.height) <= 1 || !self.width.is_multiple_of(2) || !self.height.is_multiple_of(2) {
             acc.push(self);
             return;
         }
