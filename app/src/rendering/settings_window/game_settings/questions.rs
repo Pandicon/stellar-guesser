@@ -69,6 +69,7 @@ impl Application {
                 self.state.windows.settings.game_settings.question_pack_new_name = self.game_handler.active_question_pack.clone();
                 self.state.windows.settings.game_settings.settings_type = GameSettingsType::Advanced;
                 self.state.windows.settings.game_settings.query = self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().query.clone();
+                self.state.windows.settings.game_settings.internal_query = self.state.windows.settings.game_settings.query.clone();
                 self.state.windows.settings.game_settings.question_pack_new_description = self.game_handler.question_packs.get(&self.game_handler.active_question_pack).unwrap().description.clone();
                 let new_questions = self
                     .game_handler
@@ -172,6 +173,63 @@ impl Application {
 
         let mut can_evaluate = true;
         let mut settings_all = Vec::new();
+        let mut text_parts = Vec::new();
+        for line in self.state.windows.settings.game_settings.internal_query.split('\n') {
+            let mut is_str = false;
+            let mut no_spaces = String::from("");
+            for character in line.chars() {
+                if !(character == '\'' || character == ' ') {
+                    no_spaces.push(character)
+                } else if character == '\'' {
+                    is_str = !is_str;
+                } else if character == ' ' && is_str {
+                    no_spaces.push(character);
+                }
+            }
+            let mut spl = no_spaces.split("):").map(|s| s.trim()).filter(|s| !s.is_empty()).collect::<Vec<&str>>();
+            if spl.is_empty() {
+                continue;
+            }
+            let (parsed_result, ast_res) = if spl.len() > 1 {
+                let query = spl.pop().unwrap(); //.replace(":", "");
+                match crate::game::questions_filter::parser::Parser::new(query).parse(&self.game_handler.constellation_groups_settings.constellation_groups) {
+                    Ok(Some(crate::game::questions_filter::parser::Node::Keyword(ast))) => (format!("{ast:?}"), Ok(Some(ast))),
+                    Ok(Some(crate::game::questions_filter::parser::Node::Value(_))) | Ok(None) => (String::from("No restrictions"), Ok(None)),
+                    Err(err) => {
+                        can_evaluate = false;
+                        (format!("Error when parsing the query: {err}"), Err(""))
+                    }
+                }
+            } else {
+                (String::from("No restrictions"), Ok(None))
+            };
+            let mut joined = spl.join("");
+            if joined.trim().ends_with(")") {
+                joined = String::from(joined.trim());
+                joined.pop();
+            }
+            let spl = joined.split('(').map(|s| s.trim()).filter(|s| !s.is_empty()).collect::<Vec<&str>>();
+            if spl.len() < 2 {
+                continue;
+            }
+            let question_type = spl[0];
+            let question_settings = spl[1];
+            let question_type = crate::game::questions_filter::parser::parse_question_type_and_settings(question_type, question_settings);
+            let question_type_res = match question_type {
+                Ok(question_type) => {
+                    let res = format!("{question_type:?}");
+                    if let Ok(ast_opt) = ast_res {
+                        settings_all.push((ast_opt, question_type));
+                    }
+                    res
+                }
+                Err(err) => {
+                    can_evaluate = false;
+                    err
+                }
+            };
+            text_parts.push(format!("{question_type_res}: {parsed_result}"));
+        }
         ui.collapsing("Edit question pack", |ui| {
             ui.horizontal(|ui| {
                 ui.selectable_value(&mut self.state.windows.settings.game_settings.settings_type, GameSettingsType::Basic, GameSettingsType::Basic.as_ref());
@@ -270,65 +328,6 @@ impl Application {
                 }
             }
             ui.separator();
-            let mut text_parts = Vec::new();
-            for line in self.state.windows.settings.game_settings.internal_query.split('\n') {
-                let mut is_str = false;
-                let mut no_spaces = String::from("");
-                for character in line.chars(){
-                    if !(character == '\'' || character==' '){
-                        no_spaces.push(character)
-                    }
-                    else if character =='\'' {
-                        is_str = ! is_str;
-                    }
-                    else if character == ' ' && is_str {
-                            no_spaces.push(character);
-                    }
-                }
-                let mut spl = no_spaces.split("):").map(|s| s.trim()).filter(|s| !s.is_empty()).collect::<Vec<&str>>();
-                if spl.is_empty() {
-                    continue;
-                }
-                let (parsed_result, ast_res) = if spl.len() > 1 {
-                    let query = spl.pop().unwrap(); //.replace(":", "");
-                    match crate::game::questions_filter::parser::Parser::new(query).parse(&self.game_handler.constellation_groups_settings.constellation_groups) {
-                        Ok(Some(crate::game::questions_filter::parser::Node::Keyword(ast))) => (format!("{ast:?}"), Ok(Some(ast))),
-                        Ok(Some(crate::game::questions_filter::parser::Node::Value(_))) | Ok(None) => (String::from("No restrictions"), Ok(None)),
-                        Err(err) => {
-                            can_evaluate = false;
-                            (format!("Error when parsing the query: {err}"), Err(""))
-                        }
-                    }
-                } else {
-                    (String::from("No restrictions"), Ok(None))
-                };
-                let mut joined = spl.join("");
-                if joined.trim().ends_with(")") {
-                    joined = String::from(joined.trim());
-                    joined.pop();
-                }
-                let spl = joined.split('(').map(|s| s.trim()).filter(|s| !s.is_empty()).collect::<Vec<&str>>();
-                if spl.len() < 2 {
-                    continue;
-                }
-                let question_type = spl[0];
-                let question_settings = spl[1];
-                let question_type = crate::game::questions_filter::parser::parse_question_type_and_settings(question_type, question_settings);
-                let question_type_res = match question_type {
-                    Ok(question_type) => {
-                        let res = format!("{question_type:?}");
-                        if let Ok(ast_opt) = ast_res {
-                            settings_all.push((ast_opt, question_type));
-                        }
-                        res
-                    }
-                    Err(err) => {
-                        can_evaluate = false;
-                        err
-                    }
-                };
-                text_parts.push(format!("{question_type_res}: {parsed_result}"));
-            }
             let joined = text_parts.join("\n");
             let replaced = joined.replace("SmallSettings {", "{");
             ui.label("Parsed query:");
