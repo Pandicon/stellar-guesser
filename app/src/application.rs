@@ -212,11 +212,14 @@ impl Application {
         let current_actions = std::mem::take(&mut self.actions);
         for action in current_actions {
             match action {
+                Action::DisableSingleRenderer(object_id) => {
+                    self.cellestial_sphere.disable_single_renderer(object_id);
+                }
                 Action::EnableSingleRenderer(object_id) => {
                     self.cellestial_sphere.enable_single_renderer(object_id);
                 }
                 Action::SwitchToNextQuestion => {
-                    self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme);
+                    self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme, &mut self.actions);
                 }
                 Action::SwitchToNextPart => {
                     let data = game_handler::QuestionCheckingData {

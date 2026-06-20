@@ -260,7 +260,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, theme: &Theme) {
+    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, theme: &Theme, actions: &mut Vec<Action>) {
         self.state = Default::default();
         sky.game_markers.markers = if self.is_bayer || self.is_starname {
             vec![game_markers::GameMarker::new(

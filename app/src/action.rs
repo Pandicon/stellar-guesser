@@ -1,4 +1,6 @@
 pub enum Action {
+    /// Turns on the renderer of the object with the specified id
+    DisableSingleRenderer(u64),
     /// Turns off the renderer of the object with the specified id
     EnableSingleRenderer(u64),
 

@@ -72,7 +72,7 @@ pub trait QuestionTrait {
 
     fn should_display_input(&self) -> bool;
 
-    fn start_question(&mut self, cellestial_sphere: &mut crate::rendering::caspr::renderer::CellestialSphere, sky: &mut sky::Sky, theme: &Theme);
+    fn start_question(&mut self, cellestial_sphere: &mut crate::rendering::caspr::renderer::CellestialSphere, sky: &mut sky::Sky, theme: &Theme, actions: &mut Vec<Action>);
 
     fn render_display_question(&self, ui: &mut egui::Ui);
 
@@ -373,7 +373,7 @@ impl GameHandler {
         }
     }
 
-    pub fn next_question(&mut self, cellestial_sphere: &mut crate::rendering::caspr::renderer::CellestialSphere, sky: &mut sky::Sky, theme: &Theme) {
+    pub fn next_question(&mut self, cellestial_sphere: &mut crate::rendering::caspr::renderer::CellestialSphere, sky: &mut sky::Sky, theme: &Theme, actions: &mut Vec<Action>) {
         self.answer = String::new();
         let mut possible_questions: Vec<usize> = Vec::new();
         for question in 0..self.question_catalog.len() {
@@ -395,7 +395,7 @@ impl GameHandler {
             );
 
             self.add_marker_on_click = self.question_catalog[self.current_question].add_marker_on_click();
-            self.question_catalog[self.current_question].start_question(cellestial_sphere, sky, theme);
+            self.question_catalog[self.current_question].start_question(cellestial_sphere, sky, theme, actions);
             self.request_input_focus = true;
             cellestial_sphere.init_single_renderer_group(sky, RendererCategory::Markers, "game");
             self.stage = GameStage::Guessing;

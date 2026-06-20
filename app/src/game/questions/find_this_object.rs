@@ -287,7 +287,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         false
     }
 
-    fn start_question(&mut self, _cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, _theme: &Theme) {
+    fn start_question(&mut self, _cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, _theme: &Theme, _actions: &mut Vec<Action>) {
         self.state = Default::default();
         sky.game_markers.markers = Vec::new();
     }
