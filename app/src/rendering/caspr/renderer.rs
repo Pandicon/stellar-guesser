@@ -553,7 +553,7 @@ impl CellestialSphere {
         }
     }
 
-    pub fn deinit_single_renderer_group(&mut self, category: RendererCategory, name: &str) {
+    pub fn disable_single_renderer_group(&mut self, category: RendererCategory, name: &str) {
         match category {
             RendererCategory::Stars => {
                 self.star_renderers.insert(name.to_string(), Vec::new());

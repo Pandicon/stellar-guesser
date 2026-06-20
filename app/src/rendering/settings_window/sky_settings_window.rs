@@ -270,7 +270,7 @@ impl Application {
             self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Stars, name);
         }
         for name in &newly_inactive_star_groups {
-            self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Stars, name);
+            self.cellestial_sphere.disable_single_renderer_group(RendererCategory::Stars, name);
         }
         if reinit_stars {
             self.cellestial_sphere.reinit_renderer_category(&self.sky, RendererCategory::Stars);
@@ -310,7 +310,7 @@ impl Application {
             self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Deepskies, name);
         }
         for name in &deepsky_groups_to_deinit {
-            self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Deepskies, name);
+            self.cellestial_sphere.disable_single_renderer_group(RendererCategory::Deepskies, name);
         }
     }
 
@@ -339,7 +339,7 @@ impl Application {
             self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Lines, name);
         }
         for name in &line_groups_to_deinit {
-            self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Lines, name);
+            self.cellestial_sphere.disable_single_renderer_group(RendererCategory::Lines, name);
         }
     }
 
@@ -393,7 +393,7 @@ impl Application {
             self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, name);
         }
         for name in &marker_groups_to_deinit {
-            self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Markers, name);
+            self.cellestial_sphere.disable_single_renderer_group(RendererCategory::Markers, name);
         }
     }
 }
