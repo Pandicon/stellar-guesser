@@ -1,3 +1,4 @@
+use crate::action::Action;
 use crate::enums::{GameStage, RendererCategory};
 use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
@@ -134,7 +135,6 @@ impl Question {
                     add_marker_on_click: data.add_marker_on_click,
                     questions_settings: data.questions_settings,
                     question_number: data.question_number,
-                    start_next_question: data.start_next_question,
                     switch_to_next_part: data.switch_to_next_part,
                 });
             }
@@ -219,7 +219,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         }
     }
 
-    fn generic_to_next_part(&mut self, data: QuestionCheckingData) {
+    fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
         match data.game_stage {
             GameStage::Guessing => {
                 if !self.should_display_input() {
@@ -227,7 +227,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
                 }
             }
             GameStage::Checked => {
-                *data.start_next_question = true;
+                actions.push(Action::SwitchToNextQuestion);
                 data.cellestial_sphere.enable_single_renderer(self.object_id);
                 data.sky.game_markers.markers = Vec::new();
             }

@@ -22,9 +22,13 @@ use crate::{
     },
 };
 
+use crate::action;
+
 pub struct Application {
     pub input: input::Input,
     pub state: state::State,
+
+    pub actions: Vec<action::Action>,
 
     pub cellestial_sphere: CellestialSphere,
     pub sky: sky::Sky,
@@ -160,6 +164,8 @@ impl Application {
             input,
             state,
 
+            actions: Vec::new(),
+
             game_handler,
             cellestial_sphere,
             sky,
@@ -201,6 +207,16 @@ impl Application {
         }
         app
     }
+
+    fn handle_actions(&mut self) {
+        for action in self.actions.drain(..) {
+            match action {
+                action::Action::SwitchToNextQuestion => {
+                    self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme);
+                }
+            }
+        }
+    }
 }
 
 impl eframe::App for Application {
@@ -218,6 +234,9 @@ impl eframe::App for Application {
         self.handle_input(cursor_within_central_panel, ctx);
         self.receive_threads_messages();
         self.toasts.show(ctx);
+
+        self.handle_actions();
+
         if self.game_handler.switch_to_next_part {
             let data = game_handler::QuestionCheckingData {
                 cellestial_sphere: &mut self.cellestial_sphere,
@@ -232,15 +251,10 @@ impl eframe::App for Application {
                 add_marker_on_click: &mut self.game_handler.add_marker_on_click,
                 questions_settings: &self.game_handler.questions_settings,
                 question_number: &mut self.game_handler.question_number,
-                start_next_question: &mut self.game_handler.switch_to_next_question,
                 switch_to_next_part: &mut self.game_handler.switch_to_next_part,
             };
-            self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(data);
+            self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(data, &mut self.actions);
             self.game_handler.switch_to_next_part = false;
-        }
-        if self.game_handler.switch_to_next_question {
-            self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme);
-            self.game_handler.switch_to_next_question = false;
         }
 
         let input_field_has_focus = ctx.wants_keyboard_input();

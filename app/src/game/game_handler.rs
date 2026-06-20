@@ -1,5 +1,6 @@
 use super::{game_settings, questions};
 use crate::{
+    action::Action,
     enums::{self, GameStage, RendererCategory, StorageKeys},
     game::QuestionObject,
     rendering::{caspr::renderer::CellestialSphere, themes::Theme},
@@ -26,7 +27,6 @@ pub struct QuestionWindowData<'a> {
     pub game_stage: &'a mut GameStage,
     pub ctx: &'a eframe::egui::Context,
     pub switch_to_next_part: &'a mut bool,
-    pub start_next_question: &'a mut bool,
     pub score: &'a mut u32,
     pub possible_score: &'a mut u32,
     pub is_scored_mode: bool,
@@ -51,15 +51,13 @@ pub struct QuestionCheckingData<'a> {
     pub question_number: &'a mut usize,
     /// Signals that the current question should run the generic_to_next_part() function
     pub switch_to_next_part: &'a mut bool,
-    /// Signals that the current question gives up its place and a new one should be picked
-    pub start_next_question: &'a mut bool,
 }
 
 pub trait QuestionTrait {
     fn render_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>>;
 
     /// This function should handle cases where a generic action switches the question to the next part
-    fn generic_to_next_part(&mut self, data: QuestionCheckingData);
+    fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>);
 
     // fn check_answer(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
 
@@ -177,7 +175,6 @@ pub struct GameHandler {
 
     pub request_input_focus: bool,
     pub switch_to_next_part: bool,
-    pub switch_to_next_question: bool,
 
     pub active_question_pack: String,
     pub question_packs: HashMap<String, crate::game::questions_filter::QuestionPack>,
@@ -192,8 +189,8 @@ impl GameHandler {
         self.used_questions.push(self.current_question);
     }
 
-    pub fn generic_to_next_part(&mut self, data: QuestionCheckingData) {
-        self.question_catalog[self.current_question].generic_to_next_part(data)
+    pub fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
+        self.question_catalog[self.current_question].generic_to_next_part(data, actions)
     }
 
     pub fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
@@ -339,7 +336,6 @@ impl GameHandler {
             constellation_groups_settings,
             request_input_focus: false,
             switch_to_next_part: false,
-            switch_to_next_question: false,
 
             active_question_pack,
             question_packs,

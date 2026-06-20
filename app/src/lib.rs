@@ -7,6 +7,7 @@ pub use application::Application;
 pub use config::{ANDROID_PACKAGE_NAME, DESKTOP_PACKAGE_NAME};
 pub use entry_point::*;
 
+pub mod action;
 pub mod application;
 pub mod config;
 pub mod entry_point;

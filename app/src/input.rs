@@ -27,22 +27,24 @@ impl Application {
                         match self.game_handler.stage {
                             GameStage::Guessing | GameStage::Checked => {
                                 if (self.game_handler.stage == GameStage::Guessing && !self.game_handler.should_display_input()) || self.game_handler.stage == GameStage::Checked {
-                                    self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(QuestionCheckingData {
-                                        cellestial_sphere: &mut self.cellestial_sphere,
-                                        sky: &mut self.sky,
-                                        theme: &self.theme,
-                                        game_stage: &mut self.game_handler.stage,
-                                        score: &mut self.game_handler.score,
-                                        possible_score: &mut self.game_handler.possible_score,
-                                        is_scored_mode: self.game_handler.game_settings.is_scored_mode,
-                                        current_question: self.game_handler.current_question,
-                                        used_questions: &mut self.game_handler.used_questions,
-                                        add_marker_on_click: &mut self.game_handler.add_marker_on_click,
-                                        questions_settings: &self.game_handler.questions_settings,
-                                        question_number: &mut self.game_handler.question_number,
-                                        start_next_question: &mut self.game_handler.switch_to_next_question,
-                                        switch_to_next_part: &mut self.game_handler.switch_to_next_part,
-                                    });
+                                    self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(
+                                        QuestionCheckingData {
+                                            cellestial_sphere: &mut self.cellestial_sphere,
+                                            sky: &mut self.sky,
+                                            theme: &self.theme,
+                                            game_stage: &mut self.game_handler.stage,
+                                            score: &mut self.game_handler.score,
+                                            possible_score: &mut self.game_handler.possible_score,
+                                            is_scored_mode: self.game_handler.game_settings.is_scored_mode,
+                                            current_question: self.game_handler.current_question,
+                                            used_questions: &mut self.game_handler.used_questions,
+                                            add_marker_on_click: &mut self.game_handler.add_marker_on_click,
+                                            questions_settings: &self.game_handler.questions_settings,
+                                            question_number: &mut self.game_handler.question_number,
+                                            switch_to_next_part: &mut self.game_handler.switch_to_next_part,
+                                        },
+                                        &mut self.actions,
+                                    );
                                 }
                             }
                             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}

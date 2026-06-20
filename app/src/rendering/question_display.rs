@@ -62,7 +62,6 @@ impl Application {
                     game_stage: &mut self.game_handler.stage,
                     ctx,
                     switch_to_next_part: &mut self.game_handler.switch_to_next_part,
-                    start_next_question: &mut self.game_handler.switch_to_next_question,
                     score: &mut self.game_handler.score,
                     possible_score: &mut self.game_handler.possible_score,
                     is_scored_mode: self.game_handler.game_settings.is_scored_mode,
