@@ -74,21 +74,20 @@ impl Question {
                     add_marker_on_click: data.add_marker_on_click,
                     questions_settings: data.questions_settings,
                     question_number: data.question_number,
-                    switch_to_next_part: data.switch_to_next_part,
                 });
             }
             ui.label(data.question_number_text);
         })
     }
 
-    fn render_answer_review_window(&self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+    fn render_answer_review_window(&self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
             if !self.state.answer_review_text_heading.is_empty() {
                 ui.heading(&self.state.answer_review_text_heading);
             }
             ui.label(&self.state.answer_review_text);
             if ui.button("Next").clicked() {
-                *data.switch_to_next_part = true;
+                actions.push(Action::SwitchToNextPart);
             }
             ui.label(data.question_number_text);
         })
@@ -120,11 +119,11 @@ impl Question {
 }
 
 impl crate::game::game_handler::QuestionTrait for Question {
-    fn render_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+    fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         if *data.game_stage == GameStage::Guessing {
             self.render_question_window(data)
         } else if *data.game_stage == GameStage::Checked {
-            self.render_answer_review_window(data)
+            self.render_answer_review_window(data, actions)
         } else {
             None
         }

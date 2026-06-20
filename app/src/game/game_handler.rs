@@ -26,7 +26,6 @@ pub struct QuestionWindowData<'a> {
     pub question_number_text: &'a String,
     pub game_stage: &'a mut GameStage,
     pub ctx: &'a eframe::egui::Context,
-    pub switch_to_next_part: &'a mut bool,
     pub score: &'a mut u32,
     pub possible_score: &'a mut u32,
     pub is_scored_mode: bool,
@@ -49,12 +48,10 @@ pub struct QuestionCheckingData<'a> {
     pub add_marker_on_click: &'a mut bool,
     pub questions_settings: &'a questions::Settings,
     pub question_number: &'a mut usize,
-    /// Signals that the current question should run the generic_to_next_part() function
-    pub switch_to_next_part: &'a mut bool,
 }
 
 pub trait QuestionTrait {
-    fn render_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>>;
+    fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>>;
 
     /// This function should handle cases where a generic action switches the question to the next part
     fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>);
@@ -174,7 +171,6 @@ pub struct GameHandler {
     pub constellation_groups_settings: sg_game_constellations::GameConstellations,
 
     pub request_input_focus: bool,
-    pub switch_to_next_part: bool,
 
     pub active_question_pack: String,
     pub question_packs: HashMap<String, crate::game::questions_filter::QuestionPack>,
@@ -193,8 +189,8 @@ impl GameHandler {
         self.question_catalog[self.current_question].generic_to_next_part(data, actions)
     }
 
-    pub fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
-        self.question_catalog[self.question_number].render_window(data)
+    pub fn render_question_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
+        self.question_catalog[self.question_number].render_window(data, actions)
     }
 
     pub fn init(sky: &sky::Sky, question_objects: Vec<QuestionObject>, storage: Option<&dyn eframe::Storage>, first_launch: bool) -> Self {
@@ -335,7 +331,6 @@ impl GameHandler {
             possible_score: 0,
             constellation_groups_settings,
             request_input_focus: false,
-            switch_to_next_part: false,
 
             active_question_pack,
             question_packs,

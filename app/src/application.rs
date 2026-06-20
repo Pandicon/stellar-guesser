@@ -22,13 +22,13 @@ use crate::{
     },
 };
 
-use crate::action;
+use crate::action::Action;
 
 pub struct Application {
     pub input: input::Input,
     pub state: state::State,
 
-    pub actions: Vec<action::Action>,
+    pub actions: Vec<Action>,
 
     pub cellestial_sphere: CellestialSphere,
     pub sky: sky::Sky,
@@ -209,10 +209,28 @@ impl Application {
     }
 
     fn handle_actions(&mut self) {
-        for action in self.actions.drain(..) {
+        let current_actions = std::mem::take(&mut self.actions);
+        for action in current_actions {
             match action {
-                action::Action::SwitchToNextQuestion => {
+                Action::SwitchToNextQuestion => {
                     self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme);
+                }
+                Action::SwitchToNextPart => {
+                    let data = game_handler::QuestionCheckingData {
+                        cellestial_sphere: &mut self.cellestial_sphere,
+                        sky: &mut self.sky,
+                        theme: &self.theme,
+                        game_stage: &mut self.game_handler.stage,
+                        score: &mut self.game_handler.score,
+                        possible_score: &mut self.game_handler.possible_score,
+                        is_scored_mode: self.game_handler.game_settings.is_scored_mode,
+                        current_question: self.game_handler.current_question,
+                        used_questions: &mut self.game_handler.used_questions,
+                        add_marker_on_click: &mut self.game_handler.add_marker_on_click,
+                        questions_settings: &self.game_handler.questions_settings,
+                        question_number: &mut self.game_handler.question_number,
+                    };
+                    self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(data, &mut self.actions);
                 }
             }
         }
@@ -236,26 +254,6 @@ impl eframe::App for Application {
         self.toasts.show(ctx);
 
         self.handle_actions();
-
-        if self.game_handler.switch_to_next_part {
-            let data = game_handler::QuestionCheckingData {
-                cellestial_sphere: &mut self.cellestial_sphere,
-                sky: &mut self.sky,
-                theme: &self.theme,
-                game_stage: &mut self.game_handler.stage,
-                score: &mut self.game_handler.score,
-                possible_score: &mut self.game_handler.possible_score,
-                is_scored_mode: self.game_handler.game_settings.is_scored_mode,
-                current_question: self.game_handler.current_question,
-                used_questions: &mut self.game_handler.used_questions,
-                add_marker_on_click: &mut self.game_handler.add_marker_on_click,
-                questions_settings: &self.game_handler.questions_settings,
-                question_number: &mut self.game_handler.question_number,
-                switch_to_next_part: &mut self.game_handler.switch_to_next_part,
-            };
-            self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(data, &mut self.actions);
-            self.game_handler.switch_to_next_part = false;
-        }
 
         let input_field_has_focus = ctx.wants_keyboard_input();
         if self.input.settings.display_onscreen_keyboard {

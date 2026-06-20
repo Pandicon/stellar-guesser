@@ -61,7 +61,6 @@ impl Application {
                     question_number_text: &self.game_handler.question_number_text,
                     game_stage: &mut self.game_handler.stage,
                     ctx,
-                    switch_to_next_part: &mut self.game_handler.switch_to_next_part,
                     score: &mut self.game_handler.score,
                     possible_score: &mut self.game_handler.possible_score,
                     is_scored_mode: self.game_handler.game_settings.is_scored_mode,
@@ -70,7 +69,7 @@ impl Application {
                     questions_settings: &self.game_handler.questions_settings,
                     question_number: &mut self.game_handler.question_number
                 };
-                self.game_handler.question_catalog[self.game_handler.current_question].render_window(data)
+                self.game_handler.question_catalog[self.game_handler.current_question].render_window(data, &mut self.actions)
             }
         }
     }

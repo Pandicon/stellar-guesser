@@ -41,7 +41,6 @@ impl Application {
                                             add_marker_on_click: &mut self.game_handler.add_marker_on_click,
                                             questions_settings: &self.game_handler.questions_settings,
                                             question_number: &mut self.game_handler.question_number,
-                                            switch_to_next_part: &mut self.game_handler.switch_to_next_part,
                                         },
                                         &mut self.actions,
                                     );
