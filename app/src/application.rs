@@ -212,6 +212,9 @@ impl Application {
         let current_actions = std::mem::take(&mut self.actions);
         for action in current_actions {
             match action {
+                Action::EnableSingleRenderer(object_id) => {
+                    self.cellestial_sphere.enable_single_renderer(object_id);
+                }
                 Action::SwitchToNextQuestion => {
                     self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme);
                 }

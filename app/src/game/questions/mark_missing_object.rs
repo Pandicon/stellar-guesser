@@ -219,7 +219,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             }
             GameStage::Checked => {
                 actions.push(Action::SwitchToNextQuestion);
-                data.cellestial_sphere.enable_single_renderer(self.object_id);
+                actions.push(Action::EnableSingleRenderer(self.object_id));
             }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
