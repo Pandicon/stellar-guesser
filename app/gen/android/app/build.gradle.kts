@@ -5,10 +5,10 @@ plugins {
 }
 
 android {
-    namespace="com.github.noreply.users.stellar_guesser"
+    namespace="io.github.stellarguesser.stellar_guesser"
     compileSdk = 35
     defaultConfig {
-        applicationId = "com.github.noreply.users.stellar_guesser"
+        applicationId = "io.github.stellarguesser.stellar_guesser"
         minSdk = 24
         targetSdk = 35
         versionCode = 2

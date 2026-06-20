@@ -21,7 +21,7 @@ pub const LOGGING_FILTER_LEVEL: log::LevelFilter = log::LevelFilter::Debug;
 #[cfg(not(debug_assertions))]
 pub const LOGGING_FILTER_LEVEL: log::LevelFilter = log::LevelFilter::Warn;
 
-pub const ANDROID_PACKAGE_NAME: &str = "com.github.noreply.users.stellar_guesser";
+pub const ANDROID_PACKAGE_NAME: &str = "io.github.stellarguesser.stellar_guesser";
 pub const DESKTOP_PACKAGE_NAME: &str = "stellar_guesser";
 
 pub const SKY_OBJECTS_FOLDER: &str = "./data/sphere/sky-objects";
