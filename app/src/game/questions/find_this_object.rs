@@ -2,7 +2,6 @@ use crate::action::Action;
 use crate::enums::{GameStage, RendererCategory};
 use crate::game::game_handler;
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
 use crate::sky;
 use crate::sky::markers::game_markers;
@@ -112,24 +111,27 @@ pub struct Question {
 }
 
 impl Question {
-    fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+    fn render_question_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
             self.render_display_question(ui);
             if ui.button("Check").clicked() {
-                self.check_answer(QuestionCheckingData {
-                    cellestial_sphere: data.cellestial_sphere,
-                    sky: data.sky,
-                    theme: data.theme,
-                    game_stage: data.game_stage,
-                    score: data.score,
-                    possible_score: data.possible_score,
-                    is_scored_mode: data.is_scored_mode,
-                    current_question: data.current_question,
-                    used_questions: data.used_questions,
-                    add_marker_on_click: data.add_marker_on_click,
-                    questions_settings: data.questions_settings,
-                    question_number: data.question_number,
-                });
+                self.check_answer(
+                    QuestionCheckingData {
+                        cellestial_sphere: data.cellestial_sphere,
+                        sky: data.sky,
+                        theme: data.theme,
+                        game_stage: data.game_stage,
+                        score: data.score,
+                        possible_score: data.possible_score,
+                        is_scored_mode: data.is_scored_mode,
+                        current_question: data.current_question,
+                        used_questions: data.used_questions,
+                        add_marker_on_click: data.add_marker_on_click,
+                        questions_settings: data.questions_settings,
+                        question_number: data.question_number,
+                    },
+                    actions,
+                );
             }
             ui.label(data.question_number_text);
         })
@@ -154,7 +156,7 @@ impl Question {
         })
     }
 
-    fn check_answer(&mut self, data: QuestionCheckingData) {
+    fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
         *data.add_marker_on_click = false;
         let markers = &mut data.sky.game_markers.markers;
         let mut correct = false;
@@ -210,7 +212,7 @@ impl Question {
         }
         if self.small_settings.rotate_to_answer {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
-            data.cellestial_sphere.look_at_point(&final_vector);
+            actions.push(Action::CameraLookAt(final_vector));
         } else {
             data.cellestial_sphere.init_single_renderer_group(data.sky, RendererCategory::Markers, "game");
         }
@@ -221,7 +223,7 @@ impl Question {
 impl crate::game::game_handler::QuestionTrait for Question {
     fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         if *data.game_stage == GameStage::Guessing {
-            self.render_question_window(data)
+            self.render_question_window(data, actions)
         } else if *data.game_stage == GameStage::Checked {
             self.render_answer_review_window(data, actions)
         } else {
@@ -232,7 +234,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
     fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
         match data.game_stage {
             GameStage::Guessing => {
-                self.check_answer(data);
+                self.check_answer(data, actions);
             }
             GameStage::Checked => {
                 actions.push(Action::SwitchToNextQuestion);
@@ -287,7 +289,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         false
     }
 
-    fn start_question(&mut self, _cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, _theme: &Theme, _actions: &mut Vec<Action>) {
+    fn start_question(&mut self, sky: &mut sky::Sky, _theme: &Theme, _actions: &mut Vec<Action>) {
         self.state = Default::default();
         sky.game_markers.markers = Vec::new();
     }

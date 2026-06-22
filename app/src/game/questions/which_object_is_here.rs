@@ -2,7 +2,6 @@ use crate::action::Action;
 use crate::enums::GameStage;
 use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::rendering::caspr::renderer::CellestialSphere;
 use crate::rendering::themes::Theme;
 use crate::sky;
 use crate::sky::markers::game_markers;
@@ -260,7 +259,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, theme: &Theme, _actions: &mut Vec<Action>) {
+    fn start_question(&mut self, sky: &mut sky::Sky, theme: &Theme, actions: &mut Vec<Action>) {
         self.state = Default::default();
         sky.game_markers.markers = if self.is_bayer || self.is_starname {
             vec![game_markers::GameMarker::new(
@@ -287,7 +286,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
         };
         if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
-            cellestial_sphere.look_at_point(&final_vector);
+            actions.push(Action::CameraLookAt(final_vector));
         }
     }
 

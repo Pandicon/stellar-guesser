@@ -212,6 +212,9 @@ impl Application {
         let current_actions = std::mem::take(&mut self.actions);
         for action in current_actions {
             match action {
+                Action::CameraLookAt(point) => {
+                    self.cellestial_sphere.look_at_point(&point);
+                }
                 Action::DisableSingleRenderer(object_id) => {
                     self.cellestial_sphere.disable_single_renderer(object_id);
                 }

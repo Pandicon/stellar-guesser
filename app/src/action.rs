@@ -1,4 +1,8 @@
+use nalgebra::Vector3;
+
 pub enum Action {
+    /// Directs the camera to look in the direction of the specified 3D point (the 3D point comes from a frame fixed to the RA-DEC coordinates)
+    CameraLookAt(Vector3<f32>),
     /// Turns on the renderer of the object with the specified id
     DisableSingleRenderer(u64),
     /// Turns off the renderer of the object with the specified id
