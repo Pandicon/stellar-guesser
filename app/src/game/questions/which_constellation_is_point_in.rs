@@ -64,7 +64,8 @@ pub struct ActiveQuestion {
 
 impl ActiveQuestion {
     fn render_question_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
-        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+        let mut is_window_open = *data.game_question_opened;
+        let response = egui::Window::new("Question").open(&mut is_window_open).show(data.ctx, |ui| {
             self.render_display_question(ui);
             if self.should_display_input() {
                 let text_input_response = ui.text_edit_singleline(&mut self.state.answer);
@@ -77,11 +78,16 @@ impl ActiveQuestion {
                 self.check_answer(data.current_question, data.sky, actions);
             }
             ui.label(data.question_number_text);
-        })
+        });
+        if is_window_open != *data.game_question_opened {
+            actions.push(Action::ToggleQuestionWindow(is_window_open));
+        }
+        response
     }
 
     fn render_answer_review_window(&self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
-        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+        let mut is_window_open = *data.game_question_opened;
+        let response = egui::Window::new("Question").open(&mut is_window_open).show(data.ctx, |ui| {
             if !self.state.answer_review_text_heading.is_empty() {
                 ui.heading(&self.state.answer_review_text_heading);
             }
@@ -90,7 +96,11 @@ impl ActiveQuestion {
                 actions.push(Action::SwitchToNextPart);
             }
             ui.label(data.question_number_text);
-        })
+        });
+        if is_window_open != *data.game_question_opened {
+            actions.push(Action::ToggleQuestionWindow(is_window_open));
+        }
+        response
     }
 
     fn check_answer(&mut self, question_id: usize, sky: &sky::Sky, actions: &mut Vec<Action>) {

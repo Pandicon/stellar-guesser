@@ -27,6 +27,8 @@ pub enum Action {
     SetAddMarkerOnClick(bool),
     /// Sets whether or not input should be requested for an input field; used in questions using text fields for answers, where input is requested for the text field on the first frame of rendering the question
     SetRequestInputFocus(bool),
+    /// Sets whether or not the question window is open
+    ToggleQuestionWindow(bool),
 
     // ----- GAME -----
     /// Signals that the current question gives up its place and a new one should be picked

@@ -262,6 +262,9 @@ impl Application {
                 Action::SetRequestInputFocus(enable) => {
                     self.game_handler.request_input_focus = enable;
                 }
+                Action::ToggleQuestionWindow(opened) => {
+                    self.state.windows.game_question.opened = opened;
+                }
                 Action::SwitchToNextQuestion => {
                     self.game_handler.next_question(&self.theme, &mut self.actions);
                 }

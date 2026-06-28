@@ -106,17 +106,23 @@ pub struct ActiveQuestion {
 
 impl ActiveQuestion {
     fn render_question_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
-        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+        let mut is_window_open = *data.game_question_opened;
+        let response = egui::Window::new("Question").open(&mut is_window_open).show(data.ctx, |ui| {
             self.render_display_question(ui);
             if ui.button("Check").clicked() {
                 self.check_answer(data.is_scored_mode, data.current_question, &data.sky.game_markers.markers, data.theme, actions);
             }
             ui.label(data.question_number_text);
-        })
+        });
+        if is_window_open != *data.game_question_opened {
+            actions.push(Action::ToggleQuestionWindow(is_window_open));
+        }
+        response
     }
 
     fn render_answer_review_window(&self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
-        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+        let mut is_window_open = *data.game_question_opened;
+        let response = egui::Window::new("Question").open(&mut is_window_open).show(data.ctx, |ui| {
             if !self.state.answer_review_text_heading.is_empty() {
                 ui.heading(&self.state.answer_review_text_heading);
             }
@@ -131,7 +137,11 @@ impl ActiveQuestion {
                 actions.push(Action::SwitchToNextPart);
             }
             ui.label(data.question_number_text);
-        })
+        });
+        if is_window_open != *data.game_question_opened {
+            actions.push(Action::ToggleQuestionWindow(is_window_open));
+        }
+        response
     }
 
     fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, markers: &[game_markers::GameMarker], theme: &Theme, actions: &mut Vec<Action>) {

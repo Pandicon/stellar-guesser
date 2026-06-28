@@ -23,7 +23,7 @@ pub struct QuestionWindowData<'a> {
     pub cellestial_sphere: &'a CellestialSphere,
     pub sky: &'a sky::Sky,
     pub theme: &'a Theme,
-    pub game_question_opened: &'a mut bool,
+    pub game_question_opened: &'a bool,
     pub request_input_focus: &'a bool,
     pub add_marker_on_click: &'a bool,
     pub question_number_text: &'a String,
