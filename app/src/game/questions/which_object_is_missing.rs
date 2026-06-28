@@ -125,8 +125,6 @@ impl Question {
                         sky: data.sky,
                         theme: data.theme,
                         game_stage: data.game_stage,
-                        score: data.score,
-                        possible_score: data.possible_score,
                         is_scored_mode: data.is_scored_mode,
                         current_question: data.current_question,
                         used_questions: data.used_questions,
@@ -169,7 +167,7 @@ impl Question {
         self.state.answer_review_text_heading = format!(
             "{}orrect!",
             if correct {
-                *data.score += 1;
+                actions.push(Action::ChangeScore(1));
                 "C"
             } else {
                 "Inc"
@@ -197,7 +195,7 @@ impl Question {
         } else {
             actions.push(Action::InitSingleRendererGroup(RendererCategory::Markers, String::from("game")));
         }
-        *data.possible_score += 1;
+        actions.push(Action::ChangePossibleScore(1));
         if !self.small_settings.replay_incorrect || correct {
             data.used_questions.push(data.current_question);
         } else {

@@ -32,8 +32,6 @@ impl Application {
                                             sky: &mut self.sky,
                                             theme: &self.theme,
                                             game_stage: &mut self.game_handler.stage,
-                                            score: &mut self.game_handler.score,
-                                            possible_score: &mut self.game_handler.possible_score,
                                             is_scored_mode: self.game_handler.game_settings.is_scored_mode,
                                             current_question: self.game_handler.current_question,
                                             used_questions: &mut self.game_handler.used_questions,

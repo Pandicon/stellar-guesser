@@ -264,8 +264,6 @@ impl Application {
                         sky: &mut self.sky,
                         theme: &self.theme,
                         game_stage: &mut self.game_handler.stage,
-                        score: &mut self.game_handler.score,
-                        possible_score: &mut self.game_handler.possible_score,
                         is_scored_mode: self.game_handler.game_settings.is_scored_mode,
                         current_question: self.game_handler.current_question,
                         used_questions: &mut self.game_handler.used_questions,
@@ -286,6 +284,18 @@ impl Application {
                 Action::RemoveGameMarkers => {
                     self.sky.game_markers.markers = Vec::new();
                     reinitialise_game_markers = true;
+                }
+                Action::SetScore(score) => {
+                    self.game_handler.score = score;
+                }
+                Action::SetPossibleScore(score) => {
+                    self.game_handler.possible_score = score;
+                }
+                Action::ChangeScore(score_delta) => {
+                    self.game_handler.score += score_delta;
+                }
+                Action::ChangePossibleScore(score_delta) => {
+                    self.game_handler.possible_score += score_delta;
                 }
             }
         }

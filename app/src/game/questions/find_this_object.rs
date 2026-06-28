@@ -119,8 +119,6 @@ impl Question {
                         sky: data.sky,
                         theme: data.theme,
                         game_stage: data.game_stage,
-                        score: data.score,
-                        possible_score: data.possible_score,
                         is_scored_mode: data.is_scored_mode,
                         current_question: data.current_question,
                         used_questions: data.used_questions,
@@ -156,7 +154,7 @@ impl Question {
 
     fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
         *data.add_marker_on_click = false;
-        let markers = &mut data.sky.game_markers.markers;
+        let markers = &data.sky.game_markers.markers;
         let mut correct = false;
         if !self.images.is_empty() {
             self.state.answer_image = Some(self.images[rand::thread_rng().gen_range(0..self.images.len())].clone());
@@ -166,7 +164,8 @@ impl Question {
             let answer_ra = markers[0].ra;
             let distance = sg_geometry::angular_distance((self.ra.to_rad(), self.dec.to_rad()), (answer_ra.to_rad(), answer_dec.to_rad())).to_deg();
             if data.is_scored_mode {
-                *data.score += GameHandler::evaluate_score(distance);
+                let score_delta = GameHandler::evaluate_score(distance);
+                actions.push(Action::ChangeScore(score_delta));
             }
             (
                 answer_dec.value().to_string(),

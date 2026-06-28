@@ -48,7 +48,7 @@ pub struct RaQuestion {
 }
 
 impl RaQuestion {
-    fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+    fn render_question_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
             self.render_display_question(ui);
             if self.should_display_input() {
@@ -59,19 +59,20 @@ impl RaQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(QuestionCheckingData {
-                    sky: data.sky,
-                    theme: data.theme,
-                    game_stage: data.game_stage,
-                    score: data.score,
-                    possible_score: data.possible_score,
-                    is_scored_mode: data.is_scored_mode,
-                    current_question: data.current_question,
-                    used_questions: data.used_questions,
-                    add_marker_on_click: data.add_marker_on_click,
-                    questions_settings: data.questions_settings,
-                    question_number: data.question_number,
-                });
+                self.check_answer(
+                    QuestionCheckingData {
+                        sky: data.sky,
+                        theme: data.theme,
+                        game_stage: data.game_stage,
+                        is_scored_mode: data.is_scored_mode,
+                        current_question: data.current_question,
+                        used_questions: data.used_questions,
+                        add_marker_on_click: data.add_marker_on_click,
+                        questions_settings: data.questions_settings,
+                        question_number: data.question_number,
+                    },
+                    actions,
+                );
             }
             ui.label(data.question_number_text);
         })
@@ -89,7 +90,7 @@ impl RaQuestion {
             ui.label(data.question_number_text);
         })
     }
-    fn check_answer(&mut self, data: QuestionCheckingData) {
+    fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
         match self.state.answer.parse::<f32>() {
             Ok(answer_hours) => {
                 let answer_deg = angle::Deg(answer_hours / 24.0 * 360.0);
@@ -100,13 +101,13 @@ impl RaQuestion {
 
                 if data.is_scored_mode {
                     if error_deg < angle::Deg(3.0) {
-                        *data.score += 3;
+                        actions.push(Action::ChangeScore(3));
                     } else if error_deg < angle::Deg(5.0) {
-                        *data.score += 2;
+                        actions.push(Action::ChangeScore(2));
                     } else if error_deg < angle::Deg(10.0) {
-                        *data.score += 1;
+                        actions.push(Action::ChangeScore(1));
                     }
-                    *data.possible_score += 3;
+                    actions.push(Action::ChangePossibleScore(3));
                 }
             }
             Err(_) => {
@@ -122,7 +123,7 @@ impl RaQuestion {
 impl crate::game::game_handler::QuestionTrait for RaQuestion {
     fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         if *data.game_stage == GameStage::Guessing {
-            self.render_question_window(data)
+            self.render_question_window(data, actions)
         } else if *data.game_stage == GameStage::Checked {
             self.render_answer_review_window(data, actions)
         } else {
@@ -134,7 +135,7 @@ impl crate::game::game_handler::QuestionTrait for RaQuestion {
         match data.game_stage {
             GameStage::Guessing => {
                 if !self.should_display_input() {
-                    self.check_answer(data);
+                    self.check_answer(data, actions);
                 }
             }
             GameStage::Checked => {
@@ -227,7 +228,7 @@ pub struct DecQuestion {
 }
 
 impl DecQuestion {
-    fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
+    fn render_question_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
             self.render_display_question(ui);
             if self.should_display_input() {
@@ -238,19 +239,20 @@ impl DecQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(QuestionCheckingData {
-                    sky: data.sky,
-                    theme: data.theme,
-                    game_stage: data.game_stage,
-                    score: data.score,
-                    possible_score: data.possible_score,
-                    is_scored_mode: data.is_scored_mode,
-                    current_question: data.current_question,
-                    used_questions: data.used_questions,
-                    add_marker_on_click: data.add_marker_on_click,
-                    questions_settings: data.questions_settings,
-                    question_number: data.question_number,
-                });
+                self.check_answer(
+                    QuestionCheckingData {
+                        sky: data.sky,
+                        theme: data.theme,
+                        game_stage: data.game_stage,
+                        is_scored_mode: data.is_scored_mode,
+                        current_question: data.current_question,
+                        used_questions: data.used_questions,
+                        add_marker_on_click: data.add_marker_on_click,
+                        questions_settings: data.questions_settings,
+                        question_number: data.question_number,
+                    },
+                    actions,
+                );
             }
             ui.label(data.question_number_text);
         })
@@ -268,7 +270,7 @@ impl DecQuestion {
             ui.label(data.question_number_text);
         })
     }
-    fn check_answer(&mut self, data: QuestionCheckingData) {
+    fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
         match self.state.answer.parse::<f32>() {
             Ok(answer) => {
                 let answer_deg = angle::Deg(answer);
@@ -279,13 +281,13 @@ impl DecQuestion {
 
                 if data.is_scored_mode {
                     if error < angle::Deg(3.0) {
-                        *data.score += 3;
+                        actions.push(Action::ChangeScore(3));
                     } else if error < angle::Deg(5.0) {
-                        *data.score += 2;
+                        actions.push(Action::ChangeScore(2));
                     } else if error < angle::Deg(10.0) {
-                        *data.score += 1;
+                        actions.push(Action::ChangeScore(1));
                     }
-                    *data.possible_score += 3;
+                    actions.push(Action::ChangePossibleScore(3));
                 }
             }
             Err(_) => {
@@ -301,7 +303,7 @@ impl DecQuestion {
 impl crate::game::game_handler::QuestionTrait for DecQuestion {
     fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         if *data.game_stage == GameStage::Guessing {
-            self.render_question_window(data)
+            self.render_question_window(data, actions)
         } else if *data.game_stage == GameStage::Checked {
             self.render_answer_review_window(data, actions)
         } else {
@@ -313,7 +315,7 @@ impl crate::game::game_handler::QuestionTrait for DecQuestion {
         match data.game_stage {
             GameStage::Guessing => {
                 if !self.should_display_input() {
-                    self.check_answer(data);
+                    self.check_answer(data, actions);
                 }
             }
             GameStage::Checked => {

@@ -39,8 +39,6 @@ pub struct QuestionCheckingData<'a> {
     pub sky: &'a mut sky::Sky,
     pub theme: &'a Theme,
     pub game_stage: &'a mut GameStage,
-    pub score: &'a mut u32,
-    pub possible_score: &'a mut u32,
     pub is_scored_mode: bool,
     pub current_question: usize,
     pub used_questions: &'a mut Vec<usize>,

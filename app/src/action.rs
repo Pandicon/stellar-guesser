@@ -32,6 +32,14 @@ pub enum Action {
     SetGameMarkers(Vec<game_markers::GameMarker>),
     /// Removes all game markers
     RemoveGameMarkers,
+    /// Sets the score to the specified amount
+    SetScore(u32),
+    /// Sets the maximum possible score tp the specified amount
+    SetPossibleScore(u32),
+    /// Changes the score by the specified amount
+    ChangeScore(u32),
+    /// Changes the maximum possible score by the specified amount
+    ChangePossibleScore(u32),
 }
 
 pub struct ScreenDraggedData {
