@@ -6,7 +6,7 @@ use crate::{
         questions::{ActiveQuestion, Question},
         QuestionObject,
     },
-    rendering::{caspr::renderer::CellestialSphere, themes::Theme},
+    rendering::themes::Theme,
     sky,
 };
 use angle::Angle;
@@ -20,22 +20,15 @@ pub const QUESTION_PACK_QUESTIONS_DIV: &str = "&||&";
 pub const QUESTION_PACK_QUESTIONS_PARTS_DIV: &str = "&|&";
 
 pub struct QuestionWindowData<'a> {
-    pub cellestial_sphere: &'a CellestialSphere,
     pub sky: &'a sky::Sky,
     pub theme: &'a Theme,
     pub game_question_opened: &'a bool,
     pub request_input_focus: &'a bool,
-    pub add_marker_on_click: &'a bool,
     pub question_number_text: &'a String,
     pub game_stage: &'a GameStage,
     pub ctx: &'a eframe::egui::Context,
-    pub score: &'a u32,
-    pub possible_score: &'a u32,
     pub is_scored_mode: bool,
     pub current_question: usize,
-    pub used_questions: &'a Vec<usize>,
-    pub questions_settings: &'a questions::Settings,
-    pub question_number: &'a usize,
 }
 
 pub struct QuestionCheckingData<'a> {
@@ -44,10 +37,6 @@ pub struct QuestionCheckingData<'a> {
     pub game_stage: &'a GameStage,
     pub is_scored_mode: bool,
     pub current_question: usize,
-    pub used_questions: &'a Vec<usize>,
-    pub add_marker_on_click: &'a bool,
-    pub questions_settings: &'a questions::Settings,
-    pub question_number: &'a usize,
 }
 
 pub trait QuestionTrait {

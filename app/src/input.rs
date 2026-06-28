@@ -37,10 +37,6 @@ impl Application {
                                                     game_stage: &self.game_handler.stage,
                                                     is_scored_mode: self.game_handler.game_settings.is_scored_mode,
                                                     current_question: self.game_handler.current_question,
-                                                    used_questions: &self.game_handler.used_questions,
-                                                    add_marker_on_click: &self.game_handler.add_marker_on_click,
-                                                    questions_settings: &self.game_handler.questions_settings,
-                                                    question_number: &self.game_handler.question_number,
                                                 },
                                                 &mut self.actions,
                                             );
