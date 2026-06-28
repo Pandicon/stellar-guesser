@@ -75,7 +75,7 @@ impl ActiveQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(data.is_scored_mode, *data.question_number, actions);
+                self.check_answer(data.is_scored_mode, data.current_question, actions);
             }
             ui.label(data.question_number_text);
         })
@@ -141,7 +141,7 @@ impl ActiveQuestion {
         match data.game_stage {
             GameStage::Guessing => {
                 if !self.should_display_input() {
-                    self.check_answer(data.is_scored_mode, *data.question_number, actions);
+                    self.check_answer(data.is_scored_mode, data.current_question, actions);
                 }
             }
             GameStage::Checked => {
