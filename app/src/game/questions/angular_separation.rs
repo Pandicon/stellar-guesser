@@ -44,11 +44,16 @@ pub struct Question {
     /// (ra, dec)
     pub point2: (angle::Deg<f32>, angle::Deg<f32>),
 
-    pub state: State,
     pub small_settings: SmallSettings,
 }
 
-impl Question {
+#[derive(Clone)]
+pub struct ActiveQuestion {
+    pub data: Question,
+    pub state: State,
+}
+
+impl ActiveQuestion {
     fn render_question_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
             self.render_display_question(ui);
@@ -93,8 +98,8 @@ impl Question {
     }
 
     fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
-        let (ra1, dec1) = self.point1;
-        let (ra2, dec2) = self.point2;
+        let (ra1, dec1) = self.data.point1;
+        let (ra2, dec2) = self.data.point2;
         let distance = sg_geometry::angular_distance((ra1.to_rad(), dec1.to_rad()), (ra2.to_rad(), dec2.to_rad())).to_deg();
         match self.state.answer.parse::<f32>() {
             Ok(answer) => {
@@ -124,7 +129,7 @@ impl Question {
     }
 }
 
-impl crate::game::game_handler::QuestionTrait for Question {
+impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
     fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         if *data.game_stage == GameStage::Guessing {
             self.render_question_window(data, actions)
@@ -151,10 +156,12 @@ impl crate::game::game_handler::QuestionTrait for Question {
 
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self {
-            point1: self.point1,
-            point2: self.point2,
+            data: Question {
+                point1: self.data.point1,
+                point2: self.data.point2,
+                small_settings: self.data.small_settings,
+            },
             state: Default::default(),
-            small_settings: self.small_settings,
         })
     }
 
@@ -184,13 +191,13 @@ impl crate::game::game_handler::QuestionTrait for Question {
 
     fn start_question(&mut self, theme: &Theme, actions: &mut Vec<Action>) {
         self.state = Default::default();
-        let (ra1, dec1) = self.point1;
-        let (ra2, dec2) = self.point2;
+        let (ra1, dec1) = self.data.point1;
+        let (ra2, dec2) = self.data.point2;
         actions.push(Action::SetGameMarkers(vec![
             game_markers::GameMarker::new(game_markers::GameMarkerType::Task, ra1, dec1, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
             game_markers::GameMarker::new(game_markers::GameMarkerType::Task, ra2, dec2, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
         ]));
-        if self.small_settings.rotate_to_midpoint {
+        if self.data.small_settings.rotate_to_midpoint {
             let end_1 = sg_geometry::get_point_vector(ra1, dec1, &nalgebra::Matrix3::<f32>::identity());
             let end_2 = sg_geometry::get_point_vector(ra2, dec2, &nalgebra::Matrix3::<f32>::identity());
             if (end_1 + end_2).magnitude_squared() > 10e-4 {
@@ -215,11 +222,13 @@ pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settin
         if i + 1 >= objects.len() {
             break;
         }
-        questions.push(Box::new(Question {
+        questions.push(Box::new(ActiveQuestion {
+            data: Question {
+                point1: (objects[i].ra, objects[i].dec),
+                point2: (objects[i + 1].ra, objects[i + 1].dec),
+                small_settings,
+            },
             state: Default::default(),
-            point1: (objects[i].ra, objects[i].dec),
-            point2: (objects[i + 1].ra, objects[i + 1].dec),
-            small_settings,
         }));
     }
     questions

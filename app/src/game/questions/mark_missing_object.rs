@@ -87,11 +87,15 @@ pub struct Question {
     pub constellation_abbreviation: String,
     pub images: Vec<crate::structs::image_info::ImageInfo>,
     pub object_id: u64,
+}
 
+#[derive(Clone)]
+pub struct ActiveQuestion {
+    pub data: Question,
     pub state: State,
 }
 
-impl Question {
+impl ActiveQuestion {
     fn render_question_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
             self.render_display_question(ui);
@@ -138,13 +142,13 @@ impl Question {
         *data.add_marker_on_click = false;
         let markers = &data.sky.game_markers.markers;
         let mut correct = false;
-        if !self.images.is_empty() {
-            self.state.answer_image = Some(self.images[rand::thread_rng().gen_range(0..self.images.len())].clone());
+        if !self.data.images.is_empty() {
+            self.state.answer_image = Some(self.data.images[rand::thread_rng().gen_range(0..self.data.images.len())].clone());
         }
         let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !markers.is_empty() {
             let answer_dec = markers[0].dec;
             let answer_ra = markers[0].ra;
-            let distance = sg_geometry::angular_distance((self.ra.to_rad(), self.dec.to_rad()), (answer_ra.to_rad(), answer_dec.to_rad())).to_deg();
+            let distance = sg_geometry::angular_distance((self.data.ra.to_rad(), self.data.dec.to_rad()), (answer_ra.to_rad(), answer_dec.to_rad())).to_deg();
             if data.is_scored_mode {
                 let score_delta = GameHandler::evaluate_score(distance);
                 actions.push(Action::ChangeScore(score_delta));
@@ -153,7 +157,7 @@ impl Question {
                 answer_dec.value().to_string(),
                 answer_ra.value().to_string(),
                 distance.value().to_string(),
-                if distance < self.small_settings.correctness_threshold {
+                if distance < self.data.small_settings.correctness_threshold {
                     correct = true;
                     String::from("Correct!")
                 } else {
@@ -166,22 +170,22 @@ impl Question {
         self.state.answer_review_text_heading = answer_review_text_heading;
         self.state.answer_review_text = format!(
             "Designations of the missing object: {}\nYour coordinates: [dec = {}°; ra = {}°]\nCorrect coordinates: [dec = {}°; ra = {}°]\nFully precise distance: {}°\nYou can see the correct place marked with a new {}.\nObject type: {}",
-            self.possible_names.join(", "),
+            self.data.possible_names.join(", "),
             answer_dec_text,
             answer_ra_text,
-            self.dec.value(),
-            self.ra.value(),
+            self.data.dec.value(),
+            self.data.ra.value(),
             distance,
-            if self.is_bayer || self.is_starname { "circle" } else { "cross" },
-            self.object_type
+            if self.data.is_bayer || self.data.is_starname { "circle" } else { "cross" },
+            self.data.object_type
         );
         actions.push(Action::AddGameMarker(game_markers::GameMarker::new(
             game_markers::GameMarkerType::CorrectAnswer,
-            self.ra,
-            self.dec,
+            self.data.ra,
+            self.data.dec,
             2.0,
             5.0,
-            self.is_bayer || self.is_starname,
+            self.data.is_bayer || self.data.is_starname,
             false,
             &data.theme.game_visuals.game_markers_colours,
         )));
@@ -190,8 +194,8 @@ impl Question {
         } else {
             *data.question_number += 1;
         }
-        if self.small_settings.rotate_to_answer {
-            let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
+        if self.data.small_settings.rotate_to_answer {
+            let final_vector = sg_geometry::get_point_vector(self.data.ra, self.data.dec, &nalgebra::Matrix3::<f32>::identity());
             actions.push(Action::CameraLookAt(final_vector));
         } else {
             actions.push(Action::InitSingleRendererGroup(RendererCategory::Markers, String::from("game")));
@@ -200,7 +204,7 @@ impl Question {
     }
 }
 
-impl crate::game::game_handler::QuestionTrait for Question {
+impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
     fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         if *data.game_stage == GameStage::Guessing {
             self.render_question_window(data, actions)
@@ -218,7 +222,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             }
             GameStage::Checked => {
                 actions.push(Action::SwitchToNextQuestion);
-                actions.push(Action::EnableSingleRenderer(self.object_id));
+                actions.push(Action::EnableSingleRenderer(self.data.object_id));
             }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
@@ -226,23 +230,25 @@ impl crate::game::game_handler::QuestionTrait for Question {
 
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self {
-            possible_names: self.possible_names,
-            ra: self.ra,
-            dec: self.dec,
-            is_messier: self.is_messier,
-            is_caldwell: self.is_caldwell,
-            is_ngc: self.is_ngc,
-            is_ic: self.is_ic,
-            is_bayer: self.is_bayer,
-            is_starname: self.is_starname,
-            magnitude: self.magnitude,
-            object_type: self.object_type,
-            constellation_abbreviation: self.constellation_abbreviation,
-            images: self.images,
+            data: Question {
+                possible_names: self.data.possible_names,
+                ra: self.data.ra,
+                dec: self.data.dec,
+                is_messier: self.data.is_messier,
+                is_caldwell: self.data.is_caldwell,
+                is_ngc: self.data.is_ngc,
+                is_ic: self.data.is_ic,
+                is_bayer: self.data.is_bayer,
+                is_starname: self.data.is_starname,
+                magnitude: self.data.magnitude,
+                object_type: self.data.object_type,
+                constellation_abbreviation: self.data.constellation_abbreviation,
+                images: self.data.images,
 
+                small_settings: self.data.small_settings,
+                object_id: self.data.object_id,
+            },
             state: Default::default(),
-            small_settings: self.small_settings,
-            object_id: self.object_id,
         })
     }
 
@@ -251,11 +257,11 @@ impl crate::game::game_handler::QuestionTrait for Question {
     }
 
     fn show_circle_marker(&self) -> bool {
-        self.is_bayer || self.is_starname
+        self.data.is_bayer || self.data.is_starname
     }
 
     fn get_question_distance_tolerance(&self) -> Deg<f32> {
-        self.small_settings.correctness_threshold
+        self.data.small_settings.correctness_threshold
     }
 
     fn allow_multiple_player_markers(&self) -> bool {
@@ -273,7 +279,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
     fn start_question(&mut self, _theme: &Theme, actions: &mut Vec<Action>) {
         self.state = Default::default();
         actions.push(Action::RemoveGameMarkers);
-        actions.push(Action::DisableSingleRenderer(self.object_id));
+        actions.push(Action::DisableSingleRenderer(self.data.object_id));
     }
 
     fn render_display_question(&self, ui: &mut egui::Ui) {
@@ -323,7 +329,6 @@ pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settin
             small_settings,
             ra: object.ra,
             dec: object.dec,
-            state: Default::default(),
             possible_names,
             is_messier: object.messier_number.is_some(),
             is_caldwell: object.caldwell_number.is_some(),
@@ -340,7 +345,10 @@ pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settin
             images: object.images.clone(),
             object_id: object.object_id,
         };
-        questions.push(Box::new(question));
+        questions.push(Box::new(ActiveQuestion {
+            data: question,
+            state: Default::default(),
+        }));
     }
     questions
 }

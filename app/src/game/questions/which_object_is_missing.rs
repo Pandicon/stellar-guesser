@@ -104,11 +104,15 @@ pub struct Question {
     pub constellation_abbreviation: String,
     pub images: Vec<crate::structs::image_info::ImageInfo>,
     pub object_id: u64,
+}
 
+#[derive(Clone)]
+pub struct ActiveQuestion {
+    pub data: Question,
     pub state: State,
 }
 
-impl Question {
+impl ActiveQuestion {
     fn render_question_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
             self.render_display_question(ui);
@@ -159,10 +163,10 @@ impl Question {
     }
 
     fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
-        if !self.images.is_empty() {
-            self.state.answer_image = Some(self.images[rand::thread_rng().gen_range(0..self.images.len())].clone());
+        if !self.data.images.is_empty() {
+            self.state.answer_image = Some(self.data.images[rand::thread_rng().gen_range(0..self.data.images.len())].clone());
         }
-        let possible_names_edited = self.possible_names.iter().map(|name| name.replace(' ', "").to_lowercase()).collect::<Vec<String>>();
+        let possible_names_edited = self.data.possible_names.iter().map(|name| name.replace(' ', "").to_lowercase()).collect::<Vec<String>>();
         let correct = possible_names_edited.contains(&self.state.answer.replace(' ', "").to_lowercase());
         self.state.answer_review_text_heading = format!(
             "{}orrect!",
@@ -176,27 +180,27 @@ impl Question {
         self.state.answer_review_text = format!(
             "Your answer was: {}\nPossible answers: {}\nObject type: {}",
             self.state.answer,
-            self.possible_names.join(", "),
-            self.object_type
+            self.data.possible_names.join(", "),
+            self.data.object_type
         );
         actions.push(Action::AddGameMarker(game_markers::GameMarker::new(
             game_markers::GameMarkerType::CorrectAnswer,
-            self.ra,
-            self.dec,
+            self.data.ra,
+            self.data.dec,
             2.0,
             5.0,
-            self.is_bayer || self.is_starname,
+            self.data.is_bayer || self.data.is_starname,
             false,
             &data.theme.game_visuals.game_markers_colours,
         )));
-        if self.small_settings.rotate_to_answer {
-            let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
+        if self.data.small_settings.rotate_to_answer {
+            let final_vector = sg_geometry::get_point_vector(self.data.ra, self.data.dec, &nalgebra::Matrix3::<f32>::identity());
             actions.push(Action::CameraLookAt(final_vector));
         } else {
             actions.push(Action::InitSingleRendererGroup(RendererCategory::Markers, String::from("game")));
         }
         actions.push(Action::ChangePossibleScore(1));
-        if !self.small_settings.replay_incorrect || correct {
+        if !self.data.small_settings.replay_incorrect || correct {
             data.used_questions.push(data.current_question);
         } else {
             *data.question_number += 1;
@@ -205,7 +209,7 @@ impl Question {
     }
 }
 
-impl crate::game::game_handler::QuestionTrait for Question {
+impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
     fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         if *data.game_stage == GameStage::Guessing {
             self.render_question_window(data, actions)
@@ -225,7 +229,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             }
             GameStage::Checked => {
                 actions.push(Action::SwitchToNextQuestion);
-                actions.push(Action::EnableSingleRenderer(self.object_id));
+                actions.push(Action::EnableSingleRenderer(self.data.object_id));
                 actions.push(Action::RemoveGameMarkers);
             }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
@@ -234,22 +238,23 @@ impl crate::game::game_handler::QuestionTrait for Question {
 
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self {
-            small_settings: self.small_settings,
-            possible_names: self.possible_names,
-            ra: self.ra,
-            dec: self.dec,
-            is_messier: self.is_messier,
-            is_caldwell: self.is_caldwell,
-            is_ngc: self.is_ngc,
-            is_ic: self.is_ic,
-            is_bayer: self.is_bayer,
-            is_starname: self.is_starname,
-            magnitude: self.magnitude,
-            object_type: self.object_type,
-            constellation_abbreviation: self.constellation_abbreviation,
-            images: self.images,
-            object_id: self.object_id,
-
+            data: Question {
+                small_settings: self.data.small_settings,
+                possible_names: self.data.possible_names,
+                ra: self.data.ra,
+                dec: self.data.dec,
+                is_messier: self.data.is_messier,
+                is_caldwell: self.data.is_caldwell,
+                is_ngc: self.data.is_ngc,
+                is_ic: self.data.is_ic,
+                is_bayer: self.data.is_bayer,
+                is_starname: self.data.is_starname,
+                magnitude: self.data.magnitude,
+                object_type: self.data.object_type,
+                constellation_abbreviation: self.data.constellation_abbreviation,
+                images: self.data.images,
+                object_id: self.data.object_id,
+            },
             state: State::default(),
         })
     }
@@ -259,7 +264,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
     }
 
     fn show_circle_marker(&self) -> bool {
-        self.is_bayer || self.is_starname
+        self.data.is_bayer || self.data.is_starname
     }
 
     fn get_question_distance_tolerance(&self) -> Deg<f32> {
@@ -281,36 +286,36 @@ impl crate::game::game_handler::QuestionTrait for Question {
     fn start_question(&mut self, _theme: &Theme, actions: &mut Vec<Action>) {
         self.state = Default::default();
         actions.push(Action::RemoveGameMarkers);
-        actions.push(Action::DisableSingleRenderer(self.object_id));
+        actions.push(Action::DisableSingleRenderer(self.data.object_id));
     }
 
     fn render_display_question(&self, ui: &mut egui::Ui) {
         let mut accepted = Vec::new();
-        if self.small_settings.accept_bayer {
+        if self.data.small_settings.accept_bayer {
             accepted.push("Bayer");
         }
-        if self.small_settings.accept_caldwell {
+        if self.data.small_settings.accept_caldwell {
             accepted.push("Caldwell");
         }
-        if self.small_settings.accept_flamsteed {
+        if self.data.small_settings.accept_flamsteed {
             accepted.push("Flamsteed");
         }
-        if self.small_settings.accept_hd {
+        if self.data.small_settings.accept_hd {
             accepted.push("HD");
         }
-        if self.small_settings.accept_hip {
+        if self.data.small_settings.accept_hip {
             accepted.push("HIP");
         }
-        if self.small_settings.accept_ic {
+        if self.data.small_settings.accept_ic {
             accepted.push("IC");
         }
-        if self.small_settings.accept_messier {
+        if self.data.small_settings.accept_messier {
             accepted.push("Messier");
         }
-        if self.small_settings.accept_ngc {
+        if self.data.small_settings.accept_ngc {
             accepted.push("NGC");
         }
-        if self.small_settings.accept_proper {
+        if self.data.small_settings.accept_proper {
             accepted.push("Proper name");
         }
         ui.heading("Which object is hidden from the sky?");
@@ -375,26 +380,28 @@ pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settin
             }
         }
         if !possible_names.is_empty() {
-            questions.push(Box::new(Question {
-                small_settings,
-                possible_names,
-                ra: object.ra,
-                dec: object.dec,
-                is_messier: object.messier_number.is_some(),
-                is_caldwell: object.caldwell_number.is_some(),
-                is_ngc: object.ngc_number.is_some(),
-                is_ic: object.ic_number.is_some(),
-                is_bayer: object.bayer_designation_full.is_some(),
-                images: object.images.clone(),
-                is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
-                magnitude: object.mag,
-                object_type: match &object.object_type {
-                    crate::game::ObjectType::Star(star_type) => star_type.display_name(),
-                    crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
+            questions.push(Box::new(ActiveQuestion {
+                data: Question {
+                    small_settings,
+                    possible_names,
+                    ra: object.ra,
+                    dec: object.dec,
+                    is_messier: object.messier_number.is_some(),
+                    is_caldwell: object.caldwell_number.is_some(),
+                    is_ngc: object.ngc_number.is_some(),
+                    is_ic: object.ic_number.is_some(),
+                    is_bayer: object.bayer_designation_full.is_some(),
+                    images: object.images.clone(),
+                    is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
+                    magnitude: object.mag,
+                    object_type: match &object.object_type {
+                        crate::game::ObjectType::Star(star_type) => star_type.display_name(),
+                        crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
+                    },
+                    constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
+                    object_id: object.object_id,
                 },
-                constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
                 state: Default::default(),
-                object_id: object.object_id,
             }));
         }
     }

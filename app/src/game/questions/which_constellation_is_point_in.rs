@@ -43,11 +43,16 @@ pub struct Question {
     pub ra: angle::Deg<f32>,
     pub dec: angle::Deg<f32>,
 
-    pub state: State,
     pub small_settings: SmallSettings,
 }
 
-impl Question {
+#[derive(Clone)]
+pub struct ActiveQuestion {
+    pub data: Question,
+    pub state: State,
+}
+
+impl ActiveQuestion {
     fn render_question_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
             self.render_display_question(ui);
@@ -92,7 +97,7 @@ impl Question {
     }
 
     fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
-        let possible_abbrevs = data.sky.determine_constellation((self.ra.to_rad(), self.dec.to_rad()));
+        let possible_abbrevs = data.sky.determine_constellation((self.data.ra.to_rad(), self.data.dec.to_rad()));
         let mut possible_constellation_names = Vec::new();
         for abbrev in possible_abbrevs {
             if let Some(constellation) = data.sky.constellations.get(&abbrev) {
@@ -116,7 +121,7 @@ impl Question {
     }
 }
 
-impl crate::game::game_handler::QuestionTrait for Question {
+impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
     fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         if *data.game_stage == GameStage::Guessing {
             self.render_question_window(data, actions)
@@ -143,10 +148,12 @@ impl crate::game::game_handler::QuestionTrait for Question {
 
     fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
         Box::new(Self {
-            ra: self.ra,
-            dec: self.dec,
+            data: Question {
+                ra: self.data.ra,
+                dec: self.data.dec,
+                small_settings: self.data.small_settings,
+            },
             state: Default::default(),
-            small_settings: self.small_settings,
         })
     }
 
@@ -178,16 +185,16 @@ impl crate::game::game_handler::QuestionTrait for Question {
         self.state = Default::default();
         actions.push(Action::SetGameMarkers(vec![game_markers::GameMarker::new(
             game_markers::GameMarkerType::Task,
-            self.ra,
-            self.dec,
+            self.data.ra,
+            self.data.dec,
             2.0,
             5.0,
             false,
             false,
             &theme.game_visuals.game_markers_colours,
         )]));
-        if self.small_settings.rotate_to_point {
-            let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
+        if self.data.small_settings.rotate_to_point {
+            let final_vector = sg_geometry::get_point_vector(self.data.ra, self.data.dec, &nalgebra::Matrix3::<f32>::identity());
             actions.push(Action::CameraLookAt(final_vector));
         }
     }
@@ -204,11 +211,13 @@ impl crate::game::game_handler::QuestionTrait for Question {
 pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
     let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
     for object in objects {
-        questions.push(Box::new(Question {
-            ra: object.ra,
-            dec: object.dec,
+        questions.push(Box::new(ActiveQuestion {
+            data: Question {
+                ra: object.ra,
+                dec: object.dec,
+                small_settings,
+            },
             state: Default::default(),
-            small_settings,
         }));
     }
     questions
