@@ -1,6 +1,6 @@
 use crate::action::Action;
 use crate::enums::GameStage;
-use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
+use crate::game::game_handler::{QuestionCheckingData, QuestionWindowData};
 use crate::game::questions;
 use crate::rendering::themes::Theme;
 use crate::sky::markers::game_markers;
@@ -134,8 +134,8 @@ impl ActiveRaQuestion {
     }
 }
 
-impl crate::game::game_handler::QuestionTrait for ActiveRaQuestion {
-    fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
+impl ActiveRaQuestion {
+    pub fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         if *data.game_stage == GameStage::Guessing {
             self.render_question_window(data, actions)
         } else if *data.game_stage == GameStage::Checked {
@@ -145,7 +145,7 @@ impl crate::game::game_handler::QuestionTrait for ActiveRaQuestion {
         }
     }
 
-    fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
+    pub fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
         match data.game_stage {
             GameStage::Guessing => {
                 if !self.should_display_input() {
@@ -159,31 +159,31 @@ impl crate::game::game_handler::QuestionTrait for ActiveRaQuestion {
         }
     }
 
-    fn show_tolerance_marker(&self) -> bool {
+    pub fn show_tolerance_marker(&self) -> bool {
         false
     }
 
-    fn show_circle_marker(&self) -> bool {
+    pub fn show_circle_marker(&self) -> bool {
         false
     }
 
-    fn get_question_distance_tolerance(&self) -> Deg<f32> {
+    pub fn get_question_distance_tolerance(&self) -> Deg<f32> {
         angle::Deg(0.0)
     }
 
-    fn allow_multiple_player_markers(&self) -> bool {
+    pub fn allow_multiple_player_markers(&self) -> bool {
         false
     }
 
-    fn add_marker_on_click(&self) -> bool {
+    pub fn add_marker_on_click(&self) -> bool {
         false
     }
 
-    fn should_display_input(&self) -> bool {
+    pub fn should_display_input(&self) -> bool {
         true
     }
 
-    fn start_question(&mut self, theme: &Theme, actions: &mut Vec<Action>) {
+    pub fn start_question(&mut self, theme: &Theme, actions: &mut Vec<Action>) {
         self.state = Default::default();
         actions.push(Action::SetGameMarkers(vec![game_markers::GameMarker::new(
             game_markers::GameMarkerType::Task,
@@ -314,8 +314,8 @@ impl ActiveDecQuestion {
     }
 }
 
-impl crate::game::game_handler::QuestionTrait for ActiveDecQuestion {
-    fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
+impl ActiveDecQuestion {
+    pub fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         if *data.game_stage == GameStage::Guessing {
             self.render_question_window(data, actions)
         } else if *data.game_stage == GameStage::Checked {
@@ -325,7 +325,7 @@ impl crate::game::game_handler::QuestionTrait for ActiveDecQuestion {
         }
     }
 
-    fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
+    pub fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
         match data.game_stage {
             GameStage::Guessing => {
                 if !self.should_display_input() {
@@ -339,31 +339,31 @@ impl crate::game::game_handler::QuestionTrait for ActiveDecQuestion {
         }
     }
 
-    fn show_tolerance_marker(&self) -> bool {
+    pub fn show_tolerance_marker(&self) -> bool {
         false
     }
 
-    fn show_circle_marker(&self) -> bool {
+    pub fn show_circle_marker(&self) -> bool {
         false
     }
 
-    fn get_question_distance_tolerance(&self) -> Deg<f32> {
+    pub fn get_question_distance_tolerance(&self) -> Deg<f32> {
         angle::Deg(0.0)
     }
 
-    fn allow_multiple_player_markers(&self) -> bool {
+    pub fn allow_multiple_player_markers(&self) -> bool {
         false
     }
 
-    fn add_marker_on_click(&self) -> bool {
+    pub fn add_marker_on_click(&self) -> bool {
         false
     }
 
-    fn should_display_input(&self) -> bool {
+    pub fn should_display_input(&self) -> bool {
         true
     }
 
-    fn start_question(&mut self, theme: &Theme, actions: &mut Vec<Action>) {
+    pub fn start_question(&mut self, theme: &Theme, actions: &mut Vec<Action>) {
         self.state = Default::default();
         actions.push(Action::SetGameMarkers(vec![game_markers::GameMarker::new(
             game_markers::GameMarkerType::Task,
