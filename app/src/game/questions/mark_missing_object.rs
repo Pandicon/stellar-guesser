@@ -197,7 +197,7 @@ impl Question {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             actions.push(Action::CameraLookAt(final_vector));
         } else {
-            data.cellestial_sphere.init_single_renderer_group(data.sky, RendererCategory::Markers, "game");
+            actions.push(Action::InitSingleRendererGroup(RendererCategory::Markers, String::from("game")));
         }
         *data.game_stage = GameStage::Checked;
     }

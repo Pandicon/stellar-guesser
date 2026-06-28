@@ -4,6 +4,7 @@ use angle::Angle;
 use eframe::egui;
 
 use crate::{
+    action::Action,
     enums::{LightPollution, RendererCategory},
     sky,
     structs::state::windows::settings::SkySettingsSubWindow,
@@ -144,7 +145,7 @@ impl Application {
             }
             let keys = self.sky.stars.keys().cloned().collect::<Vec<String>>();
             for star_set_name in keys {
-                self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Stars, &star_set_name);
+                self.actions.push(Action::InitSingleRendererGroup(RendererCategory::Stars, star_set_name));
             }
         }
     }
@@ -173,7 +174,7 @@ impl Application {
             }
             let keys = self.sky.stars.keys().cloned().collect::<Vec<String>>();
             for star_set_name in keys {
-                self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Stars, &star_set_name);
+                self.actions.push(Action::InitSingleRendererGroup(RendererCategory::Stars, star_set_name));
             }
         }
 
@@ -267,7 +268,7 @@ impl Application {
         }
 
         for name in &newly_active_star_groups {
-            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Stars, name);
+            self.actions.push(Action::InitSingleRendererGroup(RendererCategory::Stars, name.clone()));
         }
         for name in &newly_inactive_star_groups {
             self.cellestial_sphere.disable_single_renderer_group(RendererCategory::Stars, name);
@@ -307,7 +308,7 @@ impl Application {
             self.theme.game_visuals.deepskies_colours.insert(name.clone(), deepskies_set.colour);
         }
         for name in &deepsky_groups_to_init {
-            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Deepskies, name);
+            self.actions.push(Action::InitSingleRendererGroup(RendererCategory::Deepskies, name.clone()));
         }
         for name in &deepsky_groups_to_deinit {
             self.cellestial_sphere.disable_single_renderer_group(RendererCategory::Deepskies, name);
@@ -336,7 +337,7 @@ impl Application {
             self.theme.game_visuals.lines_colours.insert(name.clone(), lines_set.colour);
         }
         for name in &line_groups_to_init {
-            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Lines, name);
+            self.actions.push(Action::InitSingleRendererGroup(RendererCategory::Lines, name.clone()));
         }
         for name in &line_groups_to_deinit {
             self.cellestial_sphere.disable_single_renderer_group(RendererCategory::Lines, name);
@@ -366,7 +367,7 @@ impl Application {
             for marker in self.sky.game_markers.markers.iter_mut() {
                 marker.colour = sky::markers::game_markers::GameMarker::get_colour(marker.marker_type, &self.theme.game_visuals.game_markers_colours);
             }
-            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, "game");
+            self.actions.push(Action::InitSingleRendererGroup(RendererCategory::Markers, String::from("game")));
         }
         ui.separator();
         let mut marker_groups_to_init = HashSet::new();
@@ -390,7 +391,7 @@ impl Application {
             self.theme.game_visuals.markers_colours.insert(name.clone(), markers_set.colour);
         }
         for name in &marker_groups_to_init {
-            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, name);
+            self.actions.push(Action::InitSingleRendererGroup(RendererCategory::Markers, name.clone()));
         }
         for name in &marker_groups_to_deinit {
             self.cellestial_sphere.disable_single_renderer_group(RendererCategory::Markers, name);

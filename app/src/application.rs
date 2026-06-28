@@ -252,6 +252,9 @@ impl Application {
                 Action::EnableSingleRenderer(object_id) => {
                     self.cellestial_sphere.enable_single_renderer(object_id);
                 }
+                Action::InitSingleRendererGroup(category, name) => {
+                    self.cellestial_sphere.init_single_renderer_group(&self.sky, category, &name);
+                }
                 Action::SwitchToNextQuestion => {
                     self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme, &mut self.actions);
                 }

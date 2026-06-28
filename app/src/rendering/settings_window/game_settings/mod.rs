@@ -1,4 +1,4 @@
-use crate::{enums::RendererCategory, structs::state::windows::settings::GameSettingsSubWindow, Application};
+use crate::{action::Action, enums::RendererCategory, structs::state::windows::settings::GameSettingsSubWindow, Application};
 use eframe::egui;
 
 pub mod general;
@@ -51,7 +51,7 @@ impl Application {
         if tolerance_changed && self.game_handler.show_tolerance_marker() {
             let markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions, &self.theme);
             self.sky.game_markers.markers = markers;
-            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, "game");
+            self.actions.push(Action::InitSingleRendererGroup(RendererCategory::Markers, String::from("name")));
         }
     }
 }

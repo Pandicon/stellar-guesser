@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use eframe::egui;
 use egui::Color32;
 
-use crate::{enums::RendererCategory, Application};
+use crate::{action::Action, enums::RendererCategory, Application};
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 pub struct Theme {
@@ -281,7 +281,7 @@ impl Application {
             }
         }
         for name in deepskies_to_reinit {
-            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Deepskies, &name);
+            self.actions.push(Action::InitSingleRendererGroup(RendererCategory::Deepskies, name.clone()));
         }
         let mut lines_to_reinit = Vec::new();
         for (name, lines) in &mut self.sky.lines {
@@ -298,7 +298,7 @@ impl Application {
             }
         }
         for name in lines_to_reinit {
-            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Lines, &name);
+            self.actions.push(Action::InitSingleRendererGroup(RendererCategory::Lines, name.clone()));
         }
         let mut markers_to_reinit = Vec::new();
         for (name, markers) in &mut self.sky.markers {
@@ -315,7 +315,7 @@ impl Application {
             }
         }
         for name in markers_to_reinit {
-            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, &name);
+            self.actions.push(Action::InitSingleRendererGroup(RendererCategory::Markers, name.clone()));
         }
         ctx.set_visuals(self.theme.egui_visuals.clone());
     }

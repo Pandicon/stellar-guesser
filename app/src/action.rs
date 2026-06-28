@@ -1,6 +1,8 @@
 use eframe::emath;
 use nalgebra::Vector3;
 
+use crate::enums::RendererCategory;
+
 pub enum Action {
     /// The user clicked the screen on this position
     ScreenClicked(emath::Pos2),
@@ -15,6 +17,8 @@ pub enum Action {
     DisableSingleRenderer(u64),
     /// Turns off the renderer of the object with the specified id
     EnableSingleRenderer(u64),
+    /// Reinitialises the renderer group with the category and name provided
+    InitSingleRendererGroup(RendererCategory, String),
 
     // ----- GAME -----
     /// Signals that the current question gives up its place and a new one should be picked
