@@ -52,22 +52,22 @@ impl Application {
             }),
             GameStage::Guessing | GameStage::Checked => {
                 let data = QuestionWindowData {
-                    cellestial_sphere: &mut self.cellestial_sphere,
-                    sky: &mut self.sky,
+                    cellestial_sphere: &self.cellestial_sphere,
+                    sky: &self.sky,
                     theme: &self.theme,
-                    game_question_opened: &mut self.state.windows.game_question.opened,
-                    request_input_focus: &mut self.game_handler.request_input_focus,
-                    add_marker_on_click: &mut self.game_handler.add_marker_on_click,
+                    game_question_opened: &self.state.windows.game_question.opened,
+                    request_input_focus: &self.game_handler.request_input_focus,
+                    add_marker_on_click: &self.game_handler.add_marker_on_click,
                     question_number_text: &self.game_handler.question_number_text,
-                    game_stage: &mut self.game_handler.stage,
+                    game_stage: &self.game_handler.stage,
                     ctx,
-                    score: &mut self.game_handler.score,
-                    possible_score: &mut self.game_handler.possible_score,
+                    score: &self.game_handler.score,
+                    possible_score: &self.game_handler.possible_score,
                     is_scored_mode: self.game_handler.game_settings.is_scored_mode,
                     current_question: self.game_handler.current_question,
-                    used_questions: &mut self.game_handler.used_questions,
+                    used_questions: &self.game_handler.used_questions,
                     questions_settings: &self.game_handler.questions_settings,
-                    question_number: &mut self.game_handler.question_number
+                    question_number: &self.game_handler.question_number
                 };
                 match &mut self.game_handler.active_question {
                     None => {

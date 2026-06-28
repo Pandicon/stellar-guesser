@@ -32,15 +32,15 @@ impl Application {
                                         Some(active_question) => {
                                             active_question.generic_to_next_part(
                                                 QuestionCheckingData {
-                                                    sky: &mut self.sky,
+                                                    sky: &self.sky,
                                                     theme: &self.theme,
-                                                    game_stage: &mut self.game_handler.stage,
+                                                    game_stage: &self.game_handler.stage,
                                                     is_scored_mode: self.game_handler.game_settings.is_scored_mode,
                                                     current_question: self.game_handler.current_question,
-                                                    used_questions: &mut self.game_handler.used_questions,
-                                                    add_marker_on_click: &mut self.game_handler.add_marker_on_click,
+                                                    used_questions: &self.game_handler.used_questions,
+                                                    add_marker_on_click: &self.game_handler.add_marker_on_click,
                                                     questions_settings: &self.game_handler.questions_settings,
-                                                    question_number: &mut self.game_handler.question_number,
+                                                    question_number: &self.game_handler.question_number,
                                                 },
                                                 &mut self.actions,
                                             );
