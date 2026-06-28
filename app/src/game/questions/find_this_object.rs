@@ -227,7 +227,7 @@ impl ActiveQuestion {
         } else {
             actions.push(Action::InitSingleRendererGroup(RendererCategory::Markers, String::from("game")));
         }
-        *data.game_stage = GameStage::Checked;
+        actions.push(Action::SetGameStage(GameStage::Checked));
     }
 }
 

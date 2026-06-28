@@ -135,7 +135,7 @@ impl ActiveQuestion {
             }
         };
         data.used_questions.push(data.current_question);
-        *data.game_stage = GameStage::Checked;
+        actions.push(Action::SetGameStage(GameStage::Checked));
     }
 }
 

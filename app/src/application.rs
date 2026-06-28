@@ -300,6 +300,12 @@ impl Application {
                 Action::ChangePossibleScore(score_delta) => {
                     self.game_handler.possible_score += score_delta;
                 }
+                Action::SetGameStage(game_stage) => {
+                    self.game_handler.stage = game_stage;
+                }
+                Action::MarkQuestionAsUsed(question_id) => {
+                    self.game_handler.used_questions.push(question_id);
+                }
             }
         }
         if reinitialise_game_markers {

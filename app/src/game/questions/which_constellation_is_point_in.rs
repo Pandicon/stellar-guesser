@@ -126,7 +126,7 @@ impl ActiveQuestion {
         actions.push(Action::ChangePossibleScore(1));
         self.state.answer_review_text = format!("Your answer was: {}\nThe right answers were: {}", self.state.answer, possible_constellation_names.join(", "));
         data.used_questions.push(data.current_question);
-        *data.game_stage = GameStage::Checked;
+        actions.push(Action::SetGameStage(GameStage::Checked));
     }
 }
 

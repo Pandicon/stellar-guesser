@@ -197,7 +197,7 @@ impl ActiveQuestion {
         } else {
             *data.question_number += 1;
         }
-        *data.game_stage = GameStage::Checked;
+        actions.push(Action::SetGameStage(GameStage::Checked));
     }
 }
 

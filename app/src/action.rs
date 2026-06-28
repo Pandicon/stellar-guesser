@@ -1,7 +1,10 @@
 use eframe::emath;
 use nalgebra::Vector3;
 
-use crate::{enums::RendererCategory, sky::markers::game_markers};
+use crate::{
+    enums::{GameStage, RendererCategory},
+    sky::markers::game_markers,
+};
 
 pub enum Action {
     /// The user clicked the screen on this position
@@ -40,6 +43,10 @@ pub enum Action {
     ChangeScore(u32),
     /// Changes the maximum possible score by the specified amount
     ChangePossibleScore(u32),
+    /// Sets the game stage
+    SetGameStage(GameStage),
+    /// Marks the question with the provided index as used so that it is not asked again until the question deck is reset
+    MarkQuestionAsUsed(usize),
 }
 
 pub struct ScreenDraggedData {

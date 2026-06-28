@@ -75,20 +75,7 @@ impl ActiveQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(
-                    QuestionCheckingData {
-                        sky: data.sky,
-                        theme: data.theme,
-                        game_stage: data.game_stage,
-                        is_scored_mode: data.is_scored_mode,
-                        current_question: data.current_question,
-                        used_questions: data.used_questions,
-                        add_marker_on_click: data.add_marker_on_click,
-                        questions_settings: data.questions_settings,
-                        question_number: data.question_number,
-                    },
-                    actions,
-                );
+                self.check_answer(data.is_scored_mode, *data.question_number, actions);
             }
             ui.label(data.question_number_text);
         })
@@ -107,7 +94,7 @@ impl ActiveQuestion {
         })
     }
 
-    fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
+    fn check_answer(&mut self, is_scored_mode: bool, question_number: usize, actions: &mut Vec<Action>) {
         let (ra1, dec1) = self.data.point1;
         let (ra2, dec2) = self.data.point2;
         let distance = sg_geometry::angular_distance((ra1.to_rad(), dec1.to_rad()), (ra2.to_rad(), dec2.to_rad())).to_deg();
@@ -117,7 +104,7 @@ impl ActiveQuestion {
                 self.state.answer_review_text_heading = format!("You were {:.1} degrees away!", (distance - answer).value());
                 let error_percent = 1.0 - answer.value() / distance.value();
                 self.state.answer_review_text = format!("The real distance was {:.1}°. Your error is equal to {:.1}% of the distance.", distance.value(), error_percent * 100.0);
-                if data.is_scored_mode {
+                if is_scored_mode {
                     let error = (1.0 - answer.value() / distance.value()).abs();
                     if error < 0.03 {
                         actions.push(Action::ChangeScore(3));
@@ -134,8 +121,8 @@ impl ActiveQuestion {
                 self.state.answer_review_text = format!("The real distance was {distance:.1}°.");
             }
         };
-        data.used_questions.push(data.current_question);
-        *data.game_stage = GameStage::Checked;
+        actions.push(Action::MarkQuestionAsUsed(question_number));
+        actions.push(Action::SetGameStage(GameStage::Checked));
     }
 }
 
@@ -154,7 +141,7 @@ impl ActiveQuestion {
         match data.game_stage {
             GameStage::Guessing => {
                 if !self.should_display_input() {
-                    self.check_answer(data, actions);
+                    self.check_answer(data.is_scored_mode, *data.question_number, actions);
                 }
             }
             GameStage::Checked => {
