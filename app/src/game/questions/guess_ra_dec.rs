@@ -61,7 +61,6 @@ impl RaQuestion {
             }
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {
-                    cellestial_sphere: data.cellestial_sphere,
                     sky: data.sky,
                     theme: data.theme,
                     game_stage: data.game_stage,
@@ -241,7 +240,6 @@ impl DecQuestion {
             }
             if ui.button("Check").clicked() {
                 self.check_answer(QuestionCheckingData {
-                    cellestial_sphere: data.cellestial_sphere,
                     sky: data.sky,
                     theme: data.theme,
                     game_stage: data.game_stage,

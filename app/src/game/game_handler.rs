@@ -36,7 +36,6 @@ pub struct QuestionWindowData<'a> {
 }
 
 pub struct QuestionCheckingData<'a> {
-    pub cellestial_sphere: &'a mut CellestialSphere,
     pub sky: &'a mut sky::Sky,
     pub theme: &'a Theme,
     pub game_stage: &'a mut GameStage,

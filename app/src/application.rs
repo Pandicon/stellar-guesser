@@ -260,7 +260,6 @@ impl Application {
                 }
                 Action::SwitchToNextPart => {
                     let data = game_handler::QuestionCheckingData {
-                        cellestial_sphere: &mut self.cellestial_sphere,
                         sky: &mut self.sky,
                         theme: &self.theme,
                         game_stage: &mut self.game_handler.stage,

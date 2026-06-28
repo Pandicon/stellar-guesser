@@ -29,7 +29,6 @@ impl Application {
                                 if (self.game_handler.stage == GameStage::Guessing && !self.game_handler.should_display_input()) || self.game_handler.stage == GameStage::Checked {
                                     self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(
                                         QuestionCheckingData {
-                                            cellestial_sphere: &mut self.cellestial_sphere,
                                             sky: &mut self.sky,
                                             theme: &self.theme,
                                             game_stage: &mut self.game_handler.stage,
