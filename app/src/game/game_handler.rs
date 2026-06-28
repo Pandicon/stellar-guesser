@@ -323,7 +323,7 @@ impl GameHandler {
         if possible_questions.is_empty() {
             self.stage = GameStage::NoMoreQuestions;
             self.active_question = None;
-        } else if self.game_settings.is_scored_mode && self.used_questions.len() as u32 > self.game_settings.no_of_questions {
+        } else if self.game_settings.is_scored_mode && self.used_questions.len() as u32 >= self.game_settings.no_of_questions {
             self.stage = GameStage::ScoredModeFinished;
         } else {
             self.current_question = possible_questions[rand::thread_rng().gen_range(0..possible_questions.len())];
