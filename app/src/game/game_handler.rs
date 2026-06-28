@@ -373,7 +373,7 @@ impl GameHandler {
         }
     }
 
-    pub fn next_question(&mut self, _cellestial_sphere: &mut crate::rendering::caspr::renderer::CellestialSphere, sky: &mut sky::Sky, theme: &Theme, actions: &mut Vec<Action>) {
+    pub fn next_question(&mut self, sky: &mut sky::Sky, theme: &Theme, actions: &mut Vec<Action>) {
         self.answer = String::new();
         let mut possible_questions: Vec<usize> = Vec::new();
         for question in 0..self.question_catalog.len() {

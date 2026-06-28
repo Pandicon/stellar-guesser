@@ -9,7 +9,7 @@ impl Application {
                 ui.heading("Welcome!");
                 if ui.button("Start").clicked() {
                     self.game_handler.stage = GameStage::Checked;
-                    self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme, &mut self.actions)
+                    self.game_handler.next_question(&mut self.sky, &self.theme, &mut self.actions)
                 }
             }),
             GameStage::NoMoreQuestions => egui::Window::new("Question").open(&mut self.state.windows.game_question.opened).show(ctx, |ui| {
@@ -23,7 +23,7 @@ impl Application {
                 ui.horizontal(|ui| {
                     if !self.game_handler.question_catalog.is_empty() && ui.button("Reset").clicked() {
                         self.game_handler.reset_used_questions();
-                        self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme, &mut self.actions);
+                        self.game_handler.next_question(&mut self.sky, &self.theme, &mut self.actions);
                     }
                     if ui.button("Choose a different question pack").clicked() {
                         self.state.windows.settings.opened = true;
@@ -44,7 +44,7 @@ impl Application {
                 ui.horizontal(|ui| {
                     if ui.button("Reset").clicked() {
                         self.game_handler.reset_used_questions();
-                        self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme, &mut self.actions);
+                        self.game_handler.next_question(&mut self.sky, &self.theme, &mut self.actions);
                     }
                 });
 

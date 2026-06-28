@@ -256,7 +256,7 @@ impl Application {
                     self.cellestial_sphere.init_single_renderer_group(&self.sky, category, &name);
                 }
                 Action::SwitchToNextQuestion => {
-                    self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme, &mut self.actions);
+                    self.game_handler.next_question(&mut self.sky, &self.theme, &mut self.actions);
                 }
                 Action::SwitchToNextPart => {
                     let data = game_handler::QuestionCheckingData {
