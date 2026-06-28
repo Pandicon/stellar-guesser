@@ -94,7 +94,7 @@ impl ActiveQuestion {
         })
     }
 
-    fn check_answer(&mut self, is_scored_mode: bool, question_number: usize, actions: &mut Vec<Action>) {
+    fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, actions: &mut Vec<Action>) {
         let (ra1, dec1) = self.data.point1;
         let (ra2, dec2) = self.data.point2;
         let distance = sg_geometry::angular_distance((ra1.to_rad(), dec1.to_rad()), (ra2.to_rad(), dec2.to_rad())).to_deg();
@@ -121,7 +121,7 @@ impl ActiveQuestion {
                 self.state.answer_review_text = format!("The real distance was {distance:.1}°.");
             }
         };
-        actions.push(Action::MarkQuestionAsUsed(question_number));
+        actions.push(Action::MarkQuestionAsUsed(question_id));
         actions.push(Action::SetGameStage(GameStage::Checked));
     }
 }
