@@ -129,7 +129,7 @@ impl ActiveQuestion {
                 let text_input_response = ui.text_edit_singleline(&mut self.state.answer);
                 if *data.request_input_focus {
                     text_input_response.request_focus();
-                    *data.request_input_focus = false;
+                    actions.push(Action::SetRequestInputFocus(false));
                 }
             }
             if ui.button("Check").clicked() {

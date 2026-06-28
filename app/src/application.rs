@@ -259,6 +259,9 @@ impl Application {
                 Action::SetAddMarkerOnClick(enable) => {
                     self.game_handler.add_marker_on_click = enable;
                 }
+                Action::SetRequestInputFocus(enable) => {
+                    self.game_handler.request_input_focus = enable;
+                }
                 Action::SwitchToNextQuestion => {
                     self.game_handler.next_question(&self.theme, &mut self.actions);
                 }
