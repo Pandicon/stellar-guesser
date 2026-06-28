@@ -3,6 +3,7 @@ use crate::enums::GameStage;
 use crate::game::game_handler::{QuestionCheckingData, QuestionWindowData};
 use crate::game::questions;
 use crate::rendering::themes::Theme;
+use crate::sky;
 use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
 use eframe::egui;
@@ -73,20 +74,7 @@ impl ActiveQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(
-                    QuestionCheckingData {
-                        sky: data.sky,
-                        theme: data.theme,
-                        game_stage: data.game_stage,
-                        is_scored_mode: data.is_scored_mode,
-                        current_question: data.current_question,
-                        used_questions: data.used_questions,
-                        add_marker_on_click: data.add_marker_on_click,
-                        questions_settings: data.questions_settings,
-                        question_number: data.question_number,
-                    },
-                    actions,
-                );
+                self.check_answer(data.current_question, data.sky, actions);
             }
             ui.label(data.question_number_text);
         })
@@ -105,11 +93,11 @@ impl ActiveQuestion {
         })
     }
 
-    fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
-        let possible_abbrevs = data.sky.determine_constellation((self.data.ra.to_rad(), self.data.dec.to_rad()));
+    fn check_answer(&mut self, question_id: usize, sky: &sky::Sky, actions: &mut Vec<Action>) {
+        let possible_abbrevs = sky.determine_constellation((self.data.ra.to_rad(), self.data.dec.to_rad()));
         let mut possible_constellation_names = Vec::new();
         for abbrev in possible_abbrevs {
-            if let Some(constellation) = data.sky.constellations.get(&abbrev) {
+            if let Some(constellation) = sky.constellations.get(&abbrev) {
                 possible_constellation_names.extend(constellation.possible_names.iter().map(|name| name.replace(' ', "").to_lowercase()));
             };
         }
@@ -125,7 +113,7 @@ impl ActiveQuestion {
         );
         actions.push(Action::ChangePossibleScore(1));
         self.state.answer_review_text = format!("Your answer was: {}\nThe right answers were: {}", self.state.answer, possible_constellation_names.join(", "));
-        data.used_questions.push(data.current_question);
+        actions.push(Action::MarkQuestionAsUsed(question_id));
         actions.push(Action::SetGameStage(GameStage::Checked));
     }
 }
@@ -145,7 +133,7 @@ impl ActiveQuestion {
         match data.game_stage {
             GameStage::Guessing => {
                 if !self.should_display_input() {
-                    self.check_answer(data, actions);
+                    self.check_answer(data.current_question, data.sky, actions);
                 }
             }
             GameStage::Checked => {

@@ -133,20 +133,7 @@ impl ActiveQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(
-                    QuestionCheckingData {
-                        sky: data.sky,
-                        theme: data.theme,
-                        game_stage: data.game_stage,
-                        is_scored_mode: data.is_scored_mode,
-                        current_question: data.current_question,
-                        used_questions: data.used_questions,
-                        add_marker_on_click: data.add_marker_on_click,
-                        questions_settings: data.questions_settings,
-                        question_number: data.question_number,
-                    },
-                    actions,
-                );
+                self.check_answer(data.current_question, data.theme, actions);
             }
             ui.label(data.question_number_text);
         })
@@ -171,7 +158,7 @@ impl ActiveQuestion {
         })
     }
 
-    fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
+    fn check_answer(&mut self, question_id: usize, theme: &Theme, actions: &mut Vec<Action>) {
         if !self.data.images.is_empty() {
             self.state.answer_image = Some(self.data.images[rand::thread_rng().gen_range(0..self.data.images.len())].clone());
         }
@@ -200,7 +187,7 @@ impl ActiveQuestion {
             5.0,
             self.data.is_bayer || self.data.is_starname,
             false,
-            &data.theme.game_visuals.game_markers_colours,
+            &theme.game_visuals.game_markers_colours,
         )));
         if self.data.small_settings.rotate_to_answer {
             let final_vector = sg_geometry::get_point_vector(self.data.ra, self.data.dec, &nalgebra::Matrix3::<f32>::identity());
@@ -210,9 +197,9 @@ impl ActiveQuestion {
         }
         actions.push(Action::ChangePossibleScore(1));
         if !self.data.small_settings.replay_incorrect || correct {
-            data.used_questions.push(data.current_question);
+            actions.push(Action::MarkQuestionAsUsed(question_id));
         } else {
-            *data.question_number += 1;
+            actions.push(Action::IncrementRepeatedQuestionCounter);
         }
         actions.push(Action::SetGameStage(GameStage::Checked));
     }
@@ -233,7 +220,7 @@ impl ActiveQuestion {
         match data.game_stage {
             GameStage::Guessing => {
                 if !self.should_display_input() {
-                    self.check_answer(data, actions);
+                    self.check_answer(data.current_question, data.theme, actions);
                 }
             }
             GameStage::Checked => {

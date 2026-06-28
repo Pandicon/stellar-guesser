@@ -23,6 +23,9 @@ pub enum Action {
     /// Reinitialises the renderer group with the category and name provided
     InitSingleRendererGroup(RendererCategory, String),
 
+    /// Sets whether or not markers should be added when the screen is clicked
+    SetAddMarkerOnClick(bool),
+
     // ----- GAME -----
     /// Signals that the current question gives up its place and a new one should be picked
     SwitchToNextQuestion,
@@ -47,6 +50,8 @@ pub enum Action {
     SetGameStage(GameStage),
     /// Marks the question with the provided index as used so that it is not asked again until the question deck is reset
     MarkQuestionAsUsed(usize),
+    /// Increments the counter keeping track of how many questions were played without blocking them from appearing again (usually by answering incorrectly)
+    IncrementRepeatedQuestionCounter,
 }
 
 pub struct ScreenDraggedData {

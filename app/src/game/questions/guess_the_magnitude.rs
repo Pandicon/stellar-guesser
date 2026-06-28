@@ -79,20 +79,7 @@ impl ActiveQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(
-                    QuestionCheckingData {
-                        sky: data.sky,
-                        theme: data.theme,
-                        game_stage: data.game_stage,
-                        is_scored_mode: data.is_scored_mode,
-                        current_question: data.current_question,
-                        used_questions: data.used_questions,
-                        add_marker_on_click: data.add_marker_on_click,
-                        questions_settings: data.questions_settings,
-                        question_number: data.question_number,
-                    },
-                    actions,
-                );
+                self.check_answer(data.is_scored_mode, data.current_question, actions);
             }
             ui.label(data.question_number_text);
         })
@@ -110,7 +97,8 @@ impl ActiveQuestion {
             ui.label(data.question_number_text);
         })
     }
-    fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
+
+    fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, actions: &mut Vec<Action>) {
         match self.state.answer.parse::<f32>() {
             Ok(answer) => {
                 let error = (self.data.mag - answer).abs();
@@ -118,7 +106,7 @@ impl ActiveQuestion {
 
                 self.state.answer_review_text = format!("The magnitude was {:.1}.", self.data.mag);
 
-                if data.is_scored_mode {
+                if is_scored_mode {
                     if error < 0.3 {
                         actions.push(Action::ChangeScore(3));
                     } else if error < 0.7 {
@@ -134,7 +122,7 @@ impl ActiveQuestion {
                 self.state.answer_review_text = format!("The magnitude was {:.1}.", self.data.mag);
             }
         };
-        data.used_questions.push(data.current_question);
+        actions.push(Action::MarkQuestionAsUsed(question_id));
         actions.push(Action::SetGameStage(GameStage::Checked));
     }
 }
@@ -154,7 +142,7 @@ impl ActiveQuestion {
         match data.game_stage {
             GameStage::Guessing => {
                 if !self.should_display_input() {
-                    self.check_answer(data, actions);
+                    self.check_answer(data.is_scored_mode, data.current_question, actions);
                 }
             }
             GameStage::Checked => {

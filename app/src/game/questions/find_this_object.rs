@@ -128,20 +128,7 @@ impl ActiveQuestion {
         egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
             self.render_display_question(ui);
             if ui.button("Check").clicked() {
-                self.check_answer(
-                    QuestionCheckingData {
-                        sky: data.sky,
-                        theme: data.theme,
-                        game_stage: data.game_stage,
-                        is_scored_mode: data.is_scored_mode,
-                        current_question: data.current_question,
-                        used_questions: data.used_questions,
-                        add_marker_on_click: data.add_marker_on_click,
-                        questions_settings: data.questions_settings,
-                        question_number: data.question_number,
-                    },
-                    actions,
-                );
+                self.check_answer(data.is_scored_mode, data.current_question, &data.sky.game_markers.markers, data.theme, actions);
             }
             ui.label(data.question_number_text);
         })
@@ -166,9 +153,8 @@ impl ActiveQuestion {
         })
     }
 
-    fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
-        *data.add_marker_on_click = false;
-        let markers = &data.sky.game_markers.markers;
+    fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, markers: &[game_markers::GameMarker], theme: &Theme, actions: &mut Vec<Action>) {
+        actions.push(Action::SetAddMarkerOnClick(false));
         let mut correct = false;
         if !self.data.images.is_empty() {
             self.state.answer_image = Some(self.data.images[rand::thread_rng().gen_range(0..self.data.images.len())].clone());
@@ -177,7 +163,7 @@ impl ActiveQuestion {
             let answer_dec = markers[0].dec;
             let answer_ra = markers[0].ra;
             let distance = sg_geometry::angular_distance((self.data.ra.to_rad(), self.data.dec.to_rad()), (answer_ra.to_rad(), answer_dec.to_rad())).to_deg();
-            if data.is_scored_mode {
+            if is_scored_mode {
                 let score_delta = GameHandler::evaluate_score(distance);
                 actions.push(Action::ChangeScore(score_delta));
             }
@@ -214,12 +200,12 @@ impl ActiveQuestion {
             5.0,
             self.data.is_bayer || self.data.is_starname,
             false,
-            &data.theme.game_visuals.game_markers_colours,
+            &theme.game_visuals.game_markers_colours,
         )));
-        if !data.questions_settings.find_this_object.replay_incorrect || correct {
-            data.used_questions.push(data.current_question);
+        if !self.data.small_settings.replay_incorrect || correct {
+            actions.push(Action::MarkQuestionAsUsed(question_id));
         } else {
-            *data.question_number += 1;
+            actions.push(Action::IncrementRepeatedQuestionCounter);
         }
         if self.data.small_settings.rotate_to_answer {
             let final_vector = sg_geometry::get_point_vector(self.data.ra, self.data.dec, &nalgebra::Matrix3::<f32>::identity());
@@ -245,7 +231,7 @@ impl ActiveQuestion {
     pub fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
         match data.game_stage {
             GameStage::Guessing => {
-                self.check_answer(data, actions);
+                self.check_answer(data.is_scored_mode, data.current_question, &data.sky.game_markers.markers, data.theme, actions);
             }
             GameStage::Checked => {
                 actions.push(Action::SwitchToNextQuestion);

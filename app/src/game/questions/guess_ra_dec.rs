@@ -73,20 +73,7 @@ impl ActiveRaQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(
-                    QuestionCheckingData {
-                        sky: data.sky,
-                        theme: data.theme,
-                        game_stage: data.game_stage,
-                        is_scored_mode: data.is_scored_mode,
-                        current_question: data.current_question,
-                        used_questions: data.used_questions,
-                        add_marker_on_click: data.add_marker_on_click,
-                        questions_settings: data.questions_settings,
-                        question_number: data.question_number,
-                    },
-                    actions,
-                );
+                self.check_answer(data.is_scored_mode, data.current_question, actions);
             }
             ui.label(data.question_number_text);
         })
@@ -104,7 +91,8 @@ impl ActiveRaQuestion {
             ui.label(data.question_number_text);
         })
     }
-    fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
+
+    fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, actions: &mut Vec<Action>) {
         match self.state.answer.parse::<f32>() {
             Ok(answer_hours) => {
                 let answer_deg = angle::Deg(answer_hours / 24.0 * 360.0);
@@ -113,7 +101,7 @@ impl ActiveRaQuestion {
 
                 self.state.answer_review_text = format!("The real right ascension was {:.1}h", self.data.ra.value() / 360.0 * 24.0);
 
-                if data.is_scored_mode {
+                if is_scored_mode {
                     if error_deg < angle::Deg(3.0) {
                         actions.push(Action::ChangeScore(3));
                     } else if error_deg < angle::Deg(5.0) {
@@ -129,7 +117,7 @@ impl ActiveRaQuestion {
                 self.state.answer_review_text = format!("The real right ascension was {:.1}h.", self.data.ra.value() / 360.0 * 24.0);
             }
         };
-        data.used_questions.push(data.current_question);
+        actions.push(Action::MarkQuestionAsUsed(question_id));
         actions.push(Action::SetGameStage(GameStage::Checked));
     }
 }
@@ -149,7 +137,7 @@ impl ActiveRaQuestion {
         match data.game_stage {
             GameStage::Guessing => {
                 if !self.should_display_input() {
-                    self.check_answer(data, actions);
+                    self.check_answer(data.is_scored_mode, data.current_question, actions);
                 }
             }
             GameStage::Checked => {
@@ -253,20 +241,7 @@ impl ActiveDecQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(
-                    QuestionCheckingData {
-                        sky: data.sky,
-                        theme: data.theme,
-                        game_stage: data.game_stage,
-                        is_scored_mode: data.is_scored_mode,
-                        current_question: data.current_question,
-                        used_questions: data.used_questions,
-                        add_marker_on_click: data.add_marker_on_click,
-                        questions_settings: data.questions_settings,
-                        question_number: data.question_number,
-                    },
-                    actions,
-                );
+                self.check_answer(data.is_scored_mode, data.current_question, actions);
             }
             ui.label(data.question_number_text);
         })
@@ -284,7 +259,8 @@ impl ActiveDecQuestion {
             ui.label(data.question_number_text);
         })
     }
-    fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
+
+    fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, actions: &mut Vec<Action>) {
         match self.state.answer.parse::<f32>() {
             Ok(answer) => {
                 let answer_deg = angle::Deg(answer);
@@ -293,7 +269,7 @@ impl ActiveDecQuestion {
 
                 self.state.answer_review_text = format!("The declination was {:.1}°", self.data.dec.value());
 
-                if data.is_scored_mode {
+                if is_scored_mode {
                     if error < angle::Deg(3.0) {
                         actions.push(Action::ChangeScore(3));
                     } else if error < angle::Deg(5.0) {
@@ -309,7 +285,7 @@ impl ActiveDecQuestion {
                 self.state.answer_review_text = format!("The declination was {:.1}°.", self.data.dec);
             }
         };
-        data.used_questions.push(data.current_question);
+        actions.push(Action::MarkQuestionAsUsed(question_id));
         actions.push(Action::SetGameStage(GameStage::Checked));
     }
 }
@@ -329,7 +305,7 @@ impl ActiveDecQuestion {
         match data.game_stage {
             GameStage::Guessing => {
                 if !self.should_display_input() {
-                    self.check_answer(data, actions);
+                    self.check_answer(data.is_scored_mode, data.current_question, actions);
                 }
             }
             GameStage::Checked => {

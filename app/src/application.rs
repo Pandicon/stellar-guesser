@@ -256,6 +256,9 @@ impl Application {
                 Action::InitSingleRendererGroup(category, name) => {
                     self.cellestial_sphere.init_single_renderer_group(&self.sky, category, &name);
                 }
+                Action::SetAddMarkerOnClick(enable) => {
+                    self.game_handler.add_marker_on_click = enable;
+                }
                 Action::SwitchToNextQuestion => {
                     self.game_handler.next_question(&self.theme, &mut self.actions);
                 }
@@ -305,6 +308,9 @@ impl Application {
                 }
                 Action::MarkQuestionAsUsed(question_id) => {
                     self.game_handler.used_questions.push(question_id);
+                }
+                Action::IncrementRepeatedQuestionCounter => {
+                    self.game_handler.question_number += 1;
                 }
             }
         }
