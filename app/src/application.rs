@@ -1,6 +1,7 @@
+use angle::Angle;
 use eframe::egui;
 
-use crate::enums::ScreenWidth;
+use crate::enums::{RendererCategory, ScreenWidth};
 use crate::rendering::caspr::sky_settings;
 use crate::rendering::initial_setup;
 use crate::rendering::themes::{self, Theme, ThemesHandler};
@@ -22,7 +23,7 @@ use crate::{
     },
 };
 
-use crate::action::Action;
+use crate::action::{Action, ScreenDraggedData};
 
 pub struct Application {
     pub input: input::Input,
@@ -212,8 +213,38 @@ impl Application {
         let current_actions = std::mem::take(&mut self.actions);
         for action in current_actions {
             match action {
+                Action::ScreenClicked(click_position) => {
+                    if self.game_handler.add_marker_on_click {
+                        let marker_pos = self.cellestial_sphere.camera.get_projection().cast_onto_sphere_dec_ra(
+                            self.cellestial_sphere.camera.get_viewport_rect(),
+                            &click_position,
+                            *self.cellestial_sphere.camera.get_rotation(),
+                            self.cellestial_sphere.camera.get_fov().to_rad(),
+                        );
+                        if self.game_handler.allow_multiple_player_marker() {
+                            self.game_handler.guess_marker_positions.push(marker_pos);
+                        } else {
+                            self.game_handler.guess_marker_positions = vec![marker_pos];
+                        }
+                        let new_markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions, &self.theme);
+                        self.sky.game_markers.markers = new_markers;
+                        self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, "game");
+                    }
+                }
+                Action::ScreenDragged(ScreenDraggedData { from, to }) => {
+                    let initial_vector = self.cellestial_sphere.project_screen_pos(from);
+                    let final_vector = self.cellestial_sphere.project_screen_pos(to);
+
+                    if initial_vector != final_vector {
+                        // Some rotation this frame
+                        self.cellestial_sphere.rotate_between_points(&initial_vector, &final_vector);
+                    }
+                }
                 Action::CameraLookAt(point) => {
                     self.cellestial_sphere.look_at_point(&point);
+                }
+                Action::CameraZoom(zoom_velocity) => {
+                    self.cellestial_sphere.zoom(zoom_velocity);
                 }
                 Action::DisableSingleRenderer(object_id) => {
                     self.cellestial_sphere.disable_single_renderer(object_id);

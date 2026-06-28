@@ -1,12 +1,12 @@
-use angle::Angle;
 use eframe::egui;
 use egui::epaint::Pos2;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use crate::action::{Action, ScreenDraggedData};
 use crate::game::game_handler::QuestionCheckingData;
 use crate::{
-    enums::{self, GameStage, PointerPosition, RendererCategory},
+    enums::{self, GameStage, PointerPosition},
     Application,
 };
 const KEY_COMBINATIONS: [&str; 6] = ["alt+shift+g", "alt+shift+i", "alt+shift+o", "alt+shift+s", "mouse-middle", "space"];
@@ -52,39 +52,18 @@ impl Application {
                 }
             }
         }
-        self.cellestial_sphere.zoom(self.input.zoom);
+        self.actions.push(Action::CameraZoom(self.input.zoom));
 
         let pointer_position: Pos2 = match self.input.pointer_position {
             PointerPosition::OnScreen(position) => position,
             PointerPosition::OffScreen => return,
         };
         if cursor_within_central_panel {
-            if self.game_handler.add_marker_on_click && self.input.primary_released && !self.input.primary_dragging_last_frame {
-                /*let sphere_position = geometry::cast_onto_sphere(&self.cellestial_sphere, &pointer_position);
-                let (dec, ra) = geometry::cartesian_to_spherical(sphere_position);*/
-                let marker_pos = self.cellestial_sphere.camera.get_projection().cast_onto_sphere_dec_ra(
-                    self.cellestial_sphere.camera.get_viewport_rect(),
-                    &pointer_position,
-                    *self.cellestial_sphere.camera.get_rotation(),
-                    self.cellestial_sphere.camera.get_fov().to_rad(),
-                );
-                if self.game_handler.allow_multiple_player_marker() {
-                    self.game_handler.guess_marker_positions.push(marker_pos);
-                } else {
-                    self.game_handler.guess_marker_positions = vec![marker_pos];
-                }
-                let new_markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions, &self.theme);
-                self.sky.game_markers.markers = new_markers; // vec![Marker::new(ra / PI * 180.0, dec / PI * 180.0, Color32::RED, 2.0, 5.0, self.game_handler.show_circle_marker(), false)];
-                self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, "game");
+            if self.input.primary_released && !self.input.primary_dragging_last_frame {
+                self.actions.push(Action::ScreenClicked(pointer_position));
             }
-            let initial_vector = self.cellestial_sphere.project_screen_pos(pointer_position - self.input.dragged);
-            let final_vector = self.cellestial_sphere.project_screen_pos(pointer_position);
-
-            if initial_vector != final_vector {
-                // Some rotation this frame
-
-                self.cellestial_sphere.rotate_between_points(&initial_vector, &final_vector);
-            }
+            self.actions
+                .push(Action::ScreenDragged(ScreenDraggedData::new(pointer_position - self.input.dragged, pointer_position)));
         }
     }
 }
