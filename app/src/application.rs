@@ -271,7 +271,10 @@ impl Application {
                         questions_settings: &self.game_handler.questions_settings,
                         question_number: &mut self.game_handler.question_number,
                     };
-                    self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(data, &mut self.actions);
+                    match &mut self.game_handler.active_question {
+                        None => {}
+                        Some(active_question) => active_question.generic_to_next_part(data, &mut self.actions),
+                    }
                 }
                 Action::AddGameMarker(marker) => {
                     self.sky.game_markers.markers.push(marker);

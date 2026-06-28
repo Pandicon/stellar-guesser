@@ -1,7 +1,7 @@
 use crate::action::Action;
 use crate::enums::GameStage;
-use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
+use crate::game::{game_handler, questions};
 use crate::rendering::themes::Theme;
 use crate::sky::markers::game_markers;
 use angle::Deg;
@@ -103,6 +103,15 @@ pub struct Question {
     pub object_type: String,
     pub constellation_abbreviation: String,
     pub images: Vec<crate::structs::image_info::ImageInfo>,
+}
+
+impl Question {
+    pub fn activate(&self) -> ActiveQuestion {
+        ActiveQuestion {
+            data: self.clone(),
+            state: Default::default(),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -333,8 +342,8 @@ impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
     }
 }
 
-pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
-    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<questions::Question> {
+    let mut questions: Vec<questions::Question> = Vec::with_capacity(objects.len());
     for object in objects {
         let mut possible_names = Vec::new();
         if small_settings.accept_bayer {
@@ -386,27 +395,24 @@ pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settin
             }
         }
         if !possible_names.is_empty() {
-            questions.push(Box::new(ActiveQuestion {
-                data: Question {
-                    small_settings,
-                    possible_names,
-                    ra: object.ra,
-                    dec: object.dec,
-                    is_messier: object.messier_number.is_some(),
-                    is_caldwell: object.caldwell_number.is_some(),
-                    is_ngc: object.ngc_number.is_some(),
-                    is_ic: object.ic_number.is_some(),
-                    is_bayer: object.bayer_designation_full.is_some(),
-                    images: object.images.clone(),
-                    is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
-                    magnitude: object.mag,
-                    object_type: match &object.object_type {
-                        crate::game::ObjectType::Star(star_type) => star_type.display_name(),
-                        crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
-                    },
-                    constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
+            questions.push(questions::Question::WhatIsThisObject(Question {
+                small_settings,
+                possible_names,
+                ra: object.ra,
+                dec: object.dec,
+                is_messier: object.messier_number.is_some(),
+                is_caldwell: object.caldwell_number.is_some(),
+                is_ngc: object.ngc_number.is_some(),
+                is_ic: object.ic_number.is_some(),
+                is_bayer: object.bayer_designation_full.is_some(),
+                images: object.images.clone(),
+                is_starname: matches!(object.object_type, crate::game::ObjectType::Star(_)),
+                magnitude: object.mag,
+                object_type: match &object.object_type {
+                    crate::game::ObjectType::Star(star_type) => star_type.display_name(),
+                    crate::game::ObjectType::Deepsky(deepsky_type) => deepsky_type.display_name(),
                 },
-                state: Default::default(),
+                constellation_abbreviation: object.constellations_abbreviations.first().cloned().unwrap_or(String::from("Unknown")),
             }));
         }
     }

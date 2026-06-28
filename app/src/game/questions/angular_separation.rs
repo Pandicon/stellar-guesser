@@ -1,6 +1,7 @@
 use crate::action::Action;
 use crate::enums::GameStage;
 use crate::game::game_handler::{self, QuestionCheckingData, QuestionTrait, QuestionWindowData};
+use crate::game::questions;
 use crate::rendering::themes::Theme;
 use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
@@ -45,6 +46,15 @@ pub struct Question {
     pub point2: (angle::Deg<f32>, angle::Deg<f32>),
 
     pub small_settings: SmallSettings,
+}
+
+impl Question {
+    pub fn activate(&self) -> ActiveQuestion {
+        ActiveQuestion {
+            data: self.clone(),
+            state: Default::default(),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -216,19 +226,16 @@ impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
     }
 }
 
-pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
-    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len() / 2);
+pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<questions::Question> {
+    let mut questions: Vec<questions::Question> = Vec::with_capacity(objects.len() / 2);
     for i in (0..objects.len()).step_by(2) {
         if i + 1 >= objects.len() {
             break;
         }
-        questions.push(Box::new(ActiveQuestion {
-            data: Question {
-                point1: (objects[i].ra, objects[i].dec),
-                point2: (objects[i + 1].ra, objects[i + 1].dec),
-                small_settings,
-            },
-            state: Default::default(),
+        questions.push(questions::Question::AngularSeparation(Question {
+            point1: (objects[i].ra, objects[i].dec),
+            point2: (objects[i + 1].ra, objects[i + 1].dec),
+            small_settings,
         }));
     }
     questions

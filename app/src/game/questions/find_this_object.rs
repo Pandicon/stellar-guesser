@@ -1,7 +1,7 @@
 use crate::action::Action;
 use crate::enums::{GameStage, RendererCategory};
-use crate::game::game_handler;
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
+use crate::game::{game_handler, questions};
 use crate::rendering::themes::Theme;
 use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
@@ -106,6 +106,15 @@ pub struct Question {
     pub images: Vec<crate::structs::image_info::ImageInfo>,
 
     pub small_settings: SmallSettings,
+}
+
+impl Question {
+    pub fn activate(&self) -> ActiveQuestion {
+        ActiveQuestion {
+            data: self.clone(),
+            state: Default::default(),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -307,8 +316,8 @@ impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
     }
 }
 
-pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
-    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<questions::Question> {
+    let mut questions: Vec<questions::Question> = Vec::with_capacity(objects.len());
     for object in objects {
         let question = Question {
             small_settings,
@@ -333,63 +342,63 @@ pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settin
             if let Some(name_full) = &object.bayer_designation_full {
                 let mut q_2 = question.clone();
                 q_2.name = name_full.clone();
-                questions.push(Box::new(ActiveQuestion { data: q_2, state: Default::default() }));
+                questions.push(questions::Question::FindThisObject(q_2));
             }
         }
         if small_settings.ask_flamsteed {
             if let Some(name_full) = &object.flamsteed_designation_full {
                 let mut q_2 = question.clone();
                 q_2.name = name_full.clone();
-                questions.push(Box::new(ActiveQuestion { data: q_2, state: Default::default() }));
+                questions.push(questions::Question::FindThisObject(q_2));
             }
         }
         if small_settings.ask_messier {
             if let Some(name) = object.messier_number {
                 let mut q_2 = question.clone();
                 q_2.name = format!("M{name}");
-                questions.push(Box::new(ActiveQuestion { data: q_2, state: Default::default() }));
+                questions.push(questions::Question::FindThisObject(q_2));
             }
         }
         if small_settings.ask_caldwell {
             if let Some(name) = object.caldwell_number {
                 let mut q_2 = question.clone();
                 q_2.name = format!("C{name}");
-                questions.push(Box::new(ActiveQuestion { data: q_2, state: Default::default() }));
+                questions.push(questions::Question::FindThisObject(q_2));
             }
         }
         if small_settings.ask_ic {
             if let Some(name) = object.ic_number {
                 let mut q_2 = question.clone();
                 q_2.name = format!("IC{name}");
-                questions.push(Box::new(ActiveQuestion { data: q_2, state: Default::default() }));
+                questions.push(questions::Question::FindThisObject(q_2));
             }
         }
         if small_settings.ask_ngc {
             if let Some(name) = object.ngc_number {
                 let mut q_2 = question.clone();
                 q_2.name = format!("NGC{name}");
-                questions.push(Box::new(ActiveQuestion { data: q_2, state: Default::default() }));
+                questions.push(questions::Question::FindThisObject(q_2));
             }
         }
         if small_settings.ask_hd {
             if let Some(name) = object.hd_number {
                 let mut q_2 = question.clone();
                 q_2.name = format!("HD{name}");
-                questions.push(Box::new(ActiveQuestion { data: q_2, state: Default::default() }));
+                questions.push(questions::Question::FindThisObject(q_2));
             }
         }
         if small_settings.ask_hip {
             if let Some(name) = object.hipparcos_number {
                 let mut q_2 = question.clone();
                 q_2.name = format!("HIP{name}");
-                questions.push(Box::new(ActiveQuestion { data: q_2, state: Default::default() }));
+                questions.push(questions::Question::FindThisObject(q_2));
             }
         }
         if small_settings.ask_proper {
             for name_full in &object.proper_names_full {
                 let mut q_2 = question.clone();
                 q_2.name = name_full.clone();
-                questions.push(Box::new(ActiveQuestion { data: q_2, state: Default::default() }));
+                questions.push(questions::Question::FindThisObject(q_2));
             }
         }
     }

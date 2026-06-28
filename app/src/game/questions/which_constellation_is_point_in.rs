@@ -1,7 +1,7 @@
 use crate::action::Action;
 use crate::enums::GameStage;
-use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
+use crate::game::{game_handler, questions};
 use crate::rendering::themes::Theme;
 use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
@@ -44,6 +44,15 @@ pub struct Question {
     pub dec: angle::Deg<f32>,
 
     pub small_settings: SmallSettings,
+}
+
+impl Question {
+    pub fn activate(&self) -> ActiveQuestion {
+        ActiveQuestion {
+            data: self.clone(),
+            state: Default::default(),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -208,16 +217,13 @@ impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
     }
 }
 
-pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
-    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<questions::Question> {
+    let mut questions: Vec<questions::Question> = Vec::with_capacity(objects.len());
     for object in objects {
-        questions.push(Box::new(ActiveQuestion {
-            data: Question {
-                ra: object.ra,
-                dec: object.dec,
-                small_settings,
-            },
-            state: Default::default(),
+        questions.push(questions::Question::WhichConstellationIsThisPointIn(Question {
+            ra: object.ra,
+            dec: object.dec,
+            small_settings,
         }));
     }
     questions

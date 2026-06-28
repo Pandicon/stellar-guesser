@@ -69,7 +69,12 @@ impl Application {
                     questions_settings: &self.game_handler.questions_settings,
                     question_number: &mut self.game_handler.question_number
                 };
-                self.game_handler.question_catalog[self.game_handler.current_question].render_window(data, &mut self.actions)
+                match &mut self.game_handler.active_question {
+                    None => {
+                        None
+                    }
+                    Some(active_question) => active_question.render_window(data, &mut self.actions)
+                }
             }
         }
     }

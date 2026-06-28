@@ -1,7 +1,7 @@
 use crate::action::Action;
 use crate::enums::{GameStage, RendererCategory};
-use crate::game::game_handler;
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
+use crate::game::{game_handler, questions};
 use crate::rendering::themes::Theme;
 use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
@@ -87,6 +87,15 @@ pub struct Question {
     pub constellation_abbreviation: String,
     pub images: Vec<crate::structs::image_info::ImageInfo>,
     pub object_id: u64,
+}
+
+impl Question {
+    pub fn activate(&self) -> ActiveQuestion {
+        ActiveQuestion {
+            data: self.clone(),
+            state: Default::default(),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -291,8 +300,8 @@ impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
     }
 }
 
-pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
-    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<questions::Question> {
+    let mut questions: Vec<questions::Question> = Vec::with_capacity(objects.len());
     for object in objects {
         let mut possible_names = Vec::new();
         if let Some(designation) = &object.bayer_designation_raw {
@@ -345,10 +354,7 @@ pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settin
             images: object.images.clone(),
             object_id: object.object_id,
         };
-        questions.push(Box::new(ActiveQuestion {
-            data: question,
-            state: Default::default(),
-        }));
+        questions.push(questions::Question::MarkMissingObject(question));
     }
     questions
 }

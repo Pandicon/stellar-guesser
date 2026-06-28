@@ -1,7 +1,7 @@
 use crate::action::Action;
 use crate::enums::GameStage;
-use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
+use crate::game::{game_handler, questions};
 use crate::rendering::themes::Theme;
 use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
@@ -44,6 +44,15 @@ pub struct RaQuestion {
     pub ra: angle::Deg<f32>,
 
     pub small_settings: SmallSettings,
+}
+
+impl RaQuestion {
+    pub fn activate(&self) -> ActiveRaQuestion {
+        ActiveRaQuestion {
+            data: self.clone(),
+            state: Default::default(),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -212,16 +221,13 @@ impl crate::game::game_handler::QuestionTrait for ActiveRaQuestion {
     }
 }
 
-pub fn generate_ra_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
-    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+pub fn generate_ra_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<questions::Question> {
+    let mut questions: Vec<questions::Question> = Vec::with_capacity(objects.len());
     for object in objects {
-        questions.push(Box::new(ActiveRaQuestion {
-            data: RaQuestion {
-                ra: object.ra,
-                dec: object.dec,
-                small_settings,
-            },
-            state: Default::default(),
+        questions.push(questions::Question::GuessRa(RaQuestion {
+            ra: object.ra,
+            dec: object.dec,
+            small_settings,
         }));
     }
     questions
@@ -233,6 +239,15 @@ pub struct DecQuestion {
     pub ra: angle::Deg<f32>,
 
     pub small_settings: SmallSettings,
+}
+
+impl DecQuestion {
+    pub fn activate(&self) -> ActiveDecQuestion {
+        ActiveDecQuestion {
+            data: self.clone(),
+            state: Default::default(),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -401,16 +416,13 @@ impl crate::game::game_handler::QuestionTrait for ActiveDecQuestion {
     }
 }
 
-pub fn generate_dec_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
-    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+pub fn generate_dec_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<questions::Question> {
+    let mut questions: Vec<questions::Question> = Vec::with_capacity(objects.len());
     for object in objects {
-        questions.push(Box::new(ActiveDecQuestion {
-            data: DecQuestion {
-                ra: object.ra,
-                dec: object.dec,
-                small_settings,
-            },
-            state: Default::default(),
+        questions.push(questions::Question::GuessDec(DecQuestion {
+            ra: object.ra,
+            dec: object.dec,
+            small_settings,
         }));
     }
     questions
