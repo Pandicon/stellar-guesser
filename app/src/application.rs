@@ -211,6 +211,7 @@ impl Application {
 
     fn handle_actions(&mut self) {
         let current_actions = std::mem::take(&mut self.actions);
+        let mut reinitialise_game_markers = false;
         for action in current_actions {
             match action {
                 Action::ScreenClicked(click_position) => {
@@ -256,7 +257,7 @@ impl Application {
                     self.cellestial_sphere.init_single_renderer_group(&self.sky, category, &name);
                 }
                 Action::SwitchToNextQuestion => {
-                    self.game_handler.next_question(&mut self.sky, &self.theme, &mut self.actions);
+                    self.game_handler.next_question(&self.theme, &mut self.actions);
                 }
                 Action::SwitchToNextPart => {
                     let data = game_handler::QuestionCheckingData {
@@ -274,7 +275,22 @@ impl Application {
                     };
                     self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(data, &mut self.actions);
                 }
+                Action::AddGameMarker(marker) => {
+                    self.sky.game_markers.markers.push(marker);
+                    reinitialise_game_markers = true;
+                }
+                Action::SetGameMarkers(markers) => {
+                    self.sky.game_markers.markers = markers;
+                    reinitialise_game_markers = true;
+                }
+                Action::RemoveGameMarkers => {
+                    self.sky.game_markers.markers = Vec::new();
+                    reinitialise_game_markers = true;
+                }
             }
+        }
+        if reinitialise_game_markers {
+            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, "game");
         }
     }
 }

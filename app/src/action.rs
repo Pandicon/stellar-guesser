@@ -1,7 +1,7 @@
 use eframe::emath;
 use nalgebra::Vector3;
 
-use crate::enums::RendererCategory;
+use crate::{enums::RendererCategory, sky::markers::game_markers};
 
 pub enum Action {
     /// The user clicked the screen on this position
@@ -26,6 +26,12 @@ pub enum Action {
     /// Signals that the current question should run the generic_to_next_part() function
     /// The question may then switch to its next part, or give up control
     SwitchToNextPart,
+    /// Adds a game marker
+    AddGameMarker(game_markers::GameMarker),
+    /// Sets the game markers to the provided list
+    SetGameMarkers(Vec<game_markers::GameMarker>),
+    /// Removes all game markers
+    RemoveGameMarkers,
 }
 
 pub struct ScreenDraggedData {

@@ -71,7 +71,7 @@ pub trait QuestionTrait {
 
     fn should_display_input(&self) -> bool;
 
-    fn start_question(&mut self, sky: &mut sky::Sky, theme: &Theme, actions: &mut Vec<Action>);
+    fn start_question(&mut self, theme: &Theme, actions: &mut Vec<Action>);
 
     fn render_display_question(&self, ui: &mut egui::Ui);
 
@@ -372,7 +372,7 @@ impl GameHandler {
         }
     }
 
-    pub fn next_question(&mut self, sky: &mut sky::Sky, theme: &Theme, actions: &mut Vec<Action>) {
+    pub fn next_question(&mut self, theme: &Theme, actions: &mut Vec<Action>) {
         self.answer = String::new();
         let mut possible_questions: Vec<usize> = Vec::new();
         for question in 0..self.question_catalog.len() {
@@ -394,7 +394,7 @@ impl GameHandler {
             );
 
             self.add_marker_on_click = self.question_catalog[self.current_question].add_marker_on_click();
-            self.question_catalog[self.current_question].start_question(sky, theme, actions);
+            self.question_catalog[self.current_question].start_question(theme, actions);
             self.request_input_focus = true;
             actions.push(Action::InitSingleRendererGroup(RendererCategory::Markers, String::from("game")));
             self.stage = GameStage::Guessing;

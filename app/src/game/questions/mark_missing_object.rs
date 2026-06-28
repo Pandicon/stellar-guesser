@@ -3,7 +3,6 @@ use crate::enums::{GameStage, RendererCategory};
 use crate::game::game_handler;
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::rendering::themes::Theme;
-use crate::sky;
 use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
 use eframe::egui;
@@ -139,7 +138,7 @@ impl Question {
 
     fn check_answer(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
         *data.add_marker_on_click = false;
-        let markers = &mut data.sky.game_markers.markers;
+        let markers = &data.sky.game_markers.markers;
         let mut correct = false;
         if !self.images.is_empty() {
             self.state.answer_image = Some(self.images[rand::thread_rng().gen_range(0..self.images.len())].clone());
@@ -177,7 +176,7 @@ impl Question {
             if self.is_bayer || self.is_starname { "circle" } else { "cross" },
             self.object_type
         );
-        markers.push(game_markers::GameMarker::new(
+        actions.push(Action::AddGameMarker(game_markers::GameMarker::new(
             game_markers::GameMarkerType::CorrectAnswer,
             self.ra,
             self.dec,
@@ -186,7 +185,7 @@ impl Question {
             self.is_bayer || self.is_starname,
             false,
             &data.theme.game_visuals.game_markers_colours,
-        ));
+        )));
         if !data.questions_settings.find_this_object.replay_incorrect || correct {
             data.used_questions.push(data.current_question);
         } else {
@@ -272,9 +271,9 @@ impl crate::game::game_handler::QuestionTrait for Question {
         false
     }
 
-    fn start_question(&mut self, sky: &mut sky::Sky, _theme: &Theme, actions: &mut Vec<Action>) {
+    fn start_question(&mut self, _theme: &Theme, actions: &mut Vec<Action>) {
         self.state = Default::default();
-        sky.game_markers.markers = Vec::new();
+        actions.push(Action::RemoveGameMarkers);
         actions.push(Action::DisableSingleRenderer(self.object_id));
     }
 

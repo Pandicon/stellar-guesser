@@ -3,7 +3,6 @@ use crate::enums::{GameStage, RendererCategory};
 use crate::game::game_handler;
 use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::rendering::themes::Theme;
-use crate::sky;
 use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
 use eframe::egui;
@@ -194,7 +193,7 @@ impl Question {
             if self.is_bayer || self.is_starname { "circle" } else { "cross" },
             self.object_type
         );
-        markers.push(game_markers::GameMarker::new(
+        actions.push(Action::AddGameMarker(game_markers::GameMarker::new(
             game_markers::GameMarkerType::CorrectAnswer,
             self.ra,
             self.dec,
@@ -203,7 +202,7 @@ impl Question {
             self.is_bayer || self.is_starname,
             false,
             &data.theme.game_visuals.game_markers_colours,
-        ));
+        )));
         if !data.questions_settings.find_this_object.replay_incorrect || correct {
             data.used_questions.push(data.current_question);
         } else {
@@ -237,7 +236,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             }
             GameStage::Checked => {
                 actions.push(Action::SwitchToNextQuestion);
-                data.sky.game_markers.markers = Vec::new();
+                actions.push(Action::RemoveGameMarkers);
             }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
@@ -288,9 +287,9 @@ impl crate::game::game_handler::QuestionTrait for Question {
         false
     }
 
-    fn start_question(&mut self, sky: &mut sky::Sky, _theme: &Theme, _actions: &mut Vec<Action>) {
+    fn start_question(&mut self, _theme: &Theme, actions: &mut Vec<Action>) {
         self.state = Default::default();
-        sky.game_markers.markers = Vec::new();
+        actions.push(Action::RemoveGameMarkers);
     }
 
     fn render_display_question(&self, ui: &mut egui::Ui) {

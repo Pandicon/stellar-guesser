@@ -3,7 +3,6 @@ use crate::enums::{GameStage, RendererCategory};
 use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::rendering::themes::Theme;
-use crate::sky;
 use crate::sky::markers::game_markers;
 use angle::Deg;
 use eframe::egui;
@@ -182,7 +181,7 @@ impl Question {
             self.possible_names.join(", "),
             self.object_type
         );
-        data.sky.game_markers.markers.push(game_markers::GameMarker::new(
+        actions.push(Action::AddGameMarker(game_markers::GameMarker::new(
             game_markers::GameMarkerType::CorrectAnswer,
             self.ra,
             self.dec,
@@ -191,7 +190,7 @@ impl Question {
             self.is_bayer || self.is_starname,
             false,
             &data.theme.game_visuals.game_markers_colours,
-        ));
+        )));
         if self.small_settings.rotate_to_answer {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             actions.push(Action::CameraLookAt(final_vector));
@@ -229,7 +228,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             GameStage::Checked => {
                 actions.push(Action::SwitchToNextQuestion);
                 actions.push(Action::EnableSingleRenderer(self.object_id));
-                data.sky.game_markers.markers = Vec::new();
+                actions.push(Action::RemoveGameMarkers);
             }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
@@ -281,8 +280,9 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, _sky: &mut sky::Sky, _theme: &Theme, actions: &mut Vec<Action>) {
+    fn start_question(&mut self, _theme: &Theme, actions: &mut Vec<Action>) {
         self.state = Default::default();
+        actions.push(Action::RemoveGameMarkers);
         actions.push(Action::DisableSingleRenderer(self.object_id));
     }
 

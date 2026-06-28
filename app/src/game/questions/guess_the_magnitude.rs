@@ -3,7 +3,6 @@ use crate::enums::GameStage;
 use crate::game::game_handler;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::rendering::themes::Theme;
-use crate::sky;
 use crate::sky::markers::game_markers;
 use angle::Deg;
 use eframe::egui;
@@ -185,9 +184,9 @@ impl crate::game::game_handler::QuestionTrait for Question {
         true
     }
 
-    fn start_question(&mut self, sky: &mut sky::Sky, theme: &Theme, actions: &mut Vec<Action>) {
+    fn start_question(&mut self, theme: &Theme, actions: &mut Vec<Action>) {
         self.state = Default::default();
-        sky.game_markers.markers = vec![game_markers::GameMarker::new(
+        actions.push(Action::SetGameMarkers(vec![game_markers::GameMarker::new(
             game_markers::GameMarkerType::Task,
             self.ra,
             self.dec,
@@ -196,7 +195,7 @@ impl crate::game::game_handler::QuestionTrait for Question {
             true,
             false,
             &theme.game_visuals.game_markers_colours,
-        )];
+        )]));
         if self.small_settings.rotate_to_point {
             let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
             actions.push(Action::CameraLookAt(final_vector));
