@@ -1,7 +1,7 @@
 use crate::action::Action;
 use crate::enums::GameStage;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::game::{game_handler, questions};
+use crate::game::questions;
 use crate::rendering::themes::Theme;
 use crate::sky::markers::game_markers;
 use angle::Deg;
@@ -164,19 +164,6 @@ impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
         }
     }
 
-    fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(Self {
-            data: Question {
-                ra: self.data.ra,
-                dec: self.data.dec,
-                mag: self.data.mag,
-
-                small_settings: self.data.small_settings,
-            },
-            state: State::default(),
-        })
-    }
-
     fn show_tolerance_marker(&self) -> bool {
         false
     }
@@ -221,10 +208,6 @@ impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
 
     fn render_display_question(&self, ui: &mut egui::Ui) {
         ui.heading("What is the magnitude of this object?");
-    }
-
-    fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(self.clone())
     }
 }
 

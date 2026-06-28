@@ -1,6 +1,6 @@
 use crate::action::Action;
 use crate::enums::GameStage;
-use crate::game::game_handler::{self, QuestionCheckingData, QuestionTrait, QuestionWindowData};
+use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
 use crate::game::questions;
 use crate::rendering::themes::Theme;
 use crate::sky::markers::game_markers;
@@ -164,17 +164,6 @@ impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
         }
     }
 
-    fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(Self {
-            data: Question {
-                point1: self.data.point1,
-                point2: self.data.point2,
-                small_settings: self.data.small_settings,
-            },
-            state: Default::default(),
-        })
-    }
-
     fn show_tolerance_marker(&self) -> bool {
         false
     }
@@ -219,10 +208,6 @@ impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
 
     fn render_display_question(&self, ui: &mut egui::Ui) {
         ui.heading("What is the angular distance between these markers?");
-    }
-
-    fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(self.clone())
     }
 }
 

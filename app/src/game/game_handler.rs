@@ -56,10 +56,6 @@ pub trait QuestionTrait {
     /// This function should handle cases where a generic action switches the question to the next part
     fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>);
 
-    // fn check_answer(&self, game_handler: &mut GameHandler, cellestial_sphere: &mut crate::renderer::CellestialSphere, theme: &Theme);
-
-    fn reset(self: Box<Self>) -> Box<dyn QuestionTrait>;
-
     fn show_tolerance_marker(&self) -> bool;
 
     fn show_circle_marker(&self) -> bool;
@@ -75,14 +71,6 @@ pub trait QuestionTrait {
     fn start_question(&mut self, theme: &Theme, actions: &mut Vec<Action>);
 
     fn render_display_question(&self, ui: &mut egui::Ui);
-
-    fn clone_box(&self) -> Box<dyn QuestionTrait>;
-}
-
-impl Clone for Box<dyn QuestionTrait> {
-    fn clone(&self) -> Box<dyn QuestionTrait> {
-        self.clone_box()
-    }
 }
 
 pub struct GameHandler {

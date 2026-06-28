@@ -1,7 +1,7 @@
 use crate::action::Action;
 use crate::enums::GameStage;
 use crate::game::game_handler::{QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::game::{game_handler, questions};
+use crate::game::questions;
 use crate::rendering::themes::Theme;
 use crate::sky::markers::game_markers;
 use angle::Deg;
@@ -226,28 +226,6 @@ impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
         }
     }
 
-    fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(Self {
-            data: Question {
-                small_settings: self.data.small_settings,
-                possible_names: self.data.possible_names,
-                ra: self.data.ra,
-                dec: self.data.dec,
-                is_messier: self.data.is_messier,
-                is_caldwell: self.data.is_caldwell,
-                is_ngc: self.data.is_ngc,
-                is_ic: self.data.is_ic,
-                is_bayer: self.data.is_bayer,
-                is_starname: self.data.is_starname,
-                magnitude: self.data.magnitude,
-                object_type: self.data.object_type,
-                constellation_abbreviation: self.data.constellation_abbreviation,
-                images: self.data.images,
-            },
-            state: State::default(),
-        })
-    }
-
     fn show_tolerance_marker(&self) -> bool {
         false
     }
@@ -335,10 +313,6 @@ impl crate::game::game_handler::QuestionTrait for ActiveQuestion {
         }
         ui.heading("What is this object?");
         ui.label(format!("Accepted names: {}", accepted.join(", ")));
-    }
-
-    fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(self.clone())
     }
 }
 
