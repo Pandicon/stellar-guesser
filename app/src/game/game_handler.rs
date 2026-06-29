@@ -10,7 +10,6 @@ use crate::{
     sky,
 };
 use angle::Angle;
-use eframe::egui;
 use rand::Rng;
 use std::collections::HashMap;
 
@@ -18,18 +17,6 @@ pub const QUESTION_PACKS_DIV: &str = "&||||&";
 pub const QUESTION_PACK_PARTS_DIV: &str = "&|||&";
 pub const QUESTION_PACK_QUESTIONS_DIV: &str = "&||&";
 pub const QUESTION_PACK_QUESTIONS_PARTS_DIV: &str = "&|&";
-
-pub struct QuestionWindowData<'a> {
-    pub sky: &'a sky::Sky,
-    pub theme: &'a Theme,
-    pub game_question_opened: &'a bool,
-    pub request_input_focus: &'a bool,
-    pub question_number_text: &'a String,
-    pub game_stage: &'a GameStage,
-    pub ctx: &'a eframe::egui::Context,
-    pub is_scored_mode: bool,
-    pub current_question: usize,
-}
 
 pub struct GameHandler {
     pub current_question: usize,
@@ -72,13 +59,6 @@ impl GameHandler {
 
     pub fn use_up_current_question(&mut self) {
         self.used_questions.push(self.current_question);
-    }
-
-    pub fn render_question_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
-        match &mut self.active_question {
-            None => None,
-            Some(active_question) => active_question.render_window(data, actions),
-        }
     }
 
     pub fn init(sky: &sky::Sky, question_objects: Vec<QuestionObject>, storage: Option<&dyn eframe::Storage>, first_launch: bool) -> Self {

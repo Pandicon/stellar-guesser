@@ -1,4 +1,4 @@
-use crate::game::game_handler::QuestionWindowData;
+use crate::game::questions;
 use crate::{enums::GameStage, Application};
 use eframe::egui;
 
@@ -51,22 +51,19 @@ impl Application {
                 ui.label(&self.game_handler.question_number_text);
             }),
             GameStage::Guessing | GameStage::Checked => {
-                let data = QuestionWindowData {
-                    sky: &self.sky,
-                    theme: &self.theme,
-                    game_question_opened: &self.state.windows.game_question.opened,
-                    request_input_focus: &self.game_handler.request_input_focus,
-                    question_number_text: &self.game_handler.question_number_text,
-                    game_stage: &self.game_handler.stage,
-                    ctx,
-                    is_scored_mode: self.game_handler.game_settings.is_scored_mode,
-                    current_question: self.game_handler.current_question
-                };
                 match &mut self.game_handler.active_question {
                     None => {
                         None
                     }
-                    Some(active_question) => active_question.render_window(data, &mut self.actions)
+                    Some(questions::ActiveQuestion::AngularSeparation(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::FindThisObject(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::GuessDec(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::GuessRa(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::GuessTheMagnitude(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::MarkMissingObject(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::WhatIsThisObject(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::WhichConstellationIsThisPointIn(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::WhichObjectIsMissing(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
                 }
             }
         }

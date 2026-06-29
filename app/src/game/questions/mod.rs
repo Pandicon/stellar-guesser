@@ -189,20 +189,6 @@ impl ActiveQuestion {
             ActiveQuestion::WhichObjectIsMissing(active_question) => active_question.start_question(theme, actions),
         }
     }
-
-    pub fn render_window(&mut self, data: crate::game::game_handler::QuestionWindowData, actions: &mut Vec<Action>) -> Option<eframe::egui::InnerResponse<Option<()>>> {
-        match self {
-            ActiveQuestion::AngularSeparation(active_question) => active_question.render_window(data, actions),
-            ActiveQuestion::FindThisObject(active_question) => active_question.render_window(data, actions),
-            ActiveQuestion::GuessDec(active_question) => active_question.render_window(data, actions),
-            ActiveQuestion::GuessRa(active_question) => active_question.render_window(data, actions),
-            ActiveQuestion::GuessTheMagnitude(active_question) => active_question.render_window(data, actions),
-            ActiveQuestion::MarkMissingObject(active_question) => active_question.render_window(data, actions),
-            ActiveQuestion::WhatIsThisObject(active_question) => active_question.render_window(data, actions),
-            ActiveQuestion::WhichConstellationIsThisPointIn(active_question) => active_question.render_window(data, actions),
-            ActiveQuestion::WhichObjectIsMissing(active_question) => active_question.render_window(data, actions),
-        }
-    }
 }
 
 pub fn question_pack_to_string(name: &str, question_pack: &crate::game::questions_filter::QuestionPack) -> String {

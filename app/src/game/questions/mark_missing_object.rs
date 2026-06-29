@@ -1,6 +1,6 @@
 use crate::action::Action;
 use crate::enums::{GameStage, RendererCategory};
-use crate::game::game_handler::{GameHandler, QuestionWindowData};
+use crate::game::game_handler::GameHandler;
 use crate::game::questions;
 use crate::rendering::themes::Theme;
 use crate::sky::markers::{self, game_markers};
@@ -105,24 +105,24 @@ pub struct ActiveQuestion {
 }
 
 impl ActiveQuestion {
-    fn render_question_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
-        let mut is_window_open = *data.game_question_opened;
-        let response = egui::Window::new("Question").open(&mut is_window_open).show(data.ctx, |ui| {
+    fn render_question_window(&mut self, ctx: &eframe::egui::Context, game_question_opened: bool, question_number_text: &str, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
+        let mut is_window_open = game_question_opened;
+        let response = egui::Window::new("Question").open(&mut is_window_open).show(ctx, |ui| {
             self.render_display_question(ui);
             if ui.button("Check").clicked() {
                 actions.push(Action::CheckAnswer);
             }
-            ui.label(data.question_number_text);
+            ui.label(question_number_text);
         });
-        if is_window_open != *data.game_question_opened {
+        if is_window_open != game_question_opened {
             actions.push(Action::ToggleQuestionWindow(is_window_open));
         }
         response
     }
 
-    fn render_answer_review_window(&self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
-        let mut is_window_open = *data.game_question_opened;
-        let response = egui::Window::new("Question").open(&mut is_window_open).show(data.ctx, |ui| {
+    fn render_answer_review_window(&self, ctx: &eframe::egui::Context, game_question_opened: bool, question_number_text: &str, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
+        let mut is_window_open = game_question_opened;
+        let response = egui::Window::new("Question").open(&mut is_window_open).show(ctx, |ui| {
             if !self.state.answer_review_text_heading.is_empty() {
                 ui.heading(&self.state.answer_review_text_heading);
             }
@@ -136,9 +136,9 @@ impl ActiveQuestion {
             if ui.button("Next").clicked() {
                 actions.push(Action::SwitchToNextPart);
             }
-            ui.label(data.question_number_text);
+            ui.label(question_number_text);
         });
-        if is_window_open != *data.game_question_opened {
+        if is_window_open != game_question_opened {
             actions.push(Action::ToggleQuestionWindow(is_window_open));
         }
         response
@@ -210,11 +210,18 @@ impl ActiveQuestion {
 }
 
 impl ActiveQuestion {
-    pub fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
-        if *data.game_stage == GameStage::Guessing {
-            self.render_question_window(data, actions)
-        } else if *data.game_stage == GameStage::Checked {
-            self.render_answer_review_window(data, actions)
+    pub fn render_window(
+        &mut self,
+        ctx: &eframe::egui::Context,
+        game_stage: GameStage,
+        game_question_opened: bool,
+        question_number_text: &str,
+        actions: &mut Vec<Action>,
+    ) -> Option<egui::InnerResponse<Option<()>>> {
+        if game_stage == GameStage::Guessing {
+            self.render_question_window(ctx, game_question_opened, question_number_text, actions)
+        } else if game_stage == GameStage::Checked {
+            self.render_answer_review_window(ctx, game_question_opened, question_number_text, actions)
         } else {
             None
         }
