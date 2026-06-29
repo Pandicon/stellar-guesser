@@ -1,9 +1,9 @@
 use crate::action::Action;
 use crate::enums::{GameStage, RendererCategory};
-use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionWindowData};
+use crate::game::game_handler::{GameHandler, QuestionWindowData};
 use crate::game::questions;
 use crate::rendering::themes::Theme;
-use crate::sky::markers::game_markers;
+use crate::sky::markers::{self, game_markers};
 use angle::{Angle, Deg};
 use eframe::egui;
 use rand::Rng;
@@ -238,10 +238,10 @@ impl ActiveQuestion {
         }
     }
 
-    pub fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
-        match data.game_stage {
+    pub fn generic_to_next_part(&mut self, is_scored_mode: bool, question_id: usize, game_stage: &GameStage, markers: &[markers::game_markers::GameMarker], theme: &Theme, actions: &mut Vec<Action>) {
+        match game_stage {
             GameStage::Guessing => {
-                self.check_answer(data.is_scored_mode, data.current_question, &data.sky.game_markers.markers, data.theme, actions);
+                self.check_answer(is_scored_mode, question_id, markers, theme, actions);
             }
             GameStage::Checked => {
                 actions.push(Action::SwitchToNextQuestion);

@@ -1,6 +1,6 @@
 use crate::action::Action;
 use crate::enums::GameStage;
-use crate::game::game_handler::{QuestionCheckingData, QuestionWindowData};
+use crate::game::game_handler::QuestionWindowData;
 use crate::game::questions;
 use crate::rendering::themes::Theme;
 use crate::sky::markers::game_markers;
@@ -147,10 +147,10 @@ impl ActiveQuestion {
         }
     }
 
-    pub fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
-        match data.game_stage {
+    pub fn generic_to_next_part(&mut self, is_scored_mode: bool, question_id: usize, game_stage: &GameStage, actions: &mut Vec<Action>) {
+        match game_stage {
             GameStage::Guessing => {
-                self.check_answer(data.is_scored_mode, data.current_question, actions);
+                self.check_answer(is_scored_mode, question_id, actions);
             }
             GameStage::Checked => {
                 actions.push(Action::SwitchToNextQuestion);

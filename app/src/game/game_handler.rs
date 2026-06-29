@@ -31,14 +31,6 @@ pub struct QuestionWindowData<'a> {
     pub current_question: usize,
 }
 
-pub struct QuestionCheckingData<'a> {
-    pub sky: &'a sky::Sky,
-    pub theme: &'a Theme,
-    pub game_stage: &'a GameStage,
-    pub is_scored_mode: bool,
-    pub current_question: usize,
-}
-
 pub struct GameHandler {
     pub current_question: usize,
     pub active_question: Option<ActiveQuestion>,

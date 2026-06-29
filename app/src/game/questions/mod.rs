@@ -203,20 +203,6 @@ impl ActiveQuestion {
             ActiveQuestion::WhichObjectIsMissing(active_question) => active_question.render_window(data, actions),
         }
     }
-
-    pub fn generic_to_next_part(&mut self, data: crate::game::game_handler::QuestionCheckingData, actions: &mut Vec<Action>) {
-        match self {
-            ActiveQuestion::AngularSeparation(active_question) => active_question.generic_to_next_part(data, actions),
-            ActiveQuestion::FindThisObject(active_question) => active_question.generic_to_next_part(data, actions),
-            ActiveQuestion::GuessDec(active_question) => active_question.generic_to_next_part(data, actions),
-            ActiveQuestion::GuessRa(active_question) => active_question.generic_to_next_part(data, actions),
-            ActiveQuestion::GuessTheMagnitude(active_question) => active_question.generic_to_next_part(data, actions),
-            ActiveQuestion::MarkMissingObject(active_question) => active_question.generic_to_next_part(data, actions),
-            ActiveQuestion::WhatIsThisObject(active_question) => active_question.generic_to_next_part(data, actions),
-            ActiveQuestion::WhichConstellationIsThisPointIn(active_question) => active_question.generic_to_next_part(data, actions),
-            ActiveQuestion::WhichObjectIsMissing(active_question) => active_question.generic_to_next_part(data, actions),
-        }
-    }
 }
 
 pub fn question_pack_to_string(name: &str, question_pack: &crate::game::questions_filter::QuestionPack) -> String {

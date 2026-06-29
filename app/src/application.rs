@@ -2,6 +2,7 @@ use angle::Angle;
 use eframe::egui;
 
 use crate::enums::{RendererCategory, ScreenWidth};
+use crate::game::questions;
 use crate::rendering::caspr::sky_settings;
 use crate::rendering::initial_setup;
 use crate::rendering::themes::{self, Theme, ThemesHandler};
@@ -268,19 +269,58 @@ impl Application {
                 Action::SwitchToNextQuestion => {
                     self.game_handler.next_question(&self.theme, &mut self.actions);
                 }
-                Action::SwitchToNextPart => {
-                    let data = game_handler::QuestionCheckingData {
-                        sky: &self.sky,
-                        theme: &self.theme,
-                        game_stage: &self.game_handler.stage,
-                        is_scored_mode: self.game_handler.game_settings.is_scored_mode,
-                        current_question: self.game_handler.current_question,
-                    };
-                    match &mut self.game_handler.active_question {
-                        None => {}
-                        Some(active_question) => active_question.generic_to_next_part(data, &mut self.actions),
+                Action::SwitchToNextPart => match &mut self.game_handler.active_question {
+                    None => {}
+                    Some(questions::ActiveQuestion::AngularSeparation(active_question)) => active_question.generic_to_next_part(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.game_handler.stage,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::FindThisObject(active_question)) => active_question.generic_to_next_part(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.game_handler.stage,
+                        &self.sky.game_markers.markers,
+                        &self.theme,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::GuessDec(active_question)) => active_question.generic_to_next_part(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.game_handler.stage,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::GuessRa(active_question)) => active_question.generic_to_next_part(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.game_handler.stage,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::GuessTheMagnitude(active_question)) => active_question.generic_to_next_part(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.game_handler.stage,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::MarkMissingObject(active_question)) => active_question.generic_to_next_part(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.game_handler.stage,
+                        &self.sky.game_markers.markers,
+                        &self.theme,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::WhatIsThisObject(active_question)) => {
+                        active_question.generic_to_next_part(self.game_handler.current_question, &self.game_handler.stage, &mut self.actions)
                     }
-                }
+                    Some(questions::ActiveQuestion::WhichConstellationIsThisPointIn(active_question)) => {
+                        active_question.generic_to_next_part(self.game_handler.current_question, &self.game_handler.stage, &self.sky, &mut self.actions)
+                    }
+                    Some(questions::ActiveQuestion::WhichObjectIsMissing(active_question)) => {
+                        active_question.generic_to_next_part(self.game_handler.current_question, &self.game_handler.stage, &self.theme, &mut self.actions)
+                    }
+                },
                 Action::AddGameMarker(marker) => {
                     self.sky.game_markers.markers.push(marker);
                     reinitialise_game_markers = true;
