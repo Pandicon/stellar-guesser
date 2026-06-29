@@ -1,6 +1,8 @@
+use angle::Angle;
 use eframe::egui;
 
-use crate::enums::ScreenWidth;
+use crate::enums::{RendererCategory, ScreenWidth};
+use crate::game::questions;
 use crate::rendering::caspr::sky_settings;
 use crate::rendering::initial_setup;
 use crate::rendering::themes::{self, Theme, ThemesHandler};
@@ -22,9 +24,13 @@ use crate::{
     },
 };
 
+use crate::action::{Action, ScreenDraggedData};
+
 pub struct Application {
     pub input: input::Input,
     pub state: state::State,
+
+    pub actions: Vec<Action>,
 
     pub cellestial_sphere: CellestialSphere,
     pub sky: sky::Sky,
@@ -160,6 +166,8 @@ impl Application {
             input,
             state,
 
+            actions: Vec::new(),
+
             game_handler,
             cellestial_sphere,
             sky,
@@ -201,6 +209,197 @@ impl Application {
         }
         app
     }
+
+    fn handle_actions(&mut self) {
+        let current_actions = std::mem::take(&mut self.actions);
+        let mut reinitialise_game_markers = false;
+        for action in current_actions {
+            match action {
+                Action::ScreenClicked(click_position) => {
+                    if self.game_handler.add_marker_on_click {
+                        let marker_pos = self.cellestial_sphere.camera.get_projection().cast_onto_sphere_dec_ra(
+                            self.cellestial_sphere.camera.get_viewport_rect(),
+                            &click_position,
+                            *self.cellestial_sphere.camera.get_rotation(),
+                            self.cellestial_sphere.camera.get_fov().to_rad(),
+                        );
+                        if self.game_handler.allow_multiple_player_marker() {
+                            self.game_handler.guess_marker_positions.push(marker_pos);
+                        } else {
+                            self.game_handler.guess_marker_positions = vec![marker_pos];
+                        }
+                        let new_markers = self.game_handler.generate_player_markers(&self.game_handler.guess_marker_positions, &self.theme);
+                        self.sky.game_markers.markers = new_markers;
+                        self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, "game");
+                    }
+                }
+                Action::ScreenDragged(ScreenDraggedData { from, to }) => {
+                    let initial_vector = self.cellestial_sphere.project_screen_pos(from);
+                    let final_vector = self.cellestial_sphere.project_screen_pos(to);
+
+                    if initial_vector != final_vector {
+                        // Some rotation this frame
+                        self.cellestial_sphere.rotate_between_points(&initial_vector, &final_vector);
+                    }
+                }
+                Action::CameraLookAt(point) => {
+                    self.cellestial_sphere.look_at_point(&point);
+                }
+                Action::CameraZoom(zoom_velocity) => {
+                    self.cellestial_sphere.zoom(zoom_velocity);
+                }
+                Action::DisableSingleRenderer(object_id) => {
+                    self.cellestial_sphere.disable_single_renderer(object_id);
+                }
+                Action::EnableSingleRenderer(object_id) => {
+                    self.cellestial_sphere.enable_single_renderer(object_id);
+                }
+                Action::InitSingleRendererGroup(category, name) => {
+                    self.cellestial_sphere.init_single_renderer_group(&self.sky, category, &name);
+                }
+                Action::SetAddMarkerOnClick(enable) => {
+                    self.game_handler.add_marker_on_click = enable;
+                }
+                Action::SetRequestInputFocus(enable) => {
+                    self.game_handler.request_input_focus = enable;
+                }
+                Action::ToggleQuestionWindow(opened) => {
+                    self.state.windows.game_question.opened = opened;
+                }
+                Action::SwitchToNextQuestion => {
+                    self.game_handler.next_question(&self.theme, &mut self.actions);
+                }
+                Action::SwitchToNextPart => match &mut self.game_handler.active_question {
+                    None => {}
+                    Some(questions::ActiveQuestion::AngularSeparation(active_question)) => active_question.generic_to_next_part(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.game_handler.stage,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::FindThisObject(active_question)) => active_question.generic_to_next_part(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.game_handler.stage,
+                        &self.sky.game_markers.markers,
+                        &self.theme,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::GuessDec(active_question)) => active_question.generic_to_next_part(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.game_handler.stage,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::GuessRa(active_question)) => active_question.generic_to_next_part(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.game_handler.stage,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::GuessTheMagnitude(active_question)) => active_question.generic_to_next_part(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.game_handler.stage,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::MarkMissingObject(active_question)) => active_question.generic_to_next_part(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.game_handler.stage,
+                        &self.sky.game_markers.markers,
+                        &self.theme,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::WhatIsThisObject(active_question)) => {
+                        active_question.generic_to_next_part(self.game_handler.current_question, &self.game_handler.stage, &mut self.actions)
+                    }
+                    Some(questions::ActiveQuestion::WhichConstellationIsThisPointIn(active_question)) => {
+                        active_question.generic_to_next_part(self.game_handler.current_question, &self.game_handler.stage, &self.sky, &mut self.actions)
+                    }
+                    Some(questions::ActiveQuestion::WhichObjectIsMissing(active_question)) => {
+                        active_question.generic_to_next_part(self.game_handler.current_question, &self.game_handler.stage, &self.theme, &mut self.actions)
+                    }
+                },
+                Action::CheckAnswer => match &mut self.game_handler.active_question {
+                    None => {}
+                    Some(questions::ActiveQuestion::AngularSeparation(active_question)) => {
+                        active_question.check_answer(self.game_handler.game_settings.is_scored_mode, self.game_handler.current_question, &mut self.actions);
+                    }
+                    Some(questions::ActiveQuestion::FindThisObject(active_question)) => active_question.check_answer(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.sky.game_markers.markers,
+                        &self.theme,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::GuessDec(active_question)) => {
+                        active_question.check_answer(self.game_handler.game_settings.is_scored_mode, self.game_handler.current_question, &mut self.actions);
+                    }
+                    Some(questions::ActiveQuestion::GuessRa(active_question)) => {
+                        active_question.check_answer(self.game_handler.game_settings.is_scored_mode, self.game_handler.current_question, &mut self.actions);
+                    }
+                    Some(questions::ActiveQuestion::GuessTheMagnitude(active_question)) => {
+                        active_question.check_answer(self.game_handler.game_settings.is_scored_mode, self.game_handler.current_question, &mut self.actions);
+                    }
+                    Some(questions::ActiveQuestion::MarkMissingObject(active_question)) => {
+                        active_question.check_answer(
+                            self.game_handler.game_settings.is_scored_mode,
+                            self.game_handler.current_question,
+                            &self.sky.game_markers.markers,
+                            &self.theme,
+                            &mut self.actions,
+                        );
+                    }
+                    Some(questions::ActiveQuestion::WhatIsThisObject(active_question)) => {
+                        active_question.check_answer(self.game_handler.current_question, &mut self.actions);
+                    }
+                    Some(questions::ActiveQuestion::WhichConstellationIsThisPointIn(active_question)) => {
+                        active_question.check_answer(self.game_handler.current_question, &self.sky, &mut self.actions);
+                    }
+                    Some(questions::ActiveQuestion::WhichObjectIsMissing(active_question)) => {
+                        active_question.check_answer(self.game_handler.current_question, &self.theme, &mut self.actions);
+                    }
+                },
+                Action::AddGameMarker(marker) => {
+                    self.sky.game_markers.markers.push(marker);
+                    reinitialise_game_markers = true;
+                }
+                Action::SetGameMarkers(markers) => {
+                    self.sky.game_markers.markers = markers;
+                    reinitialise_game_markers = true;
+                }
+                Action::RemoveGameMarkers => {
+                    self.sky.game_markers.markers = Vec::new();
+                    reinitialise_game_markers = true;
+                }
+                Action::SetScore(score) => {
+                    self.game_handler.score = score;
+                }
+                Action::SetPossibleScore(score) => {
+                    self.game_handler.possible_score = score;
+                }
+                Action::ChangeScore(score_delta) => {
+                    self.game_handler.score += score_delta;
+                }
+                Action::ChangePossibleScore(score_delta) => {
+                    self.game_handler.possible_score += score_delta;
+                }
+                Action::SetGameStage(game_stage) => {
+                    self.game_handler.stage = game_stage;
+                }
+                Action::MarkQuestionAsUsed(question_id) => {
+                    self.game_handler.used_questions.push(question_id);
+                }
+                Action::IncrementRepeatedQuestionCounter => {
+                    self.game_handler.question_number += 1;
+                }
+            }
+        }
+        if reinitialise_game_markers {
+            self.cellestial_sphere.init_single_renderer_group(&self.sky, RendererCategory::Markers, "game");
+        }
+    }
 }
 
 impl eframe::App for Application {
@@ -218,30 +417,8 @@ impl eframe::App for Application {
         self.handle_input(cursor_within_central_panel, ctx);
         self.receive_threads_messages();
         self.toasts.show(ctx);
-        if self.game_handler.switch_to_next_part {
-            let data = game_handler::QuestionCheckingData {
-                cellestial_sphere: &mut self.cellestial_sphere,
-                sky: &mut self.sky,
-                theme: &self.theme,
-                game_stage: &mut self.game_handler.stage,
-                score: &mut self.game_handler.score,
-                possible_score: &mut self.game_handler.possible_score,
-                is_scored_mode: self.game_handler.game_settings.is_scored_mode,
-                current_question: self.game_handler.current_question,
-                used_questions: &mut self.game_handler.used_questions,
-                add_marker_on_click: &mut self.game_handler.add_marker_on_click,
-                questions_settings: &self.game_handler.questions_settings,
-                question_number: &mut self.game_handler.question_number,
-                start_next_question: &mut self.game_handler.switch_to_next_question,
-                switch_to_next_part: &mut self.game_handler.switch_to_next_part,
-            };
-            self.game_handler.question_catalog[self.game_handler.current_question].generic_to_next_part(data);
-            self.game_handler.switch_to_next_part = false;
-        }
-        if self.game_handler.switch_to_next_question {
-            self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme);
-            self.game_handler.switch_to_next_question = false;
-        }
+
+        self.handle_actions();
 
         let input_field_has_focus = ctx.wants_keyboard_input();
         if self.input.settings.display_onscreen_keyboard {

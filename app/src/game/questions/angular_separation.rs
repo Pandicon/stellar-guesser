@@ -1,8 +1,7 @@
+use crate::action::Action;
 use crate::enums::GameStage;
-use crate::game::game_handler::{self, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::rendering::caspr::renderer::CellestialSphere;
+use crate::game::questions;
 use crate::rendering::themes::Theme;
-use crate::sky;
 use crate::sky::markers::game_markers;
 use angle::{Angle, Deg};
 use eframe::egui;
@@ -45,59 +44,75 @@ pub struct Question {
     /// (ra, dec)
     pub point2: (angle::Deg<f32>, angle::Deg<f32>),
 
-    pub state: State,
     pub small_settings: SmallSettings,
 }
 
 impl Question {
-    fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
-        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+    pub fn activate(&self) -> ActiveQuestion {
+        ActiveQuestion {
+            data: self.clone(),
+            state: Default::default(),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct ActiveQuestion {
+    pub data: Question,
+    pub state: State,
+}
+
+impl ActiveQuestion {
+    fn render_question_window(
+        &mut self,
+        ctx: &eframe::egui::Context,
+        game_question_opened: bool,
+        request_input_focus: bool,
+        question_number_text: &str,
+        actions: &mut Vec<Action>,
+    ) -> Option<egui::InnerResponse<Option<()>>> {
+        let mut is_window_open = game_question_opened;
+        let response = egui::Window::new("Question").open(&mut is_window_open).show(ctx, |ui| {
             self.render_display_question(ui);
             if self.should_display_input() {
                 let text_input_response = ui.text_edit_singleline(&mut self.state.answer);
-                if *data.request_input_focus {
+                if request_input_focus {
                     text_input_response.request_focus();
-                    *data.request_input_focus = false;
+                    actions.push(Action::SetRequestInputFocus(false));
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(QuestionCheckingData {
-                    cellestial_sphere: data.cellestial_sphere,
-                    sky: data.sky,
-                    theme: data.theme,
-                    game_stage: data.game_stage,
-                    score: data.score,
-                    possible_score: data.possible_score,
-                    is_scored_mode: data.is_scored_mode,
-                    current_question: data.current_question,
-                    used_questions: data.used_questions,
-                    add_marker_on_click: data.add_marker_on_click,
-                    questions_settings: data.questions_settings,
-                    question_number: data.question_number,
-                    start_next_question: data.start_next_question,
-                    switch_to_next_part: data.switch_to_next_part,
-                });
+                actions.push(Action::CheckAnswer);
             }
-            ui.label(data.question_number_text);
-        })
+            ui.label(question_number_text);
+        });
+        if is_window_open != game_question_opened {
+            actions.push(Action::ToggleQuestionWindow(is_window_open));
+        }
+        response
     }
 
-    fn render_answer_review_window(&self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
-        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+    fn render_answer_review_window(&self, ctx: &eframe::egui::Context, game_question_opened: bool, question_number_text: &str, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
+        let mut is_window_open = game_question_opened;
+        let response = egui::Window::new("Question").open(&mut is_window_open).show(ctx, |ui| {
             if !self.state.answer_review_text_heading.is_empty() {
                 ui.heading(&self.state.answer_review_text_heading);
             }
             ui.label(&self.state.answer_review_text);
             if ui.button("Next").clicked() {
-                *data.switch_to_next_part = true;
+                actions.push(Action::SwitchToNextPart);
             }
-            ui.label(data.question_number_text);
-        })
+            ui.label(question_number_text);
+        });
+        if is_window_open != game_question_opened {
+            actions.push(Action::ToggleQuestionWindow(is_window_open));
+        }
+        response
     }
 
-    fn check_answer(&mut self, data: QuestionCheckingData) {
-        let (ra1, dec1) = self.point1;
-        let (ra2, dec2) = self.point2;
+    pub fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, actions: &mut Vec<Action>) {
+        let (ra1, dec1) = self.data.point1;
+        let (ra2, dec2) = self.data.point2;
         let distance = sg_geometry::angular_distance((ra1.to_rad(), dec1.to_rad()), (ra2.to_rad(), dec2.to_rad())).to_deg();
         match self.state.answer.parse::<f32>() {
             Ok(answer) => {
@@ -105,16 +120,16 @@ impl Question {
                 self.state.answer_review_text_heading = format!("You were {:.1} degrees away!", (distance - answer).value());
                 let error_percent = 1.0 - answer.value() / distance.value();
                 self.state.answer_review_text = format!("The real distance was {:.1}°. Your error is equal to {:.1}% of the distance.", distance.value(), error_percent * 100.0);
-                if data.is_scored_mode {
+                if is_scored_mode {
                     let error = (1.0 - answer.value() / distance.value()).abs();
                     if error < 0.03 {
-                        *data.score += 3;
+                        actions.push(Action::ChangeScore(3));
                     } else if error < 0.05 {
-                        *data.score += 2;
+                        actions.push(Action::ChangeScore(2));
                     } else if error < 0.1 {
-                        *data.score += 1;
+                        actions.push(Action::ChangeScore(1));
                     }
-                    *data.possible_score += 3;
+                    actions.push(Action::ChangePossibleScore(3));
                 }
             }
             Err(_) => {
@@ -122,83 +137,81 @@ impl Question {
                 self.state.answer_review_text = format!("The real distance was {distance:.1}°.");
             }
         };
-        data.used_questions.push(data.current_question);
-        *data.game_stage = GameStage::Checked;
+        actions.push(Action::MarkQuestionAsUsed(question_id));
+        actions.push(Action::SetGameStage(GameStage::Checked));
     }
 }
 
-impl crate::game::game_handler::QuestionTrait for Question {
-    fn render_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
-        if *data.game_stage == GameStage::Guessing {
-            self.render_question_window(data)
-        } else if *data.game_stage == GameStage::Checked {
-            self.render_answer_review_window(data)
+impl ActiveQuestion {
+    pub fn render_window(
+        &mut self,
+        ctx: &eframe::egui::Context,
+        game_stage: GameStage,
+        game_question_opened: bool,
+        request_input_focus: bool,
+        question_number_text: &str,
+        actions: &mut Vec<Action>,
+    ) -> Option<egui::InnerResponse<Option<()>>> {
+        if game_stage == GameStage::Guessing {
+            self.render_question_window(ctx, game_question_opened, request_input_focus, question_number_text, actions)
+        } else if game_stage == GameStage::Checked {
+            self.render_answer_review_window(ctx, game_question_opened, question_number_text, actions)
         } else {
             None
         }
     }
 
-    fn generic_to_next_part(&mut self, data: QuestionCheckingData) {
-        match data.game_stage {
+    pub fn generic_to_next_part(&mut self, is_scored_mode: bool, question_id: usize, game_stage: &GameStage, actions: &mut Vec<Action>) {
+        match game_stage {
             GameStage::Guessing => {
-                if !self.should_display_input() {
-                    self.check_answer(data);
-                }
+                self.check_answer(is_scored_mode, question_id, actions);
             }
             GameStage::Checked => {
-                *data.start_next_question = true;
+                actions.push(Action::SwitchToNextQuestion);
+                actions.push(Action::RemoveGameMarkers);
             }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
     }
 
-    fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(Self {
-            point1: self.point1,
-            point2: self.point2,
-            state: Default::default(),
-            small_settings: self.small_settings,
-        })
-    }
-
-    fn show_tolerance_marker(&self) -> bool {
+    pub fn show_tolerance_marker(&self) -> bool {
         false
     }
 
-    fn show_circle_marker(&self) -> bool {
+    pub fn show_circle_marker(&self) -> bool {
         false
     }
 
-    fn get_question_distance_tolerance(&self) -> Deg<f32> {
+    pub fn get_question_distance_tolerance(&self) -> Deg<f32> {
         angle::Deg(0.0)
     }
 
-    fn allow_multiple_player_markers(&self) -> bool {
+    pub fn allow_multiple_player_markers(&self) -> bool {
         false
     }
 
-    fn add_marker_on_click(&self) -> bool {
+    pub fn add_marker_on_click(&self) -> bool {
         false
     }
 
-    fn should_display_input(&self) -> bool {
+    pub fn should_display_input(&self) -> bool {
         true
     }
 
-    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, theme: &Theme) {
+    pub fn start_question(&mut self, theme: &Theme, actions: &mut Vec<Action>) {
         self.state = Default::default();
-        let (ra1, dec1) = self.point1;
-        let (ra2, dec2) = self.point2;
-        sky.game_markers.markers = vec![
+        let (ra1, dec1) = self.data.point1;
+        let (ra2, dec2) = self.data.point2;
+        actions.push(Action::SetGameMarkers(vec![
             game_markers::GameMarker::new(game_markers::GameMarkerType::Task, ra1, dec1, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
             game_markers::GameMarker::new(game_markers::GameMarkerType::Task, ra2, dec2, 2.0, 5.0, false, false, &theme.game_visuals.game_markers_colours),
-        ];
-        if self.small_settings.rotate_to_midpoint {
+        ]));
+        if self.data.small_settings.rotate_to_midpoint {
             let end_1 = sg_geometry::get_point_vector(ra1, dec1, &nalgebra::Matrix3::<f32>::identity());
             let end_2 = sg_geometry::get_point_vector(ra2, dec2, &nalgebra::Matrix3::<f32>::identity());
             if (end_1 + end_2).magnitude_squared() > 10e-4 {
                 let final_vector = (end_1 + end_2).normalize();
-                cellestial_sphere.look_at_point(&final_vector);
+                actions.push(Action::CameraLookAt(final_vector));
             }
         }
     }
@@ -206,20 +219,15 @@ impl crate::game::game_handler::QuestionTrait for Question {
     fn render_display_question(&self, ui: &mut egui::Ui) {
         ui.heading("What is the angular distance between these markers?");
     }
-
-    fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(self.clone())
-    }
 }
 
-pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
-    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len() / 2);
+pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<questions::Question> {
+    let mut questions: Vec<questions::Question> = Vec::with_capacity(objects.len() / 2);
     for i in (0..objects.len()).step_by(2) {
         if i + 1 >= objects.len() {
             break;
         }
-        questions.push(Box::new(Question {
-            state: Default::default(),
+        questions.push(questions::Question::AngularSeparation(Question {
             point1: (objects[i].ra, objects[i].dec),
             point2: (objects[i + 1].ra, objects[i + 1].dec),
             small_settings,

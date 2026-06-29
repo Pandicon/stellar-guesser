@@ -17,7 +17,7 @@ impl Application {
             self.game_handler.reset_used_questions();
 
             // Remove all game markers from the screen
-            self.cellestial_sphere.deinit_single_renderer_group(RendererCategory::Markers, "game");
+            self.cellestial_sphere.disable_single_renderer_group(RendererCategory::Markers, "game");
             // Disable adding a game marker on click
             self.game_handler.add_marker_on_click = false;
         }

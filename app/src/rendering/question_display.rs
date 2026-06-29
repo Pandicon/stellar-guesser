@@ -1,4 +1,4 @@
-use crate::game::game_handler::QuestionWindowData;
+use crate::game::questions;
 use crate::{enums::GameStage, Application};
 use eframe::egui;
 
@@ -9,7 +9,7 @@ impl Application {
                 ui.heading("Welcome!");
                 if ui.button("Start").clicked() {
                     self.game_handler.stage = GameStage::Checked;
-                    self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme)
+                    self.game_handler.next_question(&self.theme, &mut self.actions)
                 }
             }),
             GameStage::NoMoreQuestions => egui::Window::new("Question").open(&mut self.state.windows.game_question.opened).show(ctx, |ui| {
@@ -23,7 +23,7 @@ impl Application {
                 ui.horizontal(|ui| {
                     if !self.game_handler.question_catalog.is_empty() && ui.button("Reset").clicked() {
                         self.game_handler.reset_used_questions();
-                        self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme);
+                        self.game_handler.next_question(&self.theme, &mut self.actions);
                     }
                     if ui.button("Choose a different question pack").clicked() {
                         self.state.windows.settings.opened = true;
@@ -44,34 +44,27 @@ impl Application {
                 ui.horizontal(|ui| {
                     if ui.button("Reset").clicked() {
                         self.game_handler.reset_used_questions();
-                        self.game_handler.next_question(&mut self.cellestial_sphere, &mut self.sky, &self.theme);
+                        self.game_handler.next_question(&self.theme, &mut self.actions);
                     }
                 });
 
                 ui.label(&self.game_handler.question_number_text);
             }),
             GameStage::Guessing | GameStage::Checked => {
-                let data = QuestionWindowData {
-                    cellestial_sphere: &mut self.cellestial_sphere,
-                    sky: &mut self.sky,
-                    theme: &self.theme,
-                    game_question_opened: &mut self.state.windows.game_question.opened,
-                    request_input_focus: &mut self.game_handler.request_input_focus,
-                    add_marker_on_click: &mut self.game_handler.add_marker_on_click,
-                    question_number_text: &self.game_handler.question_number_text,
-                    game_stage: &mut self.game_handler.stage,
-                    ctx,
-                    switch_to_next_part: &mut self.game_handler.switch_to_next_part,
-                    start_next_question: &mut self.game_handler.switch_to_next_question,
-                    score: &mut self.game_handler.score,
-                    possible_score: &mut self.game_handler.possible_score,
-                    is_scored_mode: self.game_handler.game_settings.is_scored_mode,
-                    current_question: self.game_handler.current_question,
-                    used_questions: &mut self.game_handler.used_questions,
-                    questions_settings: &self.game_handler.questions_settings,
-                    question_number: &mut self.game_handler.question_number
-                };
-                self.game_handler.question_catalog[self.game_handler.current_question].render_window(data)
+                match &mut self.game_handler.active_question {
+                    None => {
+                        None
+                    }
+                    Some(questions::ActiveQuestion::AngularSeparation(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::FindThisObject(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::GuessDec(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::GuessRa(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::GuessTheMagnitude(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::MarkMissingObject(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::WhatIsThisObject(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::WhichConstellationIsThisPointIn(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
+                    Some(questions::ActiveQuestion::WhichObjectIsMissing(active_question)) => active_question.render_window(ctx, self.game_handler.stage, self.state.windows.game_question.opened, self.game_handler.request_input_focus, &self.game_handler.question_number_text, &mut self.actions),
+                }
             }
         }
     }

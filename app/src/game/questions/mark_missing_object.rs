@@ -1,10 +1,9 @@
+use crate::action::Action;
 use crate::enums::{GameStage, RendererCategory};
-use crate::game::game_handler;
-use crate::game::game_handler::{GameHandler, QuestionCheckingData, QuestionTrait, QuestionWindowData};
-use crate::rendering::caspr::renderer::CellestialSphere;
+use crate::game::game_handler::GameHandler;
+use crate::game::questions;
 use crate::rendering::themes::Theme;
-use crate::sky;
-use crate::sky::markers::game_markers;
+use crate::sky::markers::{self, game_markers};
 use angle::{Angle, Deg};
 use eframe::egui;
 use rand::Rng;
@@ -88,38 +87,42 @@ pub struct Question {
     pub constellation_abbreviation: String,
     pub images: Vec<crate::structs::image_info::ImageInfo>,
     pub object_id: u64,
-
-    pub state: State,
 }
 
 impl Question {
-    fn render_question_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
-        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+    pub fn activate(&self) -> ActiveQuestion {
+        ActiveQuestion {
+            data: self.clone(),
+            state: Default::default(),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct ActiveQuestion {
+    pub data: Question,
+    pub state: State,
+}
+
+impl ActiveQuestion {
+    fn render_question_window(&mut self, ctx: &eframe::egui::Context, game_question_opened: bool, question_number_text: &str, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
+        let mut is_window_open = game_question_opened;
+        let response = egui::Window::new("Question").open(&mut is_window_open).show(ctx, |ui| {
             self.render_display_question(ui);
             if ui.button("Check").clicked() {
-                self.check_answer(QuestionCheckingData {
-                    cellestial_sphere: data.cellestial_sphere,
-                    sky: data.sky,
-                    theme: data.theme,
-                    game_stage: data.game_stage,
-                    score: data.score,
-                    possible_score: data.possible_score,
-                    is_scored_mode: data.is_scored_mode,
-                    current_question: data.current_question,
-                    used_questions: data.used_questions,
-                    add_marker_on_click: data.add_marker_on_click,
-                    questions_settings: data.questions_settings,
-                    question_number: data.question_number,
-                    start_next_question: data.start_next_question,
-                    switch_to_next_part: data.switch_to_next_part,
-                });
+                actions.push(Action::CheckAnswer);
             }
-            ui.label(data.question_number_text);
-        })
+            ui.label(question_number_text);
+        });
+        if is_window_open != game_question_opened {
+            actions.push(Action::ToggleQuestionWindow(is_window_open));
+        }
+        response
     }
 
-    fn render_answer_review_window(&self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
-        egui::Window::new("Question").open(data.game_question_opened).show(data.ctx, |ui| {
+    fn render_answer_review_window(&self, ctx: &eframe::egui::Context, game_question_opened: bool, question_number_text: &str, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
+        let mut is_window_open = game_question_opened;
+        let response = egui::Window::new("Question").open(&mut is_window_open).show(ctx, |ui| {
             if !self.state.answer_review_text_heading.is_empty() {
                 ui.heading(&self.state.answer_review_text_heading);
             }
@@ -131,31 +134,35 @@ impl Question {
                 }
             }
             if ui.button("Next").clicked() {
-                *data.switch_to_next_part = true;
+                actions.push(Action::SwitchToNextPart);
             }
-            ui.label(data.question_number_text);
-        })
+            ui.label(question_number_text);
+        });
+        if is_window_open != game_question_opened {
+            actions.push(Action::ToggleQuestionWindow(is_window_open));
+        }
+        response
     }
 
-    fn check_answer(&mut self, data: QuestionCheckingData) {
-        *data.add_marker_on_click = false;
-        let markers = &mut data.sky.game_markers.markers;
+    pub fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, markers: &[game_markers::GameMarker], theme: &Theme, actions: &mut Vec<Action>) {
+        actions.push(Action::SetAddMarkerOnClick(false));
         let mut correct = false;
-        if !self.images.is_empty() {
-            self.state.answer_image = Some(self.images[rand::thread_rng().gen_range(0..self.images.len())].clone());
+        if !self.data.images.is_empty() {
+            self.state.answer_image = Some(self.data.images[rand::thread_rng().gen_range(0..self.data.images.len())].clone());
         }
         let (answer_dec_text, answer_ra_text, distance, answer_review_text_heading) = if !markers.is_empty() {
             let answer_dec = markers[0].dec;
             let answer_ra = markers[0].ra;
-            let distance = sg_geometry::angular_distance((self.ra.to_rad(), self.dec.to_rad()), (answer_ra.to_rad(), answer_dec.to_rad())).to_deg();
-            if data.is_scored_mode {
-                *data.score += GameHandler::evaluate_score(distance);
+            let distance = sg_geometry::angular_distance((self.data.ra.to_rad(), self.data.dec.to_rad()), (answer_ra.to_rad(), answer_dec.to_rad())).to_deg();
+            if is_scored_mode {
+                let score_delta = GameHandler::evaluate_score(distance);
+                actions.push(Action::ChangeScore(score_delta));
             }
             (
                 answer_dec.value().to_string(),
                 answer_ra.value().to_string(),
                 distance.value().to_string(),
-                if distance < self.small_settings.correctness_threshold {
+                if distance < self.data.small_settings.correctness_threshold {
                     correct = true;
                     String::from("Correct!")
                 } else {
@@ -168,127 +175,109 @@ impl Question {
         self.state.answer_review_text_heading = answer_review_text_heading;
         self.state.answer_review_text = format!(
             "Designations of the missing object: {}\nYour coordinates: [dec = {}°; ra = {}°]\nCorrect coordinates: [dec = {}°; ra = {}°]\nFully precise distance: {}°\nYou can see the correct place marked with a new {}.\nObject type: {}",
-            self.possible_names.join(", "),
+            self.data.possible_names.join(", "),
             answer_dec_text,
             answer_ra_text,
-            self.dec.value(),
-            self.ra.value(),
+            self.data.dec.value(),
+            self.data.ra.value(),
             distance,
-            if self.is_bayer || self.is_starname { "circle" } else { "cross" },
-            self.object_type
+            if self.data.is_bayer || self.data.is_starname { "circle" } else { "cross" },
+            self.data.object_type
         );
-        markers.push(game_markers::GameMarker::new(
+        actions.push(Action::AddGameMarker(game_markers::GameMarker::new(
             game_markers::GameMarkerType::CorrectAnswer,
-            self.ra,
-            self.dec,
+            self.data.ra,
+            self.data.dec,
             2.0,
             5.0,
-            self.is_bayer || self.is_starname,
+            self.data.is_bayer || self.data.is_starname,
             false,
-            &data.theme.game_visuals.game_markers_colours,
-        ));
-        if !data.questions_settings.find_this_object.replay_incorrect || correct {
-            data.used_questions.push(data.current_question);
+            &theme.game_visuals.game_markers_colours,
+        )));
+        if !self.data.small_settings.replay_incorrect || correct {
+            actions.push(Action::MarkQuestionAsUsed(question_id));
         } else {
-            *data.question_number += 1;
+            actions.push(Action::IncrementRepeatedQuestionCounter);
         }
-        if self.small_settings.rotate_to_answer {
-            let final_vector = sg_geometry::get_point_vector(self.ra, self.dec, &nalgebra::Matrix3::<f32>::identity());
-            data.cellestial_sphere.look_at_point(&final_vector);
+        if self.data.small_settings.rotate_to_answer {
+            let final_vector = sg_geometry::get_point_vector(self.data.ra, self.data.dec, &nalgebra::Matrix3::<f32>::identity());
+            actions.push(Action::CameraLookAt(final_vector));
         } else {
-            data.cellestial_sphere.init_single_renderer_group(data.sky, RendererCategory::Markers, "game");
+            actions.push(Action::InitSingleRendererGroup(RendererCategory::Markers, String::from("game")));
         }
-        *data.game_stage = GameStage::Checked;
+        actions.push(Action::SetGameStage(GameStage::Checked));
     }
 }
 
-impl crate::game::game_handler::QuestionTrait for Question {
-    fn render_window(&mut self, data: QuestionWindowData) -> Option<egui::InnerResponse<Option<()>>> {
-        if *data.game_stage == GameStage::Guessing {
-            self.render_question_window(data)
-        } else if *data.game_stage == GameStage::Checked {
-            self.render_answer_review_window(data)
+impl ActiveQuestion {
+    pub fn render_window(
+        &mut self,
+        ctx: &eframe::egui::Context,
+        game_stage: GameStage,
+        game_question_opened: bool,
+        question_number_text: &str,
+        actions: &mut Vec<Action>,
+    ) -> Option<egui::InnerResponse<Option<()>>> {
+        if game_stage == GameStage::Guessing {
+            self.render_question_window(ctx, game_question_opened, question_number_text, actions)
+        } else if game_stage == GameStage::Checked {
+            self.render_answer_review_window(ctx, game_question_opened, question_number_text, actions)
         } else {
             None
         }
     }
 
-    fn generic_to_next_part(&mut self, data: QuestionCheckingData) {
-        match data.game_stage {
+    pub fn generic_to_next_part(&mut self, is_scored_mode: bool, question_id: usize, game_stage: &GameStage, markers: &[markers::game_markers::GameMarker], theme: &Theme, actions: &mut Vec<Action>) {
+        match game_stage {
             GameStage::Guessing => {
-                self.check_answer(data);
+                self.check_answer(is_scored_mode, question_id, markers, theme, actions);
             }
             GameStage::Checked => {
-                *data.start_next_question = true;
-                data.cellestial_sphere.enable_single_renderer(self.object_id);
+                actions.push(Action::SwitchToNextQuestion);
+                actions.push(Action::EnableSingleRenderer(self.data.object_id));
+                actions.push(Action::RemoveGameMarkers);
             }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
     }
 
-    fn reset(self: Box<Self>) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(Self {
-            possible_names: self.possible_names,
-            ra: self.ra,
-            dec: self.dec,
-            is_messier: self.is_messier,
-            is_caldwell: self.is_caldwell,
-            is_ngc: self.is_ngc,
-            is_ic: self.is_ic,
-            is_bayer: self.is_bayer,
-            is_starname: self.is_starname,
-            magnitude: self.magnitude,
-            object_type: self.object_type,
-            constellation_abbreviation: self.constellation_abbreviation,
-            images: self.images,
-
-            state: Default::default(),
-            small_settings: self.small_settings,
-            object_id: self.object_id,
-        })
-    }
-
-    fn show_tolerance_marker(&self) -> bool {
+    pub fn show_tolerance_marker(&self) -> bool {
         true
     }
 
-    fn show_circle_marker(&self) -> bool {
-        self.is_bayer || self.is_starname
+    pub fn show_circle_marker(&self) -> bool {
+        self.data.is_bayer || self.data.is_starname
     }
 
-    fn get_question_distance_tolerance(&self) -> Deg<f32> {
-        self.small_settings.correctness_threshold
+    pub fn get_question_distance_tolerance(&self) -> Deg<f32> {
+        self.data.small_settings.correctness_threshold
     }
 
-    fn allow_multiple_player_markers(&self) -> bool {
+    pub fn allow_multiple_player_markers(&self) -> bool {
         false
     }
 
-    fn add_marker_on_click(&self) -> bool {
+    pub fn add_marker_on_click(&self) -> bool {
         true
     }
 
-    fn should_display_input(&self) -> bool {
+    pub fn should_display_input(&self) -> bool {
         false
     }
 
-    fn start_question(&mut self, cellestial_sphere: &mut CellestialSphere, sky: &mut sky::Sky, _theme: &Theme) {
+    pub fn start_question(&mut self, _theme: &Theme, actions: &mut Vec<Action>) {
         self.state = Default::default();
-        sky.game_markers.markers = Vec::new();
-        cellestial_sphere.disable_single_renderer(self.object_id);
+        actions.push(Action::RemoveGameMarkers);
+        actions.push(Action::DisableSingleRenderer(self.data.object_id));
     }
 
     fn render_display_question(&self, ui: &mut egui::Ui) {
         ui.heading("Find the object that is missing in the sky");
     }
-
-    fn clone_box(&self) -> Box<dyn game_handler::QuestionTrait> {
-        Box::new(self.clone())
-    }
 }
 
-pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<Box<dyn QuestionTrait>> {
-    let mut questions: Vec<Box<dyn QuestionTrait>> = Vec::with_capacity(objects.len());
+pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settings: SmallSettings) -> Vec<questions::Question> {
+    let mut questions: Vec<questions::Question> = Vec::with_capacity(objects.len());
     for object in objects {
         let mut possible_names = Vec::new();
         if let Some(designation) = &object.bayer_designation_raw {
@@ -325,7 +314,6 @@ pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settin
             small_settings,
             ra: object.ra,
             dec: object.dec,
-            state: Default::default(),
             possible_names,
             is_messier: object.messier_number.is_some(),
             is_caldwell: object.caldwell_number.is_some(),
@@ -342,7 +330,7 @@ pub fn generate_questions(objects: &[&crate::game::QuestionObject], small_settin
             images: object.images.clone(),
             object_id: object.object_id,
         };
-        questions.push(Box::new(question));
+        questions.push(questions::Question::MarkMissingObject(question));
     }
     questions
 }
