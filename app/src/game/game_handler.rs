@@ -39,29 +39,6 @@ pub struct QuestionCheckingData<'a> {
     pub current_question: usize,
 }
 
-pub trait QuestionTrait {
-    fn render_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>>;
-
-    /// This function should handle cases where a generic action switches the question to the next part
-    fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>);
-
-    fn show_tolerance_marker(&self) -> bool;
-
-    fn show_circle_marker(&self) -> bool;
-
-    fn get_question_distance_tolerance(&self) -> angle::Deg<f32>;
-
-    fn allow_multiple_player_markers(&self) -> bool;
-
-    fn add_marker_on_click(&self) -> bool;
-
-    fn should_display_input(&self) -> bool;
-
-    fn start_question(&mut self, theme: &Theme, actions: &mut Vec<Action>);
-
-    fn render_display_question(&self, ui: &mut egui::Ui);
-}
-
 pub struct GameHandler {
     pub current_question: usize,
     pub active_question: Option<ActiveQuestion>,
