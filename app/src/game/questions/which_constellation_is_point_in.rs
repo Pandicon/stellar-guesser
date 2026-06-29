@@ -75,7 +75,7 @@ impl ActiveQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(data.current_question, data.sky, actions);
+                actions.push(Action::CheckAnswer);
             }
             ui.label(data.question_number_text);
         });
@@ -103,7 +103,7 @@ impl ActiveQuestion {
         response
     }
 
-    fn check_answer(&mut self, question_id: usize, sky: &sky::Sky, actions: &mut Vec<Action>) {
+    pub fn check_answer(&mut self, question_id: usize, sky: &sky::Sky, actions: &mut Vec<Action>) {
         let possible_abbrevs = sky.determine_constellation((self.data.ra.to_rad(), self.data.dec.to_rad()));
         let mut possible_constellation_names = Vec::new();
         for abbrev in possible_abbrevs {

@@ -129,7 +129,7 @@ impl ActiveQuestion {
         let response = egui::Window::new("Question").open(&mut is_window_open).show(data.ctx, |ui| {
             self.render_display_question(ui);
             if ui.button("Check").clicked() {
-                self.check_answer(data.is_scored_mode, data.current_question, &data.sky.game_markers.markers, data.theme, actions);
+                actions.push(Action::CheckAnswer);
             }
             ui.label(data.question_number_text);
         });
@@ -163,7 +163,7 @@ impl ActiveQuestion {
         response
     }
 
-    fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, markers: &[game_markers::GameMarker], theme: &Theme, actions: &mut Vec<Action>) {
+    pub fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, markers: &[game_markers::GameMarker], theme: &Theme, actions: &mut Vec<Action>) {
         actions.push(Action::SetAddMarkerOnClick(false));
         let mut correct = false;
         if !self.data.images.is_empty() {

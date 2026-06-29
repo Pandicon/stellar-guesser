@@ -36,6 +36,8 @@ pub enum Action {
     /// Signals that the current question should run the generic_to_next_part() function
     /// The question may then switch to its next part, or give up control
     SwitchToNextPart,
+    /// Check the answer to the current question
+    CheckAnswer,
     /// Adds a game marker
     AddGameMarker(game_markers::GameMarker),
     /// Sets the game markers to the provided list

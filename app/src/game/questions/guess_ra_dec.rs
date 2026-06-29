@@ -74,7 +74,7 @@ impl ActiveRaQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(data.is_scored_mode, data.current_question, actions);
+                actions.push(Action::CheckAnswer);
             }
             ui.label(data.question_number_text);
         });
@@ -102,7 +102,7 @@ impl ActiveRaQuestion {
         response
     }
 
-    fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, actions: &mut Vec<Action>) {
+    pub fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, actions: &mut Vec<Action>) {
         match self.state.answer.parse::<f32>() {
             Ok(answer_hours) => {
                 let answer_deg = angle::Deg(answer_hours / 24.0 * 360.0);
@@ -251,7 +251,7 @@ impl ActiveDecQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(data.is_scored_mode, data.current_question, actions);
+                actions.push(Action::CheckAnswer);
             }
             ui.label(data.question_number_text);
         });
@@ -279,7 +279,7 @@ impl ActiveDecQuestion {
         response
     }
 
-    fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, actions: &mut Vec<Action>) {
+    pub fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, actions: &mut Vec<Action>) {
         match self.state.answer.parse::<f32>() {
             Ok(answer) => {
                 let answer_deg = angle::Deg(answer);

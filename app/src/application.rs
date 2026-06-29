@@ -321,6 +321,46 @@ impl Application {
                         active_question.generic_to_next_part(self.game_handler.current_question, &self.game_handler.stage, &self.theme, &mut self.actions)
                     }
                 },
+                Action::CheckAnswer => match &mut self.game_handler.active_question {
+                    None => {}
+                    Some(questions::ActiveQuestion::AngularSeparation(active_question)) => {
+                        active_question.check_answer(self.game_handler.game_settings.is_scored_mode, self.game_handler.current_question, &mut self.actions);
+                    }
+                    Some(questions::ActiveQuestion::FindThisObject(active_question)) => active_question.check_answer(
+                        self.game_handler.game_settings.is_scored_mode,
+                        self.game_handler.current_question,
+                        &self.sky.game_markers.markers,
+                        &self.theme,
+                        &mut self.actions,
+                    ),
+                    Some(questions::ActiveQuestion::GuessDec(active_question)) => {
+                        active_question.check_answer(self.game_handler.game_settings.is_scored_mode, self.game_handler.current_question, &mut self.actions);
+                    }
+                    Some(questions::ActiveQuestion::GuessRa(active_question)) => {
+                        active_question.check_answer(self.game_handler.game_settings.is_scored_mode, self.game_handler.current_question, &mut self.actions);
+                    }
+                    Some(questions::ActiveQuestion::GuessTheMagnitude(active_question)) => {
+                        active_question.check_answer(self.game_handler.game_settings.is_scored_mode, self.game_handler.current_question, &mut self.actions);
+                    }
+                    Some(questions::ActiveQuestion::MarkMissingObject(active_question)) => {
+                        active_question.check_answer(
+                            self.game_handler.game_settings.is_scored_mode,
+                            self.game_handler.current_question,
+                            &self.sky.game_markers.markers,
+                            &self.theme,
+                            &mut self.actions,
+                        );
+                    }
+                    Some(questions::ActiveQuestion::WhatIsThisObject(active_question)) => {
+                        active_question.check_answer(self.game_handler.current_question, &mut self.actions);
+                    }
+                    Some(questions::ActiveQuestion::WhichConstellationIsThisPointIn(active_question)) => {
+                        active_question.check_answer(self.game_handler.current_question, &self.sky, &mut self.actions);
+                    }
+                    Some(questions::ActiveQuestion::WhichObjectIsMissing(active_question)) => {
+                        active_question.check_answer(self.game_handler.current_question, &self.theme, &mut self.actions);
+                    }
+                },
                 Action::AddGameMarker(marker) => {
                     self.sky.game_markers.markers.push(marker);
                     reinitialise_game_markers = true;

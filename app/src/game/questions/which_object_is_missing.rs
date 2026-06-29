@@ -134,7 +134,7 @@ impl ActiveQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(data.current_question, data.theme, actions);
+                actions.push(Action::CheckAnswer);
             }
             ui.label(data.question_number_text);
         });
@@ -168,7 +168,7 @@ impl ActiveQuestion {
         response
     }
 
-    fn check_answer(&mut self, question_id: usize, theme: &Theme, actions: &mut Vec<Action>) {
+    pub fn check_answer(&mut self, question_id: usize, theme: &Theme, actions: &mut Vec<Action>) {
         if !self.data.images.is_empty() {
             self.state.answer_image = Some(self.data.images[rand::thread_rng().gen_range(0..self.data.images.len())].clone());
         }

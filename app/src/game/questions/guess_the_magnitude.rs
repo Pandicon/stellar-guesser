@@ -80,7 +80,7 @@ impl ActiveQuestion {
                 }
             }
             if ui.button("Check").clicked() {
-                self.check_answer(data.is_scored_mode, data.current_question, actions);
+                actions.push(Action::CheckAnswer);
             }
             ui.label(data.question_number_text);
         });
@@ -108,7 +108,7 @@ impl ActiveQuestion {
         response
     }
 
-    fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, actions: &mut Vec<Action>) {
+    pub fn check_answer(&mut self, is_scored_mode: bool, question_id: usize, actions: &mut Vec<Action>) {
         match self.state.answer.parse::<f32>() {
             Ok(answer) => {
                 let error = (self.data.mag - answer).abs();
