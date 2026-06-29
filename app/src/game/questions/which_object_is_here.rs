@@ -212,9 +212,7 @@ impl ActiveQuestion {
     pub fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
         match data.game_stage {
             GameStage::Guessing => {
-                if !self.should_display_input() {
-                    self.check_answer(data.current_question, actions);
-                }
+                self.check_answer(data.current_question, actions);
             }
             GameStage::Checked => {
                 actions.push(Action::SwitchToNextQuestion);
