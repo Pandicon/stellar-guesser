@@ -154,6 +154,7 @@ impl ActiveQuestion {
             }
             GameStage::Checked => {
                 actions.push(Action::SwitchToNextQuestion);
+                actions.push(Action::RemoveGameMarkers);
             }
             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
         }
