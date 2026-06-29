@@ -82,13 +82,6 @@ impl GameHandler {
         self.used_questions.push(self.current_question);
     }
 
-    pub fn generic_to_next_part(&mut self, data: QuestionCheckingData, actions: &mut Vec<Action>) {
-        match &mut self.active_question {
-            None => {}
-            Some(active_question) => active_question.generic_to_next_part(data, actions),
-        }
-    }
-
     pub fn render_question_window(&mut self, data: QuestionWindowData, actions: &mut Vec<Action>) -> Option<egui::InnerResponse<Option<()>>> {
         match &mut self.active_question {
             None => None,

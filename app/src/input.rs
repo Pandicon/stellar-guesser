@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::action::{Action, ScreenDraggedData};
-use crate::game::game_handler::QuestionCheckingData;
 use crate::{
     enums::{self, GameStage, PointerPosition},
     Application,
@@ -27,21 +26,7 @@ impl Application {
                         match self.game_handler.stage {
                             GameStage::Guessing | GameStage::Checked => {
                                 if (self.game_handler.stage == GameStage::Guessing && !self.game_handler.should_display_input()) || self.game_handler.stage == GameStage::Checked {
-                                    match &mut self.game_handler.active_question {
-                                        None => {}
-                                        Some(active_question) => {
-                                            active_question.generic_to_next_part(
-                                                QuestionCheckingData {
-                                                    sky: &self.sky,
-                                                    theme: &self.theme,
-                                                    game_stage: &self.game_handler.stage,
-                                                    is_scored_mode: self.game_handler.game_settings.is_scored_mode,
-                                                    current_question: self.game_handler.current_question,
-                                                },
-                                                &mut self.actions,
-                                            );
-                                        }
-                                    }
+                                    self.actions.push(Action::SwitchToNextPart);
                                 }
                             }
                             GameStage::NotStartedYet | GameStage::NoMoreQuestions | GameStage::ScoredModeFinished => {}
