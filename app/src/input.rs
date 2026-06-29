@@ -12,7 +12,7 @@ const KEY_COMBINATIONS: [&str; 6] = ["alt+shift+g", "alt+shift+i", "alt+shift+o"
 
 impl Application {
     pub fn handle_input(&mut self, cursor_within_central_panel: bool, ctx: &egui::Context) {
-        self.input.handle(cursor_within_central_panel, ctx);
+        self.input.handle(cursor_within_central_panel, ctx, &mut self.actions);
         for input_to_handle in &self.input.to_handle {
             match input_to_handle {
                 enums::Inputs::AltShiftI => self.state.windows.app_info.opened = !self.state.windows.app_info.opened,
@@ -107,7 +107,7 @@ impl Default for Input {
 }
 
 impl Input {
-    pub fn handle(&mut self, cursor_within_central_panel: bool, ctx: &egui::Context) {
+    pub fn handle(&mut self, cursor_within_central_panel: bool, ctx: &egui::Context, actions: &mut Vec<Action>) {
         self.text_from_keys = String::new();
         let input_events = ctx.input(|i| i.events.clone());
         let shift_held = ctx.input(|i| i.modifiers.shift);
@@ -165,6 +165,8 @@ impl Input {
         let mut tap_position = Pos2::new(0.0, 0.0);
         let mut tap_released = false;
         let mut touch_detected = false;
+        let something_has_focus = ctx.memory(|mem| mem.focused().is_some());
+
         for event in &input_events {
             match event {
                 egui::Event::Zoom(zoom) => {
@@ -372,6 +374,26 @@ impl Input {
                         println!("The alt+shift+s combination was not in the 'currently_held' hashmap");
                     }
                 }
+                egui::Event::Key {
+                    key: egui::Key::Enter,
+                    physical_key: _,
+                    pressed: true,
+                    repeat: false,
+                    modifiers:
+                        egui::Modifiers {
+                            alt: _,
+                            ctrl: _,
+                            shift: _,
+                            mac_cmd: _,
+                            command: _,
+                        },
+                } => {
+                    if !something_has_focus {
+                        actions.push(Action::SwitchToNextPart);
+                    } else {
+                        self.text_from_keys += "\n";
+                    }
+                }
                 // All unhandled, unmodified keys - construct the text edit string by hand
                 #[cfg(any(target_os = "ios", target_os = "android"))]
                 egui::Event::Key {
@@ -389,7 +411,6 @@ impl Input {
                         },
                 } => {
                     let mut character = match *key {
-                        egui::Key::Enter => "\n",
                         egui::Key::Space => " ",
                         egui::Key::Minus => "-",
                         egui::Key::Plus => "+",
@@ -445,7 +466,8 @@ impl Input {
                         egui::Key::X => "x",
                         egui::Key::Y => "y",
                         egui::Key::Z => "z",
-                        egui::Key::ArrowDown
+                        egui::Key::Enter
+                        | egui::Key::ArrowDown
                         | egui::Key::ArrowLeft
                         | egui::Key::ArrowRight
                         | egui::Key::ArrowUp
