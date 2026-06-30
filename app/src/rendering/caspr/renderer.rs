@@ -322,7 +322,7 @@ impl CellestialSphere {
             std::mem::swap(&mut self.deepsky_renderers, &mut old_renderers);
             let mut active_deepsky_groups = Vec::new();
             let mut all_disabled_renderers = std::collections::HashMap::new();
-            for name in sky.stars.keys() {
+            for name in sky.deepskies.keys() {
                 let active = self.sky_settings.deepskies_categories_active.entry(name.to_owned()).or_insert(true);
                 if !*active {
                     continue;
