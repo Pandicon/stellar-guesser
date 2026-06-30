@@ -411,11 +411,17 @@ impl eframe::App for Application {
         #[cfg(any(target_os = "ios", target_os = "android"))]
         // Push the input text restored from key presses to events as a Text event so that input fields take it in by themselves
         ctx.input_mut(|i| i.events.push(egui::Event::Text(self.input.text_from_keys.clone())));
+
         self.frames_handler.update_started();
+
         self.screen_width = ScreenWidth::from_width(ctx.screen_rect().size().x);
+
         let cursor_within_central_panel = self.render(ctx, frame);
+
         self.handle_input(cursor_within_central_panel, ctx);
+
         self.receive_threads_messages();
+
         self.toasts.show(ctx);
 
         self.handle_actions();
