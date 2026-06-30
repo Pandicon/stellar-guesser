@@ -4366,9 +4366,9 @@ dependencies = [
 
 [[package]]
 name = "spherical_geometry"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f07dd1e54901bfa4e3a526dcbd6029512be05998f226aa878c79840e514a2f33"
+checksum = "019c1ee02460de0fcb4560123520c62b8657c03ef62787e8de8c27bfb61fee07"
 dependencies = [
  "nalgebra",
  "serde",
@@ -4434,7 +4434,7 @@ dependencies = [
  "sg_credits",
  "sg_game_constellations",
  "sg_geometry",
- "spherical_geometry 0.4.1",
+ "spherical_geometry 0.4.2",
  "tokio",
  "url",
  "wasm-bindgen",
